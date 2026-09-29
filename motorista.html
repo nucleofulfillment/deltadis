@@ -213,8 +213,11 @@ a{color:inherit}
 .rp-item:last-child{border-bottom:none} .rp-item input[type=checkbox]{width:19px;height:19px;margin-top:2px;accent-color:var(--roxo);flex:none}
 .rp-item b{display:block;font-size:13.5px} .rp-item small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
 .rp-x{margin-left:auto;flex:none;border:none;background:var(--s3);color:var(--muted2);border-radius:8px;font-size:11px;font-weight:700;padding:6px 9px}
-.rm-pin{width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid var(--border2);color:var(--text);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.35)}
-.rm-pin.aprox{border-color:#D97706;border-style:dashed}
+.rm-pin{width:24px;height:24px;border-radius:50%;background:#16A34A;border:2px solid #fff;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.rm-pin.aprox{background:#D97706}
+.rp-pos{width:46px;flex:none;text-align:center;font-weight:800;font-size:14px;padding:6px 2px;border:1.5px solid var(--border2);border-radius:9px;background:#fff;color:var(--roxo)}
+.rp-base{font-size:12px;color:var(--muted);margin:0 0 10px}.rp-base b{color:var(--text)}
+.rp-err{font-size:11.5px;color:#DC2626;margin:0 0 10px;word-break:break-word}.rp-sem{background:#FEF3C7;color:#92400E;border-radius:10px;padding:9px 11px;font-size:12px;margin:0 0 12px}
 .rm-pin.atual{background:var(--roxo);color:#fff;border-color:var(--roxo);box-shadow:0 0 0 5px rgba(109,40,217,.22)}
 .rm-pin.st-entregue{background:var(--green);color:#fff;border-color:var(--green)}
 .rm-pin.st-ausente{background:var(--amber);color:#fff;border-color:var(--amber)}
@@ -292,7 +295,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-2-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-6-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -698,7 +701,7 @@ function alternarTelaCheia(){
    (a bipagem/digitação continua valendo pra quando ele trabalha em outros pontos)
    ══════════════════════════════════════════════════════════ */
 var RP_API='https://deltadis-api.iliveyou.com.br', RP_KEY='deltadis2026', RP_BASE_PADRAO='R. Farroupilha, 25 - Campinas, Florianópolis - SC, 88117-110';
-var RP_COR={linear:'#6D28D9',circular:'#EC4899'};
+var RP_COR={linear:'#6D28D9',circular:'#EC4899',manual:'#0EA5E9'};
 var RP={on:false,mt:null,mtn:'',lista:[],total:0,itens:[],sel:{},fora:{},msg:'',res:null,pts:[],extra:[],opc:'linear',baseGeo:{},rota:null,mapa:null,mapaEl:null,mapaOk:false,marc:[],ajustou:false};
 try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
 function rpApi(caminho,opts){ return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();}); }
@@ -714,6 +717,16 @@ function rpSalvarCfg(){
 function rpKm(x){ return x.toFixed(1).replace('.',',')+' km'; }
 function rpMin(m){ m=Math.round(m); if(m<60) return m+' min'; return Math.floor(m/60)+'h'+('0'+(m%60)).slice(-2); }
 function rpAprox(p){ return p.lat!=null && (p.precisao==='rua'||p.precisao==='cep'||(p.flags||[]).indexOf('parcial')>=0); }
+function rpKmEntre(a,b){ var R=6371,q=Math.PI/180,dl=(b.lat-a.lat)*q,dg=(b.lng-a.lng)*q,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a.lat*q)*Math.cos(b.lat*q)*Math.sin(dg/2)*Math.sin(dg/2); return 2*R*Math.asin(Math.sqrt(x)); }
+/* trava de segurança: ponto de outra cidade ou muito longe do grosso das paradas NÃO entra na rota */
+function rpMarcarLonge(lista){
+  var com=lista.filter(function(p){ return p.lat!=null; }), i, p;
+  lista.forEach(function(p){ p._longe=false; if((p.flags||[]).indexOf('cidade_diferente')>=0||(p.flags||[]).indexOf('longe_da_base')>=0) p._longe=true; });
+  if(com.length>=3){
+    var la=com.map(function(p){return p.lat;}).sort(function(a,b){return a-b;}), lo=com.map(function(p){return p.lng;}).sort(function(a,b){return a-b;}), m={lat:la[la.length>>1],lng:lo[lo.length>>1]};
+    com.forEach(function(p){ if(rpKmEntre(m,p)>40) p._longe=true; });
+  }
+}
 function rpSinal(p){ return !!p.inc || p.lat==null || rpAprox(p); }
 function rpFeitos(){ var f=null; try{ f=JSON.parse(localStorage.getItem('dd_feitos')||'null'); }catch(e){} if(!f||f.dia!==hojeISO()||String(f.mt)!==String(RP.mt)) f={dia:hojeISO(),mt:RP.mt,cods:[]}; return f; }
 function rpMarcarFeitos(cods){ var f=rpFeitos(), i; for(i=0;i<cods.length;i++) if(f.cods.indexOf(cods[i])<0) f.cods.push(cods[i]); try{ localStorage.setItem('dd_feitos',JSON.stringify(f)); }catch(e){} }
@@ -744,19 +757,26 @@ function rpCardPronta(){
   }
   return '<div class="card" style="margin-bottom:14px;text-align:center"><p style="margin:0;color:var(--muted);font-size:13px">Nenhuma rota do painel para você agora.</p><span style="font-size:11.5px;color:var(--muted);text-decoration:underline;cursor:pointer" onclick="rpTrocarMt()">Não sou '+esc((RP.mtn||'').split(' ')[0]||'eu')+'</span></div>';
 }
-function rpIniciar(){ RP.itens=[]; RP.sel={}; RP.fora={}; RP.res=null; EST='rp_calc'; RP.msg='Buscando os endereços da sua rota...'; renderInicio(); rpBuscar(0); }
+function rpIniciar(){ RP._bipou=false; RP.itens=[]; RP.sel={}; RP.fora={}; RP.res=null; EST='rp_calc'; RP.msg='Buscando os endereços da sua rota...'; renderInicio(); rpBuscar(); }
 function rpErro(t){ EST='sem_lote'; renderInicio(); aviso(t||'Sem conexão com o servidor. Tente de novo.'); }
-function rpBuscar(ini){
-  rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n=10&todos=1').then(function(d){
-    if(!d||!d.ok) throw new Error('falhou');
-    var feitos=rpFeitos().cods, novos=d.itens.filter(function(p){ return feitos.indexOf(p.cod)<0; });
-    var mx=rpCfg().max; RP.itens=RP.itens.concat(novos); if(mx>0&&RP.itens.length>mx) RP.itens=RP.itens.slice(0,mx);
-    if(mx>0&&RP.itens.length>=mx){ var sin0=RP.itens.filter(rpSinal); if(sin0.length){ EST='rp_conferir'; renderInicio(); } else rpCalcular(); return; }
-    RP.msg='Localizando os endereços... '+Math.min(ini+10,d.total)+' de '+d.total; renderInicio();
-    if(d.proximo!=null) return rpBuscar(d.proximo);
-    var sin=RP.itens.filter(rpSinal);
-    if(sin.length){ EST='rp_conferir'; renderInicio(); } else rpCalcular();
-  }).catch(function(){ rpErro(); });
+function rpBuscar(){
+  /* modo foguete: 1ª chamada descobre o total; o resto vem em paralelo (4 por vez) */
+  var mx=rpCfg().max, feitos=rpFeitos().cods, N=12, blocos={};
+  function pega(ini){ return rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n='+N+'&todos=1').then(function(d){ if(!d||!d.ok) throw new Error('falhou'); blocos[ini]=d.itens; return d; }); }
+  function fim(){
+    var k=Object.keys(blocos).map(Number).sort(function(a,b){return a-b;}), todos=[], i;
+    for(i=0;i<k.length;i++) todos=todos.concat(blocos[k[i]]);
+    todos=todos.filter(function(p){ return feitos.indexOf(p.cod)<0; }); if(mx>0) todos=todos.slice(0,mx);
+    RP.itens=todos;
+    rpCalcular();
+  }
+  pega(0).then(function(d){
+    var alvo=d.total; if(mx>0) alvo=Math.min(alvo,mx+feitos.length);
+    var fila=[], ini; for(ini=N;ini<alvo;ini+=N) fila.push(ini);
+    var feitosN=1, tot=Math.min(alvo,d.total); RP.msg='Localizando os endereços... '+Math.min(N,tot)+' de '+tot; renderInicio();
+    function worker(){ if(!fila.length) return Promise.resolve(); var x=fila.shift(); return pega(x).then(function(){ feitosN++; RP.msg='Localizando os endereços... '+Math.min(feitosN*N,tot)+' de '+tot; renderInicio(); return worker(); }); }
+    return Promise.all([worker(),worker(),worker(),worker()]);
+  }).then(fim).catch(function(){ rpErro(); });
 }
 function rpTag(p){ return p.inc?'Endereço incompleto':(p.lat==null?'Não localizado':'Localização aproximada'); }
 function rpTelaConferir(){
@@ -767,8 +787,8 @@ function rpTelaConferir(){
   return h;
 }
 function rpCalcular(){
-  var sel=RP.itens.filter(function(p){ return !RP.fora[p.cod] && (!rpSinal(p) || RP.sel[p.cod]); });
-  var pts=sel.filter(function(p){ return p.lat!=null; }), extra=sel.filter(function(p){ return p.lat==null; });
+  var sel=RP.itens.filter(function(p){ return !RP.fora[p.cod]; });
+  rpMarcarLonge(sel); var pts=sel.filter(function(p){ return p.lat!=null && !p.inc && !p._longe; }), extra=[]; RP.semLoc=sel.length-pts.length; RP.semNomes=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); }).map(function(p){ return p.cliente||p.cod; });
   if(!pts.length){ rpErro('Nenhum endereço da rota foi localizado no mapa.'); return; }
   EST='rp_calc'; RP.msg='Calculando a melhor rota pelas ruas...'; renderInicio();
   var cfg=rpCfg(), bt=cfg.base;
@@ -778,28 +798,42 @@ function rpCalcular(){
     var base=(b&&b.ok)?{lat:b.lat,lng:b.lng}:null;
     return rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,pontos:pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:cfg.pm})}).then(function(c){
       if(!c.ok) throw new Error('falhou');
-      RP.res=c; RP.pts=pts; RP.extra=extra; if(!RP.res[RP.opc]) RP.opc='linear'; EST='rp_escolher'; renderInicio();
+      RP.res=c; RP.pts=pts; RP.extra=extra; RP.opc='linear'; EST='rp_escolher'; renderInicio(); if(RP.semLoc>0 && !RP._bipou){ RP._bipou=true; rpApito(); }
     });
   }).catch(function(){ rpErro('Não consegui calcular a rota agora. Tente de novo.'); });
 }
 function rpCartao(t,r,dica,rec){
   return '<div class="rp-opc'+(RP.opc===t?' on':'')+'" onclick="RP.opc=\''+t+'\';renderInicio()" style="--c:'+RP_COR[t]+'">'+(rec?'<span class="rp-rec">Recomendado, entregas mais rápidas</span>':'')+
-    '<h3>'+(t==='linear'?'→ Linear':'↻ Circular')+'</h3><p>'+dica+'</p>'+
+    '<h3>'+(t==='linear'?'→ Linear':(t==='manual'?'✍ Personalizada':'↻ Circular'))+'</h3><p>'+dica+'</p>'+
     '<div class="rp-ln"><span>Tempo médio até cada entrega</span><b>'+rpMin(r.mediaMin)+'</b></div>'+
     '<div class="rp-ln"><span>Até a última entrega</span><b>'+rpKm(r.idaKm)+' · '+rpMin(r.idaMin)+'</b></div>'+
     '<div class="rp-ln"><span>Volta à base</span><b>'+rpKm(r.voltaKm)+' · '+rpMin(r.voltaMin)+'</b></div>'+
     '<div class="rp-ln rp-tot"><span>Total</span><b>'+rpKm(r.totalKm)+' · '+rpMin(r.totalMin)+'</b></div></div>';
 }
+function rpApito(){ _tom(660,0,0.16,0.5); _tom(440,0.2,0.16,0.5); _tom(660,0.4,0.16,0.5); _tom(440,0.6,0.28,0.5); try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]); }catch(e){} }
+function rpReordenar(de,para){
+  var r=RP.res[RP.opc], n=r.ordem.length; para=parseInt(para,10); if(!isFinite(para)) { renderInicio(); return; }
+  para=Math.max(1,Math.min(n,para)); if(para-1===de){ renderInicio(); return; }
+  var o=r.ordem.slice(), x=o.splice(de,1)[0]; o.splice(para-1,0,x);
+  EST='rp_calc'; RP.msg='Recalculando com a nova ordem...'; renderInicio();
+  rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:RP.res.base,pontos:RP.pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:rpCfg().pm,ordem:o})}).then(function(c){
+    if(!c.ok||!c.manual) throw new Error('falhou');
+    RP.res.manual=c.manual; RP.opc='manual'; EST='rp_escolher'; renderInicio();
+  }).catch(function(){ EST='rp_escolher'; renderInicio(); aviso('Não consegui recalcular agora. Tente de novo.'); });
+}
 function rpTirar(cod){ RP.fora[cod]=true; rpCalcular(); }
 function rpTelaEscolher(){
-  var c=RP.res, r=c[RP.opc], h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 14px;color:var(--muted);font-size:12.5px">'+RP.pts.length+' paradas · escolha o modelo da rota</p>';
-  h+=rpCartao('linear',c.linear,'Entrega mais rápido, mas pode demorar mais para voltar à base.',true)+rpCartao('circular',c.circular,'Últimas entregas demoram mais, mas roda menos e gasta menos combustível.',false);
-  h+='<p style="font-size:11.5px;color:var(--muted);margin:0 0 12px">'+(c.linear.real?'Km e tempo pelo trajeto real das ruas, mais '+String(c.minPorParada).replace('.',',')+' min por parada.':'Km e tempo estimados em linha reta ('+String(c.minPorParada).replace('.',',')+' min por parada).')+'</p>';
-  h+='<h4 style="margin:6px 0 0">Paradas na ordem</h4>';
+  var c=RP.res, r=c[RP.opc], cf=rpCfg(), h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">'+RP.pts.length+' paradas · escolha o modelo da rota</p>';
+  h+='<p class="rp-base">Saindo de: <b>'+esc(cf.base)+'</b></p>';
+  if(RP.semLoc){ h+='<div class="rp-sem"><b>'+RP.semLoc+' pedido'+(RP.semLoc>1?'s':'')+' sem localização '+(RP.semLoc>1?'ficaram':'ficou')+' de fora:</b><br>'+esc((RP.semNomes||[]).slice(0,8).join(', '))+((RP.semNomes||[]).length>8?' e mais '+((RP.semNomes||[]).length-8):'')+'</div>'; }
+  h+=rpCartao('linear',c.linear,'Entrega mais rápido, mas pode demorar mais para voltar à base.',!c.manual)+rpCartao('circular',c.circular,'Últimas entregas demoram mais, mas roda menos e gasta menos combustível.',false);
+  if(c.manual) h+=rpCartao('manual',c.manual,'A sua ordem, com as posições que você ajustou.',false);
+  h+='<p style="font-size:11.5px;color:var(--muted);margin:0 0 '+(r.real?'12':'4')+'px">'+(r.real?'Km e tempo pelo trajeto real das ruas, mais '+String(c.minPorParada).replace('.',',')+' min por parada.':'Km e tempo estimados em linha reta ('+String(c.minPorParada).replace('.',',')+' min por parada).')+'</p>';
+  if(!r.real && r.realErro) h+='<p class="rp-err">Trajeto real indisponível: '+esc(r.realErro)+'</p>';
+  h+='<h4 style="margin:6px 0 2px">Paradas na ordem</h4><p style="margin:0 0 6px;font-size:11.5px;color:var(--muted)">Para mudar a ordem, digite a nova posição no número da parada.</p>';
   var i, p;
   for(i=0;i<r.ordem.length;i++){ p=RP.pts[r.ordem[i]];
-    h+='<div class="rp-item"><span class="bp-seq">'+(i+1)+'</span><div><b>'+esc(p.cliente||p.cod)+'</b><small>'+esc((p.rua||'')+(p.num?', '+p.num:'')+(p.bai?' — '+p.bai:''))+'</small></div><button class="rp-x" onclick="rpTirar(\''+esc(p.cod).replace(/'/g,'')+'\')">Tirar</button></div>'; }
-  for(i=0;i<RP.extra.length;i++) h+='<div class="rp-item"><span class="bp-seq">+</span><div><b>'+esc(RP.extra[i].cliente||RP.extra[i].cod)+'</b><small>sem localização no mapa — vai no fim da lista</small></div></div>';
+    h+='<div class="rp-item"><input class="rp-pos" type="number" inputmode="numeric" min="1" max="'+r.ordem.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rpReordenar('+i+',this.value)"><div><b>'+esc(p.cliente||p.cod)+(p.precisao&&p.precisao!=='numero'?' <span class="badge b-wt" style="margin-left:4px">aprox.</span>':'')+'</b><small>'+esc((p.rua||'')+(p.num?', '+p.num:'')+(p.bai?' — '+p.bai:''))+'</small></div><button class="rp-x" onclick="rpTirar(\''+esc(p.cod).replace(/'/g,'')+'\')">Remover</button></div>'; }
   h+='<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button><button class="btn pri" style="flex:1" onclick="rpComecar()">Começar entregas</button></div></div>';
   return h;
 }
@@ -811,7 +845,7 @@ function rpComecar(){
   var r=RP.res[RP.opc], i;
   LOTE_ATUAL=[]; for(i=0;i<r.ordem.length;i++) LOTE_ATUAL.push(rpParada(RP.pts[r.ordem[i]],i+1));
   for(i=0;i<RP.extra.length;i++) LOTE_ATUAL.push(rpParada(RP.extra[i],LOTE_ATUAL.length+1));
-  ROTA_KM=Math.round(r.totalKm*10)/10; ROTA_MIN=Math.round(r.totalMin); RP.rota=r; RP.ajustou=false;
+  ROTA_KM=Math.round(r.totalKm*10)/10; ROTA_MIN=Math.round(r.totalMin); RP.rota=r; RP.baseLL=RP.res.base||null; RP.ajustou=false;
   PONTEIRO=0; SAIU_TELA_CHEIA=false; EST='em_rota'; renderInicio();
 }
 /* mapa real (OpenFreeMap) da rota em andamento — o elemento fica guardado pra não recarregar a cada parada */
@@ -837,7 +871,10 @@ function rpMapaDesenhar(ajustar){
   for(i=0;i<LOTE_ATUAL.length;i++){ p=LOTE_ATUAL[i]; if(p.lat==null) continue;
     e=document.createElement('div'); e.className='rm-pin'+(p.aprox?' aprox':'')+(i<PONTEIRO?' st-'+(p.status||'entregue'):(i===PONTEIRO?' atual':'')); e.textContent=String(i+1);
     RP.marc.push(new maplibregl.Marker({element:e}).setLngLat([p.lng,p.lat]).addTo(m)); bounds.extend([p.lng,p.lat]); linha.push([p.lng,p.lat]); }
+  if(RP.baseLL){ e=document.createElement('div'); e.className='rm-pin base'; e.textContent='B'; RP.marc.push(new maplibregl.Marker({element:e}).setLngLat([RP.baseLL.lng,RP.baseLL.lat]).addTo(m)); bounds.extend([RP.baseLL.lng,RP.baseLL.lat]); linha.unshift([RP.baseLL.lng,RP.baseLL.lat]); }
   if(r && r.real && r.linha && r.linha.length) linha=r.linha;
+  var geoV={type:'Feature',geometry:{type:'LineString',coordinates:(r&&r.real&&r.linhaVolta)||[]}};
+  if(m.getSource('rota-v')) m.getSource('rota-v').setData(geoV); else { m.addSource('rota-v',{type:'geojson',data:geoV}); m.addLayer({id:'rota-vl',type:'line',source:'rota-v',paint:{'line-color':'#EC4899','line-width':3,'line-opacity':.8,'line-dasharray':[2,2]}}); }
   var geo={type:'Feature',geometry:{type:'LineString',coordinates:linha}};
   if(m.getSource('rota')) m.getSource('rota').setData(geo); else { m.addSource('rota',{type:'geojson',data:geo}); m.addLayer({id:'rota-l',type:'line',source:'rota',paint:{'line-color':'#6D28D9','line-width':4,'line-opacity':.85}}); }
   var at=LOTE_ATUAL[PONTEIRO];
