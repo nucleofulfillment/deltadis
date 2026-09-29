@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-35-2809</p>
+      <p class="bld">DELTADIS-BASE-36-2809</p>
     </div>
   </div>
 </div>
@@ -583,7 +583,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MOTORISTAS -->
       <section class="page" id="pg-motoristas">
-        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div></div>
+        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirNotifColeta()">🔔 Notificação de Coleta</button><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div></div>
         <div class="card">
           <div class="search"><span>🔎</span><input id="mt-busca" placeholder="buscar motorista" oninput="pintarMotoristas()"></div>
           <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px"><div class="pills" id="mt-pills" style="display:contents"></div><div class="pills" id="mt-filtros" style="display:contents"></div></div>
@@ -606,7 +606,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
             <input type="date" class="inp" id="fin-rep-ini" onchange="mudarPeriodoRep()" title="De" style="width:150px"><span style="color:var(--muted);font-size:12px">até</span><input type="date" class="inp" id="fin-rep-fim" onchange="mudarPeriodoRep()" title="Até" style="width:150px">
             <span class="vertodos" onclick="FIN_REP_INI='';FIN_REP_FIM='';mudarPeriodoRep(true)">Todo o período</span>
-            <button class="btn pri" style="margin-left:auto" onclick="el('up-direto').click()">+ Upload planilha</button>
+            <button class="btn pri" style="margin-left:auto" onclick="baixarRelatorioRepasse()">⬇ Baixar relatório</button>
           </div>
           <div id="fin-repasse-aviso" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
           <div class="tb-wrap"><table class="tb">
@@ -631,13 +631,13 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <section class="page" id="pg-config">
         <div class="pghd"><div><h1>Configurações</h1><div class="sub">integrações e estrutura do ponto</div></div></div>
         <div class="cfgcards">
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard"><div class="ic">🔌</div><h4>Integrações com transportadoras</h4><p>Conecte a API de cada transportadora para receber a pré-lista de pacotes automaticamente.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">🏢</div><h4>Bases e pontos</h4><p>Cadastre mais de um ponto de distribuição sob a mesma conta e alterne entre eles.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><span class="badge b-wt">desativado</span></div>
           <div class="cfgcard"><div class="ic">💰</div><h4>Custos Operacionais</h4><p>Combustível, manutenção da frota e demais custos fixos do ponto de distribuição.</p><span class="badge b-nu">em breve</span></div>
-          <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
-          <div class="cfgcard" style="cursor:pointer" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
-          <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
         </div>
       </section>
 
@@ -711,7 +711,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
 <!-- ══ MODAL: novo lançamento (fluxo de caixa) ══ -->
 <div class="sheet" id="sh-lancamento">
-  <div class="sh-hd"><h3>Novo lançamento</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-hd"><h3 id="lc-titulo">Novo lançamento</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <div class="field">
       <label>Tipo</label>
@@ -727,7 +727,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Descrição</label><input class="inp" id="lc-descricao" placeholder="Ex: Aluguel do galpão"></div>
     <div class="field"><label>Data de vencimento</label><input class="inp" type="date" id="lc-data"></div>
     <div class="field" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="lc-pago"><label style="margin:0">Pago</label></div>
-    <div class="field" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="lc-recorrente"><label style="margin:0">Recorrente mensal (12 meses)</label></div>
+    <div class="field" id="lc-rec-box" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="lc-recorrente"><label style="margin:0">Recorrente mensal (12 meses)</label></div>
     <div class="field"><label>Observações (opcional)</label><textarea class="inp" id="lc-obs" rows="3" style="resize:vertical"></textarea></div>
     <div style="display:flex;gap:12px;margin-top:6px">
       <button class="btn sec" style="flex:1" onclick="limparLancamento()">Limpar</button>
@@ -773,7 +773,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet wide" id="sh-ciclo">
   <div class="sh-hd"><h3>Ciclo de repasse dos motoristas</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Vale para todos os motoristas. No <b>Automático</b>, ao abrir o repasse de um motorista as datas do ciclo e do pagamento já vêm preenchidas. No <b>Manual</b>, você digita as datas na hora de fechar.</p>
+    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Cada regra vale para <b>todos</b> os motoristas ou para um <b>grupo</b>. Se o motorista estiver em um grupo com regra, vale a do grupo; senão vale a de "Todos". No <b>Automático</b>, as datas do ciclo e do pagamento já vêm preenchidas no repasse. No <b>Manual</b>, você digita na hora de fechar.</p>
+    <div id="ci-lista"></div>
+    <h4 style="margin:16px 0 8px;font-size:13px">Nova regra</h4>
+    <div class="field"><label>Vale para</label><select class="inp" id="ci-grupo"></select></div>
     <div class="pills"><span class="pill" id="ci-auto" onclick="escolherModoCiclo('auto')">Automático</span><span class="pill" id="ci-manual" onclick="escolherModoCiclo('manual')">Manual</span></div>
     <div id="ci-campos">
       <div class="field"><label>Frequência</label><select class="inp" id="ci-tipo" onchange="ajustarCamposCiclo()"><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal (1–15 e 16–fim do mês)</option><option value="mensal">Mensal</option></select></div>
@@ -781,7 +784,19 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field" id="ci-dia-mes"><label>Dia do mês em que fecha (1 a 28)</label><input class="inp" id="ci-dia-m" inputmode="numeric" placeholder="ex: 5"></div>
       <div class="field"><label>Pagar quantos dias depois de fechar</label><input class="inp" id="ci-prazo" inputmode="numeric" placeholder="ex: 2"></div>
     </div>
-    <button class="btn pri wide" style="margin-top:8px" onclick="salvarCiclo()">Salvar</button>
+    <button class="btn pri wide" id="ci-salvar" style="margin-top:8px" onclick="salvarCiclo()">Adicionar regra</button>
+    <button class="btn sec wide" id="ci-cancelar" style="display:none;margin-top:8px" onclick="CI_EDIT=null;limparFormCiclo()">Cancelar edição</button>
+  </div>
+</div>
+
+<div class="sheet wide" id="sh-notif">
+  <div class="sh-hd"><h3>Notificação de coleta</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Avisa os motoristas que já podem vir coletar os pacotes. Quem foi avisado hoje fica com o <b style="color:#16A34A">✔ verde</b> na lista, e o check some à meia-noite. <b>Por enquanto só registra o aviso</b> — o disparo pelo WhatsApp entra quando o módulo for ligado.</p>
+    <div class="field"><label>Avisar</label><select class="inp" id="nt-alvo" onchange="contarNotif()"></select></div>
+    <div class="field"><label>Mensagem</label><textarea class="inp" id="nt-msg" rows="3" style="resize:vertical">Olá! Já pode vir coletar os pacotes no ponto de coleta.</textarea></div>
+    <div id="nt-qtd" style="font-size:12.5px;color:var(--muted);margin-bottom:8px"></div>
+    <button class="btn pri wide" onclick="enviarNotifColeta()">Enviar notificação</button>
   </div>
 </div>
 
@@ -811,11 +826,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
-<input type="file" id="up-direto" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadDireto(this)">
 <div class="sheet wide" id="sh-fin-lista">
   <div class="sh-hd"><h3 id="fl-titulo">Pacotes</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span id="fl-resumo" style="font-size:12.5px;color:var(--muted)"></span><button class="btn pri" onclick="el('up-direto').click()">+ Upload planilha</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span id="fl-resumo" style="font-size:12.5px;color:var(--muted)"></span><button class="btn pri" onclick="baixarRelatorioLista()">⬇ Baixar relatório</button></div>
     <div class="tb-wrap"><table class="tb"><thead><tr><th>Código</th><th>Cliente</th><th>Motorista</th><th id="fl-th-st">Status</th><th>Recebe</th><th>Repasse</th></tr></thead><tbody id="fl-corpo"></tbody></table></div>
   </div>
 </div>
@@ -857,7 +871,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-35-2809</div>
+<div class="bld-fix">DELTADIS-BASE-36-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -950,7 +964,7 @@ var EXTRATO=[
    Tudo fica guardado neste navegador.
    ══════════════════════════════════════════════════════════ */
 var REAL=true;
-var CICLO={modo:'manual', tipo:'semanal', dia:5, prazo:2};   /* ciclo de repasse dos motoristas (Configurações): auto ou manual */
+var CICLOS=[];   /* regras de ciclo de repasse (Configurações): {id,grupo:'todos'|id do grupo,modo:'auto'|'manual',tipo,dia,prazo} */
 var GRUPOS=[];   /* grupos de motoristas: {id,nome,ids:[id do motorista]} — base pra regras/repasses por grupo no futuro */
 var AREAS=[];   /* áreas de entrega: {nome,valor} por nome  ou  {ini,fim,valor} por faixa de CEP */
 var PRECOS={};   /* id da transportadora → {recebe: R$ por pacote que ela paga ao ponto, paga: R$ por pacote pago ao motorista} */
@@ -991,7 +1005,7 @@ function salvarLocal(cb){
   var o;
   if(REAL){
     var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null]); }
-    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclo:CICLO};
+    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
   idbGravar(o,function(ok){ if(cb) cb(ok); });
@@ -1002,7 +1016,7 @@ function aplicarSalvo(d){
   if(d.precos) PRECOS=d.precos;
   if(d.areas) AREAS=d.areas;
   if(d.grupos) GRUPOS=d.grupos;
-  if(d.ciclo) CICLO=d.ciclo;
+  if(d.ciclos) CICLOS=d.ciclos; else if(d.ciclo && d.ciclo.modo) CICLOS=[{id:'c0',grupo:'todos',modo:d.ciclo.modo,tipo:d.ciclo.tipo,dia:d.ciclo.dia,prazo:d.ciclo.prazo}];
   if((d.pedidos||d.pc) && d.motoristas){
     if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
@@ -1332,10 +1346,10 @@ function abrirRepasseMotorista(id){
   el('rp-rota-qtd').textContent=rs.rotaQtd; el('rp-rota-val').textContent=moeda(rs.rotaVal);
   el('rp-ext-qtd').textContent=rs.extQtd;
   el('rp-saldo').textContent=moeda(saldoAbertoMotorista(id));
-  var auto=(CICLO.modo==='auto'), cc=auto?cicloAtual():{ini:'',fim:'',pag:''};
+  var rg=cicloDoMotorista(id), auto=!!(rg && rg.modo==='auto'), cc=auto?cicloAtual(rg):{ini:'',fim:'',pag:''};
   el('rp-ciclo-ini').value=cc.ini; el('rp-ciclo-fim').value=cc.fim; el('rp-data-pg').value=cc.pag;
   el('rp-ciclo-ini').disabled=el('rp-ciclo-fim').disabled=el('rp-data-pg').disabled=auto;
-  el('rp-ciclo-nota').textContent=auto?('Ciclo automático ('+({semanal:'semanal',quinzenal:'quinzenal',mensal:'mensal'}[CICLO.tipo])+') — para mudar, vá em Configurações → Ciclo de repasse.'):'Ciclo manual — digite as datas. (Para preencher sozinho, ative o modo automático em Configurações → Ciclo de repasse.)';
+  el('rp-ciclo-nota').textContent=auto?('Ciclo automático — regra: '+nomeGrupoCi(rg.grupo)+' ('+textoRegraCi(rg).replace('Automático · ','')+'). Para mudar, vá em Configurações → Ciclo de repasse.'):'Ciclo manual — digite as datas. (Para preencher sozinho, crie uma regra automática em Configurações → Ciclo de repasse.)';
   pintarFechamentosMotorista(id);
   abrir('sh-repasse');
 }
@@ -1388,15 +1402,43 @@ function marcarFechamentoPago(){
   aviso('Marcado como pago!');
   abrirDetalheFechamento(FC_MOT_ATUAL, FC_ID_ATUAL);
 }
+/* logo do DELTADIS (copiada do topo da tela) pros PDFs/relatórios */
+function logoPdfHtml(){
+  var h='<b style="font-size:20px;color:#6D28D9">DELTADIS</b>';
+  try{ var tl=document.querySelector('.tb-logo'), im=tl.querySelector('img.mk'), wm=tl.querySelector('svg.wm');
+    h='<div style="display:flex;align-items:center;gap:10px">'+(im?'<img src="'+im.src+'" style="height:36px">':'')+(wm?wm.outerHTML.replace('<svg class="wm"','<svg style="height:20px;width:auto;color:#6D28D9"'):'')+'</div>'; }catch(e){}
+  return h;
+}
+/* relatório em PDF (janela de impressão) no mesmo padrão do fechamento: logo + ponto de coleta */
+function abrirRelatorio(titulo, linhaInfo, cols, linhas, resumo){
+  var th='', tb='', i, j;
+  for(i=0;i<cols.length;i++) th+='<th>'+esc(cols[i])+'</th>';
+  for(i=0;i<linhas.length;i++){ tb+='<tr>'; for(j=0;j<linhas[i].length;j++) tb+='<td>'+esc(linhas[i][j])+'</td>'; tb+='</tr>'; }
+  if(!tb) tb='<tr><td colspan="'+cols.length+'">Nenhum registro</td></tr>';
+  var agora=new Date(), emitido=dataBR(isoDe(agora))+' '+('0'+agora.getHours()).slice(-2)+':'+('0'+agora.getMinutes()).slice(-2);
+  var htmlPg='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title>'+
+    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}th{background:#f3effb}</style></head>'+
+    '<body><div class="cab">'+logoPdfHtml()+'<div style="text-align:right;font-size:12px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
+    '<h1>'+esc(titulo)+'</h1><p style="font-size:12px;color:#555">'+esc(linhaInfo||'')+' &nbsp;|&nbsp; Emitido em '+emitido+'</p>'+
+    (resumo?('<p><b>'+esc(resumo)+'</b></p>'):'')+
+    '<table><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table>'+
+    '<script>window.onload=function(){window.print();}</'+'script></body></html>';
+  var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups pra baixar o relatório'); return; }
+  w.document.open(); w.document.write(htmlPg); w.document.close();
+}
+var FIN_LISTA_DADOS=null, FIN_REP_DADOS=null;
+function baixarRelatorioLista(){ var d=FIN_LISTA_DADOS; if(!d){ return; } abrirRelatorio(d.titulo, d.info, d.cols, d.linhas, d.resumo); }
+function baixarRelatorioRepasse(){
+  var d=FIN_REP_DADOS; if(!d) return;
+  abrirRelatorio('Repasse por motorista', d.info, ['Motorista','Pacotes','Em rota','Entregues','A repassar'], d.linhas, d.resumo);
+}
 function baixarPdfFechamento(){
   var m=motorista(FC_MOT_ATUAL); if(!m) return;
   var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===FC_ID_ATUAL) f=m.fechamentos[i];
   if(!f) return;
   var linhas='',j,pd;
   for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; linhas+='<tr><td>'+esc(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
-  var logoPdf='<b style="font-size:20px;color:#6D28D9">DELTADIS</b>';
-  try{ var tl=document.querySelector('.tb-logo'), im=tl.querySelector('img.mk'), wm=tl.querySelector('svg.wm');
-    logoPdf='<div style="display:flex;align-items:center;gap:10px">'+(im?'<img src="'+im.src+'" style="height:36px">':'')+(wm?wm.outerHTML.replace('<svg class="wm"','<svg style="height:20px;width:auto;color:#6D28D9"'):'')+'</div>'; }catch(e){}
+  var logoPdf=logoPdfHtml();
   var htmlPg='<!doctype html><html><head><meta charset="utf-8"><title>Fechamento '+esc(m.n)+'</title>'+
     '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}</style></head>'+
     '<body><div class="cab">'+logoPdf+'<div style="text-align:right;font-size:12px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div><h1>Fechamento de repasse — '+esc(m.n)+'</h1>'+
@@ -1950,7 +1992,7 @@ function pintarMotoristas(){
     if(busca && (m.n+' '+m.regiao).toLowerCase().indexOf(busca)<0) continue;
     if(!passaFiltrosMt(m)) continue;
     visiveis.push(m.id);
-    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b></td>'+
+    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b><span title="'+(notifHoje(m)?('Avisado hoje às '+m.notifColeta.hora):'Não avisado hoje')+'" style="margin-left:6px;font-weight:800;color:#16A34A;opacity:'+(notifHoje(m)?'1':'.22')+'">✔</span></td>'+
        '<td>'+esc(m.regiao)+'</td><td>'+m.pac+'</td>'+
        '<td><span class="veic-hover" onmouseenter="mostrarVeic(event,'+m.id+')" onmouseleave="esconderVeic()">'+veicCompacto(m)+'</span></td>'+
        '<td>'+badgeStatus(m.st)+'</td><td>'+slaMotorista(m)+'%</td></tr>';}
@@ -2002,14 +2044,56 @@ function abrirDdMt(k){ MT_DD=(MT_DD===k)?null:k; pintarFiltrosMt(); }
 function alternarFiltroMt(k,j){ var v=MT_OPTS[k][j].v, p=MT_FIL[k].indexOf(v); if(p>=0) MT_FIL[k].splice(p,1); else MT_FIL[k].push(v); pintarMotoristas(); }
 document.addEventListener('click',function(){ if(MT_DD){ MT_DD=null; pintarFiltrosMt(); } });
 /* grupos de motoristas */
+/* notificação de coleta: marca o motorista como avisado HOJE (o ✔ some sozinho no dia seguinte) */
+function notifHoje(m){ return !!(m.notifColeta && m.notifColeta.dia===hojeISO()); }
+function idsDoAlvoNotif(v){
+  var ids=[], i, k;
+  if(v==='todos'){ for(i=0;i<MOTORISTAS.length;i++) ids.push(MOTORISTAS[i].id); }
+  else if(v==='sel'){ for(k in MT_SEL) ids.push(Number(k)); }
+  else { for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].id===v) ids=GRUPOS[i].ids.slice(); }
+  return ids.filter(function(id){ return !!motorista(id); });
+}
+function abrirNotifColeta(){
+  var h='<option value="todos">Todos os motoristas</option>', ns=0, k, i;
+  for(k in MT_SEL) ns++;
+  if(ns) h+='<option value="sel">Selecionados na lista ('+ns+')</option>';
+  for(i=0;i<GRUPOS.length;i++) h+='<option value="'+GRUPOS[i].id+'">Grupo '+esc(GRUPOS[i].nome)+' ('+GRUPOS[i].ids.length+')</option>';
+  el('nt-alvo').innerHTML=h; if(ns) el('nt-alvo').value='sel';
+  contarNotif(); abrir('sh-notif');
+}
+function contarNotif(){ var ids=idsDoAlvoNotif(el('nt-alvo').value); el('nt-qtd').textContent=ids.length+' motorista(s) serão avisados.'; }
+function enviarNotifColeta(){
+  var ids=idsDoAlvoNotif(el('nt-alvo').value), i, m, ag=new Date(), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2);
+  if(!ids.length){ aviso('Nenhum motorista nesse grupo'); return; }
+  for(i=0;i<ids.length;i++){ m=motorista(ids[i]); m.notifColeta={dia:hojeISO(), hora:hora}; }
+  if(REAL) salvarLocal();
+  fecharTudo(); pintarMotoristas();
+  aviso('Notificação registrada para '+ids.length+' motorista(s). O envio pelo WhatsApp entra depois.');
+}
 var GR_EDIT=null, GR_PRE=null;
-/* ciclo de repasse (Configurações) */
-var CI_MODO='manual';
-function abrirCiclo(){
-  CI_MODO=CICLO.modo||'manual';
-  el('ci-tipo').value=CICLO.tipo||'semanal'; el('ci-dia-s').value=String(CICLO.tipo==='semanal'?CICLO.dia:5); el('ci-dia-m').value=(CICLO.tipo==='mensal'?CICLO.dia:'');
-  el('ci-prazo').value=(CICLO.prazo==null?'':CICLO.prazo);
-  pintarModoCiclo(); abrir('sh-ciclo');
+/* ciclo de repasse (Configurações): várias regras, cada uma para "todos" ou para um grupo de motoristas */
+var CI_MODO='auto', CI_EDIT=null;
+var DIAS_SEM=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+function nomeGrupoCi(g){ if(g==='todos') return 'Todos os motoristas'; var i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].id===g) return 'Grupo '+GRUPOS[i].nome; return 'Grupo removido'; }
+function textoRegraCi(r){
+  if(r.modo!=='auto') return 'Manual';
+  var t={semanal:'Semanal, fecha '+String(DIAS_SEM[r.dia]||'').toLowerCase(), quinzenal:'Quinzenal (1–15 e 16–fim)', mensal:'Mensal, fecha dia '+r.dia}[r.tipo]||r.tipo;
+  return 'Automático · '+t+' · paga '+(r.prazo||0)+' dia(s) depois';
+}
+function abrirCiclo(){ CI_EDIT=null; limparFormCiclo(); pintarRegrasCiclo(); abrir('sh-ciclo'); }
+function limparFormCiclo(){
+  var h='<option value="todos">Todos os motoristas</option>', i; for(i=0;i<GRUPOS.length;i++) h+='<option value="'+GRUPOS[i].id+'">Grupo '+esc(GRUPOS[i].nome)+'</option>';
+  el('ci-grupo').innerHTML=h; el('ci-grupo').value='todos';
+  CI_MODO='auto'; el('ci-tipo').value='semanal'; el('ci-dia-s').value='5'; el('ci-dia-m').value=''; el('ci-prazo').value='2';
+  el('ci-salvar').textContent='Adicionar regra'; el('ci-cancelar').style.display='none';
+  pintarModoCiclo();
+}
+function pintarRegrasCiclo(){
+  var h='', i, r;
+  for(i=0;i<CICLOS.length;i++){ r=CICLOS[i];
+    h+='<div class="mt-cfg-lista" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 4px;font-size:13px"><span><b>'+esc(nomeGrupoCi(r.grupo))+'</b><br><span style="color:var(--muted);font-size:11.5px">'+esc(textoRegraCi(r))+'</span></span><span style="display:flex;gap:14px"><span class="vertodos" onclick="editarRegraCiclo(\''+r.id+'\')">editar</span><span class="vertodos" onclick="removerRegraCiclo(\''+r.id+'\')">remover</span></span></div>';
+  }
+  el('ci-lista').innerHTML=h||'<div class="empty" style="padding:6px 0;font-size:12.5px">Nenhuma regra ainda — todos os motoristas ficam no modo manual.</div>';
 }
 function escolherModoCiclo(m){ CI_MODO=m; pintarModoCiclo(); }
 function pintarModoCiclo(){
@@ -2017,17 +2101,35 @@ function pintarModoCiclo(){
   el('ci-campos').style.display=(CI_MODO==='auto')?'block':'none'; ajustarCamposCiclo();
 }
 function ajustarCamposCiclo(){ var t=el('ci-tipo').value; el('ci-dia-sem').style.display=(t==='semanal')?'block':'none'; el('ci-dia-mes').style.display=(t==='mensal')?'block':'none'; }
+function editarRegraCiclo(id){
+  var r=null,i; for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===id) r=CICLOS[i]; if(!r) return;
+  limparFormCiclo(); CI_EDIT=id; el('ci-grupo').value=r.grupo; CI_MODO=r.modo; el('ci-tipo').value=r.tipo||'semanal';
+  el('ci-dia-s').value=String(r.tipo==='semanal'?r.dia:5); el('ci-dia-m').value=(r.tipo==='mensal'?r.dia:''); el('ci-prazo').value=(r.prazo==null?'':r.prazo);
+  el('ci-salvar').textContent='Atualizar regra'; el('ci-cancelar').style.display='block'; pintarModoCiclo();
+}
+function removerRegraCiclo(id){ var i; for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===id){ CICLOS.splice(i,1); break; } if(REAL) salvarLocal(); if(CI_EDIT===id){ CI_EDIT=null; limparFormCiclo(); } pintarRegrasCiclo(); }
 function salvarCiclo(){
-  var t=el('ci-tipo').value, dia=(t==='semanal')?Number(el('ci-dia-s').value):(t==='mensal'?parseInt(el('ci-dia-m').value,10):0), prazo=parseInt(el('ci-prazo').value,10)||0;
+  var t=el('ci-tipo').value, dia=(t==='semanal')?Number(el('ci-dia-s').value):(t==='mensal'?parseInt(el('ci-dia-m').value,10):0), prazo=parseInt(el('ci-prazo').value,10)||0, g=el('ci-grupo').value, i, alvo=null;
   if(CI_MODO==='auto' && t==='mensal' && !(dia>=1 && dia<=28)){ aviso('Digite um dia do mês entre 1 e 28'); return; }
-  CICLO={modo:CI_MODO, tipo:t, dia:dia, prazo:prazo};
+  var dados={grupo:g, modo:CI_MODO, tipo:t, dia:dia, prazo:prazo};
+  if(CI_EDIT){ for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===CI_EDIT) alvo=CICLOS[i]; }
+  if(!alvo){ for(i=0;i<CICLOS.length;i++) if(CICLOS[i].grupo===g) alvo=CICLOS[i]; }   /* uma regra por grupo */
+  if(alvo){ alvo.grupo=g; alvo.modo=CI_MODO; alvo.tipo=t; alvo.dia=dia; alvo.prazo=prazo; }
+  else { dados.id='c'+Date.now(); CICLOS.push(dados); }
   if(REAL) salvarLocal();
-  fecharTudo(); aviso('Ciclo de repasse salvo ('+(CI_MODO==='auto'?'automático':'manual')+')');
+  CI_EDIT=null; limparFormCiclo(); pintarRegrasCiclo(); aviso('Regra de ciclo salva');
+}
+/* qual regra vale pra esse motorista: a do grupo dele (se tiver) ou a de "todos" */
+function cicloDoMotorista(id){
+  var i, r, todos=null, g, k;
+  for(i=0;i<CICLOS.length;i++){ r=CICLOS[i]; if(r.grupo==='todos'){ todos=r; continue; }
+    for(k=0;k<GRUPOS.length;k++){ g=GRUPOS[k]; if(g.id===r.grupo && g.ids.indexOf(id)>=0) return r; } }
+  return todos;
 }
 function isoDe(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function addDiasISO(iso,n){ var p=iso.split('-'), d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]),12,0,0); d.setDate(d.getDate()+n); return isoDe(d); }
 /* último ciclo COMPLETO até hoje, conforme a configuração */
-function cicloAtual(){
+function cicloAtual(CICLO){
   var h=new Date(); h.setHours(12,0,0,0); var hoje=isoDe(h), ini, fim, y=h.getFullYear(), m=h.getMonth();
   if(CICLO.tipo==='semanal'){ var k=(h.getDay()-Number(CICLO.dia)+7)%7; fim=addDiasISO(hoje,-k); ini=addDiasISO(fim,-6); }
   else if(CICLO.tipo==='quinzenal'){
@@ -2403,11 +2505,14 @@ function abrirListaFin(tipo){
     else { if(p.st!=='entregue') continue; if(tipo==='repasse' && !p.mt) continue; }
     lst.push(p); tr+=Number(precoTransp(p.tr).recebe)||0; m=p.mt?motorista(p.mt):null; tp+=m?valorMotorista(m,p):0;
   }
-  var h='', n=Math.min(lst.length,300), st;
+  var h='', n=Math.min(lst.length,300), st, todas=[];
+  for(i=0;i<lst.length;i++){ p=lst[i]; m=p.mt?motorista(p.mt):null; st=(tipo==='repasse')?(p.fechId?'fechado':'a fechar'):p.st;
+    todas.push([p.cod,p.cliente||'—',m?m.n:'—',st,moeda(precoTransp(p.tr).recebe),moeda(m?valorMotorista(m,p):0)]); }
   for(i=0;i<n;i++){ p=lst[i]; m=p.mt?motorista(p.mt):null;
     st=(tipo==='repasse')?(p.fechId?'fechado':'a fechar'):p.st;
     h+='<tr><td>'+esc(p.cod)+'</td><td>'+esc(p.cliente||'—')+'</td><td>'+esc(m?m.n:'—')+'</td><td>'+esc(st)+'</td><td>'+moeda(precoTransp(p.tr).recebe)+'</td><td>'+moeda(m?valorMotorista(m,p):0)+'</td></tr>';
   }
+  FIN_LISTA_DADOS={titulo:tit, info:'Financeiro', cols:['Código','Cliente','Motorista',(tipo==='repasse')?'Fechamento':'Status','Recebe','Repasse'], linhas:todas, resumo:lst.length+' pacote(s) · recebe '+moeda(tr)+' · repasse '+moeda(tp)};
   el('fl-titulo').textContent=tit;
   el('fl-resumo').textContent=lst.length+' pacote(s) · recebe '+moeda(tr)+' · repasse '+moeda(tp)+(lst.length>n?(' · mostrando os primeiros '+n):'');
   el('fl-th-st').textContent=(tipo==='repasse')?'Fechamento':'Status';
@@ -2435,6 +2540,7 @@ function pintarFinanceiroReal(){
   for(i=0;i<lista.length;i++){ x=lista[i]; tp+=x.m.pac; te+=x.ent; tv+=x.val;
     h+='<tr onclick="abrirMotorista('+x.m.id+')" style="cursor:pointer"><td><b>'+esc(x.m.n)+'</b></td><td>'+x.m.pac+'</td><td>'+(x.m.emrota||0)+'</td><td>'+x.ent+'</td><td style="font-weight:800">'+moeda(x.val)+'</td></tr>';
   }
+  FIN_REP_DADOS={info:'Período: '+((FIN_REP_INI||FIN_REP_FIM)?(dataBR(FIN_REP_INI||'…')+' a '+dataBR(FIN_REP_FIM||'…')):'todo o período')+(qb?(' · busca: "'+((el('fin-rep-busca')&&el('fin-rep-busca').value)||'')+'"'):''), linhas:lista.map(function(x){return [x.m.n,String(x.m.pac),String(x.m.emrota||0),String(x.ent),moeda(x.val)];}), resumo:lista.length+' motorista(s) · '+lista.reduce(function(a,x){return a+x.ent;},0)+' entregue(s) · a repassar '+moeda(lista.reduce(function(a,x){return a+x.val;},0))};
   if(lista.length) h+='<tr><td><b>Total</b></td><td><b>'+tp+'</b></td><td></td><td><b>'+te+'</b></td><td style="font-weight:800">'+moeda(tv)+'</td></tr>';
   if(rs.semMot) h+='<tr><td colspan="5" style="color:var(--muted);font-size:12px">'+rs.semMot+' pacote(s) entregue(s) sem motorista no arquivo — não entram no repasse.</td></tr>';
   el('fin-repasse-corpo').innerHTML=h||'<tr><td colspan="5"><div class="empty">Nenhum motorista com pacotes ainda</div></td></tr>';
@@ -2520,7 +2626,7 @@ function pintarFluxoCaixa(){
        '<td style="font-weight:800;color:'+(e.tp==='in'?'var(--green)':'var(--red)')+'">'+(e.tp==='in'?'+ ':'- ')+moeda(e.vl)+'</td>'+
        '<td>'+badgeStatus(e.status)+'</td>'+
        '<td><div class="fc-acoes">'+
-         '<button onclick="aviso(\'Editar lançamento (demonstração)\')" title="Editar">✎</button>'+
+         '<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>'+
          '<button onclick="duplicarLancamento('+e.id+')" title="Duplicar">⧉</button>'+
          '<button class="del" onclick="excluirLancamento('+e.id+')" title="Excluir">🗑</button>'+
        '</div></td></tr>';}
@@ -2539,17 +2645,19 @@ function duplicarLancamento(id){
 }
 function excluirLancamento(id){
   for(var i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id===id){ EXTRATO.splice(i,1); break; }
+  if(REAL) salvarLocal();
   pintarFinanceiro();
   aviso('Lançamento excluído');
 }
 
 /* ── novo lançamento (modal) ── */
-var LC_TIPO='out';
+var LC_TIPO='out', LC_EDIT=null;
 function preencherCategoriasLc(){
   var h='',i; for(i=0;i<CATEGORIAS_FC.length;i++) h+='<option value="'+CATEGORIAS_FC[i]+'">'+CATEGORIAS_FC[i]+'</option>';
   el('lc-categoria').innerHTML=h;
 }
 function abrirNovoLancamento(){
+  LC_EDIT=null; el('lc-titulo').textContent='Novo lançamento'; el('lc-rec-box').style.display='flex';
   LC_TIPO='out';
   preencherCategoriasLc();
   el('lc-valor').value=''; el('lc-descricao').value='';
@@ -2557,6 +2665,16 @@ function abrirNovoLancamento(){
   el('lc-pago').checked=false; el('lc-recorrente').checked=false; el('lc-obs').value='';
   atualizarTipoLcVisual();
   abrir('sh-lancamento');
+}
+function abrirEditarLancamento(id){
+  var e=null,i; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id===id) e=EXTRATO[i];
+  if(!e) return;
+  LC_EDIT=id; LC_TIPO=e.tp; preencherCategoriasLc();
+  el('lc-titulo').textContent='Editar lançamento'; el('lc-rec-box').style.display='none';
+  if(e.categoria && !Array.prototype.some.call(el('lc-categoria').options,function(o){return o.value===e.categoria;})) el('lc-categoria').innerHTML+='<option value="'+esc(e.categoria)+'">'+esc(e.categoria)+'</option>';
+  el('lc-categoria').value=e.categoria; el('lc-valor').value=String(e.vl).replace('.',','); el('lc-descricao').value=e.tt; el('lc-data').value=e.data;
+  el('lc-pago').checked=(e.status==='pago'||e.status==='recebido'); el('lc-recorrente').checked=false; el('lc-obs').value='';
+  atualizarTipoLcVisual(); abrir('sh-lancamento');
 }
 function selecionarTipoLc(t){ LC_TIPO=t; atualizarTipoLcVisual(); }
 function atualizarTipoLcVisual(){
@@ -2571,6 +2689,11 @@ function salvarLancamento(){
   var desc=(el('lc-descricao').value||'').trim();
   var valor=Number((el('lc-valor').value||'0').replace(',','.'));
   if(!desc || !valor){ aviso('Preencha descrição e valor'); return; }
+  if(LC_EDIT){
+    var ed=null,q; for(q=0;q<EXTRATO.length;q++) if(EXTRATO[q].id===LC_EDIT) ed=EXTRATO[q];
+    if(ed){ ed.tp=LC_TIPO; ed.tt=desc; ed.categoria=el('lc-categoria').value; ed.data=el('lc-data').value||ed.data; ed.vl=valor; ed.status=el('lc-pago').checked?(LC_TIPO==='in'?'recebido':'pago'):'pendente'; }
+    LC_EDIT=null; if(REAL) salvarLocal(); fecharTudo(); pintarFinanceiro(); aviso('Lançamento atualizado!'); return;
+  }
   var maxId=0,i; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id>maxId) maxId=EXTRATO[i].id;
   var pago=el('lc-pago').checked;
   var status = pago ? (LC_TIPO==='in'?'recebido':'pago') : 'pendente';
@@ -2586,6 +2709,7 @@ function salvarLancamento(){
       EXTRATO.push({id:nextId++, tp:LC_TIPO, tt:desc+' (recorrente)', categoria:categoria, data:dd.toISOString().slice(0,10), vl:valor, status:'pendente'});
     }
   }
+  if(REAL) salvarLocal();
   fecharTudo();
   pintarFinanceiro();
   aviso('Lançamento salvo!');
