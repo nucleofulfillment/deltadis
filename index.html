@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-47-2809</p>
+      <p class="bld">DELTADIS-BASE-49-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-47-2809</div>
+<div class="bld-fix">DELTADIS-BASE-49-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1229,6 +1229,24 @@ function registrarProblemas(cb){
     });
   }
   proxima();
+}
+/* botão da ficha: liga o rastreio automático de um pacote na hora (qualquer transportadora) */
+function rastrearPacote(cod){
+  aviso('Ligando o rastreio desse pacote...');
+  fetch(DELTADIS_API+'/registrar?key='+encodeURIComponent(DELTADIS_API_KEY),{
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({codigos:[cod]})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok){ RASTREADOS[cod]=1; salvarLocal(); aviso('Pacote em acompanhamento! O histórico pode levar alguns minutos pra aparecer.'); abrirPedido(cod); }
+    else aviso('Não consegui ligar o rastreio agora.');
+  }).catch(function(){ aviso('Não consegui falar com o serviço de rastreio agora.'); });
+}
+function atualizarRastreioPacote(cod){
+  aviso('Consultando o rastreio...');
+  sincronizarAnjun(function(mudou){
+    if(mudou<0) aviso('Não consegui falar com o serviço de rastreio agora.');
+    else aviso(mudou>0?'Rastreio atualizado!':'Consultado! Nada de novo por enquanto.');
+    abrirPedido(cod);
+  });
 }
 function ordemStatus(st){ if(st==='entregue'||st==='devolvido'||st==='extraviado') return 3; if(ehTentativa(st)) return 2; if(st==='em rota') return 1; return 0; }
 /* pergunta pro Worker o status mais recente dos pacotes em acompanhamento (Anjun em aberto + os que entraram por problema) */
@@ -1810,6 +1828,8 @@ function abrirPedido(cod){
     h+='<div style="display:flex;gap:12px;margin-top:16px"><button class="btn pri" onclick="aviso(\'Aqui reagenda a entrega\')">Reagendar entrega</button><button class="btn sec" onclick="aviso(\'Aqui troca o motorista\')">Trocar motorista</button></div>';
   } else {
     h+='<div style="margin-top:18px;font-weight:700;font-size:13px">Histórico de rastreio</div>';
+    if(!RASTREADOS[p.cod] && p.st!=='entregue') h+='<div style="margin-top:6px"><button class="btn sec" onclick="rastrearPacote(\''+esc(p.cod)+'\')">Acompanhar rastreio deste pacote</button></div>';
+    if(RASTREADOS[p.cod]) h+='<div style="margin-top:6px"><button class="btn sec" onclick="atualizarRastreioPacote(\''+esc(p.cod)+'\')">Atualizar rastreio</button></div>';
     h+='<div id="hist-rastreio" style="margin-top:6px">Carregando...</div>';
   }
   el('pd-corpo-sheet').innerHTML=h;
