@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-50-2809</p>
+      <p class="bld">DELTADIS-BASE-51-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-50-2809</div>
+<div class="bld-fix">DELTADIS-BASE-51-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1017,7 +1017,7 @@ function idbLer(cb){
 function salvarLocal(cb){
   var o;
   if(REAL){
-    var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null]); }
+    var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null,p.tel||'',p.canal||'',p.vend||'']); }
     o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
@@ -1032,7 +1032,7 @@ function aplicarSalvo(d){
   if(d.rast){ RASTREADOS={}; d.rast.forEach(function(c){ RASTREADOS[c]=1; }); }
   if(d.ciclos) CICLOS=d.ciclos; else if(d.ciclo && d.ciclo.modo) CICLOS=[{id:'c0',grupo:'todos',modo:d.ciclo.modo,tipo:d.ciclo.tipo,dia:d.ciclo.dia,prazo:d.ciclo.prazo}];
   if((d.pedidos||d.pc) && d.motoristas){
-    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
+    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
     MOTORISTAS=d.motoristas; EXTRATO=d.extrato||[];
     /* dados salvos antes: nome que era só o login "arrumado" volta a ser o login de verdade */
@@ -1075,7 +1075,10 @@ function lerColunas(cab,amostra){
       cep:ach(function(t){return t==='cep destino';}),
       area:ach(function(t){return t==='geocom';}),
       valor:ach(function(t){return t==='valor mercadoria';}),
-      motivo:ach(function(t){return t.indexOf('motivos dos pacotes problematicos')===0;})};
+      motivo:ach(function(t){return t.indexOf('motivos dos pacotes problematicos')===0;}),
+      tel:ach(function(t){return t==='celular do destinatario';}),
+      tel2:ach(function(t){return t==='tel fixo do destinatario';}),
+      canal:ach(function(t){return t==='origem do pedido';})};
   }
   var rem=ach(function(t){return t.indexOf('numero da remessa')===0;});
   var nm=ach(function(t){return t.indexOf('nome do motorista')===0;});
@@ -1101,7 +1104,10 @@ function lerColunas(cab,amostra){
     end:ach(function(t){return t.indexOf('endereco')>=0;}),
     valor:ach(function(t){return t.indexOf('valor')>=0;}),
     cep:ach(function(t){return t.indexOf('cep do destinatario')>=0;}),
-    area:ach(function(t){return t.indexOf('area de recebimento')>=0;})
+    area:ach(function(t){return t.indexOf('area de recebimento')>=0;}),
+    tel:ach(function(t){return t.indexOf('telefone')>=0||t.indexOf('celular')>=0||t.indexOf('phone')>=0;}),
+    canal:ach(function(t){return t==='nome do cliente';}),
+    vend:ach(function(t){return t==='nome do cliente merchant';})
   };
 }
 /* status da Anjun → status do DELTADIS
@@ -1147,6 +1153,19 @@ function acharOuCriarMotorista(login,tr,doc){
   MOTORISTAS.push(nv);
   return nv;
 }
+/* canal de venda: nome limpo (Anjun: "sheind2d" → Shein; J&T: "MERCADO CBT" → Mercado Livre CBT) */
+function canalLimpo(v){
+  var o=String(v==null?'':v).trim(), t=normTxt(o);
+  if(!o) return '';
+  if(t.indexOf('shein')>=0) return 'Shein';
+  if(t.indexOf('temu')>=0) return 'Temu';
+  if(t.indexOf('tiktok')>=0) return 'TikTok';
+  if(t.indexOf('shopee')>=0) return 'Shopee';
+  if(t.indexOf('mercado')>=0) return 'Mercado Livre'+(t.indexOf('cbt')>=0?' CBT':'');
+  if(t.indexOf('magalu')>=0||t.indexOf('magazine')>=0) return 'Magalu';
+  if(t.indexOf('amazon')>=0) return 'Amazon';
+  return o;
+}
 /* motivo do pacote problemático da J&T: tira o texto em chinês e os pontos ("Ausência.do.destinatário客户不在" → "Ausência do destinatário") */
 function motivoLimpo(v){ return String(v==null?'':v).replace(/[\u3000-\u9fff\uff00-\uffef]+/g,'').replace(/\./g,' ').replace(/\s+/g,' ').trim(); }
 /* motivo → status do DELTADIS (o motivo em si fica na observação e no filtro de Ocorrência) */
@@ -1187,11 +1206,14 @@ function importarPlanilha(linhas,c){
     var valorNv=(c.valor>=0)?(function(){var vv=r[c.valor]; if(vv==null||vv==='') return null; vv=String(vv).replace(/[^\d,.-]/g,''); if(vv.indexOf(',')>=0) vv=vv.replace(/\./g,'').replace(',','.'); vv=parseFloat(vv); return isNaN(vv)?null:vv;})():null;
     var cepNv=(c.cep>=0)?String(r[c.cep]==null?'':r[c.cep]).replace(/\D/g,''):'';
     var areaNv=(c.area>=0)?String(r[c.area]==null?'':r[c.area]).trim():'';
+    var telNv=(c.tel>=0)?String(r[c.tel]==null?'':r[c.tel]).trim():''; if(!telNv && c.tel2>=0) telNv=String(r[c.tel2]==null?'':r[c.tel2]).trim();
+    var canalNv=(c.canal>=0)?canalLimpo(r[c.canal]):'';
+    var vendNv=(c.vend>=0)?String(r[c.vend]==null?'':r[c.vend]).trim():'';
     var endComCep=endNv+(cepNv?(' — CEP '+cepNv):'');
     p=idx[cod];
-    if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv) p.bairro=endComCep; if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; atualizados++; }
+    if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv) p.bairro=endComCep; if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; if(telNv) p.tel=telNv; if(canalNv) p.canal=canalNv; if(vendNv) p.vend=vendNv; atualizados++; }
     else{
-      p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'',
+      p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'', tel:telNv, canal:canalNv, vend:vendNv,
          scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en, fechId:null};
       PEDIDOS.push(p); idx[cod]=p; novos++; codigosNovos.push(cod);
     }
@@ -1815,6 +1837,9 @@ function abrirPedido(cod){
   var h='';
   h+='<div class="sh-row"><span class="k">Status</span><span class="v">'+badgeStatus(p.st)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Cliente</span><span class="v">'+esc(p.cliente||'—')+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(p.tel||'—')+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Canal de venda</span><span class="v">'+esc(p.canal||'—')+'</span></div>';
+  if(p.vend) h+='<div class="sh-row"><span class="k">Loja / vendedor</span><span class="v">'+esc(p.vend)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Transportadora</span><span class="v">'+esc(t?t.n:'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Motorista</span><span class="v">'+(m?('<span class="vertodos" onclick="fecharTudo();abrirMotorista('+m.id+')">'+esc(m.n)+' ›</span>'):'sem motorista')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc(p.bairro||'—')+'</span></div>';
