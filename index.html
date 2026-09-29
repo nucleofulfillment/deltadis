@@ -375,25 +375,6 @@ a{color:inherit}
   .transp-grid{grid-template-columns:repeat(2,1fr)}
 }
 .bld-fix{position:fixed;right:10px;bottom:6px;font-size:9.5px;color:var(--s4);z-index:5}
-/* ══ Roteirização (2B-2) ══ */
-.rt-ctl{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
-.rt-ctl label{display:block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
-.rt-msg{margin-top:12px;font-size:13px;color:var(--muted2)} .rt-msg.er{color:var(--red);font-weight:700} .rt-msg.av{color:var(--amber);font-weight:700}
-.rt-opcs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px}
-.rt-opc{position:relative;background:var(--s1);border:2px solid var(--border);border-radius:var(--r);padding:20px 18px 14px;cursor:pointer;box-shadow:var(--sh1)}
-.rt-opc.on{border-color:var(--c);box-shadow:0 0 0 3px rgba(109,40,217,.08)}
-.rt-opc h3{margin:0 0 6px;font-size:16px;color:var(--c)} .rt-opc p{margin:0 0 10px;font-size:12.5px;color:var(--muted)}
-.rt-rec{position:absolute;top:-10px;left:14px;background:var(--roxo);color:#fff;font-size:10.5px;font-weight:800;padding:3px 10px;border-radius:99px}
-.rt-ln{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:5px 0}.rt-ln span{color:var(--muted)}
-.rt-tot{border-top:1px solid var(--border);margin-top:4px;padding-top:8px;font-size:14px}
-.rt-nota{font-size:12px;color:var(--muted);margin:0 0 12px}
-#rt-mapa{height:420px;border-radius:var(--r);overflow:hidden;border:1px solid var(--border);margin-bottom:14px}
-.rt-pin{width:24px;height:24px;border-radius:50%;background:#16A34A;color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
-.rt-pin.aprox{background:#D97706} .rt-pin.base{background:#1F0A3D;width:28px;height:28px}
-.rt-sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
-.rt-tb tr{cursor:default} .rt-tb td.ck{width:34px} .rt-tb input[type=checkbox]{width:17px;height:17px;accent-color:var(--roxo);cursor:pointer}
-.rt-tb tr.off td{opacity:.55}
-@media(max-width:700px){.rt-opcs{grid-template-columns:1fr}#rt-mapa{height:320px}.rt-ctl>div{width:100%}}
 </style>
 </head>
 <body>
@@ -475,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-86-2809</p>
+      <p class="bld">DELTADIS-BASE-87-2809</p>
     </div>
   </div>
 </div>
@@ -592,37 +573,6 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
             <thead><tr><th>Pacote</th><th>Transportadora</th><th>Motorista</th><th>Status</th><th>Valor NF</th></tr></thead>
             <tbody id="pd-corpo"></tbody>
           </table></div>
-        </div>
-      </section>
-
-      <!-- ROTEIRIZAÇÃO (2B-2) -->
-      <section class="page" id="pg-rotas">
-        <div class="pghd"><div><h1>Roteirização</h1><div class="sub">escolha os pedidos, compare Linear e Circular e veja o trajeto pelas ruas</div></div></div>
-        <div class="card">
-          <div class="rt-ctl">
-            <div><label>Pedidos</label><div class="pills" style="margin:0"><span class="pill on" id="rt-p-coletado" onclick="rtStatus('coletado')">Na base</span><span class="pill" id="rt-p-emrota" onclick="rtStatus('em rota')">Em rota</span></div></div>
-            <div id="rt-mtbox" style="display:none"><label>Motorista</label><select class="inp" id="rt-mt" onchange="rtMotorista()" style="min-width:230px"></select></div>
-            <div style="flex:1;min-width:240px"><label>Endereço da base (de onde o motorista sai)</label><input class="inp" id="rt-base" placeholder="Rua, número, cidade"></div>
-            <div><label>Min. por parada</label><input class="inp" id="rt-pm" type="number" min="0" max="30" step="0.5" value="2" style="width:100px"></div>
-            <div><button class="btn pri" id="rt-btn" onclick="rtMontar()">Montar rota</button></div>
-          </div>
-          <div class="rt-msg" id="rt-msg">Marque os pedidos que vão na rota e clique em Montar rota.</div>
-        </div>
-        <div id="rt-res" style="display:none;margin-top:16px">
-          <div class="rt-opcs" id="rt-opcs"></div>
-          <p class="rt-nota" id="rt-nota"></p>
-          <div id="rt-mapa"></div>
-          <div class="card" style="margin-bottom:16px"><div class="tb-wrap"><table class="tb rt-tb"><thead><tr><th>#</th><th>Cliente</th><th>Endereço</th><th>Localização</th></tr></thead><tbody id="rt-ordem"></tbody></table></div></div>
-        </div>
-        <div class="card" style="margin-top:16px">
-          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-            <div class="search" style="margin-bottom:0"><span>🔎</span><input id="rt-busca" placeholder="buscar por código, cliente ou bairro" oninput="rtPintarLista()"></div>
-            <span class="vertodos" onclick="rtMarcar()" style="white-space:nowrap">Marcar os primeiros</span>
-            <input class="inp" id="rt-qtd" type="number" min="1" max="120" value="30" style="width:80px" title="Quantos pedidos completos marcar">
-            <span class="vertodos" onclick="rtLimpar()" style="white-space:nowrap">Desmarcar tudo</span>
-            <span id="rt-cont" style="font-size:12.5px;color:var(--muted)"></span>
-          </div>
-          <div class="tb-wrap"><table class="tb rt-tb"><thead><tr><th></th><th>Pacote / cliente</th><th>Endereço</th><th>Aviso</th></tr></thead><tbody id="rt-lista"></tbody></table></div>
         </div>
       </section>
 
@@ -1000,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-86-2809</div>
+<div class="bld-fix">DELTADIS-BASE-87-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1913,7 +1863,6 @@ function badgeStatus(st){
 var NAV_DESKTOP=[
   {id:'dashboard',  lb:'Dashboard',  ic:'<path d="M4 20V10M11 20V4M18 20V13"/>'},
   {id:'pedidos',    lb:'Pedidos',    ic:'<rect x="3" y="8" width="18" height="12" rx="1.5"/><path d="M3 8L12 3L21 8"/>'},
-  {id:'rotas',      lb:'Roteirização', ic:'<circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8.2 19H15a3 3 0 000-6H9a3 3 0 010-6h6.8"/>'},
   {id:'mapeamento', lb:'Mapeamento', ic:'<path d="M12 21s7-6.2 7-11.2A7 7 0 105 9.8C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.6"/>'},
   {id:'motoristas', lb:'Motoristas', ic:'<rect x="1" y="7" width="15" height="10" rx="1.5"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>'},
   {id:'financeiro', lb:'Financeiro', ic:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V16.5M9.3 14.3C9.3 15.5 10.4 16.2 12 16.2C13.6 16.2 14.7 15.5 14.7 14.2C14.7 11.6 9.3 12.6 9.3 10C9.3 8.7 10.4 8 12 8C13.6 8 14.7 8.7 14.7 9.9"/>'},
@@ -1943,7 +1892,6 @@ function ir(p){
   PAG=p;
   try{ pintarIndicadores(); }catch(e){}
   if(p==='financeiro' && typeof carregarSaldoAsaas==='function' && (Date.now()-SALDO_QUANDO>60000)) carregarSaldoAsaas(true);
-  if(p==='rotas'){ try{ pintarRotas(); }catch(e){} }
   var ps=document.querySelectorAll('.page'),i;
   for(i=0;i<ps.length;i++) ps[i].classList.toggle('on', ps[i].id==='pg-'+p);
   var bs=document.querySelectorAll('.side button,.tabbar button');
@@ -1974,155 +1922,6 @@ function relogio(){
   el('tb-hora').textContent=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
   var td=el('tb-data-topo');
   if(td) td.textContent=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}).replace('.','');
-}
-
-/* ══ ROTEIRIZAÇÃO (2B-2): escolhe pedidos, localiza os endereços (Google) e compara Linear x Circular pelo trajeto real ══ */
-var RT={status:'coletado',mt:'',sel:{},conf:{},geo:{},baseGeo:{},res:null,pts:[],opc:'linear',mapa:null,marc:[],ocupado:false,pronto:false};
-var RT_BASE_PADRAO='R. Farroupilha, 25 - Campinas, Florianópolis - SC, 88117-110';
-var RT_COR={linear:'#6D28D9',circular:'#EC4899'};
-function rtApi(caminho,opts){ return fetch(DELTADIS_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(DELTADIS_API_KEY),opts).then(function(r){return r.json();}); }
-function rtMsg(t,cls){ var m=el('rt-msg'); m.className='rt-msg'+(cls?' '+cls:''); m.textContent=t; }
-function rtKm(x){ return x.toFixed(1).replace('.',',')+' km'; }
-function rtMin(m){ m=Math.round(m); if(m<60) return m+' min'; return Math.floor(m/60)+'h'+('0'+(m%60)).slice(-2); }
-function rtAprox(g){ return !!g && (g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); }
-function rtLista(){
-  var todos=listaParaServidor(), out=[], i, p, b=(el('rt-busca')?el('rt-busca').value:'').trim().toLowerCase();
-  for(i=0;i<todos.length;i++){ p=todos[i]; if(p.st!==RT.status) continue;
-    if(RT.status==='em rota' && String(p.mt)!==String(RT.mt)) continue;
-    if(b && (p.cod+' '+p.cliente+' '+p.bai+' '+p.rua).toLowerCase().indexOf(b)<0) continue;
-    out.push(p); }
-  out.sort(function(a,c){ return a.cod<c.cod?-1:1; });
-  return out;
-}
-function rtEndereco(p){ return esc((p.rua||'—')+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':''))+'<span class="rt-sub">'+esc((p.bai?p.bai+' — ':'')+(p.cid||''))+'</span>'; }
-function rtAviso(p){
-  var g=RT.geo[p.cod], h='';
-  if(p.inc) h+='<span class="badge b-wt">Endereço incompleto</span> ';
-  if(g){ if(g.lat==null) h+='<span class="badge b-no">não localizado</span> '; else if(rtAprox(g)) h+='<span class="badge b-wt">localização aproximada</span> '; else h+='<span class="badge b-ok">número exato</span> '; }
-  if(!RT.sel[p.cod] && ((p.inc)||(g&&(g.lat==null||rtAprox(g))))) h+='<span class="rt-sub">'+(p.inc&&!g?'Endereço incompleto':(g&&g.lat==null?'Não foi possível localizar':'Localização aproximada'))+', deseja levar mesmo assim? Marque para incluir.</span>';
-  return h||'<span style="color:var(--muted)">—</span>';
-}
-function rtPintarLista(){
-  var l=rtLista(), h='', i, p, n=0, tot=l.length, max=200;
-  for(i=0;i<l.length;i++) if(RT.sel[l[i].cod]) n++;
-  for(i=0;i<l.length && i<max;i++){ p=l[i];
-    h+='<tr class="'+(RT.sel[p.cod]?'':'off')+'"><td class="ck"><input type="checkbox" '+(RT.sel[p.cod]?'checked':'')+' onchange="rtToggle(\''+esc(p.cod).replace(/'/g,'')+'\',this.checked)"></td><td><b>'+esc(p.cod)+'</b><span class="rt-sub">'+esc(p.cliente)+'</span></td><td>'+rtEndereco(p)+'</td><td>'+rtAviso(p)+'</td></tr>'; }
-  if(!l.length) h='<tr><td colspan="4" style="color:var(--muted);padding:18px">Nenhum pedido '+(RT.status==='coletado'?'na base':'em rota'+(RT.mt?' para este motorista':''))+' encontrado.</td></tr>';
-  el('rt-lista').innerHTML=h;
-  el('rt-cont').textContent=n+' marcado(s) de '+tot+(tot>max?' (mostrando os primeiros '+max+')':'');
-}
-function rtToggle(cod,on){ RT.sel[cod]=!!on; if(on) RT.conf[cod]=true; rtPintarLista(); }
-function rtMarcar(){
-  var l=rtLista(), q=Math.max(1,Math.min(120,parseInt(el('rt-qtd').value,10)||30)), i, n=0;
-  RT.sel={}; for(i=0;i<l.length && n<q;i++){ if(l[i].inc||!l[i].rua||!l[i].num||!l[i].cid) continue; RT.sel[l[i].cod]=true; n++; }
-  rtPintarLista();
-}
-function rtLimpar(){ RT.sel={}; rtPintarLista(); }
-function rtStatus(s){
-  RT.status=s; el('rt-p-coletado').classList.toggle('on',s==='coletado'); el('rt-p-emrota').classList.toggle('on',s==='em rota');
-  el('rt-mtbox').style.display=(s==='em rota')?'block':'none';
-  RT.sel={}; rtMotoristas(); rtPintarLista();
-}
-function rtMotoristas(){
-  var todos=listaParaServidor(), c={}, nm={}, i, p, h='', k;
-  for(i=0;i<todos.length;i++){ p=todos[i]; if(p.st!=='em rota'||p.mt==null) continue; c[p.mt]=(c[p.mt]||0)+1; nm[p.mt]=p.mtn||('Motorista '+p.mt); }
-  for(k in c) h+='<option value="'+esc(k)+'"'+(String(RT.mt)===k?' selected':'')+'>'+esc(nm[k])+' — '+c[k]+' em rota</option>';
-  el('rt-mt').innerHTML=h||'<option value="">Nenhum motorista com pedidos em rota</option>';
-  if(!RT.mt || !c[RT.mt]) RT.mt=el('rt-mt').value;
-}
-function rtMotorista(){ RT.mt=el('rt-mt').value; RT.sel={}; rtPintarLista(); }
-function pintarRotas(){
-  if(!RT.pronto){ RT.pronto=true; var b; try{ b=localStorage.getItem('deltadis_base'); }catch(e){} el('rt-base').value=b||RT_BASE_PADRAO; rtMotoristas(); }
-  rtPintarLista();
-}
-function rtLocalizar(itens,ini,cb){
-  if(ini>=itens.length){ cb(); return; }
-  rtMsg('Localizando os endereços... '+Math.min(ini,itens.length)+' de '+itens.length);
-  var lote=itens.slice(ini,ini+10);
-  rtApi('/rota/localizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:lote})}).then(function(d){
-    if(!d||!d.ok) throw new Error('falhou');
-    d.itens.forEach(function(g){ RT.geo[g.cod]=g; });
-    rtLocalizar(itens,ini+10,cb);
-  }).catch(function(){ RT.ocupado=false; el('rt-btn').disabled=false; rtMsg('O servidor não respondeu ao localizar os endereços. Tente de novo.','er'); });
-}
-function rtMontar(){
-  if(RT.ocupado) return;
-  var l=rtLista(), sel=[], i;
-  for(i=0;i<l.length;i++) if(RT.sel[l[i].cod]) sel.push(l[i]);
-  if(!sel.length){ rtMsg('Marque pelo menos um pedido.','er'); return; }
-  if(sel.length>120){ rtMsg('Marque no máximo 120 pedidos por rota.','er'); return; }
-  var baseTxt=el('rt-base').value.trim(); try{ localStorage.setItem('deltadis_base',baseTxt); }catch(e){}
-  RT.ocupado=true; el('rt-btn').disabled=true;
-  var faltam=sel.filter(function(p){ return !RT.geo[p.cod]; });
-  rtLocalizar(faltam,0,function(){
-    var perguntas=0;
-    sel.forEach(function(p){ var g=RT.geo[p.cod];
-      if(g && !RT.conf[p.cod] && (g.lat==null || rtAprox(g))){ RT.sel[p.cod]=false; perguntas++; } });
-    if(perguntas){
-      RT.ocupado=false; el('rt-btn').disabled=false; rtPintarLista();
-      rtMsg(perguntas+' pedido(s) com localização aproximada ou não localizados ficaram desmarcados. Marque os que deseja levar mesmo assim e clique em Montar rota de novo.','av'); return; }
-    var pts=sel.filter(function(p){ var g=RT.geo[p.cod]; return g && g.lat!=null; });
-    if(!pts.length){ RT.ocupado=false; el('rt-btn').disabled=false; rtPintarLista(); rtMsg('Nenhum dos pedidos marcados foi localizado no mapa.','er'); return; }
-    rtMsg('Buscando a base e calculando o trajeto pelas ruas...');
-    var pB=baseTxt?(RT.baseGeo[baseTxt]?Promise.resolve(RT.baseGeo[baseTxt]):rtApi('/rota/base?q='+encodeURIComponent(baseTxt))):Promise.resolve({ok:false});
-    pB.then(function(b){
-      if(b&&b.ok) RT.baseGeo[baseTxt]=b;
-      var base=(b&&b.ok)?{lat:b.lat,lng:b.lng}:null;
-      var pm=parseFloat(String(el('rt-pm').value).replace(',','.'));
-      return rtApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,pontos:pts.map(function(p){return {lat:RT.geo[p.cod].lat,lng:RT.geo[p.cod].lng};}),minPorParada:pm})}).then(function(c){
-        if(!c.ok) throw new Error(c.erro||'falhou');
-        RT.res=c; RT.pts=pts; RT.opc='linear';
-        var sem=sel.length-pts.length;
-        rtMsg(pts.length+' paradas'+(baseTxt&&!base?' · não achei o endereço da base, usei o centro das paradas':'')+(c.baseNota==='centro_das_paradas'&&!baseTxt?' · saída no centro das paradas (informe a base)':''));
-        rtMostrar(); rtPintarLista();
-      });
-    }).catch(function(){ rtMsg('Não consegui calcular a rota agora. Tente de novo.','er'); })
-      .then(function(){ RT.ocupado=false; el('rt-btn').disabled=false; });
-  });
-}
-function rtCartao(t,r,dica,rec){
-  return '<div class="rt-opc'+(RT.opc===t?' on':'')+'" onclick="rtEscolher(\''+t+'\')" style="--c:'+RT_COR[t]+'">'+(rec?'<span class="rt-rec">Recomendado, entregas mais rápidas</span>':'')+
-    '<h3>'+(t==='linear'?'→ Linear':'↻ Circular')+'</h3><p>'+dica+'</p>'+
-    '<div class="rt-ln"><span>Tempo médio até cada entrega</span><b>'+rtMin(r.mediaMin)+'</b></div>'+
-    '<div class="rt-ln"><span>Até a última entrega</span><b>'+rtKm(r.idaKm)+' · '+rtMin(r.idaMin)+'</b></div>'+
-    '<div class="rt-ln"><span>Volta à base</span><b>'+rtKm(r.voltaKm)+' · '+rtMin(r.voltaMin)+'</b></div>'+
-    '<div class="rt-ln rt-tot"><span>Total estimado</span><b>'+rtKm(r.totalKm)+' · '+rtMin(r.totalMin)+'</b></div></div>';
-}
-function rtEscolher(t){ RT.opc=t; rtMostrar(); }
-function rtMostrar(){
-  var c=RT.res; el('rt-res').style.display='block';
-  el('rt-opcs').innerHTML=rtCartao('linear',c.linear,'Pedidos entregues mais rápido, mas o entregador pode demorar mais para voltar à base.',true)+rtCartao('circular',c.circular,'Últimos pedidos podem demorar mais, mas o entregador percorre menos e gasta menos combustível.',false);
-  var pmt=String(c.minPorParada).replace('.',',');
-  el('rt-nota').textContent=c.linear.real?('Km e tempo pelo trajeto real das ruas (Google, sem trânsito) mais '+pmt+' min de parada em cada entrega. A linha no mapa segue as ruas.'):('Km e tempo são estimativas: linha reta x '+c.fator+', '+c.kmh+' km/h e '+pmt+' min por parada.'+(c.linear.realErro?' (Trajeto real indisponível: '+c.linear.realErro+')':''));
-  rtCarregarMapa(function(){ rtDesenhar(); });
-  var r=c[RT.opc], h='', i;
-  for(i=0;i<r.ordem.length;i++){ var p=RT.pts[r.ordem[i]], g=RT.geo[p.cod];
-    h+='<tr><td>'+(i+1)+'</td><td><b>'+esc(p.cliente||p.cod)+'</b><span class="rt-sub">'+esc(p.cod)+'</span></td><td>'+rtEndereco(p)+'</td><td>'+(rtAprox(g)?'<span class="badge b-wt">localização aproximada</span>':'<span class="badge b-ok">número exato</span>')+'</td></tr>'; }
-  el('rt-ordem').innerHTML=h;
-}
-function rtCarregarMapa(cb){
-  if(window.maplibregl){ cb(); return; }
-  if(!document.getElementById('rt-mlcss')){ var l=document.createElement('link'); l.id='rt-mlcss'; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'; document.head.appendChild(l); }
-  var s=document.createElement('script'); s.src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'; s.onload=cb;
-  s.onerror=function(){ el('rt-mapa').innerHTML='<div style="padding:30px;color:var(--muted)">Não foi possível carregar o mapa agora.</div>'; };
-  document.head.appendChild(s);
-}
-function rtDesenhar(){
-  var c=RT.res, r=c[RT.opc], b=c.base, seq=r.ordem.map(function(i){return RT.pts[i];});
-  if(!RT.mapa){ RT.mapa=new maplibregl.Map({container:'rt-mapa',style:'https://tiles.openfreemap.org/styles/liberty',center:[b.lng,b.lat],zoom:11}); RT.mapa.addControl(new maplibregl.NavigationControl()); RT.mapaOk=false; RT.mapa.on('load',function(){ RT.mapaOk=true; rtDesenhar(); }); return; }
-  if(!RT.mapaOk) return;
-  RT.marc.forEach(function(m){ m.remove(); }); RT.marc=[];
-  var bounds=new maplibregl.LngLatBounds(), eb=document.createElement('div'); eb.className='rt-pin base'; eb.textContent='B';
-  RT.marc.push(new maplibregl.Marker({element:eb}).setLngLat([b.lng,b.lat]).addTo(RT.mapa)); bounds.extend([b.lng,b.lat]);
-  var linha=[[b.lng,b.lat]];
-  seq.forEach(function(p,i){ var g=RT.geo[p.cod], e=document.createElement('div'); e.className='rt-pin'+(rtAprox(g)?' aprox':''); e.textContent=String(i+1);
-    RT.marc.push(new maplibregl.Marker({element:e}).setLngLat([g.lng,g.lat]).setPopup(new maplibregl.Popup({offset:12}).setHTML('<b>'+(i+1)+'. '+esc(p.cliente||p.cod)+'</b><br>'+esc(p.rua+', '+p.num)+'<br>'+esc(p.bai||''))).addTo(RT.mapa)); bounds.extend([g.lng,g.lat]); linha.push([g.lng,g.lat]); });
-  if(RT.opc==='circular') linha.push([b.lng,b.lat]);
-  if(r.real && r.linha && r.linha.length){ linha=r.linha.slice(); if(RT.opc==='circular' && r.linhaVolta) linha=linha.concat(r.linhaVolta); }
-  var geo={type:'Feature',geometry:{type:'LineString',coordinates:linha}};
-  if(RT.mapa.getSource('rota')){ RT.mapa.getSource('rota').setData(geo); RT.mapa.setPaintProperty('rota-l','line-color',RT_COR[RT.opc]); }
-  else { RT.mapa.addSource('rota',{type:'geojson',data:geo}); RT.mapa.addLayer({id:'rota-l',type:'line',source:'rota',paint:{'line-color':RT_COR[RT.opc],'line-width':3.5,'line-opacity':.85}}); }
-  RT.mapa.resize(); RT.mapa.fitBounds(bounds,{padding:50,maxZoom:15,duration:0});
 }
 
 function montarTudo(){
