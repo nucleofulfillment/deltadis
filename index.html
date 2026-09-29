@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-37-2809</p>
+      <p class="bld">DELTADIS-BASE-38-2809</p>
     </div>
   </div>
 </div>
@@ -599,7 +599,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <section class="page" id="pg-financeiro">
         <div class="pghd"><div><h1>Financeiro</h1><div class="sub">movimento do ponto de distribuição</div></div></div>
         <div class="finrow" id="fin-resumo"></div>
-        <div class="duo"><div class="kpi"><div class="lb">TOTAL MOVIMENTADO</div><div class="vl" id="fin-mov">R$ 0,00</div></div><div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div></div></div>
+        <div class="duo"><div class="kpi"><div class="lb">TOTAL MOVIMENTADO</div><div class="vl" id="fin-mov">R$ 0,00</div></div><div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div><div class="lb" style="margin-top:8px;font-weight:500;opacity:.85">Saldo no banco — será lido do Asaas quando integrar</div></div></div>
         <div class="card" id="fin-repasse-card" style="margin-bottom:16px">
           <h3 style="margin-bottom:0"><span class="lft">Repasse por motorista</span><span style="display:flex;align-items:center;gap:10px;margin-left:auto"><input class="inp" id="fin-rep-busca" placeholder="buscar por nome, telefone, região ou grupo" oninput="toggleRepasseLista(true);pintarFinanceiro()" style="width:270px;max-width:46vw"><span class="rp-mais" id="fin-rep-mais" onclick="toggleRepasseLista()" title="Mostrar / ocultar a listagem">+</span></span></h3>
           <div id="fin-repasse-body" style="display:none;margin-top:14px">
@@ -876,7 +876,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-37-2809</div>
+<div class="bld-fix">DELTADIS-BASE-38-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2510,6 +2510,7 @@ function inicioMesISO(){var d=new Date(); return d.getFullYear()+'-'+('0'+(d.get
 var FC_DATA_INI=inicioMesISO();
 var FC_DATA_FIM=hojeISO();
 var FC_CAT='todas';
+var SALDO_BANCO=0;   /* saldo real do ponto no banco — será preenchido pela integração com o Asaas */
 
 /* listagem "Repasse por motorista": fica oculta; abre no + ou ao clicar no card Repasse */
 function nomesGruposDe(id){ var r=[], i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].ids.indexOf(id)>=0) r.push(GRUPOS[i].nome); return r.join(' '); }
@@ -2592,8 +2593,7 @@ function pintarFinanceiro(){
     '<div class="kpi"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(areceber)+'</div><div class="dl">repasses de transportadoras</div></div>'+
     '<div class="kpi"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(repasse)+'</div><div class="dl">a pagar aos motoristas hoje</div></div>';
 
-  var saldo=0; for(i=0;i<EXTRATO.length;i++) saldo+= (EXTRATO[i].tp==='in'?1:-1)*EXTRATO[i].vl;
-  el('fin-saldo').textContent=moeda(saldo);
+  el('fin-saldo').textContent=moeda(SALDO_BANCO);   /* saldo no banco: NÃO vem dos lançamentos do fluxo de caixa (virá do Asaas) */
 
   pintarFiltrosFC();
   pintarFluxoCaixa();
@@ -2607,12 +2607,19 @@ function pintarFiltrosFC(){
   el('fc-filtros').innerHTML=
     '<select onchange="mudarCatFC(this.value)">'+catOpts+'</select>'+
     '<button type="button" class="btn-cat-add" onclick="abrirNovaCategoria()" title="Cadastrar nova categoria">+</button>'+
+    '<input type="month" value="'+((FC_DATA_INI&&FC_DATA_FIM&&FC_DATA_INI.slice(0,7)===FC_DATA_FIM.slice(0,7))?FC_DATA_INI.slice(0,7):'')+'" onchange="mudarMesFC(this.value)" title="Mês">'+
     '<input type="date" value="'+FC_DATA_INI+'" onchange="mudarDataIniFC(this.value)" title="Data inicial">'+
     '<input type="date" value="'+FC_DATA_FIM+'" onchange="mudarDataFimFC(this.value)" title="Data final">';
 }
 function mudarCatFC(v){FC_CAT=v; pintarFluxoCaixa();}
-function mudarDataIniFC(v){FC_DATA_INI=v; pintarFluxoCaixa();}
-function mudarDataFimFC(v){FC_DATA_FIM=v; pintarFluxoCaixa();}
+function mudarDataIniFC(v){FC_DATA_INI=v; pintarFiltrosFC(); pintarFluxoCaixa();}
+function mudarDataFimFC(v){FC_DATA_FIM=v; pintarFiltrosFC(); pintarFluxoCaixa();}
+function mudarMesFC(v){
+  if(!v){ return; }
+  var p=v.split('-'), ult=new Date(Number(p[0]),Number(p[1]),0).getDate();
+  FC_DATA_INI=v+'-01'; FC_DATA_FIM=v+'-'+('0'+ult).slice(-2);
+  pintarFiltrosFC(); pintarFluxoCaixa();
+}
 
 function abrirNovaCategoria(){ el('ncat-nome').value=''; abrir('sh-nova-categoria'); }
 function salvarNovaCategoria(){
