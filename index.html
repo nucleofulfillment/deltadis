@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-41-2809</p>
+      <p class="bld">DELTADIS-BASE-46-2809</p>
     </div>
   </div>
 </div>
@@ -536,9 +536,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:18px">
             <div class="search" style="margin-bottom:0"><span>🔎</span><input id="pd-busca" placeholder="buscar por código, cliente ou motorista" oninput="pintarPedidos()"></div>
             <div class="fc-filtros" style="margin-bottom:0;gap:10px">
+              <select class="inp" id="pd-ocor" onchange="pintarPedidos()" title="Ocorrência" style="width:auto;max-width:230px"></select>
               <input type="date" id="pd-data-ini" onchange="pintarPedidos()" title="Data inicial">
               <input type="date" id="pd-data-fim" onchange="pintarPedidos()" title="Data final">
-              <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';pintarPedidos()" style="white-space:nowrap">Limpar</span>
+              <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';document.getElementById('pd-ocor').value='';pintarPedidos()" style="white-space:nowrap">Limpar</span>
             </div>
           </div>
           <div class="pills" id="pd-pills" style="margin-top:20px;margin-bottom:6px"></div>
@@ -881,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-41-2809</div>
+<div class="bld-fix">DELTADIS-BASE-46-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1057,6 +1058,22 @@ function lerColunas(cab,amostra){
   function ach(fn){ for(var k=0;k<n.length;k++) if(fn(n[k])) return k; return -1; }
   function ou(v,f){ return v>=0?v:f; }
   /* J&T: "Motorista de entrega final" — tem remessa, nome do motorista e horário da entrega (vazio = ainda em aberto) */
+  /* J&T (JMS) "Exportar carta de porte": traz destinatário, endereço, CEP e GEOCOM (código da região de entrega) */
+  var jms=ach(function(t){return t.indexOf('numero de pedido jms')===0;});
+  var resp=ach(function(t){return t.indexOf('responsavel pela entrega')===0;});
+  if(jms>=0 && resp>=0){
+    return {ok:true, tr:'jt', cod:jms, mot:resp,
+      ent:ach(function(t){return t==='horario da entrega';}),
+      saida:ach(function(t){return t.indexOf('horario de saida para entrega')===0;}),
+      cpf:ach(function(t){return t==='codigo entregador';}),
+      cliente:ach(function(t){return t==='destinatario';}),
+      end:ach(function(t){return t==='complemento';}),
+      bairro:ach(function(t){return t==='distrito destinatario';}),
+      cep:ach(function(t){return t==='cep destino';}),
+      area:ach(function(t){return t==='geocom';}),
+      valor:ach(function(t){return t==='valor mercadoria';}),
+      motivo:ach(function(t){return t.indexOf('motivos dos pacotes problematicos')===0;})};
+  }
   var rem=ach(function(t){return t.indexOf('numero da remessa')===0;});
   var nm=ach(function(t){return t.indexOf('nome do motorista')===0;});
   if(rem>=0 && nm>=0){
@@ -1127,6 +1144,14 @@ function acharOuCriarMotorista(login,tr,doc){
   MOTORISTAS.push(nv);
   return nv;
 }
+/* motivo do pacote problemático da J&T: tira o texto em chinês e os pontos ("Ausência.do.destinatário客户不在" → "Ausência do destinatário") */
+function motivoLimpo(v){ return String(v==null?'':v).replace(/[\u3000-\u9fff\uff00-\uffef]+/g,'').replace(/\./g,' ').replace(/\s+/g,' ').trim(); }
+/* motivo → status do DELTADIS (o motivo em si fica na observação e no filtro de Ocorrência) */
+function statusPorMotivo(m){
+  var t=normTxt(m);
+  if(t.indexOf('ausencia')>=0||t.indexOf('endereco incorreto')>=0||t.indexOf('impossibilidade')>=0||t.indexOf('mudou')>=0||t.indexOf('recusa')>=0) return 'tentativa 1';
+  return 'em rota';
+}
 /* junta a planilha na base: código novo entra, código que já existe só atualiza status, motorista e data da entrega */
 function importarPlanilha(linhas,c){
   if(!REAL){ PEDIDOS=[]; MOTORISTAS=[]; EXTRATO=[]; REAL=true; }
@@ -1139,6 +1164,9 @@ function importarPlanilha(linhas,c){
     if(tr==='jt'){
       var te=c.ent>=0?String(r[c.ent]==null?'':r[c.ent]).trim():'';
       s=te?{st:'entregue'}:{st:'em rota', obs:'em aberto'};
+      if(!te && c.saida>=0 && !String(r[c.saida]==null?'':r[c.saida]).trim()) s={st:'coletado', obs:'na base'};
+      var mv=(!te && c.motivo>=0)?motivoLimpo(r[c.motivo]):'';
+      if(mv && s.st!=='coletado'){ s={st:statusPorMotivo(mv), obs:mv}; }
       mot=acharOuCriarMotorista(r[c.mot],'jt',c.cpf>=0?r[c.cpf]:'');
       if(te){ e=dataEntrada(te); en=e.dia+' '+e.hora; }
       e=dataEntrada(c.saida>=0?r[c.saida]:'');
@@ -1150,11 +1178,12 @@ function importarPlanilha(linhas,c){
       if(s.st==='entregue' && c.ent>=0 && String(r[c.ent]||'').trim()){ e=dataEntrada(r[c.ent]); en=e.dia+' '+e.hora; }
       e=dataEntrada(r[c.entrada]);
     }
-    var clienteNv=(tr==='anj' && c.cliente>=0)?String(r[c.cliente]==null?'':r[c.cliente]).trim():'';
-    var endNv=(tr==='anj' && c.end>=0)?String(r[c.end]==null?'':r[c.end]).trim():'';
-    var valorNv=(tr==='anj' && c.valor>=0)?(function(){var vv=r[c.valor]; if(vv==null||vv==='') return null; vv=String(vv).replace(/[^\d,.-]/g,'').replace(',','.'); vv=parseFloat(vv); return isNaN(vv)?null:vv;})():null;
-    var cepNv=(tr==='anj' && c.cep>=0)?String(r[c.cep]==null?'':r[c.cep]).replace(/\D/g,''):'';
-    var areaNv=(tr==='anj' && c.area>=0)?String(r[c.area]==null?'':r[c.area]).trim():'';
+    var clienteNv=(c.cliente>=0)?String(r[c.cliente]==null?'':r[c.cliente]).trim():'';
+    var endNv=(c.end>=0)?String(r[c.end]==null?'':r[c.end]).trim():'';
+    if(c.bairro>=0 && r[c.bairro]) endNv=(endNv?endNv+' — ':'')+String(r[c.bairro]).trim();
+    var valorNv=(c.valor>=0)?(function(){var vv=r[c.valor]; if(vv==null||vv==='') return null; vv=String(vv).replace(/[^\d,.-]/g,''); if(vv.indexOf(',')>=0) vv=vv.replace(/\./g,'').replace(',','.'); vv=parseFloat(vv); return isNaN(vv)?null:vv;})():null;
+    var cepNv=(c.cep>=0)?String(r[c.cep]==null?'':r[c.cep]).replace(/\D/g,''):'';
+    var areaNv=(c.area>=0)?String(r[c.area]==null?'':r[c.area]).trim():'';
     var endComCep=endNv+(cepNv?(' — CEP '+cepNv):'');
     p=idx[cod];
     if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv) p.bairro=endComCep; if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; atualizados++; }
@@ -1477,7 +1506,7 @@ function iconeTransp(t){
 }
 function badgeStatus(st){
   var map={aguardando:['b-nu','Aguardando'],'em rota':['b-in','Em rota'],entregue:['b-ok','Entregue'],tratativa:['b-no','Tratativa'],
-    coletado:['b-nu','Coletado'],'tentativa 1':['b-no','Tentativa 1'],'tentativa 2':['b-no','Tentativa 2'],'tentativa 3':['b-no','Tentativa 3'],
+    coletado:['b-nu','Base'],'tentativa 1':['b-no','Tentativa 1'],'tentativa 2':['b-no','Tentativa 2'],'tentativa 3':['b-no','Tentativa 3'],
     devolvido:['b-no','Devolvido'],extraviado:['b-no','Extraviado'],
     ativo:['b-ok','ativo'],pendente:['b-wt','pendente'],'na base':['b-nu','Na base'],inativo:['b-no','Inativo'],
     pago:['b-ok','Pago'],recebido:['b-ok','Recebido'],'a revisar':['b-wt','A revisar']};
@@ -1587,7 +1616,7 @@ window.addEventListener('resize', ajustarAlturaIndbar);
 function pintarDashboard(){
   var i;
   el('db-kpis').innerHTML=
-    '<div class="kpi"><div class="lb">Coletado</div><div class="vl">'+DASH_AGG.coletado+'</div><div class="dl">na mesa, sem motorista</div></div>'+
+    '<div class="kpi"><div class="lb">Base</div><div class="vl">'+DASH_AGG.coletado+'</div><div class="dl">na base, aguardando saída</div></div>'+
     '<div class="kpi"><div class="lb cb">Em rota</div><div class="vl vb">'+DASH_AGG.emrota+'</div><div class="dl">com motoristas agora</div></div>'+
     '<div class="kpi"><div class="lb cg">Entregue</div><div class="vl vg">'+DASH_AGG.entregue+'</div><div class="dl">concluídos hoje</div></div>'+
     '<div class="kpi"><div class="lb cr">Precisa de ação</div><div class="vl vr">'+(DASH_AGG.tentativas+DASH_AGG.devolvido+DASH_AGG.extraviado)+'</div><div class="dl">tentativas, devolução ou extravio</div></div>';
@@ -1838,9 +1867,16 @@ function pintarPedidos(){
   var stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i,j,cont={};
   for(i=0;i<stAll.length;i++) cont[stAll[i]]=0;
   for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
+  var ocSel=el('pd-ocor'), ocAtual=ocSel.value, ocCont={}, ocN=0, ocH='';
+  for(j=0;j<PEDIDOS.length;j++){ var po=PEDIDOS[j]; if(FILTRO_TR && po.tr!==FILTRO_TR) continue; if(!passaData(po)) continue; if(po.obs && po.obs!=='em aberto' && po.st!=='entregue'){ ocCont[po.obs]=(ocCont[po.obs]||0)+1; } }
+  var ocLista=Object.keys(ocCont).sort(function(a,b){return ocCont[b]-ocCont[a];});
+  ocH='<option value="">Todas as ocorrências</option>';
+  for(j=0;j<ocLista.length;j++) ocH+='<option value="'+esc(ocLista[j])+'">'+esc(ocLista[j])+' ('+ocCont[ocLista[j]]+')</option>';
+  ocSel.innerHTML=ocH; ocSel.value=(ocCont[ocAtual]?ocAtual:'');
+  var ocFiltro=ocSel.value;
   var pills='';
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
-    pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
+    pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
   }
   el('pd-pills').innerHTML=pills;
 
@@ -1849,12 +1885,13 @@ function pintarPedidos(){
     if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
+    if(ocFiltro && p.obs!==ocFiltro) continue;
     var m=motorista(p.mt);
     var alvo=(p.cod+' '+p.cliente+' '+(p.scan||'')+' '+(m?m.n:'')).toLowerCase();
     if(busca && alvo.indexOf(busca)<0) continue;
     n++; if(n>LIM) continue;
     var t=transp(p.tr);
-    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b><br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span></td>'+
+    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b><br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+'</td>'+
        '<td>'+esc(t?t.n:'—')+'</td><td>'+esc(m?m.n:'sem motorista')+'</td><td>'+badgeStatus(p.st)+'</td><td>'+(p.vl==null?'—':moeda(p.vl))+'</td></tr>';}
   if(n>LIM) h+='<tr><td colspan="5"><div class="empty">Mostrando os primeiros '+LIM+' de '+n+' pacotes — use a busca ou os filtros para ver os outros</div></td></tr>';
   if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+'</div></td></tr>';
@@ -1903,7 +1940,7 @@ function processarPlanilha(arquivo, ficar){
     }catch(err){ aviso('Não consegui abrir esse arquivo. Envie a planilha exportada do painel (.xlsx).'); return; }
     if(!linhas || linhas.length<2){ aviso('A planilha está vazia.'); return; }
     var col=lerColunas(linhas[0], linhas[1]);
-    if(!col.ok){ aviso('Não reconheci as colunas. Por enquanto entram as planilhas da Anjun e a "Motorista de entrega final" da J&T.'); return; }
+    if(!col.ok){ aviso('Não reconheci as colunas. Por enquanto entram a da Anjun e as da J&T ("Motorista de entrega final" e "Carta de porte").'); return; }
     var r=importarPlanilha(linhas,col);
     if(!ficar) fecharTudo();
     pintarIndicadores(); pintarDashboard(); pintarPedidos(); pintarMotoristas(); pintarFinanceiro(); pintarMapeamento();
@@ -2585,7 +2622,7 @@ function pintarFinanceiroReal(){
   var rs=resumoFinanceiro(), i, h='', x, m, o, te=0, tv=0, tp=0;
   var lin=function(q,t,v,ic,dica){ return '<div class="dl" style="margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(ic?('<span title="'+dica+'" style="cursor:help;margin-right:4px">'+ic+'</span>'):'')+'<b>'+q+'</b> '+t+' › '+moeda(v)+'</div>'; };
   el('fin-resumo').innerHTML=
-    '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'previsto\')"><div class="lb cb">Previsto</div><div class="vl vb">'+moeda(rs.rotaReceber)+'</div>'+lin(rs.ruaQtd,'Não entregues',rs.ruaReceber,'🚚','Na rua')+lin(rs.baseQtd,'Não coletados',rs.baseReceber,'📦','Na base')+'</div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'previsto\')"><div class="lb cb">Previsto</div><div class="vl vb">'+moeda(rs.rotaReceber)+'</div>'+lin(rs.ruaQtd,'Não entregues',rs.ruaReceber,'🚚','Na rua')+lin(rs.baseQtd,'Na base',rs.baseReceber,'📦','Na base')+'</div>'+
     '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'receber\')"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(rs.receber)+'</div>'+lin(rs.entregues,'Entregues',rs.receber)+'</div>'+
     '<div class="kpi" style="cursor:pointer" onclick="toggleRepasseLista(true,true)"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(rs.pRepasse)+'</div>'+lin(rs.abQtd,'A fechar',rs.abVal)+lin(rs.fechQtd,'Fechados',rs.fechVal)+'<div class="dl" style="margin-top:5px;font-size:11px">'+((FIN_REP_INI||FIN_REP_FIM)?('período '+dataBR(FIN_REP_INI||'…')+' a '+dataBR(FIN_REP_FIM||'…')):'todo o período')+'</div></div>'+
     '<div class="kpi"><div class="lb">Margem</div><div class="vl">'+moeda(rs.receber-rs.repasse)+'</div><div class="dl">o que sobra para o ponto</div></div>';
