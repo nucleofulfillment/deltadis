@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-34-2809</p>
+      <p class="bld">DELTADIS-BASE-35-2809</p>
     </div>
   </div>
 </div>
@@ -583,11 +583,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MOTORISTAS -->
       <section class="page" id="pg-motoristas">
-        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" onclick="abrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div></div>
+        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div></div>
         <div class="card">
           <div class="search"><span>🔎</span><input id="mt-busca" placeholder="buscar motorista" oninput="pintarMotoristas()"></div>
-          <div class="pills" id="mt-pills"></div>
-          <div class="pills" id="mt-filtros" style="align-items:center"></div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px"><div class="pills" id="mt-pills" style="display:contents"></div><div class="pills" id="mt-filtros" style="display:contents"></div></div>
           <div class="tb-wrap"><table class="tb">
             <colgroup><col style="width:4%"><col style="width:21%"><col style="width:13%"><col style="width:10%"><col style="width:18%"><col style="width:14%"><col style="width:12%"></colgroup>
             <thead><tr><th><input type="checkbox" id="mt-todos" onchange="selecionarTodosMt(this.checked)" title="Selecionar todos"></th><th>Motorista</th><th>Região</th><th>Pacotes hoje</th><th>Veículo</th><th>Status</th><th>SLA</th></tr></thead>
@@ -602,8 +601,13 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="finrow" id="fin-resumo"></div>
         <div class="duo"><div class="kpi"><div class="lb">TOTAL MOVIMENTADO</div><div class="vl" id="fin-mov">R$ 0,00</div></div><div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div></div></div>
         <div class="card" id="fin-repasse-card" style="margin-bottom:16px">
-          <h3 style="margin-bottom:0"><span class="lft">Repasse por motorista</span><span style="display:flex;align-items:center;gap:10px;margin-left:auto"><input class="inp" id="fin-rep-busca" placeholder="buscar por nome, telefone ou região" oninput="toggleRepasseLista(true);pintarFinanceiro()" style="width:270px;max-width:46vw"><span class="rp-mais" id="fin-rep-mais" onclick="toggleRepasseLista()" title="Mostrar / ocultar a listagem">+</span></span></h3>
+          <h3 style="margin-bottom:0"><span class="lft">Repasse por motorista</span><span style="display:flex;align-items:center;gap:10px;margin-left:auto"><input class="inp" id="fin-rep-busca" placeholder="buscar por nome, telefone, região ou grupo" oninput="toggleRepasseLista(true);pintarFinanceiro()" style="width:270px;max-width:46vw"><span class="rp-mais" id="fin-rep-mais" onclick="toggleRepasseLista()" title="Mostrar / ocultar a listagem">+</span></span></h3>
           <div id="fin-repasse-body" style="display:none;margin-top:14px">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+            <input type="date" class="inp" id="fin-rep-ini" onchange="mudarPeriodoRep()" title="De" style="width:150px"><span style="color:var(--muted);font-size:12px">até</span><input type="date" class="inp" id="fin-rep-fim" onchange="mudarPeriodoRep()" title="Até" style="width:150px">
+            <span class="vertodos" onclick="FIN_REP_INI='';FIN_REP_FIM='';mudarPeriodoRep(true)">Todo o período</span>
+            <button class="btn pri" style="margin-left:auto" onclick="el('up-direto').click()">+ Upload planilha</button>
+          </div>
           <div id="fin-repasse-aviso" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
           <div class="tb-wrap"><table class="tb">
             <thead><tr><th>Motorista</th><th>Pacotes</th><th>Em rota</th><th>Entregues</th><th>A repassar</th></tr></thead>
@@ -632,6 +636,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><span class="badge b-wt">desativado</span></div>
           <div class="cfgcard"><div class="ic">💰</div><h4>Custos Operacionais</h4><p>Combustível, manutenção da frota e demais custos fixos do ponto de distribuição.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
         </div>
       </section>
@@ -765,6 +770,21 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
+<div class="sheet wide" id="sh-ciclo">
+  <div class="sh-hd"><h3>Ciclo de repasse dos motoristas</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Vale para todos os motoristas. No <b>Automático</b>, ao abrir o repasse de um motorista as datas do ciclo e do pagamento já vêm preenchidas. No <b>Manual</b>, você digita as datas na hora de fechar.</p>
+    <div class="pills"><span class="pill" id="ci-auto" onclick="escolherModoCiclo('auto')">Automático</span><span class="pill" id="ci-manual" onclick="escolherModoCiclo('manual')">Manual</span></div>
+    <div id="ci-campos">
+      <div class="field"><label>Frequência</label><select class="inp" id="ci-tipo" onchange="ajustarCamposCiclo()"><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal (1–15 e 16–fim do mês)</option><option value="mensal">Mensal</option></select></div>
+      <div class="field" id="ci-dia-sem"><label>Dia da semana em que fecha</label><select class="inp" id="ci-dia-s"><option value="1">Segunda</option><option value="2">Terça</option><option value="3">Quarta</option><option value="4">Quinta</option><option value="5">Sexta</option><option value="6">Sábado</option><option value="0">Domingo</option></select></div>
+      <div class="field" id="ci-dia-mes"><label>Dia do mês em que fecha (1 a 28)</label><input class="inp" id="ci-dia-m" inputmode="numeric" placeholder="ex: 5"></div>
+      <div class="field"><label>Pagar quantos dias depois de fechar</label><input class="inp" id="ci-prazo" inputmode="numeric" placeholder="ex: 2"></div>
+    </div>
+    <button class="btn pri wide" style="margin-top:8px" onclick="salvarCiclo()">Salvar</button>
+  </div>
+</div>
+
 <div class="sheet wide" id="sh-grupo">
   <div class="sh-hd"><h3>Criar grupo de motoristas</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
@@ -772,7 +792,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Nome do grupo</label><input class="inp" id="gr-nome" placeholder="ex: Utilitários — Norte da Ilha"></div>
     <div class="search" style="max-width:none"><span>🔎</span><input id="gr-busca" placeholder="buscar motorista" oninput="pintarGrupoLista()"></div>
     <div id="gr-lista" style="max-height:240px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:4px 8px"></div>
-    <button class="btn pri wide" style="margin-top:12px" onclick="salvarGrupo()">Salvar grupo</button>
+    <button class="btn pri wide" id="gr-salvar" style="margin-top:12px" onclick="salvarGrupo()">Salvar grupo</button>
+    <button class="btn sec wide" id="gr-cancelar" style="display:none;margin-top:8px" onclick="abrirGrupo()">Cancelar edição</button>
     <h4 style="margin:18px 0 6px;font-size:13px">Grupos criados</h4>
     <div id="gr-existentes"></div>
   </div>
@@ -790,10 +811,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
+<input type="file" id="up-direto" accept=".xlsx,.xls,.csv" style="display:none" onchange="uploadDireto(this)">
 <div class="sheet wide" id="sh-fin-lista">
   <div class="sh-hd"><h3 id="fl-titulo">Pacotes</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span id="fl-resumo" style="font-size:12.5px;color:var(--muted)"></span><button class="btn pri" onclick="fecharTudo();abrirUploadPlanilha()">+ Upload planilha</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span id="fl-resumo" style="font-size:12.5px;color:var(--muted)"></span><button class="btn pri" onclick="el('up-direto').click()">+ Upload planilha</button></div>
     <div class="tb-wrap"><table class="tb"><thead><tr><th>Código</th><th>Cliente</th><th>Motorista</th><th id="fl-th-st">Status</th><th>Recebe</th><th>Repasse</th></tr></thead><tbody id="fl-corpo"></tbody></table></div>
   </div>
 </div>
@@ -813,7 +835,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <input class="inp" type="date" title="Data de pagamento" id="rp-data-pg" style="width:150px">
       <button class="btn pri" onclick="fecharCicloMotorista()">Fechar ciclo</button>
     </div>
-    <p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Fechamento manual por enquanto — quando o Asaas estiver conectado, isso fecha e paga automático.</p>
+    <p id="rp-ciclo-nota" style="margin:6px 0 0;font-size:11.5px;color:var(--muted)"></p>
     <h4 style="margin:18px 0 8px;font-size:13px">Fechamentos</h4>
     <div id="rp-fechamentos"></div>
   </div>
@@ -835,7 +857,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-34-2809</div>
+<div class="bld-fix">DELTADIS-BASE-35-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -928,6 +950,7 @@ var EXTRATO=[
    Tudo fica guardado neste navegador.
    ══════════════════════════════════════════════════════════ */
 var REAL=true;
+var CICLO={modo:'manual', tipo:'semanal', dia:5, prazo:2};   /* ciclo de repasse dos motoristas (Configurações): auto ou manual */
 var GRUPOS=[];   /* grupos de motoristas: {id,nome,ids:[id do motorista]} — base pra regras/repasses por grupo no futuro */
 var AREAS=[];   /* áreas de entrega: {nome,valor} por nome  ou  {ini,fim,valor} por faixa de CEP */
 var PRECOS={};   /* id da transportadora → {recebe: R$ por pacote que ela paga ao ponto, paga: R$ por pacote pago ao motorista} */
@@ -968,7 +991,7 @@ function salvarLocal(cb){
   var o;
   if(REAL){
     var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null]); }
-    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS};
+    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclo:CICLO};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
   idbGravar(o,function(ok){ if(cb) cb(ok); });
@@ -979,6 +1002,7 @@ function aplicarSalvo(d){
   if(d.precos) PRECOS=d.precos;
   if(d.areas) AREAS=d.areas;
   if(d.grupos) GRUPOS=d.grupos;
+  if(d.ciclo) CICLO=d.ciclo;
   if((d.pedidos||d.pc) && d.motoristas){
     if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
@@ -1261,7 +1285,7 @@ function adicionarAreaCep(){
 }
 /* o que entra e o que sai: só conta pacote ENTREGUE */
 function resumoFinanceiro(){
-  var out={receber:0, repasse:0, entregues:0, semMot:0, porMot:{}, rotaQtd:0, rotaReceber:0, rotaRepasse:0, ruaQtd:0, ruaReceber:0, baseQtd:0, baseReceber:0, abQtd:0, abVal:0, fechQtd:0, fechVal:0}, i, p, m, v, o;
+  var out={receber:0, repasse:0, entregues:0, semMot:0, porMot:{}, rotaQtd:0, rotaReceber:0, rotaRepasse:0, ruaQtd:0, ruaReceber:0, baseQtd:0, baseReceber:0, abQtd:0, abVal:0, fechQtd:0, fechVal:0, pRepasse:0}, i, p, m, v, o;
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
     if(p.st==='coletado' || p.st==='em rota' || ehTentativa(p.st)){   /* ainda não entregue (na base ou na rua): valor previsto, entra quando for entregue */
       out.rotaQtd++; out.rotaReceber+=Number(precoTransp(p.tr).recebe)||0;
@@ -1283,8 +1307,9 @@ function resumoFinanceiro(){
     if(!m){ out.semMot++; continue; }
     v=valorMotorista(m,p);
     out.repasse+=v;
-    if(p.fechId){ out.fechQtd++; out.fechVal+=v; } else { out.abQtd++; out.abVal+=v; }
-    o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0}); o.ent++; o.val+=v;
+    var dEnt=String(p.ent||p.dia||'').slice(0,10), noPer=(!FIN_REP_INI||dEnt>=FIN_REP_INI)&&(!FIN_REP_FIM||dEnt<=FIN_REP_FIM);
+    if(noPer){ out.pRepasse+=v; if(p.fechId){ out.fechQtd++; out.fechVal+=v; } else { out.abQtd++; out.abVal+=v; } }
+    o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0,pEnt:0,pVal:0}); o.ent++; o.val+=v; if(noPer){ o.pEnt=(o.pEnt||0)+1; o.pVal=(o.pVal||0)+v; }
   }
   return out;
 }
@@ -1296,6 +1321,7 @@ function saldoAbertoMotorista(id){
   return total;
 }
 var PONTO_NOME='Delta Express';   /* nome do ponto de coleta (sai no PDF do fechamento) */
+var FIN_REP_INI=inicioMesISO(), FIN_REP_FIM=hojeISO();   /* período da listagem Repasse por motorista */
 var RP_MOT_ATUAL=null, FC_MOT_ATUAL=null, FC_ID_ATUAL=null;
 function abrirRepasseMotorista(id){
   var m=motorista(id); if(!m) return;
@@ -1306,7 +1332,10 @@ function abrirRepasseMotorista(id){
   el('rp-rota-qtd').textContent=rs.rotaQtd; el('rp-rota-val').textContent=moeda(rs.rotaVal);
   el('rp-ext-qtd').textContent=rs.extQtd;
   el('rp-saldo').textContent=moeda(saldoAbertoMotorista(id));
-  el('rp-ciclo-ini').value=''; el('rp-ciclo-fim').value=''; el('rp-data-pg').value='';
+  var auto=(CICLO.modo==='auto'), cc=auto?cicloAtual():{ini:'',fim:'',pag:''};
+  el('rp-ciclo-ini').value=cc.ini; el('rp-ciclo-fim').value=cc.fim; el('rp-data-pg').value=cc.pag;
+  el('rp-ciclo-ini').disabled=el('rp-ciclo-fim').disabled=el('rp-data-pg').disabled=auto;
+  el('rp-ciclo-nota').textContent=auto?('Ciclo automático ('+({semanal:'semanal',quinzenal:'quinzenal',mensal:'mensal'}[CICLO.tipo])+') — para mudar, vá em Configurações → Ciclo de repasse.'):'Ciclo manual — digite as datas. (Para preencher sozinho, ative o modo automático em Configurações → Ciclo de repasse.)';
   pintarFechamentosMotorista(id);
   abrir('sh-repasse');
 }
@@ -1803,6 +1832,15 @@ function enviarPlanilha(){
   if(!UP_TRANSP){ aviso('Escolha a transportadora antes de enviar'); return; }
   var f=el('up-arquivo');
   if(!f || !f.files || !f.files.length){ aviso('Selecione o arquivo da planilha'); return; }
+  processarPlanilha(f.files[0], false);
+}
+/* upload direto (botão "+ Upload planilha" do Financeiro): escolhe o arquivo na hora, o painel reconhece a transportadora e a tela continua onde está */
+function uploadDireto(inp){
+  if(!inp.files || !inp.files.length) return;
+  var arq=inp.files[0]; inp.value='';
+  processarPlanilha(arq, true);
+}
+function processarPlanilha(arquivo, ficar){
   if(typeof XLSX==='undefined'){ aviso('O leitor de planilha não carregou. Confira a internet e recarregue a página.'); return; }
   var rd=new FileReader();
   rd.onload=function(ev){
@@ -1815,16 +1853,17 @@ function enviarPlanilha(){
     var col=lerColunas(linhas[0], linhas[1]);
     if(!col.ok){ aviso('Não reconheci as colunas. Por enquanto entram as planilhas da Anjun e a "Motorista de entrega final" da J&T.'); return; }
     var r=importarPlanilha(linhas,col);
-    fecharTudo();
+    if(!ficar) fecharTudo();
     pintarIndicadores(); pintarDashboard(); pintarPedidos(); pintarMotoristas(); pintarFinanceiro(); pintarMapeamento();
-    ir('pedidos');
+    if(!ficar) ir('pedidos');
+    else if(FIN_LISTA_TIPO && el('sh-fin-lista').classList.contains('on')) abrirListaFin(FIN_LISTA_TIPO);
     aviso((r.tr==='jt'?'J&T: ':'Anjun: ')+r.novos+' pacotes novos, '+r.atualizados+' atualizados · '+MOTORISTAS.length+' motoristas'+(r.ignorados?(' · '+r.ignorados+' ainda não chegaram (fora)'):'')+(r.desconhecidos?(' · '+r.desconhecidos+' com status desconhecido'):'')+(r.gravou?'':' · ATENÇÃO: não coube guardar no navegador, ao recarregar precisa importar de novo'));
     if(r.tr==='anj' && r.codigosNovos && r.codigosNovos.length){
       registrarAnjunNoWorker(r.codigosNovos);
     }
   };
   rd.onerror=function(){ aviso('Não consegui ler o arquivo.'); };
-  rd.readAsArrayBuffer(f.files[0]);
+  rd.readAsArrayBuffer(arquivo);
 }
 function fmtNumBR(v){ return (v===undefined||v===null||v==='')?'':String(v).replace('.',','); }
 var PR_GRID='display:grid;grid-template-columns:1.2fr 0.8fr 1fr 0.55fr 0.55fr 0.6fr;gap:8px;align-items:center;';
@@ -1963,7 +2002,44 @@ function abrirDdMt(k){ MT_DD=(MT_DD===k)?null:k; pintarFiltrosMt(); }
 function alternarFiltroMt(k,j){ var v=MT_OPTS[k][j].v, p=MT_FIL[k].indexOf(v); if(p>=0) MT_FIL[k].splice(p,1); else MT_FIL[k].push(v); pintarMotoristas(); }
 document.addEventListener('click',function(){ if(MT_DD){ MT_DD=null; pintarFiltrosMt(); } });
 /* grupos de motoristas */
+var GR_EDIT=null, GR_PRE=null;
+/* ciclo de repasse (Configurações) */
+var CI_MODO='manual';
+function abrirCiclo(){
+  CI_MODO=CICLO.modo||'manual';
+  el('ci-tipo').value=CICLO.tipo||'semanal'; el('ci-dia-s').value=String(CICLO.tipo==='semanal'?CICLO.dia:5); el('ci-dia-m').value=(CICLO.tipo==='mensal'?CICLO.dia:'');
+  el('ci-prazo').value=(CICLO.prazo==null?'':CICLO.prazo);
+  pintarModoCiclo(); abrir('sh-ciclo');
+}
+function escolherModoCiclo(m){ CI_MODO=m; pintarModoCiclo(); }
+function pintarModoCiclo(){
+  el('ci-auto').className='pill'+(CI_MODO==='auto'?' on':''); el('ci-manual').className='pill'+(CI_MODO==='manual'?' on':'');
+  el('ci-campos').style.display=(CI_MODO==='auto')?'block':'none'; ajustarCamposCiclo();
+}
+function ajustarCamposCiclo(){ var t=el('ci-tipo').value; el('ci-dia-sem').style.display=(t==='semanal')?'block':'none'; el('ci-dia-mes').style.display=(t==='mensal')?'block':'none'; }
+function salvarCiclo(){
+  var t=el('ci-tipo').value, dia=(t==='semanal')?Number(el('ci-dia-s').value):(t==='mensal'?parseInt(el('ci-dia-m').value,10):0), prazo=parseInt(el('ci-prazo').value,10)||0;
+  if(CI_MODO==='auto' && t==='mensal' && !(dia>=1 && dia<=28)){ aviso('Digite um dia do mês entre 1 e 28'); return; }
+  CICLO={modo:CI_MODO, tipo:t, dia:dia, prazo:prazo};
+  if(REAL) salvarLocal();
+  fecharTudo(); aviso('Ciclo de repasse salvo ('+(CI_MODO==='auto'?'automático':'manual')+')');
+}
+function isoDe(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function addDiasISO(iso,n){ var p=iso.split('-'), d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]),12,0,0); d.setDate(d.getDate()+n); return isoDe(d); }
+/* último ciclo COMPLETO até hoje, conforme a configuração */
+function cicloAtual(){
+  var h=new Date(); h.setHours(12,0,0,0); var hoje=isoDe(h), ini, fim, y=h.getFullYear(), m=h.getMonth();
+  if(CICLO.tipo==='semanal'){ var k=(h.getDay()-Number(CICLO.dia)+7)%7; fim=addDiasISO(hoje,-k); ini=addDiasISO(fim,-6); }
+  else if(CICLO.tipo==='quinzenal'){
+    if(h.getDate()>=15){ ini=isoDe(new Date(y,m,1,12)); fim=isoDe(new Date(y,m,15,12)); }
+    else { ini=isoDe(new Date(y,m-1,16,12)); fim=isoDe(new Date(y,m,0,12)); }
+  } else {
+    var d=Number(CICLO.dia)||1, fm=(h.getDate()>=d)?m:m-1; fim=isoDe(new Date(y,fm,d,12)); ini=addDiasISO(isoDe(new Date(y,fm-1,d,12)),1);
+  }
+  return {ini:ini, fim:fim, pag:addDiasISO(fim,Number(CICLO.prazo)||0)};
+}
 function abrirGrupo(){
+  GR_EDIT=null; GR_PRE=null; el('gr-salvar').textContent='Salvar grupo'; el('gr-cancelar').style.display='none';
   el('gr-nome').value=''; el('gr-busca').value=''; el('gr-lista').removeAttribute('data-ini');
   pintarGrupoLista(); pintarGruposExistentes(); abrir('sh-grupo');
 }
@@ -1972,7 +2048,7 @@ function pintarGrupoLista(){
   var atuais=el('gr-lista').querySelectorAll('input:checked'); for(i=0;i<atuais.length;i++) marcados[atuais[i].value]=1;
   var primeira=!el('gr-lista').getAttribute('data-ini');
   for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; if(q && m.n.toLowerCase().indexOf(q)<0) continue;
-    var on=primeira?!!MT_SEL[m.id]:!!marcados[m.id];
+    var on=primeira?(GR_PRE?!!GR_PRE[m.id]:!!MT_SEL[m.id]):!!marcados[m.id];
     h+='<label style="display:flex;gap:9px;align-items:center;padding:7px 4px;font-size:13px;cursor:pointer"><input type="checkbox" value="'+m.id+'" '+(on?'checked':'')+'> <span class="av" style="width:24px;height:24px;font-size:10px;background:'+m.cor+'">'+m.ini+'</span> '+esc(m.n)+'</label>';
   }
   el('gr-lista').innerHTML=h||'<div class="empty">Nenhum motorista</div>';
@@ -1983,17 +2059,28 @@ function salvarGrupo(){
   if(!nome){ aviso('Digite o nome do grupo'); return; }
   for(i=0;i<ck.length;i++) ids.push(Number(ck[i].value));
   if(!ids.length){ aviso('Marque pelo menos um motorista'); return; }
-  GRUPOS.push({id:'g'+Date.now(), nome:nome, ids:ids});
+  var editando=false, gi;
+  if(GR_EDIT){ for(gi=0;gi<GRUPOS.length;gi++) if(GRUPOS[gi].id===GR_EDIT){ GRUPOS[gi].nome=nome; GRUPOS[gi].ids=ids; editando=true; } }
+  if(!editando) GRUPOS.push({id:'g'+Date.now(), nome:nome, ids:ids});
   if(REAL) salvarLocal();
+  GR_EDIT=null; GR_PRE=null; el('gr-salvar').textContent='Salvar grupo'; el('gr-cancelar').style.display='none';
   el('gr-nome').value=''; el('gr-lista').removeAttribute('data-ini'); pintarGrupoLista();
-  pintarGruposExistentes(); pintarMotoristas(); aviso('Grupo "'+nome+'" criado com '+ids.length+' motorista(s)');
+  pintarGruposExistentes(); pintarMotoristas(); aviso('Grupo "'+nome+'" '+(editando?'atualizado':'criado')+' com '+ids.length+' motorista(s)');
 }
 function pintarGruposExistentes(){
   var h='', i, g;
   for(i=0;i<GRUPOS.length;i++){ g=GRUPOS[i];
-    h+='<div class="mt-cfg-lista" style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;font-size:13px"><span><b>'+esc(g.nome)+'</b> <span style="color:var(--muted);font-size:11.5px">· '+g.ids.length+' motorista(s)</span></span><span class="vertodos" onclick="removerGrupo(\''+g.id+'\')">remover</span></div>';
+    h+='<div class="mt-cfg-lista" style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;font-size:13px"><span><b>'+esc(g.nome)+'</b> <span style="color:var(--muted);font-size:11.5px">· '+g.ids.length+' motorista(s)</span></span><span style="display:flex;gap:14px"><span class="vertodos" onclick="editarGrupo(\''+g.id+'\')">editar</span><span class="vertodos" onclick="removerGrupo(\''+g.id+'\')">remover</span></span></div>';
   }
   el('gr-existentes').innerHTML=h||'<div class="empty" style="padding:6px 0;font-size:12.5px">Nenhum grupo ainda</div>';
+}
+function editarGrupo(id){
+  var g=null, i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].id===id) g=GRUPOS[i];
+  if(!g) return;
+  GR_EDIT=id; GR_PRE={}; for(i=0;i<g.ids.length;i++) GR_PRE[g.ids[i]]=1;
+  el('gr-nome').value=g.nome; el('gr-busca').value=''; el('gr-lista').removeAttribute('data-ini');
+  pintarGrupoLista(); el('gr-salvar').textContent='Atualizar grupo'; el('gr-cancelar').style.display='block';
+  el('gr-nome').focus();
 }
 function removerGrupo(id){
   var i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].id===id){ GRUPOS.splice(i,1); break; }
@@ -2294,6 +2381,11 @@ var FC_DATA_FIM=hojeISO();
 var FC_CAT='todas';
 
 /* listagem "Repasse por motorista": fica oculta; abre no + ou ao clicar no card Repasse */
+function nomesGruposDe(id){ var r=[], i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].ids.indexOf(id)>=0) r.push(GRUPOS[i].nome); return r.join(' '); }
+function mudarPeriodoRep(soPintar){
+  if(!soPintar){ FIN_REP_INI=el('fin-rep-ini').value||''; FIN_REP_FIM=el('fin-rep-fim').value||''; }
+  pintarFinanceiro();
+}
 function toggleRepasseLista(forcar,rolar){
   var b=el('fin-repasse-body'), m=el('fin-rep-mais'); if(!b) return;
   var abrir=(forcar===true)?true:(b.style.display==='none');
@@ -2301,7 +2393,9 @@ function toggleRepasseLista(forcar,rolar){
   if(abrir && rolar){ var c=el('fin-repasse-card'); if(c && c.scrollIntoView) c.scrollIntoView({behavior:'smooth',block:'start'}); }
 }
 /* clicou num card do Financeiro: lista os pacotes que formam aquele valor */
+var FIN_LISTA_TIPO=null;
 function abrirListaFin(tipo){
+  FIN_LISTA_TIPO=tipo;
   var tit={previsto:'Previsto — pacotes ainda não entregues', receber:'A receber — pacotes entregues', repasse:'Repasse — pacotes entregues por motorista'}[tipo]||'Pacotes';
   var lst=[], i, p, m, tr=0, tp=0;
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
@@ -2326,16 +2420,17 @@ function pintarFinanceiroReal(){
   el('fin-resumo').innerHTML=
     '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'previsto\')"><div class="lb cb">Previsto</div><div class="vl vb">'+moeda(rs.rotaReceber)+'</div>'+lin(rs.ruaQtd,'Não entregues',rs.ruaReceber,'🚚','Na rua')+lin(rs.baseQtd,'Não coletados',rs.baseReceber,'📦','Na base')+'</div>'+
     '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'receber\')"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(rs.receber)+'</div>'+lin(rs.entregues,'Entregues',rs.receber)+'</div>'+
-    '<div class="kpi" style="cursor:pointer" onclick="toggleRepasseLista(true,true)"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(rs.repasse)+'</div>'+lin(rs.abQtd,'A fechar',rs.abVal)+lin(rs.fechQtd,'Fechados',rs.fechVal)+'</div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="toggleRepasseLista(true,true)"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(rs.pRepasse)+'</div>'+lin(rs.abQtd,'A fechar',rs.abVal)+lin(rs.fechQtd,'Fechados',rs.fechVal)+'<div class="dl" style="margin-top:5px;font-size:11px">'+((FIN_REP_INI||FIN_REP_FIM)?('período '+dataBR(FIN_REP_INI||'…')+' a '+dataBR(FIN_REP_FIM||'…')):'todo o período')+'</div></div>'+
     '<div class="kpi"><div class="lb">Margem</div><div class="vl">'+moeda(rs.receber-rs.repasse)+'</div><div class="dl">o que sobra para o ponto</div></div>';
   var mv=el('fin-mov'); if(mv) mv.textContent=moeda(rs.receber+rs.rotaReceber);
   el('fin-resumo').style.gridTemplateColumns=(window.innerWidth>760?'repeat(4,1fr)':'1fr');
   var card=el('fin-repasse-card'); if(card) card.style.display='block';
   var lista=[];
+  var ri=el('fin-rep-ini'), rf=el('fin-rep-fim'); if(ri) ri.value=FIN_REP_INI||''; if(rf) rf.value=FIN_REP_FIM||'';
   var qb=normTxt((el('fin-rep-busca')&&el('fin-rep-busca').value)||'');
   for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; if(!m.pac) continue;
-    if(qb && normTxt(m.n+' '+(m.regiao||'')+' '+(m.tel||'')+' '+String(m.tel||'').replace(/\D/g,'')).indexOf(qb)<0) continue;
-    o=rs.porMot[m.id]||{ent:0,val:0}; lista.push({m:m,ent:o.ent,val:o.val}); }
+    if(qb && normTxt(m.n+' '+(m.regiao||'')+' '+(m.tel||'')+' '+String(m.tel||'').replace(/\D/g,'')+' '+nomesGruposDe(m.id)).indexOf(qb)<0) continue;
+    o=rs.porMot[m.id]||{ent:0,val:0}; lista.push({m:m,ent:(o.pEnt||0),val:(o.pVal||0)}); }
   lista.sort(function(a,b){return (b.val-a.val) || (b.m.pac-a.m.pac);});
   for(i=0;i<lista.length;i++){ x=lista[i]; tp+=x.m.pac; te+=x.ent; tv+=x.val;
     h+='<tr onclick="abrirMotorista('+x.m.id+')" style="cursor:pointer"><td><b>'+esc(x.m.n)+'</b></td><td>'+x.m.pac+'</td><td>'+(x.m.emrota||0)+'</td><td>'+x.ent+'</td><td style="font-weight:800">'+moeda(x.val)+'</td></tr>';
