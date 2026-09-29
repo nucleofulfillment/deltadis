@@ -424,7 +424,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-29-2809</p>
+      <p class="bld">DELTADIS-BASE-30-2809</p>
     </div>
   </div>
 </div>
@@ -621,7 +621,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><span class="badge b-wt">desativado</span></div>
           <div class="cfgcard"><div class="ic">💰</div><h4>Custos Operacionais</h4><p>Combustível, manutenção da frota e demais custos fixos do ponto de distribuição.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
-          <div class="cfgcard"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Configure e segmente as regiões de entrega para organizar melhor as rotas dos motoristas.</p><span class="badge b-nu">em breve</span></div>
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
         </div>
       </section>
 
@@ -748,9 +748,21 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet wide" id="sh-precos">
   <div class="sh-hd"><h3>Precificação por pacote</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Cadastre livremente as transportadoras que operam no seu ponto: nome, quanto paga por pacote <b>entregue</b>, e o ciclo de pagamento dela. O valor pago a cada motorista fica no cadastro dele (por código de região ou faixa de CEP).</p>
+    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Cadastre livremente as transportadoras que operam no seu ponto: nome, quanto paga por pacote <b>entregue</b>, e o ciclo de pagamento dela. O valor pago ao motorista por região fica em Configurações → Áreas de entrega.</p>
     <div id="pr-linhas"></div>
     <button class="btn pri wide" style="margin-top:6px" onclick="salvarPrecos()">Salvar valores</button>
+  </div>
+</div>
+
+<div class="sheet wide" id="sh-areas">
+  <div class="sh-hd"><h3>Áreas de entrega</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Aqui mora o <b>valor pago ao motorista por pacote entregue</b>. As regiões que vêm na planilha aparecem sozinhas — é só preencher o valor. Você também pode cadastrar uma <b>faixa de CEP</b>. Se o motorista tiver <b>preço fixo</b> na ficha dele, esse vale no lugar da área.</p>
+    <div id="ar-lista"></div>
+    <h4 style="margin:16px 0 6px;font-size:13px">Nova região (por nome)</h4>
+    <div class="mt-cfg-linha" style="grid-template-columns:1fr 100px 38px"><input class="inp" id="ar-nome" placeholder="Nome da região"><input class="inp mt-cfg-valor" id="ar-nome-val" placeholder="Valor R$"><button class="btn sec mt-cfg-add" onclick="adicionarAreaNome()">+</button></div>
+    <h4 style="margin:16px 0 6px;font-size:13px">Nova faixa de CEP</h4>
+    <div class="mt-cfg-linha" style="grid-template-columns:1fr 1fr 100px 38px"><input class="inp" id="ar-cep-ini" placeholder="CEP de"><input class="inp" id="ar-cep-fim" placeholder="até"><input class="inp mt-cfg-valor" id="ar-cep-val" placeholder="Valor R$"><button class="btn sec mt-cfg-add" onclick="adicionarAreaCep()">+</button></div>
   </div>
 </div>
 
@@ -791,7 +803,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-29-2809</div>
+<div class="bld-fix">DELTADIS-BASE-30-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -884,6 +896,7 @@ var EXTRATO=[
    Tudo fica guardado neste navegador.
    ══════════════════════════════════════════════════════════ */
 var REAL=true;
+var AREAS=[];   /* áreas de entrega: {nome,valor} por nome  ou  {ini,fim,valor} por faixa de CEP */
 var PRECOS={};   /* id da transportadora → {recebe: R$ por pacote que ela paga ao ponto, paga: R$ por pacote pago ao motorista} */
 var DIAS={};     /* dia (ISO) → {tot, por:{idTransportadora:qtd}} — alimenta o gráfico do Dashboard */
 var LS_KEY='deltadis_real_v1';
@@ -922,7 +935,7 @@ function salvarLocal(cb){
   var o;
   if(REAL){
     var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null]); }
-    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS};
+    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
   idbGravar(o,function(ok){ if(cb) cb(ok); });
@@ -931,6 +944,7 @@ function salvarLocal(cb){
 function aplicarSalvo(d){
   if(!d) return;
   if(d.precos) PRECOS=d.precos;
+  if(d.areas) AREAS=d.areas;
   if((d.pedidos||d.pc) && d.motoristas){
     if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
@@ -1068,7 +1082,7 @@ function importarPlanilha(linhas,c){
       PEDIDOS.push(p); idx[cod]=p; novos++; codigosNovos.push(cod);
     }
   }
-  recalcularReal(); var gravou=true; salvarLocal(function(ok){ if(!ok) aviso('ATENÇÃO: não consegui guardar no navegador, ao recarregar precisa importar de novo'); });
+  sincronizarAreas(); recalcularReal(); var gravou=true; salvarLocal(function(ok){ if(!ok) aviso('ATENÇÃO: não consegui guardar no navegador, ao recarregar precisa importar de novo'); });
   return {tr:tr, novos:novos, atualizados:atualizados, desconhecidos:desconhecidos, ignorados:ignorados, gravou:gravou, codigosNovos:codigosNovos};
 }
 /* ══════════════════════════════════════════════════════════
@@ -1159,21 +1173,57 @@ function precoTransp(id){ return PRECOS[id]||{recebe:0,paga:0}; }
    (valorPct só existe pros motoristas de demonstração, mantido como último recurso) */
 function valorMotorista(m,p){
   if(!m) return 0;
-  var area=(p && p.area)?String(p.area).trim().toLowerCase():'';
-  var cep=(p && p.cep)?String(p.cep).replace(/\D/g,''):'';
-  var i;
-  if(area && m.regioes){
-    var areaN=normTxt(area);
-    for(i=0;i<m.regioes.length;i++){ if(normTxt(m.regioes[i].cod)===areaN) return Number(m.regioes[i].valor)||0; }
-  }
-  if(cep && m.faixasCep){
-    var cn=parseInt(cep,10);
-    for(i=0;i<m.faixasCep.length;i++){ var f=m.faixasCep[i], fi=parseInt(String(f.ini).replace(/\D/g,''),10), ff=parseInt(String(f.fim).replace(/\D/g,''),10);
-      if(!isNaN(cn) && !isNaN(fi) && !isNaN(ff) && cn>=fi && cn<=ff) return Number(f.valor)||0; }
-  }
-  if(Number(m.valorPadrao)>0) return Number(m.valorPadrao);
+  if(Number(m.valorPadrao)>0) return Number(m.valorPadrao);   /* preço fixo do motorista (só quando cadastrado) */
+  var a=areaDoPedido(p);
+  if(a && Number(a.valor)>0) return Number(a.valor);
   if(m.valorPct>0) return m.valorPct;
   return 0;
+}
+/* acha a área cadastrada do pedido: 1º pelo nome da região, 2º pela faixa de CEP */
+function areaDoPedido(p){
+  if(!p) return null;
+  var i, a, an=p.area?normTxt(p.area):'';
+  if(an){ for(i=0;i<AREAS.length;i++){ a=AREAS[i]; if(a.nome && normTxt(a.nome)===an && Number(a.valor)>0) return a; } }
+  var cn=p.cep?parseInt(String(p.cep).replace(/\D/g,''),10):NaN;
+  if(!isNaN(cn)){ for(i=0;i<AREAS.length;i++){ a=AREAS[i]; if(a.ini){ var fi=parseInt(String(a.ini).replace(/\D/g,''),10), ff=parseInt(String(a.fim).replace(/\D/g,''),10); if(!isNaN(fi)&&!isNaN(ff)&&cn>=fi&&cn<=ff&&Number(a.valor)>0) return a; } } }
+  return null;
+}
+/* põe na tabela toda região nova que veio na planilha (com valor 0 = falta preencher) */
+function sincronizarAreas(){
+  var vis={}, i, a, p, mudou=false;
+  for(i=0;i<AREAS.length;i++){ if(AREAS[i].nome) vis[normTxt(AREAS[i].nome)]=1; }
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(!p.area) continue; a=normTxt(p.area); if(a && !vis[a]){ vis[a]=1; AREAS.push({nome:String(p.area).trim(), valor:0}); mudou=true; } }
+  return mudou;
+}
+function abrirAreas(){ if(sincronizarAreas() && REAL) salvarLocal(); pintarAreas(); abrir('sh-areas'); }
+function pintarAreas(){
+  var cont={}, i, p, k;
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.area){ k=normTxt(p.area); cont[k]=(cont[k]||0)+1; } }
+  var idx=[]; for(i=0;i<AREAS.length;i++) idx.push(i);
+  idx.sort(function(x,y){ var ax=AREAS[x], ay=AREAS[y], px=(Number(ax.valor)>0)?1:0, py=(Number(ay.valor)>0)?1:0; if(px!==py) return px-py; return String(ax.nome||ax.ini).localeCompare(String(ay.nome||ay.ini)); });
+  var h='', j, a, sem=0;
+  for(j=0;j<idx.length;j++){ i=idx[j]; a=AREAS[i]; if(!(Number(a.valor)>0)) sem++;
+    var tit=a.nome?esc(a.nome):('CEP '+esc(a.ini)+' até '+esc(a.fim));
+    var qt=a.nome?(cont[normTxt(a.nome)]||0):0;
+    h+='<div class="mt-cfg-lista" style="display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;padding:9px 4px;font-size:13px"><span>'+tit+(qt?(' <span style="color:var(--muted);font-size:11px">· '+qt+' pacote(s)</span>'):'')+(Number(a.valor)>0?'':' <span class="badge b-wt" style="margin-left:4px">sem valor</span>')+'</span>'+
+       '<input class="inp mt-cfg-valor" inputmode="decimal" placeholder="R$" value="'+(a.valor?String(a.valor).replace('.',','):'')+'" onchange="valorArea('+i+',this.value)"><span class="vertodos" onclick="removerArea('+i+')">remover</span></div>';
+  }
+  el('ar-lista').innerHTML=(sem?'<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+sem+' área(s) esperando valor</div>':'')+(h||'<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhuma área ainda. Importe uma planilha (as regiões aparecem aqui sozinhas) ou cadastre abaixo.</div>');
+}
+function areasMudou(){ if(REAL) salvarLocal(); pintarAreas(); pintarFinanceiro(); }
+function valorArea(i,v){ if(!AREAS[i]) return; AREAS[i].valor=Number(String(v||'0').replace(',','.'))||0; areasMudou(); aviso('Valor salvo!'); }
+function removerArea(i){ AREAS.splice(i,1); areasMudou(); }
+function adicionarAreaNome(){
+  var n=(el('ar-nome').value||'').trim(), v=Number(String(el('ar-nome-val').value||'0').replace(',','.'))||0, k=normTxt(n), i;
+  if(!n||!(v>0)){ aviso('Preencha o nome e o valor'); return; }
+  for(i=0;i<AREAS.length;i++){ if(AREAS[i].nome && normTxt(AREAS[i].nome)===k){ AREAS[i].valor=v; el('ar-nome').value=''; el('ar-nome-val').value=''; areasMudou(); aviso('Valor da região atualizado'); return; } }
+  AREAS.push({nome:n,valor:v}); el('ar-nome').value=''; el('ar-nome-val').value=''; areasMudou();
+}
+function adicionarAreaCep(){
+  var ini=String(el('ar-cep-ini').value||'').replace(/\D/g,''), fim=String(el('ar-cep-fim').value||'').replace(/\D/g,''), v=Number(String(el('ar-cep-val').value||'0').replace(',','.'))||0;
+  if(!ini||!fim||!(v>0)){ aviso('Preencha CEP de, até e o valor'); return; }
+  if(parseInt(ini,10)>parseInt(fim,10)){ var t=ini; ini=fim; fim=t; }
+  AREAS.push({ini:ini,fim:fim,valor:v}); el('ar-cep-ini').value=''; el('ar-cep-fim').value=''; el('ar-cep-val').value=''; areasMudou();
 }
 /* o que entra e o que sai: só conta pacote ENTREGUE */
 function resumoFinanceiro(){
@@ -2087,15 +2137,7 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Documentos</span><span class="v">'+esc(m.doc)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Contrato</span><span class="v">'+badgeStatus(m.contrato)+'</span></div>';
-  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor padrão por pacote<br><span style="font-size:10.5px;font-weight:500">vale quando a região/CEP não tem valor cadastrado</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 38px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-padrao-'+m.id+'" value="'+(m.valorPadrao?String(m.valorPadrao).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarValorPadraoMotorista('+m.id+')">✓</button></div></span></div>';
-  var areasSet={}, areasOpt='', ap, ak;
-  for(ap=0;ap<PEDIDOS.length;ap++){ if(PEDIDOS[ap].mt===m.id && PEDIDOS[ap].area) areasSet[PEDIDOS[ap].area]=1; }
-  for(ak in areasSet) areasOpt+='<option value="'+esc(ak)+'">';
-  h+='<datalist id="mt-areas-'+m.id+'">'+areasOpt+'</datalist>';
-  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por Região</span><span class="v" style="width:100%"><div id="mt-regioes-'+m.id+'"></div>'+
-       '<div class="mt-cfg-linha" style="grid-template-columns:1fr 90px 38px"><input class="inp" list="mt-areas-'+m.id+'" placeholder="Região (escolha da planilha)" id="mt-reg-cod-'+m.id+'"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-reg-val-'+m.id+'"><button class="btn sec mt-cfg-add" onclick="adicionarRegiaoMotorista('+m.id+')">+</button></div></span></div>';
-  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por CEP</span><span class="v" style="width:100%"><div id="mt-faixas-'+m.id+'"></div>'+
-       '<div class="mt-cfg-linha" style="grid-template-columns:1fr 1fr 90px 38px"><input class="inp" placeholder="CEP de" id="mt-cep-ini-'+m.id+'"><input class="inp" placeholder="até" id="mt-cep-fim-'+m.id+'"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-cep-val-'+m.id+'"><button class="btn sec mt-cfg-add" onclick="adicionarFaixaMotorista('+m.id+')">+</button></div></span></div>';
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Preço fixo por pacote<br><span style="font-size:10.5px;font-weight:500">opcional — se preenchido, vale no lugar da área</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 38px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-padrao-'+m.id+'" value="'+(m.valorPadrao?String(m.valorPadrao).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarValorPadraoMotorista('+m.id+')">✓</button></div></span></div>';
   if(!REAL) h+='<div class="mapa-mock" style="height:190px;margin-top:16px;margin-bottom:0">'+
      '<iframe class="mapa-iframe" src="https://www.google.com/maps?q=Itaja%C3%AD,SC&z=13&output=embed" loading="lazy" title="Mapa"></iframe>'+
      '<span class="mapa-regiao-label">'+esc(m.regiao)+'</span>'+
@@ -2104,22 +2146,6 @@ function abrirMotorista(id){
   h+='<div style="display:flex;justify-content:center;gap:12px;margin-top:16px"><button class="btn pri" onclick="fecharTudo();abrirRepasseMotorista('+m.id+')">Ver repasse</button><button class="btn sec" onclick="fecharTudo();abrirNovoMotorista('+m.id+')">Editar ficha</button></div>';
   el('mt-corpo-sheet').innerHTML=h;
   abrir('sh-motorista');
-  pintarValoresMotorista(m.id);
-}
-/* lista (e permite remover) os códigos de região e faixas de CEP já cadastrados na ficha do motorista */
-function pintarValoresMotorista(id){
-  var m=motorista(id); if(!m) return;
-  m.regioes=m.regioes||[]; m.faixasCep=m.faixasCep||[];
-  var hr='', i, r;
-  for(i=0;i<m.regioes.length;i++){ r=m.regioes[i];
-    hr+='<div class="mt-cfg-lista" style="display:flex;justify-content:space-between;align-items:center;padding:9px 6px;font-size:13px"><span>'+esc(r.cod)+'</span><span style="display:flex;align-items:center;gap:12px"><b>'+moeda(r.valor)+'</b><span class="vertodos" onclick="removerRegiaoMotorista('+id+','+i+')">remover</span></span></div>';
-  }
-  var alvoR=el('mt-regioes-'+id); if(alvoR) alvoR.innerHTML=hr||'<div class="empty" style="padding:4px 0;font-size:12px">Nenhum código cadastrado</div>';
-  var hc='', j, f;
-  for(j=0;j<m.faixasCep.length;j++){ f=m.faixasCep[j];
-    hc+='<div class="mt-cfg-lista" style="display:flex;justify-content:space-between;align-items:center;padding:9px 6px;font-size:13px"><span>'+esc(f.ini)+' até '+esc(f.fim)+'</span><span style="display:flex;align-items:center;gap:12px"><b>'+moeda(f.valor)+'</b><span class="vertodos" onclick="removerFaixaMotorista('+id+','+j+')">remover</span></span></div>';
-  }
-  var alvoC=el('mt-faixas-'+id); if(alvoC) alvoC.innerHTML=hc||'<div class="empty" style="padding:4px 0;font-size:12px">Nenhuma faixa cadastrada</div>';
 }
 function salvarValorPadraoMotorista(id){
   var m=motorista(id); if(!m) return;
@@ -2129,39 +2155,6 @@ function salvarValorPadraoMotorista(id){
   pintarFinanceiro();
   aviso(v>0?'Valor padrão salvo!':'Valor padrão removido');
 }
-function adicionarRegiaoMotorista(id){
-  var m=motorista(id); if(!m) return;
-  var elC=el('mt-reg-cod-'+id), elV=el('mt-reg-val-'+id);
-  var cod=(elC.value||'').trim(), val=Number((elV.value||'0').replace(',','.'));
-  if(!cod || !val){ aviso('Preencha o código e o valor'); return; }
-  m.regioes=m.regioes||[]; m.regioes.push({cod:cod, valor:val});
-  elC.value=''; elV.value='';
-  if(REAL) salvarLocal();
-  pintarValoresMotorista(id); pintarFinanceiro();
-}
-function removerRegiaoMotorista(id,idx){
-  var m=motorista(id); if(!m || !m.regioes) return;
-  m.regioes.splice(idx,1);
-  if(REAL) salvarLocal();
-  pintarValoresMotorista(id); pintarFinanceiro();
-}
-function adicionarFaixaMotorista(id){
-  var m=motorista(id); if(!m) return;
-  var elI=el('mt-cep-ini-'+id), elF=el('mt-cep-fim-'+id), elV=el('mt-cep-val-'+id);
-  var ini=String(elI.value||'').replace(/\D/g,''), fim=String(elF.value||'').replace(/\D/g,''), val=Number((elV.value||'0').replace(',','.'));
-  if(!ini || !fim || !val){ aviso('Preencha o CEP de, até e o valor'); return; }
-  m.faixasCep=m.faixasCep||[]; m.faixasCep.push({ini:ini, fim:fim, valor:val});
-  elI.value=''; elF.value=''; elV.value='';
-  if(REAL) salvarLocal();
-  pintarValoresMotorista(id); pintarFinanceiro();
-}
-function removerFaixaMotorista(id,idx){
-  var m=motorista(id); if(!m || !m.faixasCep) return;
-  m.faixasCep.splice(idx,1);
-  if(REAL) salvarLocal();
-  pintarValoresMotorista(id); pintarFinanceiro();
-}
-
 /* ══ financeiro (Receita/A receber/Repasse + Fluxo de caixa) ══ */
 function dataBR(iso){var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0];}
 function hojeISO(){var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
