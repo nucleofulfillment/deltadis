@@ -416,7 +416,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-17-2809</p>
+      <p class="bld">DELTADIS-BASE-18-2809</p>
     </div>
   </div>
 </div>
@@ -724,7 +724,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-17-2809</div>
+<div class="bld-fix">DELTADIS-BASE-18-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -893,7 +893,10 @@ function lerColunas(cab,amostra){
     scan:ou(ach(function(t){return t.indexOf('escaneamento')>=0;}),1),
     entrada:ou(ach(function(t){return t.indexOf('tempo de entrada')>=0;}),2),
     desp:ou(desp,11),
-    ent:ach(function(t){return t.indexOf('tempo de assinatura')===0;})
+    ent:ach(function(t){return t.indexOf('tempo de assinatura')===0;}),
+    cliente:ach(function(t){return t.indexOf('nome do destinatario')>=0;}),
+    end:ach(function(t){return t.indexOf('endereco')>=0;}),
+    valor:ach(function(t){return t.indexOf('valor')>=0;})
   };
 }
 /* status da Anjun → status do DELTADIS
@@ -962,10 +965,13 @@ function importarPlanilha(linhas,c){
       if(s.st==='entregue' && c.ent>=0 && String(r[c.ent]||'').trim()){ e=dataEntrada(r[c.ent]); en=e.dia+' '+e.hora; }
       e=dataEntrada(r[c.entrada]);
     }
+    var clienteNv=(tr==='anj' && c.cliente>=0)?String(r[c.cliente]==null?'':r[c.cliente]).trim():'';
+    var endNv=(tr==='anj' && c.end>=0)?String(r[c.end]==null?'':r[c.end]).trim():'';
+    var valorNv=(tr==='anj' && c.valor>=0)?(function(){var vv=r[c.valor]; if(vv==null||vv==='') return null; vv=String(vv).replace(/[^\d,.-]/g,'').replace(',','.'); vv=parseFloat(vv); return isNaN(vv)?null:vv;})():null;
     p=idx[cod];
-    if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; atualizados++; }
+    if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv) p.bairro=endNv; if(valorNv!=null) p.vl=valorNv; atualizados++; }
     else{
-      p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:'', bairro:'', vl:null, st:s.st, t1:'', t2:'',
+      p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endNv, vl:valorNv, st:s.st, t1:'', t2:'',
          scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en};
       PEDIDOS.push(p); idx[cod]=p; novos++; codigosNovos.push(cod);
     }
@@ -1371,7 +1377,7 @@ function abrirPedido(cod){
   h+='<div class="sh-row"><span class="k">Cliente</span><span class="v">'+esc(p.cliente||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Transportadora</span><span class="v">'+esc(t?t.n:'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Motorista</span><span class="v">'+esc(m?m.n:'sem motorista')+'</span></div>';
-  h+='<div class="sh-row"><span class="k">Bairro</span><span class="v">'+esc(p.bairro||'—')+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc(p.bairro||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Valor da NF</span><span class="v">'+(p.vl==null?'—':moeda(p.vl))+'</span></div>';
   if(p.dia) h+='<div class="sh-row"><span class="k">Entrada no ponto</span><span class="v">'+dataBR(p.dia)+(p.hora?' '+esc(p.hora):'')+'</span></div>';
   if(p.scan && p.scan!==p.cod) h+='<div class="sh-row"><span class="k">Código de escaneamento</span><span class="v">'+esc(p.scan)+'</span></div>';
