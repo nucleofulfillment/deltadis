@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-82-2809</p>
+      <p class="bld">DELTADIS-BASE-83-2809</p>
     </div>
   </div>
 </div>
@@ -950,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-82-2809</div>
+<div class="bld-fix">DELTADIS-BASE-83-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1962,7 +1962,7 @@ function pintarSlaDash(){
     '<line class="sla-hand" id="sla-hand" data-ang="'+((st.media%12)*30).toFixed(1)+'" x1="50" y1="50" x2="50" y2="28" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/>'+
     '<line class="sla-hand sla-min" id="sla-min" data-ang="'+(720+(st.media%1)*360).toFixed(1)+'" x1="50" y1="50" x2="50" y2="15" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="50" cy="50" r="4.5" fill="#fff"/></svg>';
   var bar=function(pc,cor){ return '<div class="sla-bar"><i data-w="'+pc+'" style="background:'+cor+'"></i></div>'; };
-  var card=function(lb,vl,dl,cor,pc){ return '<div class="sla-card"><div class="lb">'+lb+'</div><div class="vl" style="color:'+cor+'">'+vl+'</div><div class="dl">'+dl+'</div>'+(pc!=null?bar(pc,cor):'')+'</div>'; };
+  var card=function(lb,vl,dl,cor,pc){ return '<div class="sla-card"><div class="lb">'+lb+'</div><div class="vl" style="color:'+cor+'"'+(pc!=null?' data-cnt="'+pc+'"':'')+'>'+vl+'</div><div class="dl">'+dl+'</div>'+(pc!=null?bar(pc,cor):'')+'</div>'; };
   var h2='<div class="sla-grid">'+
     '<div class="sla-hero"><div><div class="lb">Tempo médio</div><div class="vl">'+fmtDur(st.media)+'</div><div class="dl">da entrada até a entrega</div></div>'+clock+'</div>'+
     card('Mediana',fmtDur(st.mediana),'metade entrega mais rápido','var(--text)')+
@@ -1982,8 +1982,19 @@ function pintarSlaDash(){
   animarSla();
 }
 /* anima o ponteiro do relógio e as barrinhas até o valor */
+var SLA_CONT_FEITA=false;
+/* números viram cronômetro (0 até o valor) — só na 1ª vez da sessão */
+function contarSla(alvo){
+  var ns=alvo.querySelectorAll('[data-cnt]'), t0=null, k;
+  SLA_CONT_FEITA=true;
+  var passo=function(t){ if(t0==null) t0=t; var f=Math.min(1,(t-t0)/1500), e=1-Math.pow(1-f,3);
+    for(k=0;k<ns.length;k++) ns[k].textContent=Math.round(parseFloat(ns[k].getAttribute('data-cnt'))*e)+'%';
+    if(f<1) window.requestAnimationFrame(passo); };
+  window.requestAnimationFrame(passo);
+}
 function animarSla(){
   var alvo=el('db-sla'); if(!alvo) return;
+  if(!SLA_CONT_FEITA){ var z=alvo.querySelectorAll('[data-cnt]'), q; for(q=0;q<z.length;q++) z[q].textContent='0%'; }
   var hs=alvo.querySelectorAll('.sla-hand'), bs=alvo.querySelectorAll('.sla-bar i');
   var ligar=function(){ var k; for(k=0;k<hs.length;k++) hs[k].style.transform='rotate('+hs[k].getAttribute('data-ang')+'deg)';
     for(k=0;k<bs.length;k++) bs[k].style.width=bs[k].getAttribute('data-w')+'%'; };
@@ -1991,11 +2002,11 @@ function animarSla(){
     for(k=0;k<bs.length;k++){ bs[k].style.transition='none'; bs[k].style.width='0'; }
     void alvo.offsetWidth; for(k=0;k<hs.length;k++) hs[k].style.transition=''; for(k=0;k<bs.length;k++) bs[k].style.transition=''; };
   if(window.__slaObs){ try{window.__slaObs.disconnect();}catch(e){} window.__slaObs=null; }
-  if(!('IntersectionObserver' in window)){ window.requestAnimationFrame(function(){ window.requestAnimationFrame(ligar); }); return; }
+  if(!('IntersectionObserver' in window)){ window.requestAnimationFrame(function(){ window.requestAnimationFrame(ligar); }); var z2=alvo.querySelectorAll('[data-cnt]'),q2; for(q2=0;q2<z2.length;q2++) z2[q2].textContent=z2[q2].getAttribute('data-cnt')+'%'; SLA_CONT_FEITA=true; return; }
   var vis=false;
   window.__slaObs=new IntersectionObserver(function(es){
     var v=es[0].isIntersecting;
-    if(v&&!vis){ vis=true; zerar(); window.requestAnimationFrame(function(){ window.requestAnimationFrame(ligar); }); }
+    if(v&&!vis){ vis=true; zerar(); if(!SLA_CONT_FEITA) contarSla(alvo); window.requestAnimationFrame(function(){ window.requestAnimationFrame(ligar); }); }
     else if(!v&&vis){ vis=false; zerar(); }
   },{threshold:0.35});
   window.__slaObs.observe(alvo);
@@ -2098,11 +2109,13 @@ function mostrarDiaTip(ev,iso,total){
   for(i=0;i<dist.length;i++) h+='<div class="gt-row"><span>'+esc(dist[i].t.n)+'</span><b>'+dist[i].qtd+'</b></div>';
   h+='<div class="gt-total"><span>Total</span><span>'+total+'</span></div>';
   var tt=el('graf-tip'); tt.innerHTML=h;
-  var x=ev.clientX+14, y=ev.clientY+14;
-  if(x>window.innerWidth-240) x=ev.clientX-240-14;
-  if(y>window.innerHeight-260) y=ev.clientY-260-14;
-  tt.style.left=x+'px'; tt.style.top=y+'px';
   tt.classList.add('on');
+  var w=tt.offsetWidth, hh=tt.offsetHeight, alvo=(ev&&ev.currentTarget&&ev.currentTarget.getBoundingClientRect)?ev.currentTarget.getBoundingClientRect():null;
+  var cx=alvo?alvo.left+alvo.width/2:ev.clientX, topo=alvo?alvo.top:ev.clientY, base=alvo?alvo.bottom:ev.clientY, gap=8;
+  var x=cx-w/2, y=topo-hh-gap;
+  if(y<4) y=base+gap;
+  if(x<8) x=8; if(x>window.innerWidth-w-8) x=window.innerWidth-w-8;
+  tt.style.left=x+'px'; tt.style.top=y+'px';
 }
 function esconderDiaTip(){ el('graf-tip').classList.remove('on'); }
 
