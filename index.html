@@ -416,7 +416,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-18-2809</p>
+      <p class="bld">DELTADIS-BASE-19-2809</p>
     </div>
   </div>
 </div>
@@ -517,17 +517,15 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="pghd"><div><h1>Pedidos</h1><div class="sub">todos os pacotes recebidos hoje, por status</div></div><span class="vertodos" onclick="abrirUploadPlanilha()">+ Upload planilha</span> <span class="vertodos" onclick="sincronizarAnjunClique()">🔄 Sincronizar rastreio</span></div>
         <div id="pd-chip"></div>
         <div class="card">
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:18px">
             <div class="search" style="margin-bottom:0"><span>🔎</span><input id="pd-busca" placeholder="buscar por código, cliente ou motorista" oninput="pintarPedidos()"></div>
-            <div class="search" style="margin-bottom:0;max-width:none;gap:6px">
-              <span>📅</span>
-              <input type="date" id="pd-data-ini" onchange="pintarPedidos()" style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text)">
-              <span style="color:var(--muted);font-size:12px">até</span>
-              <input type="date" id="pd-data-fim" onchange="pintarPedidos()" style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text)">
-              <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';pintarPedidos()" style="margin-left:4px;white-space:nowrap">Limpar</span>
+            <div class="fc-filtros" style="margin-bottom:0;gap:10px">
+              <input type="date" id="pd-data-ini" onchange="pintarPedidos()" title="Data inicial">
+              <input type="date" id="pd-data-fim" onchange="pintarPedidos()" title="Data final">
+              <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';pintarPedidos()" style="white-space:nowrap">Limpar</span>
             </div>
           </div>
-          <div class="pills" id="pd-pills" style="margin-top:12px"></div>
+          <div class="pills" id="pd-pills" style="margin-top:20px;margin-bottom:6px"></div>
           <div class="tb-wrap"><table class="tb">
             <thead><tr><th>Pacote</th><th>Transportadora</th><th>Motorista</th><th>Status</th><th>Valor NF</th></tr></thead>
             <tbody id="pd-corpo"></tbody>
@@ -724,7 +722,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-18-2809</div>
+<div class="bld-fix">DELTADIS-BASE-19-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
