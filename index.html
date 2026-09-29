@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-55-2809</p>
+      <p class="bld">DELTADIS-BASE-56-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-55-2809</div>
+<div class="bld-fix">DELTADIS-BASE-56-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1034,6 +1034,7 @@ function aplicarSalvo(d){
   if((d.pedidos||d.pc) && d.motoristas){
     if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', rua:a[18]||'', num:a[19]||'', comp:a[20]||'', bai:a[21]||'', cid:a[22]||'', endOrig:a[23]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
+    PEDIDOS.forEach(garantirEndereco);
     MOTORISTAS=d.motoristas; EXTRATO=d.extrato||[];
     /* dados salvos antes: nome que era só o login "arrumado" volta a ser o login de verdade */
     MOTORISTAS.forEach(function(m){ var lg=m.logins&&m.logins.anj; if(lg && m.n===nomeAntigoDeLogin(lg)){ m.n=String(lg).trim(); m.ini=iniciaisNome(m.n); } });
@@ -1188,7 +1189,14 @@ function separarEndereco(rua,num){
   if(tk.length>=2 && /^\d{1,6}[A-Za-z]?$/.test(tk[tk.length-1]) && !new RegExp('^'+KW+'$','i').test(tk[tk.length-2].replace(/[,.;]$/,''))){
     return {rua:limpa(r), num:tk[tk.length-1].toUpperCase(), comp:tk.slice(0,-1).join(' ')};
   }
+  if(!comp && new RegExp('^'+KW+'(?=[\\s\\d.,;-]|$)','i').test(r)) return {rua:'', num:'', comp:r};
   return {rua:limpa(r), num:'', comp:comp};
+}
+/* pacote guardado antes da separação do endereço: separa rua / número / complemento a partir do texto que já está guardado (não precisa importar de novo) */
+function garantirEndereco(p){
+  if(p.rua || p.num || p.endOrig || !p.bairro) return;
+  var seg=String(p.bairro).split(' — ')[0], sep=separarEndereco(seg,'');
+  p.endOrig=seg; p.rua=sep.rua; p.num=sep.num; p.comp=sep.comp;
 }
 /* canal de venda: nome limpo (Anjun: "sheind2d" → Shein; J&T: "MERCADO CBT" → Mercado Livre CBT) */
 function canalLimpo(v){
