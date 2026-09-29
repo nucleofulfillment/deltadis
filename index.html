@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-81-2809</p>
+      <p class="bld">DELTADIS-BASE-82-2809</p>
     </div>
   </div>
 </div>
@@ -950,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-81-2809</div>
+<div class="bld-fix">DELTADIS-BASE-82-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2106,6 +2106,30 @@ function mostrarDiaTip(ev,iso,total){
 }
 function esconderDiaTip(){ el('graf-tip').classList.remove('on'); }
 
+var EVO_ANIM_FEITA=false, EVO_OBS=null;
+/* efeito de entrada do gráfico: roda 1x por sessão, na primeira vez que ele aparece na tela com dados */
+function animarEvolucao(){
+  var box=el('db-grafico-svg'); if(!box) return;
+  var ps=box.querySelectorAll('svg > path'), cs=box.querySelectorAll('svg circle'), k;
+  if(ps.length<2) { EVO_ANIM_FEITA=true; return; }
+  var area=ps[0], linha=ps[1];
+  var pronto=function(){ area.style.opacity='0'; linha.setAttribute('pathLength','1'); linha.style.strokeDasharray='1'; linha.style.strokeDashoffset='1';
+    for(k=0;k<cs.length;k++) cs[k].style.opacity='0'; };
+  var rodar=function(){
+    EVO_ANIM_FEITA=true;
+    if(EVO_OBS){ try{EVO_OBS.disconnect();}catch(e){} EVO_OBS=null; }
+    void box.offsetWidth;
+    linha.style.transition='stroke-dashoffset 1.8s cubic-bezier(.4,.1,.2,1)'; linha.style.strokeDashoffset='0';
+    area.style.transition='opacity 1.2s ease 0.7s'; area.style.opacity='1';
+    var n=cs.length, passo=Math.min(50,1500/Math.max(1,n));
+    for(k=0;k<n;k++){ cs[k].style.transition='opacity .35s ease '+(0.15+k*passo/1000).toFixed(2)+'s'; cs[k].style.opacity='1'; }
+  };
+  pronto();
+  if(!('IntersectionObserver' in window)){ window.requestAnimationFrame(function(){ window.requestAnimationFrame(rodar); }); return; }
+  if(EVO_OBS){ try{EVO_OBS.disconnect();}catch(e){} }
+  EVO_OBS=new IntersectionObserver(function(es){ if(es[0].isIntersecting) window.requestAnimationFrame(function(){ window.requestAnimationFrame(rodar); }); },{threshold:0.3});
+  EVO_OBS.observe(box);
+}
 function pintarGraficoEvolucao(){
   var ini=DASH_G_INI, fim=DASH_G_FIM, dias=[];
   if(ini && fim && ini<=fim){
@@ -2160,6 +2184,7 @@ function pintarGraficoEvolucao(){
   el('db-grafico-svg').innerHTML=svg;
 
   var total=0; for(i=0;i<dias.length;i++) total+=dias[i].v;
+  if(!EVO_ANIM_FEITA && total>0) animarEvolucao();
   el('db-grafico-total').textContent=total.toLocaleString('pt-BR')+' pacotes no período selecionado';
 }
 
