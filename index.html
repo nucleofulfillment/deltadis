@@ -300,7 +300,7 @@ a{color:inherit}
   .sheet{top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-height:82vh;border-radius:18px;border:1px solid var(--border)}
   .sheet.wide{width:640px}
   .sheet.xwide{width:760px}
-  #sh-fin-lista{width:1040px;max-width:96vw}
+  #sh-fin-lista,#sh-extrato-asaas{width:1040px;max-width:96vw}
 }
 #fl-corpo td{white-space:nowrap}
 @media (max-width:859px){
@@ -437,7 +437,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-66-2809</p>
+      <p class="bld">DELTADIS-BASE-67-2809</p>
     </div>
   </div>
 </div>
@@ -607,7 +607,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <section class="page" id="pg-financeiro">
         <div class="pghd"><div><h1>Financeiro</h1><div class="sub">movimento do ponto de distribuição</div></div></div>
         <div class="finrow" id="fin-resumo"></div>
-        <div class="duo"><div class="kpi"><div class="lb">TOTAL MOVIMENTADO</div><div class="vl" id="fin-mov">R$ 0,00</div></div><div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div><div class="lb" style="margin-top:8px;font-weight:500;opacity:.85">Saldo no banco — será lido do Asaas quando integrar</div></div></div>
+        <div class="duo"><div class="kpi"><div class="lb">TOTAL MOVIMENTADO</div><div class="vl" id="fin-mov">R$ 0,00</div></div><div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div><div class="lb" id="fin-saldo-info" style="margin-top:8px;font-weight:500;opacity:.85">Conectando ao Asaas...</div><div style="margin-top:10px;display:flex;gap:16px;font-size:12.5px;font-weight:700"><span style="cursor:pointer;text-decoration:underline" onclick="carregarSaldoAsaas(false)">atualizar</span><span style="cursor:pointer;text-decoration:underline" onclick="abrirExtratoAsaas()">ver extrato</span></div></div></div>
         <div class="card" id="fin-repasse-card" style="margin-bottom:16px">
           <h3 style="margin-bottom:0"><span class="lft">Repasse por motorista</span><span style="display:flex;align-items:center;gap:10px;margin-left:auto"><input class="inp" id="fin-rep-busca" placeholder="buscar por nome, telefone, região ou grupo" oninput="toggleRepasseLista(true);pintarFinanceiro()" style="width:270px;max-width:46vw"><span class="rp-mais" id="fin-rep-mais" onclick="toggleRepasseLista()" title="Mostrar / ocultar a listagem">+</span></span></h3>
           <div id="fin-repasse-body" style="display:none;margin-top:14px">
@@ -845,6 +845,17 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div style="flex-shrink:0;border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;background:var(--s1);border-radius:0 0 18px 18px"><button class="btn pri" onclick="salvarValoresAreas()">Salvar valores</button><span style="font-size:12px;color:var(--muted)">Preencha quantas quiser e salve de uma vez.</span></div>
 </div>
 
+<div class="sheet wide" id="sh-extrato-asaas">
+  <div class="sh-hd"><h3>Extrato do Asaas</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <input type="date" class="inp" id="ex-ini" title="De" style="width:150px"><span style="color:var(--muted);font-size:12px">até</span><input type="date" class="inp" id="ex-fim" title="Até" style="width:150px">
+      <button class="btn pri" onclick="buscarExtratoAsaas()">Buscar</button><span id="ex-resumo" style="font-size:12.5px;color:var(--muted)"></span>
+    </div>
+    <div class="tb-wrap"><table class="tb"><thead><tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>Valor</th><th>Saldo</th></tr></thead><tbody id="ex-corpo"></tbody></table></div>
+  </div>
+</div>
+
 <div class="sheet wide" id="sh-fin-lista">
   <div class="sh-hd"><h3 id="fl-titulo">Pacotes</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
@@ -890,7 +901,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-66-2809</div>
+<div class="bld-fix">DELTADIS-BASE-67-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1693,6 +1704,7 @@ function baixarPdfFechamento(){
 }
 PEDIDOS=[]; MOTORISTAS=[]; EXTRATO=[]; recalcularReal();
 carregarLocal();
+setTimeout(function(){ try{ carregarSaldoAsaas(true); }catch(e){} },1200);
 
 /* ══ ajudantes ══ */
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
@@ -1751,6 +1763,7 @@ function montarNav(){
 function ir(p){
   PAG=p;
   try{ pintarIndicadores(); }catch(e){}
+  if(p==='financeiro' && typeof carregarSaldoAsaas==='function' && (Date.now()-SALDO_QUANDO>60000)) carregarSaldoAsaas(true);
   var ps=document.querySelectorAll('.page'),i;
   for(i=0;i<ps.length;i++) ps[i].classList.toggle('on', ps[i].id==='pg-'+p);
   var bs=document.querySelectorAll('.side button,.tabbar button');
@@ -2885,7 +2898,35 @@ function inicioMesISO(){var d=new Date(); return d.getFullYear()+'-'+('0'+(d.get
 var FC_DATA_INI=inicioMesISO();
 var FC_DATA_FIM=hojeISO();
 var FC_CAT='todas';
-var SALDO_BANCO=0;   /* saldo real do ponto no banco — será preenchido pela integração com o Asaas */
+var SALDO_BANCO=0, SALDO_OK=false, SALDO_QUANDO=0;   /* saldo real da conta Asaas (lido pelo Worker; nenhuma chave fica no site) */
+function carregarSaldoAsaas(silencioso){
+  var info=el('fin-saldo-info');
+  if(!silencioso && info) info.textContent='Consultando o Asaas...';
+  fetch(DELTADIS_API+'/asaas/saldo?key='+encodeURIComponent(DELTADIS_API_KEY)).then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok){ SALDO_BANCO=d.saldo; SALDO_OK=true; SALDO_QUANDO=Date.now(); var ag=new Date();
+      if(info) info.textContent='Asaas'+(d.ambiente==='producao'?'':' ('+d.ambiente+')')+' · atualizado '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2);
+      if(!silencioso) aviso('Saldo atualizado!'); }
+    else { SALDO_OK=false; if(info) info.textContent=(d&&d.erro==='nao_configurado')?'Asaas ainda não conectado — falta cadastrar a chave no Worker':((d&&d.mensagem)||'Não consegui ler o saldo agora'); if(!silencioso) aviso((d&&d.mensagem)||'Não consegui ler o saldo agora.'); }
+    var sv=el('fin-saldo'); if(sv) sv.textContent=SALDO_OK?moeda(SALDO_BANCO):'—';
+  }).catch(function(){ SALDO_OK=false; if(info) info.textContent='Sem conexão com o serviço agora'; var sv=el('fin-saldo'); if(sv) sv.textContent='—'; });
+}
+function abrirExtratoAsaas(){
+  var a=el('ex-ini'), b=el('ex-fim'); if(a && !a.value) a.value=inicioMesISO(); if(b && !b.value) b.value=hojeISO();
+  el('ex-corpo').innerHTML=''; el('ex-resumo').textContent=''; abrir('sh-extrato-asaas'); buscarExtratoAsaas();
+}
+function buscarExtratoAsaas(){
+  var ini=el('ex-ini').value, fim=el('ex-fim').value;
+  if(!ini||!fim){ aviso('Escolha as duas datas'); return; }
+  el('ex-resumo').textContent='Buscando...';
+  fetch(DELTADIS_API+'/asaas/extrato?key='+encodeURIComponent(DELTADIS_API_KEY)+'&ini='+ini+'&fim='+fim).then(function(r){return r.json();}).then(function(d){
+    if(!d || !d.ok){ el('ex-resumo').textContent=''; el('ex-corpo').innerHTML='<tr><td colspan="5"><div class="empty">'+esc((d&&d.mensagem)||'Não consegui buscar o extrato agora')+'</div></td></tr>'; return; }
+    var h=[], ent=0, sai=0, i, x, v;
+    for(i=0;i<d.itens.length;i++){ x=d.itens[i]; v=x.valor; if(v>=0) ent+=v; else sai+=v;
+      h.push('<tr><td>'+esc(dataBR(String(x.data).slice(0,10)))+'</td><td style="white-space:normal">'+esc(x.descricao||'—')+'</td><td>'+esc(String(x.tipo||'').toLowerCase().replace(/_/g,' '))+'</td><td style="font-weight:700;color:'+(v>=0?'var(--green,#16A34A)':'var(--red,#DC2626)')+'">'+moeda(v)+'</td><td>'+(x.saldo==null?'—':moeda(x.saldo))+'</td></tr>'); }
+    el('ex-corpo').innerHTML=h.join('')||'<tr><td colspan="5"><div class="empty">Nenhuma movimentação nesse período</div></td></tr>';
+    el('ex-resumo').textContent=d.itens.length+' movimentação(ões) · entradas '+moeda(ent)+' · saídas '+moeda(Math.abs(sai))+(d.cortado?' · mostrando as 2.000 mais recentes':'');
+  }).catch(function(){ el('ex-resumo').textContent=''; el('ex-corpo').innerHTML='<tr><td colspan="5"><div class="empty">Sem conexão com o serviço agora</div></td></tr>'; });
+}
 
 /* listagem "Repasse por motorista": fica oculta; abre no + ou ao clicar no card Repasse */
 function nomesGruposDe(id){ var r=[], i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].ids.indexOf(id)>=0) r.push(GRUPOS[i].nome); return r.join(' '); }
@@ -2976,7 +3017,7 @@ function pintarFinanceiro(){
     '<div class="kpi"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(areceber)+'</div><div class="dl">repasses de transportadoras</div></div>'+
     '<div class="kpi"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(repasse)+'</div><div class="dl">a pagar aos motoristas hoje</div></div>';
 
-  el('fin-saldo').textContent=moeda(SALDO_BANCO);   /* saldo no banco: NÃO vem dos lançamentos do fluxo de caixa (virá do Asaas) */
+  el('fin-saldo').textContent=SALDO_OK?moeda(SALDO_BANCO):'—';   /* saldo no banco: vem do Asaas, NÃO dos lançamentos do fluxo de caixa */
 
   pintarFiltrosFC();
   pintarFluxoCaixa();
