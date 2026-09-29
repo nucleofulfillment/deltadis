@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-49-2809</p>
+      <p class="bld">DELTADIS-BASE-50-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-49-2809</div>
+<div class="bld-fix">DELTADIS-BASE-50-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1816,7 +1816,7 @@ function abrirPedido(cod){
   h+='<div class="sh-row"><span class="k">Status</span><span class="v">'+badgeStatus(p.st)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Cliente</span><span class="v">'+esc(p.cliente||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Transportadora</span><span class="v">'+esc(t?t.n:'—')+'</span></div>';
-  h+='<div class="sh-row"><span class="k">Motorista</span><span class="v">'+esc(m?m.n:'sem motorista')+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Motorista</span><span class="v">'+(m?('<span class="vertodos" onclick="fecharTudo();abrirMotorista('+m.id+')">'+esc(m.n)+' ›</span>'):'sem motorista')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc(p.bairro||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Valor da NF</span><span class="v">'+(p.vl==null?'—':moeda(p.vl))+'</span></div>';
   if(p.dia) h+='<div class="sh-row"><span class="k">Entrada no ponto</span><span class="v">'+dataBR(p.dia)+(p.hora?' '+esc(p.hora):'')+'</span></div>';
@@ -2589,6 +2589,20 @@ function abrirMotorista(id){
     h+='<div class="sh-row"><span class="k">A repassar (entregues × valor)</span><span class="v">'+moeda(rsm.val)+'</span></div>';
   }
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
+  if(REAL){
+    var oc=[], oi, op;
+    for(oi=0;oi<PEDIDOS.length;oi++){ op=PEDIDOS[oi]; if(op.mt!==m.id || op.st==='entregue') continue;
+      if(ehTentativa(op.st)||op.st==='devolvido'||op.st==='extraviado'||(op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')) oc.push(op); }
+    h+='<div style="margin-top:14px;font-weight:700;font-size:13px">Ocorrências ('+oc.length+')</div>';
+    if(!oc.length) h+='<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhum pacote com problema.</div>';
+    else {
+      h+='<div class="tb-wrap" style="margin-top:6px;max-height:260px;overflow:auto"><table class="tb"><tbody>';
+      for(oi=0;oi<oc.length&&oi<100;oi++){ op=oc[oi];
+        h+='<tr style="cursor:pointer" onclick="fecharTudo();abrirPedido(\''+esc(op.cod)+'\')"><td><b>'+esc(op.cod)+'</b><br><span style="color:var(--muted);font-size:11.5px">'+esc(op.cliente||'')+'</span>'+((op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(op.obs)+'</span>':'')+'</td><td>'+badgeStatus(op.st)+'</td></tr>'; }
+      h+='</tbody></table></div>';
+      if(oc.length>100) h+='<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Mostrando 100 de '+oc.length+'</div>';
+    }
+  }
   if(m.email) h+='<div class="sh-row"><span class="k">E-mail</span><span class="v">'+esc(m.email)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Documentos</span><span class="v">'+esc(m.doc)+'</span></div>';
   var gm=[], gi; for(gi=0;gi<GRUPOS.length;gi++) if(GRUPOS[gi].ids.indexOf(m.id)>=0) gm.push(GRUPOS[gi].nome);
