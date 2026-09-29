@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-83-2809</p>
+      <p class="bld">DELTADIS-BASE-84-2809</p>
     </div>
   </div>
 </div>
@@ -950,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-83-2809</div>
+<div class="bld-fix">DELTADIS-BASE-84-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1082,6 +1082,33 @@ function idbLer(cb){
     }catch(e){ cb(null); }
   });
 }
+/* ── envia os pedidos ATIVOS (na base, em rota, tentativas) ao servidor, com o endereço já separado — o app do motorista lê de lá ── */
+var PED_SYNC={hash:'',ok:null,quando:0,n:0,erro:'',timer:null,enviando:false,avisou:false};
+function pedidoAtivo(p){ return p.st==='coletado'||p.st==='em rota'||ehTentativa(p.st); }
+function listaParaServidor(){
+  var out=[], i, p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(!pedidoAtivo(p)) continue;
+    out.push({cod:p.cod,tr:p.tr,mt:(p.mt==null?null:p.mt),st:p.st,cliente:p.cliente||'',tel:p.tel||'',rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||'',area:p.area||'',dia:p.dia||'',hora:p.hora||'',inc:incompletoDe(p)}); }
+  return out;
+}
+function agendarEnvioPedidos(){ if(!REAL || !PEDIDOS.length) return; if(PED_SYNC.timer) clearTimeout(PED_SYNC.timer); PED_SYNC.timer=setTimeout(function(){ PED_SYNC.timer=null; enviarPedidosServidor(); },4000); }
+function enviarPedidosServidor(forcar){
+  if(!REAL || !PEDIDOS.length) return;
+  if(PED_SYNC.enviando){ agendarEnvioPedidos(); return; }
+  var lista=listaParaServidor(), corpo=JSON.stringify({pedidos:lista, limpar:!lista.length}), h=0, k;
+  for(k=0;k<corpo.length;k++){ h=(Math.imul(h,31)+corpo.charCodeAt(k))|0; } h=h+':'+corpo.length;
+  if(!forcar && h===PED_SYNC.hash) return;
+  PED_SYNC.enviando=true;
+  fetch(DELTADIS_API+'/pedidos/sincronizar?key='+encodeURIComponent(DELTADIS_API_KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:corpo})
+  .then(function(r){return r.json();}).then(function(d){
+    PED_SYNC.enviando=false;
+    if(d && d.ok){ PED_SYNC.hash=h; PED_SYNC.ok=true; PED_SYNC.quando=Date.now(); PED_SYNC.n=d.total; PED_SYNC.erro=''; }
+    else { PED_SYNC.ok=false; PED_SYNC.erro=(d&&d.mensagem)||(d&&d.erro)||'falhou'; }
+  }).catch(function(){
+    PED_SYNC.enviando=false; PED_SYNC.ok=false; PED_SYNC.erro='sem conexão';
+    if(!PED_SYNC.avisou){ PED_SYNC.avisou=true; aviso('Não consegui enviar os pedidos ao servidor agora. Tento de novo sozinho.'); }
+    setTimeout(agendarEnvioPedidos,60000);
+  });
+}
 function salvarLocal(cb){
   var o;
   if(REAL){
@@ -1090,6 +1117,7 @@ function salvarLocal(cb){
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
   idbGravar(o,function(ok){ if(cb) cb(ok); });
+  agendarEnvioPedidos();
   return true;
 }
 function aplicarSalvo(d){
@@ -1471,6 +1499,8 @@ function sincronizarAnjunClique(){
   });
 }
 /* recalcula tudo que depende dos pacotes: totais do Dashboard, volume por transportadora, pacotes por motorista */
+/* REGRA ÚNICA de endereço incompleto (Ocorrências, roteirização e app do motorista usam esta): sem número → 'num'; tem número mas sem nome da rua → 'rua' */
+function incompletoDe(p){ if(!p || !p.bairro) return ''; if(!p.num) return 'num'; if(!p.rua) return 'rua'; return ''; }
 function ehTentativa(st){ return st==='tentativa 1'||st==='tentativa 2'||st==='tentativa 3'; }
 function recalcularReal(){
   var i,p,m,t,mp={},agg={coletado:0,emrota:0,entregue:0,tentativas:0,devolvido:0,extraviado:0};
@@ -2327,7 +2357,7 @@ function pintarPedidos(){
   var ocSel=el('pd-ocor'), ocAtual=ocSel.value, ocCont={}, ocN=0, ocH='';
   for(j=0;j<PEDIDOS.length;j++){ var po=PEDIDOS[j]; if(FILTRO_TR && po.tr!==FILTRO_TR) continue; if(!passaData(po)) continue; if(po.obs && po.obs!=='em aberto' && po.st!=='entregue'){ ocCont[po.obs]=(ocCont[po.obs]||0)+1; } }
   var ocLista=Object.keys(ocCont).sort(function(a,b){return ocCont[b]-ocCont[a];}), nSemNum=0, nSemRua=0;
-  for(j=0;j<PEDIDOS.length;j++){ var pe=PEDIDOS[j]; if(FILTRO_TR && pe.tr!==FILTRO_TR) continue; if(!passaData(pe)) continue; if(pe.st==='entregue'||!pe.bairro) continue; if(!pe.num) nSemNum++; else if(!pe.rua) nSemRua++; }
+  for(j=0;j<PEDIDOS.length;j++){ var pe=PEDIDOS[j]; if(FILTRO_TR && pe.tr!==FILTRO_TR) continue; if(!passaData(pe)) continue; if(pe.st==='entregue') continue; var ie=incompletoDe(pe); if(ie==='num') nSemNum++; else if(ie==='rua') nSemRua++; }
   ocH='<option value="">Todas as ocorrências</option>';
   if(nSemNum) ocH+='<option value="__semnum">⚠ Endereço sem número ('+nSemNum+')</option>';
   if(nSemRua) ocH+='<option value="__semrua">⚠ Endereço sem nome da rua ('+nSemRua+')</option>';
@@ -2346,8 +2376,8 @@ function pintarPedidos(){
     else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
-    if(ocFiltro==='__semnum'){ if(p.st==='entregue'||!p.bairro||p.num) continue; }
-    else if(ocFiltro==='__semrua'){ if(p.st==='entregue'||!p.bairro||!p.num||p.rua) continue; }
+    if(ocFiltro==='__semnum'){ if(p.st==='entregue'||incompletoDe(p)!=='num') continue; }
+    else if(ocFiltro==='__semrua'){ if(p.st==='entregue'||incompletoDe(p)!=='rua') continue; }
     else if(ocFiltro && p.obs!==ocFiltro) continue;
     var m=motorista(p.mt);
     var alvo=(p.cod+' '+p.cliente+' '+(p.scan||'')+' '+(m?m.n:'')).toLowerCase();
@@ -3411,6 +3441,7 @@ function atualizarFluxoCaixa(){
 }
 setInterval(function(){ if(REAL && !document.hidden) pixConferirPendentes(); },15000);
 setTimeout(function(){ if(REAL){ sincronizarFechamentosFC(); pixConferirPendentes(); } },2500);
+setTimeout(agendarEnvioPedidos,6000);
 /* confere no Asaas como ficou um Pix já enviado */
 function verificarPix(id,silencioso){
   var e=achaLanc(id); if(!e||!e.pixRef) return;
