@@ -424,7 +424,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-28-2809</p>
+      <p class="bld">DELTADIS-BASE-29-2809</p>
     </div>
   </div>
 </div>
@@ -791,7 +791,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-28-2809</div>
+<div class="bld-fix">DELTADIS-BASE-29-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1171,6 +1171,7 @@ function valorMotorista(m,p){
     for(i=0;i<m.faixasCep.length;i++){ var f=m.faixasCep[i], fi=parseInt(String(f.ini).replace(/\D/g,''),10), ff=parseInt(String(f.fim).replace(/\D/g,''),10);
       if(!isNaN(cn) && !isNaN(fi) && !isNaN(ff) && cn>=fi && cn<=ff) return Number(f.valor)||0; }
   }
+  if(Number(m.valorPadrao)>0) return Number(m.valorPadrao);
   if(m.valorPct>0) return m.valorPct;
   return 0;
 }
@@ -2086,8 +2087,13 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Documentos</span><span class="v">'+esc(m.doc)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Contrato</span><span class="v">'+badgeStatus(m.contrato)+'</span></div>';
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor padrão por pacote<br><span style="font-size:10.5px;font-weight:500">vale quando a região/CEP não tem valor cadastrado</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 38px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-padrao-'+m.id+'" value="'+(m.valorPadrao?String(m.valorPadrao).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarValorPadraoMotorista('+m.id+')">✓</button></div></span></div>';
+  var areasSet={}, areasOpt='', ap, ak;
+  for(ap=0;ap<PEDIDOS.length;ap++){ if(PEDIDOS[ap].mt===m.id && PEDIDOS[ap].area) areasSet[PEDIDOS[ap].area]=1; }
+  for(ak in areasSet) areasOpt+='<option value="'+esc(ak)+'">';
+  h+='<datalist id="mt-areas-'+m.id+'">'+areasOpt+'</datalist>';
   h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por Região</span><span class="v" style="width:100%"><div id="mt-regioes-'+m.id+'"></div>'+
-       '<div class="mt-cfg-linha" style="grid-template-columns:1fr 90px 38px"><input class="inp" placeholder="Código (ex: Capoeiras)" id="mt-reg-cod-'+m.id+'"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-reg-val-'+m.id+'"><button class="btn sec mt-cfg-add" onclick="adicionarRegiaoMotorista('+m.id+')">+</button></div></span></div>';
+       '<div class="mt-cfg-linha" style="grid-template-columns:1fr 90px 38px"><input class="inp" list="mt-areas-'+m.id+'" placeholder="Região (escolha da planilha)" id="mt-reg-cod-'+m.id+'"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-reg-val-'+m.id+'"><button class="btn sec mt-cfg-add" onclick="adicionarRegiaoMotorista('+m.id+')">+</button></div></span></div>';
   h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por CEP</span><span class="v" style="width:100%"><div id="mt-faixas-'+m.id+'"></div>'+
        '<div class="mt-cfg-linha" style="grid-template-columns:1fr 1fr 90px 38px"><input class="inp" placeholder="CEP de" id="mt-cep-ini-'+m.id+'"><input class="inp" placeholder="até" id="mt-cep-fim-'+m.id+'"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-cep-val-'+m.id+'"><button class="btn sec mt-cfg-add" onclick="adicionarFaixaMotorista('+m.id+')">+</button></div></span></div>';
   if(!REAL) h+='<div class="mapa-mock" style="height:190px;margin-top:16px;margin-bottom:0">'+
@@ -2115,6 +2121,14 @@ function pintarValoresMotorista(id){
   }
   var alvoC=el('mt-faixas-'+id); if(alvoC) alvoC.innerHTML=hc||'<div class="empty" style="padding:4px 0;font-size:12px">Nenhuma faixa cadastrada</div>';
 }
+function salvarValorPadraoMotorista(id){
+  var m=motorista(id); if(!m) return;
+  var v=Number(String(el('mt-padrao-'+id).value||'0').replace(',','.'))||0;
+  m.valorPadrao=v>0?v:0;
+  if(REAL) salvarLocal();
+  pintarFinanceiro();
+  aviso(v>0?'Valor padrão salvo!':'Valor padrão removido');
+}
 function adicionarRegiaoMotorista(id){
   var m=motorista(id); if(!m) return;
   var elC=el('mt-reg-cod-'+id), elV=el('mt-reg-val-'+id);
@@ -2123,13 +2137,13 @@ function adicionarRegiaoMotorista(id){
   m.regioes=m.regioes||[]; m.regioes.push({cod:cod, valor:val});
   elC.value=''; elV.value='';
   if(REAL) salvarLocal();
-  pintarValoresMotorista(id);
+  pintarValoresMotorista(id); pintarFinanceiro();
 }
 function removerRegiaoMotorista(id,idx){
   var m=motorista(id); if(!m || !m.regioes) return;
   m.regioes.splice(idx,1);
   if(REAL) salvarLocal();
-  pintarValoresMotorista(id);
+  pintarValoresMotorista(id); pintarFinanceiro();
 }
 function adicionarFaixaMotorista(id){
   var m=motorista(id); if(!m) return;
@@ -2139,13 +2153,13 @@ function adicionarFaixaMotorista(id){
   m.faixasCep=m.faixasCep||[]; m.faixasCep.push({ini:ini, fim:fim, valor:val});
   elI.value=''; elF.value=''; elV.value='';
   if(REAL) salvarLocal();
-  pintarValoresMotorista(id);
+  pintarValoresMotorista(id); pintarFinanceiro();
 }
 function removerFaixaMotorista(id,idx){
   var m=motorista(id); if(!m || !m.faixasCep) return;
   m.faixasCep.splice(idx,1);
   if(REAL) salvarLocal();
-  pintarValoresMotorista(id);
+  pintarValoresMotorista(id); pintarFinanceiro();
 }
 
 /* ══ financeiro (Receita/A receber/Repasse + Fluxo de caixa) ══ */
