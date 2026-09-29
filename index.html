@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-80-2809</p>
+      <p class="bld">DELTADIS-BASE-81-2809</p>
     </div>
   </div>
 </div>
@@ -950,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-80-2809</div>
+<div class="bld-fix">DELTADIS-BASE-81-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1955,39 +1955,50 @@ function pintarSlaDash(){
   if(!todas.length){ alvo.innerHTML=cab+'<div class="empty" style="padding:8px 0;font-size:12.5px">Sem dados ainda: o SLA usa pacotes entregues que tenham data e hora de entrada e de entrega na planilha.</div>'; return; }
   var st=statsSla(todas);
   var cx=50, cy=50, tk='', a, x1, y1, x2, y2, big;
-  for(a=0;a<24;a++){ big=(a%6===0); var r1=big?36:40, r2=44, ang=a*15*Math.PI/180;
+  for(a=0;a<12;a++){ big=(a%3===0); var r1=big?35:40, r2=44, ang=a*30*Math.PI/180;
     x1=cx+r1*Math.sin(ang); y1=cy-r1*Math.cos(ang); x2=cx+r2*Math.sin(ang); y2=cy-r2*Math.cos(ang);
     tk+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#fff" stroke-width="'+(big?2.4:1.2)+'" stroke-linecap="round" opacity="'+(big?1:.6)+'"/>'; }
   var clock='<svg class="sla-clock" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="rgba(255,255,255,.14)" stroke="#fff" stroke-width="2.5"/>'+tk+
-    '<line class="sla-hand" id="sla-hand" data-ang="'+Math.min(st.media/24*360,1440).toFixed(1)+'" x1="50" y1="50" x2="50" y2="20" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/><circle cx="50" cy="50" r="4.5" fill="#fff"/></svg>';
+    '<line class="sla-hand" id="sla-hand" data-ang="'+((st.media%12)*30).toFixed(1)+'" x1="50" y1="50" x2="50" y2="28" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/>'+
+    '<line class="sla-hand sla-min" id="sla-min" data-ang="'+(720+(st.media%1)*360).toFixed(1)+'" x1="50" y1="50" x2="50" y2="15" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><circle cx="50" cy="50" r="4.5" fill="#fff"/></svg>';
   var bar=function(pc,cor){ return '<div class="sla-bar"><i data-w="'+pc+'" style="background:'+cor+'"></i></div>'; };
   var card=function(lb,vl,dl,cor,pc){ return '<div class="sla-card"><div class="lb">'+lb+'</div><div class="vl" style="color:'+cor+'">'+vl+'</div><div class="dl">'+dl+'</div>'+(pc!=null?bar(pc,cor):'')+'</div>'; };
   var h2='<div class="sla-grid">'+
     '<div class="sla-hero"><div><div class="lb">Tempo médio</div><div class="vl">'+fmtDur(st.media)+'</div><div class="dl">da entrada até a entrega</div></div>'+clock+'</div>'+
     card('Mediana',fmtDur(st.mediana),'metade entrega mais rápido','var(--text)')+
     card('Em até 24h',st.p24+'%','dos entregues','var(--green)',st.p24)+
-    card('Em até 48h',st.p48+'%','dos entregues · inclui as de 24h','var(--green)',st.p48)+
+    card('De 24h a 48h',Math.max(0,st.p48-st.p24)+'%','dos entregues','var(--amber)',Math.max(0,st.p48-st.p24))+
     card('Acima de 48h',st.pmais+'%','dos entregues','var(--red)',st.pmais)+'</div>';
   var lin='';
   if(!DASH_TR){
     var ks=Object.keys(por).sort(function(a,b){return por[b].length-por[a].length;});
     if(ks.length>1){
-      lin='<div class="sla-tb"><div class="sla-row h"><span>Transportadora</span><span>Pacotes</span><span>Tempo médio</span><span>Até 24h</span><span>Até 48h</span><span>Acima de 48h</span></div>';
-      for(i=0;i<ks.length;i++){ var s2=statsSla(por[ks[i]]), tn=transp(ks[i]); lin+='<div class="sla-row"><b>'+esc(tn?tn.n:ks[i])+'</b><span>'+s2.n+'</span><span>'+fmtDur(s2.media)+'</span><span>'+s2.p24+'%</span><span>'+s2.p48+'%</span><span>'+s2.pmais+'%</span></div>'; }
+      lin='<div class="sla-tb"><div class="sla-row h"><span>Transportadora</span><span>Pacotes</span><span>Tempo médio</span><span>Até 24h</span><span>24h a 48h</span><span>Acima de 48h</span></div>';
+      for(i=0;i<ks.length;i++){ var s2=statsSla(por[ks[i]]), tn=transp(ks[i]); lin+='<div class="sla-row"><b>'+esc(tn?tn.n:ks[i])+'</b><span>'+s2.n+'</span><span>'+fmtDur(s2.media)+'</span><span>'+s2.p24+'%</span><span>'+Math.max(0,s2.p48-s2.p24)+'%</span><span>'+s2.pmais+'%</span></div>'; }
       lin+='</div>';
     }
   }
-  alvo.innerHTML=cab+h2+lin+'<div style="font-size:11.5px;color:var(--muted);margin-top:10px">Base: '+todas.length+' de '+ent+' entregues com data e hora dos dois lados. A entrada é a da planilha de cada transportadora (J&amp;T: saída pra entrega · Pichau: criação do pedido). Relógio: uma volta completa = 24h.</div>';
+  alvo.innerHTML=cab+h2+lin+'<div style="font-size:11.5px;color:var(--muted);margin-top:10px">Base: '+todas.length+' de '+ent+' entregues com data e hora dos dois lados. A entrada é a da planilha de cada transportadora (J&amp;T: saída pra entrega · Pichau: criação do pedido). Relógio: mostra o tempo médio como horas e minutos (ex.: 21h07).</div>';
   animarSla();
 }
 /* anima o ponteiro do relógio e as barrinhas até o valor */
 function animarSla(){
-  var h=el('sla-hand'), bs=document.querySelectorAll('#db-sla .sla-bar i');
-  if(!h) return;
-  window.requestAnimationFrame(function(){ window.requestAnimationFrame(function(){
-    var k; if(h) h.style.transform='rotate('+h.getAttribute('data-ang')+'deg)';
-    for(k=0;k<bs.length;k++) bs[k].style.width=bs[k].getAttribute('data-w')+'%';
-  }); });
+  var alvo=el('db-sla'); if(!alvo) return;
+  var hs=alvo.querySelectorAll('.sla-hand'), bs=alvo.querySelectorAll('.sla-bar i');
+  var ligar=function(){ var k; for(k=0;k<hs.length;k++) hs[k].style.transform='rotate('+hs[k].getAttribute('data-ang')+'deg)';
+    for(k=0;k<bs.length;k++) bs[k].style.width=bs[k].getAttribute('data-w')+'%'; };
+  var zerar=function(){ var k; for(k=0;k<hs.length;k++){ hs[k].style.transition='none'; hs[k].style.transform='rotate(0deg)'; }
+    for(k=0;k<bs.length;k++){ bs[k].style.transition='none'; bs[k].style.width='0'; }
+    void alvo.offsetWidth; for(k=0;k<hs.length;k++) hs[k].style.transition=''; for(k=0;k<bs.length;k++) bs[k].style.transition=''; };
+  if(window.__slaObs){ try{window.__slaObs.disconnect();}catch(e){} window.__slaObs=null; }
+  if(!('IntersectionObserver' in window)){ window.requestAnimationFrame(function(){ window.requestAnimationFrame(ligar); }); return; }
+  var vis=false;
+  window.__slaObs=new IntersectionObserver(function(es){
+    var v=es[0].isIntersecting;
+    if(v&&!vis){ vis=true; zerar(); window.requestAnimationFrame(function(){ window.requestAnimationFrame(ligar); }); }
+    else if(!v&&vis){ vis=false; zerar(); }
+  },{threshold:0.35});
+  window.__slaObs.observe(alvo);
 }
 function agregadoDash(){
   if(!DASH_TR) return DASH_AGG;
