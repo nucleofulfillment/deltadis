@@ -415,7 +415,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-11-2809</p>
+      <p class="bld">DELTADIS-BASE-13-2809</p>
     </div>
   </div>
 </div>
@@ -517,6 +517,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div id="pd-chip"></div>
         <div class="card">
           <div class="search"><span>🔎</span><input id="pd-busca" placeholder="buscar por código, cliente ou motorista" oninput="pintarPedidos()"></div>
+          <div style="display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap">
+            <label style="font-size:11.5px;color:var(--muted)">De <input type="date" id="pd-data-ini" onchange="pintarPedidos()" style="margin-left:4px"></label>
+            <label style="font-size:11.5px;color:var(--muted)">Até <input type="date" id="pd-data-fim" onchange="pintarPedidos()" style="margin-left:4px"></label>
+            <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';pintarPedidos()">Limpar datas</span>
+          </div>
           <div class="pills" id="pd-pills"></div>
           <div class="tb-wrap"><table class="tb">
             <thead><tr><th>Pacote</th><th>Transportadora</th><th>Motorista</th><th>Status</th><th>Valor NF</th></tr></thead>
@@ -714,7 +719,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-11-2809</div>
+<div class="bld-fix">DELTADIS-BASE-13-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1379,20 +1384,56 @@ function abrirPedido(cod){
   if(REAL && p.tr==='anj') carregarHistoricoRastreio(p.cod);
 }
 /* busca no Worker a linha do tempo de eventos do 17TRACK pra esse pacote */
+function formatarQuandoRastreio(iso){
+  var m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if(!m) return iso||'';
+  return m[3]+'/'+m[2]+' '+m[4]+':'+m[5];
+}
+function montarTimelineRastreio(eventos){
+  var h='', i, e, ultimo=eventos.length-1;
+  for(i=0;i<eventos.length;i++){ e=eventos[i];
+    h+='<div style="display:flex;gap:10px">'+
+         '<div style="display:flex;flex-direction:column;align-items:center;width:10px">'+
+           '<div style="width:9px;height:9px;border-radius:50%;background:'+(i===0?'var(--blue)':'var(--s3)')+';flex-shrink:0;margin-top:5px"></div>'+
+           (i<ultimo?'<div style="flex:1;width:2px;background:var(--s3);margin-top:2px"></div>':'')+
+         '</div>'+
+         '<div style="flex:1;padding-bottom:14px">'+
+           '<div style="font-size:11px;color:var(--muted)">'+esc(formatarQuandoRastreio(e.quando))+'</div>'+
+           '<div style="font-size:13px;font-weight:600;margin-top:1px">'+esc(e.descricao||'')+'</div>'+
+           (e.local?('<div style="font-size:12px;color:var(--muted);margin-top:1px">'+esc(e.local)+'</div>'):'')+
+         '</div>'+
+       '</div>';
+  }
+  return h;
+}
+/* mostra só os eventos mais recentes (o fim da rota, que é o que importa no dia a dia); o resto fica atrás de "ver histórico completo" */
+var HIST_VISIVEL=4;
 function carregarHistoricoRastreio(cod){
   var alvo=el('hist-rastreio'); if(!alvo) return;
   fetch(DELTADIS_API+'/historico?key='+encodeURIComponent(DELTADIS_API_KEY)+'&numero='+encodeURIComponent(cod))
     .then(function(r){return r.json();})
     .then(function(d){
-      if(!alvo || alvo!==el('hist-rastreio')) return;
-      if(!d || !d.ok || !d.eventos || !d.eventos.length){ alvo.innerHTML='<div class="empty" style="padding:8px 0">Ainda sem histórico de rastreio pra esse pacote.</div>'; return; }
-      var h='', i, e;
-      for(i=0;i<d.eventos.length;i++){ e=d.eventos[i];
-        h+='<div class="sh-row" style="align-items:flex-start"><span class="k" style="min-width:150px;font-size:11px;color:var(--muted)">'+esc(e.quando||'')+'</span><span class="v">'+esc(e.descricao||'')+(e.local?(' · '+esc(e.local)):'')+'</span></div>';
+      var alvo2=el('hist-rastreio'); if(!alvo2) return;
+      if(!d || !d.ok || !d.eventos || !d.eventos.length){ alvo2.innerHTML='<div class="empty" style="padding:8px 0">Ainda sem histórico de rastreio pra esse pacote.</div>'; return; }
+      var eventos=d.eventos, h='';
+      if(eventos.length<=HIST_VISIVEL){
+        h=montarTimelineRastreio(eventos);
+      } else {
+        h='<div id="hist-recentes">'+montarTimelineRastreio(eventos.slice(0,HIST_VISIVEL))+'</div>';
+        h+='<div id="hist-mais-link"><span class="vertodos" onclick="expandirHistoricoCompleto()">+ ver histórico completo ('+eventos.length+' eventos)</span></div>';
+        h+='<div id="hist-completo" style="display:none"></div>';
+        window._histEventosCompletos=eventos;
       }
-      alvo.innerHTML=h;
+      alvo2.innerHTML=h;
     })
-    .catch(function(){ if(alvo===el('hist-rastreio')) alvo.innerHTML='<div class="empty" style="padding:8px 0">Não consegui buscar o histórico agora.</div>'; });
+    .catch(function(){ var alvo3=el('hist-rastreio'); if(alvo3) alvo3.innerHTML='<div class="empty" style="padding:8px 0">Não consegui buscar o histórico agora.</div>'; });
+}
+function expandirHistoricoCompleto(){
+  var alvoC=el('hist-completo'), link=el('hist-mais-link');
+  if(!alvoC || !window._histEventosCompletos) return;
+  alvoC.innerHTML=montarTimelineRastreio(window._histEventosCompletos.slice(HIST_VISIVEL));
+  alvoC.style.display='block';
+  if(link) link.style.display='none';
 }
 
 /* ══ pedidos ══ */
@@ -1404,14 +1445,21 @@ function pintarPedidos(){
   var tf=FILTRO_TR?transp(FILTRO_TR):null;
   el('pd-chip').innerHTML = tf ? ('<div class="chip-filtro">Transportadora: '+esc(tf.n)+' <span onclick="limparFiltroTransportadora()">✕</span></div>') : '';
 
-  var pills='',stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i;
-  for(i=0;i<stAll.length;i++) pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'</span>';
+  var dIni=(el('pd-data-ini')&&el('pd-data-ini').value)||'', dFim=(el('pd-data-fim')&&el('pd-data-fim').value)||'';
+  function passaData(p2){ if(!p2.dia) return !dIni && !dFim; if(dIni && p2.dia<dIni) return false; if(dFim && p2.dia>dFim) return false; return true; }
+
+  var stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i,j,cont={};
+  for(i=0;i<stAll.length;i++) cont[stAll[i]]=0;
+  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
+  var pills='';
+  for(i=0;i<stAll.length;i++) pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i][0].toUpperCase()+stAll[i].slice(1))+' ('+cont[stAll[i]]+')</span>';
   el('pd-pills').innerHTML=pills;
 
   var busca=(el('pd-busca').value||'').toLowerCase().trim(), h='', n=0, LIM=300;
   for(i=0;i<PEDIDOS.length;i++){var p=PEDIDOS[i];
     if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
+    if(!passaData(p)) continue;
     var m=motorista(p.mt);
     var alvo=(p.cod+' '+p.cliente+' '+(p.scan||'')+' '+(m?m.n:'')).toLowerCase();
     if(busca && alvo.indexOf(busca)<0) continue;
