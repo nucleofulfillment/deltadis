@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-46-2809</p>
+      <p class="bld">DELTADIS-BASE-47-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-46-2809</div>
+<div class="bld-fix">DELTADIS-BASE-47-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -976,6 +976,8 @@ var EXTRATO=[
    ══════════════════════════════════════════════════════════ */
 var REAL=true;
 var CICLOS=[];   /* regras de ciclo de repasse (Configurações): {id,grupo:'todos'|id do grupo,modo:'auto'|'manual',tipo,dia,prazo} */
+var RASTREADOS={};   /* códigos já registrados no rastreio automático (só pacotes com problema entram) */
+var RASTREIO_DIAS=2;   /* pacote não entregue há mais de N dias entra no rastreio */
 var GRUPOS=[];   /* grupos de motoristas: {id,nome,ids:[id do motorista]} — base pra regras/repasses por grupo no futuro */
 var AREAS=[];   /* áreas de entrega: {nome,valor} por nome  ou  {ini,fim,valor} por faixa de CEP */
 var PRECOS={};   /* id da transportadora → {recebe: R$ por pacote que ela paga ao ponto, paga: R$ por pacote pago ao motorista} */
@@ -1016,7 +1018,7 @@ function salvarLocal(cb){
   var o;
   if(REAL){
     var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null]); }
-    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS};
+    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
   idbGravar(o,function(ok){ if(cb) cb(ok); });
@@ -1027,6 +1029,7 @@ function aplicarSalvo(d){
   if(d.precos) PRECOS=d.precos;
   if(d.areas) AREAS=d.areas;
   if(d.grupos) GRUPOS=d.grupos;
+  if(d.rast){ RASTREADOS={}; d.rast.forEach(function(c){ RASTREADOS[c]=1; }); }
   if(d.ciclos) CICLOS=d.ciclos; else if(d.ciclo && d.ciclo.modo) CICLOS=[{id:'c0',grupo:'todos',modo:d.ciclo.modo,tipo:d.ciclo.tipo,dia:d.ciclo.dia,prazo:d.ciclo.prazo}];
   if((d.pedidos||d.pc) && d.motoristas){
     if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
@@ -1201,23 +1204,39 @@ function importarPlanilha(linhas,c){
    ══════════════════════════════════════════════════════════ */
 var DELTADIS_API='https://deltadis-api.iliveyou.com.br';
 var DELTADIS_API_KEY='deltadis2026';
-/* manda os códigos novos/atualizados da Anjun pro 17TRACK (via Worker) registrar o rastreio */
-function registrarAnjunNoWorker(codigos){
-  if(!codigos || !codigos.length) return;
-  fetch(DELTADIS_API+'/registrar?key='+encodeURIComponent(DELTADIS_API_KEY),{
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({codigos:codigos})
-  }).then(function(r){return r.json();}).then(function(d){
-    if(!d || !d.ok) aviso('A planilha foi importada normalmente, mas não consegui ligar o rastreio automático desses pacotes agora.');
-  }).catch(function(){
-    aviso('A planilha foi importada normalmente, mas não consegui falar com o serviço de rastreio automático agora.');
-  });
+/* rastreio automático só pros pacotes com problema (não gasta com o que foi entregue no mesmo dia):
+   tentativa 1/2/3, devolvido, extraviado, ou não entregue há mais de RASTREIO_DIAS dias. Vale pra Anjun e J&T. */
+function precisaRastrear(p){
+  if(p.st==='entregue' || RASTREADOS[p.cod]) return false;
+  if(ehTentativa(p.st) || p.st==='devolvido' || p.st==='extraviado') return true;
+  return !!(p.dia && p.dia<=addDiasISO(hojeISO(),-RASTREIO_DIAS));
 }
-/* pergunta pro Worker o status mais recente dos pacotes da Anjun que ainda estão em aberto */
+function registrarProblemas(cb){
+  var lista=[], i;
+  for(i=0;i<PEDIDOS.length;i++) if(precisaRastrear(PEDIDOS[i])) lista.push(PEDIDOS[i].cod);
+  if(!lista.length){ if(cb) cb(0); return; }
+  var pos=0, total=0;
+  function proxima(){
+    if(pos>=lista.length){ salvarLocal(); if(cb) cb(total); return; }
+    var lote=lista.slice(pos,pos+200); pos+=200;
+    fetch(DELTADIS_API+'/registrar?key='+encodeURIComponent(DELTADIS_API_KEY),{
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({codigos:lote})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(d && d.ok){ lote.forEach(function(c){ RASTREADOS[c]=1; }); total+=lote.length; proxima(); }
+      else { aviso('A planilha foi importada normalmente, mas não consegui ligar o rastreio automático dos pacotes com problema agora.'); if(cb) cb(total); }
+    }).catch(function(){
+      aviso('A planilha foi importada normalmente, mas não consegui falar com o serviço de rastreio automático agora.'); if(cb) cb(total);
+    });
+  }
+  proxima();
+}
+function ordemStatus(st){ if(st==='entregue'||st==='devolvido'||st==='extraviado') return 3; if(ehTentativa(st)) return 2; if(st==='em rota') return 1; return 0; }
+/* pergunta pro Worker o status mais recente dos pacotes em acompanhamento (Anjun em aberto + os que entraram por problema) */
 function sincronizarAnjun(cb){
   var codigos=[], i, p;
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
-    if(p.tr==='anj' && p.st!=='entregue' && p.st!=='devolvido' && p.st!=='extraviado') codigos.push(p.cod);
+    if(p.st==='entregue' || p.st==='devolvido' || p.st==='extraviado') continue;
+    if(p.tr==='anj' || RASTREADOS[p.cod]) codigos.push(p.cod);
   }
   if(!codigos.length){ if(cb) cb(0); return; }
   fetch(DELTADIS_API+'/status?key='+encodeURIComponent(DELTADIS_API_KEY),{
@@ -1228,7 +1247,10 @@ function sincronizarAnjun(cb){
     if(d && d.ok && d.status){
       for(j=0;j<PEDIDOS.length;j++) idx[PEDIDOS[j].cod]=PEDIDOS[j];
       for(var cod in d.status){ var p2=idx[cod], v=d.status[cod];
-        if(p2 && v && v.st && v.st!==p2.st){ p2.st=v.st; mudou++; }
+        /* só avança (nunca volta): o Worker guarda "coletado" como padrão enquanto o 17TRACK ainda não respondeu */
+        if(p2 && v && v.st && v.st!==p2.st && ordemStatus(v.st)>ordemStatus(p2.st)){
+          if(p2.tr==='jt' && ordemStatus(v.st)<3) continue;   /* J&T: a planilha manda; o rastreio só fecha entregue/devolvido/extraviado */
+          p2.st=v.st; mudou++; }
       }
       if(mudou){ recalcularReal(); salvarLocal(); pintarIndicadores(); pintarDashboard(); pintarPedidos(); pintarMotoristas(); pintarFinanceiro(); }
     }
@@ -1827,7 +1849,7 @@ function carregarHistoricoRastreio(cod){
     .then(function(r){return r.json();})
     .then(function(d){
       var alvo2=el('hist-rastreio'); if(!alvo2) return;
-      if(!d || !d.ok || !d.eventos || !d.eventos.length){ alvo2.innerHTML='<div class="empty" style="padding:8px 0">Ainda sem histórico de rastreio pra esse pacote.</div>'; return; }
+      if(!d || !d.ok || !d.eventos || !d.eventos.length){ alvo2.innerHTML='<div class="empty" style="padding:8px 0">'+(RASTREADOS[cod]?'Ainda sem histórico de rastreio pra esse pacote.':'Pacote fora do rastreio automático: só entra quando tem problema (tentativa, devolvido, extraviado) ou passa de '+RASTREIO_DIAS+' dias sem entrega.')+'</div>'; return; }
       var eventos=d.eventos, h='', idxPonto=-1, ii;
       for(ii=0; ii<eventos.length; ii++){ if(ehPontoDeColeta(eventos[ii].descricao)){ idxPonto=ii; break; } }
       var qtdVisivel = idxPonto>=0 ? (idxPonto+1) : HIST_VISIVEL;
@@ -1947,9 +1969,7 @@ function processarPlanilha(arquivo, ficar){
     if(!ficar) ir('pedidos');
     else if(FIN_LISTA_TIPO && el('sh-fin-lista').classList.contains('on')) abrirListaFin(FIN_LISTA_TIPO);
     aviso((r.tr==='jt'?'J&T: ':'Anjun: ')+r.novos+' pacotes novos, '+r.atualizados+' atualizados · '+MOTORISTAS.length+' motoristas'+(r.ignorados?(' · '+r.ignorados+' ainda não chegaram (fora)'):'')+(r.desconhecidos?(' · '+r.desconhecidos+' com status desconhecido'):'')+(r.gravou?'':' · ATENÇÃO: não coube guardar no navegador, ao recarregar precisa importar de novo'));
-    if(r.tr==='anj' && r.codigosNovos && r.codigosNovos.length){
-      registrarAnjunNoWorker(r.codigosNovos);
-    }
+    registrarProblemas();
   };
   rd.onerror=function(){ aviso('Não consegui ler o arquivo.'); };
   rd.readAsArrayBuffer(arquivo);
