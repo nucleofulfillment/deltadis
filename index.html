@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-77-2809</p>
+      <p class="bld">DELTADIS-BASE-78-2809</p>
     </div>
   </div>
 </div>
@@ -647,7 +647,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="cfgcard"><div class="ic">🔌</div><h4>Integrações com transportadoras</h4><p>Conecte a API de cada transportadora para receber a pré-lista de pacotes automaticamente.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">🏢</div><h4>Bases e pontos</h4><p>Cadastre mais de um ponto de distribuição sob a mesma conta e alterne entre eles.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><span class="badge b-wt">desativado</span></div>
-          <div class="cfgcard"><div class="ic">💰</div><h4>Custos Operacionais</h4><p>Combustível, manutenção da frota e demais custos fixos do ponto de distribuição.</p><span class="badge b-nu">em breve</span></div>
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirCustos()"><div class="ic">💰</div><h4>Custos Operacionais</h4><p>Quanto cada categoria pesa nos custos do ponto, em %. Os dados vêm do Fluxo de Caixa.</p><span class="badge b-in">abrir</span></div>
         </div>
       </section>
 
@@ -871,6 +871,20 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div style="flex-shrink:0;border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;background:var(--s1);border-radius:0 0 18px 18px"><button class="btn pri" id="pp-btn" onclick="executarPagarPix()">Pagar agora</button></div>
 </div>
 
+<div class="sheet wide" id="sh-custos">
+  <div class="sh-hd"><h3>Custos por categoria</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <input type="date" class="inp" id="cu-ini" title="De" style="width:150px" onchange="pintarCustos()"><span style="color:var(--muted);font-size:12px">até</span><input type="date" class="inp" id="cu-fim" title="Até" style="width:150px" onchange="pintarCustos()">
+      <select class="inp" id="cu-modo" style="width:190px" onchange="pintarCustos()"><option value="todas">Todas as saídas</option><option value="pagas">Só o que já foi pago</option></select>
+    </div>
+    <div id="cu-total" style="font-size:12.5px;color:var(--muted)">Total de custos</div>
+    <div id="cu-valor" style="font-size:26px;font-weight:800;margin:2px 0 14px"></div>
+    <div id="cu-barra" style="display:flex;gap:2px;height:14px;margin-bottom:18px"></div>
+    <div id="cu-lista"></div>
+  </div>
+</div>
+
 <div class="sheet wide" id="sh-fin-lista">
   <div class="sh-hd"><h3 id="fl-titulo">Pacotes</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
@@ -919,7 +933,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-77-2809</div>
+<div class="bld-fix">DELTADIS-BASE-78-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3154,6 +3168,37 @@ function fcDecidir(novo){
   for(i=0;i<sel.length;i++){ sel[i].status=novo; if(novo==='pendente'){ delete sel[i].decEm; } else { sel[i].decEm=qd; } }
   FC_SEL={}; if(REAL) salvarLocal(); pintarFluxoCaixa();
   aviso(sel.length+' lançamento(s): '+({autorizado:'autorizado(s)',recusado:'marcado(s) como não pagar',pendente:'de volta pra pendente'}[novo]));
+}
+/* ══ Custos por categoria (% de cada categoria nas saídas do Fluxo de Caixa) ══ */
+var CU_CORES=['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#4a3aa7'];   /* cor segue a categoria (ordem fixa), nunca o ranking */
+var CU_MAPA={};
+function corCategoria(cat){ var i=CU_MAPA[cat]; return (i!=null&&i<CU_CORES.length)?CU_CORES[i]:'#8b8b94'; }
+function mapearCoresCustos(nomes){ var m={}, usados={}, i, n, livre=0; for(i=0;i<CATEGORIAS_FC.length;i++){ m[CATEGORIAS_FC[i]]=i; usados[i]=1; }
+  nomes.slice().sort().forEach(function(n){ if(m[n]==null){ while(usados[livre]) livre++; m[n]=livre; usados[livre]=1; } }); CU_MAPA=m; }
+function abrirCustos(){
+  var a=el('cu-ini'), b=el('cu-fim'); if(!a.value) a.value=inicioMesISO(); if(!b.value) b.value=hojeISO();
+  pintarCustos(); abrir('sh-custos');
+}
+function pintarCustos(){
+  var ini=el('cu-ini').value, fim=el('cu-fim').value, so=el('cu-modo').value==='pagas', i, e, tot=0, por={}, cats=[], k;
+  for(i=0;i<EXTRATO.length;i++){ e=EXTRATO[i];
+    if(e.tp!=='out' || e.status==='recusado') continue;
+    if(so && e.status!=='pago') continue;
+    if((ini&&e.data<ini)||(fim&&e.data>fim)) continue;
+    k=e.categoria||'Sem categoria'; por[k]=(por[k]||0)+(Number(e.vl)||0); tot+=Number(e.vl)||0; }
+  for(k in por) cats.push({n:k,v:por[k]});
+  cats.sort(function(x,y){return y.v-x.v;});
+  mapearCoresCustos(cats.map(function(c){return c.n;}));
+  el('cu-valor').textContent=moeda(tot);
+  var bar='', h='', pc, tip;
+  for(i=0;i<cats.length;i++){ pc=tot>0?cats[i].v/tot*100:0; tip=cats[i].n+': '+moeda(cats[i].v)+' ('+pc.toFixed(1).replace('.',',')+'%)';
+    bar+='<div title="'+esc(tip)+'" style="flex:'+cats[i].v+' 1 0;min-width:3px;background:'+corCategoria(cats[i].n)+';border-radius:4px"></div>';
+    h+='<div title="'+esc(tip)+'" style="display:grid;grid-template-columns:150px 1fr 64px 110px;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border)">'+
+       '<span style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px"><span style="width:10px;height:10px;border-radius:3px;background:'+corCategoria(cats[i].n)+';flex-shrink:0"></span>'+esc(cats[i].n)+'</span>'+
+       '<span style="height:8px;background:var(--s3);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:'+pc.toFixed(1)+'%;background:'+corCategoria(cats[i].n)+';border-radius:4px"></span></span>'+
+       '<b style="text-align:right">'+pc.toFixed(1).replace('.',',')+'%</b><span style="text-align:right;color:var(--muted);font-size:12.5px">'+moeda(cats[i].v)+'</span></div>'; }
+  el('cu-barra').innerHTML=bar; el('cu-barra').style.display=cats.length?'flex':'none';
+  el('cu-lista').innerHTML=h||'<div class="empty">Nenhuma saída nesse período</div>';
 }
 /* ══ Pix real via Asaas (etapa C) — tudo passa pelo Worker; nenhuma chave do Asaas fica no site ══ */
 function cpfOk(n){
