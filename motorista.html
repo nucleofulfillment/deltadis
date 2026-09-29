@@ -292,7 +292,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-1-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-2-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -348,6 +348,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="card" style="margin-bottom:14px">
         <h4 style="margin:0 0 8px">Minhas rotas</h4>
         <div class="field"><label>Endereço de saída (base)</label><input class="inp" id="cfg-base" placeholder="Rua, número, cidade"></div>
+        <div class="field"><label>Máximo de paradas por rota (0 = sem limite)</label><input class="inp" id="cfg-max" type="number" min="0" max="500" step="1"></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
@@ -701,11 +702,13 @@ var RP_COR={linear:'#6D28D9',circular:'#EC4899'};
 var RP={on:false,mt:null,mtn:'',lista:[],total:0,itens:[],sel:{},fora:{},msg:'',res:null,pts:[],extra:[],opc:'linear',baseGeo:{},rota:null,mapa:null,mapaEl:null,mapaOk:false,marc:[],ajustou:false};
 try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
 function rpApi(caminho,opts){ return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();}); }
-function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:c.base||RP_BASE_PADRAO, pm:(c.pm==null||c.pm==='')?2:Number(c.pm)}; }
+function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:c.base||RP_BASE_PADRAO, pm:(c.pm==null||c.pm==='')?2:Number(c.pm), max:(c.max==null||c.max==='')?30:Number(c.max)}; }
 function rpSalvarCfg(){
   var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:b||RP_BASE_PADRAO,pm:pm})); }catch(e){}
+  var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30;
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:b||RP_BASE_PADRAO,pm:pm,max:mx})); }catch(e){}
+  rpAtualizar();
   aviso('Configurações salvas');
 }
 function rpKm(x){ return x.toFixed(1).replace('.',',')+' km'; }
@@ -735,7 +738,7 @@ function rpCardPronta(){
     return '<div class="card" style="margin-bottom:14px;background:var(--grad-arte);color:#fff;border:none">'+
       '<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85">Rota do painel</div>'+
       '<h3 style="margin:4px 0 2px;font-size:20px;color:#fff">Rota pronta para iniciar</h3>'+
-      '<p style="margin:0 0 14px;font-size:13px;opacity:.9">'+RP.total+' pacote'+(RP.total===1?'':'s')+' para você, '+esc((RP.mtn||'').split(' ')[0])+'</p>'+
+      '<p style="margin:0 0 14px;font-size:13px;opacity:.9">'+(rpCfg().max>0&&RP.total>rpCfg().max?rpCfg().max+' de '+RP.total+' pacotes':RP.total+' pacote'+(RP.total===1?'':'s'))+' para você, '+esc((RP.mtn||'').split(' ')[0])+'</p>'+
       '<button class="btn wide" style="background:#fff;color:var(--roxo)" onclick="rpIniciar()">Iniciar rota</button>'+
       '<div style="text-align:center;margin-top:10px"><span style="font-size:11.5px;opacity:.85;text-decoration:underline;cursor:pointer" onclick="rpTrocarMt()">Não sou '+esc((RP.mtn||'').split(' ')[0]||'eu')+'</span></div></div>';
   }
@@ -747,7 +750,9 @@ function rpBuscar(ini){
   rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n=10&todos=1').then(function(d){
     if(!d||!d.ok) throw new Error('falhou');
     var feitos=rpFeitos().cods, novos=d.itens.filter(function(p){ return feitos.indexOf(p.cod)<0; });
-    RP.itens=RP.itens.concat(novos); RP.msg='Localizando os endereços... '+Math.min(ini+10,d.total)+' de '+d.total; renderInicio();
+    var mx=rpCfg().max; RP.itens=RP.itens.concat(novos); if(mx>0&&RP.itens.length>mx) RP.itens=RP.itens.slice(0,mx);
+    if(mx>0&&RP.itens.length>=mx){ var sin0=RP.itens.filter(rpSinal); if(sin0.length){ EST='rp_conferir'; renderInicio(); } else rpCalcular(); return; }
+    RP.msg='Localizando os endereços... '+Math.min(ini+10,d.total)+' de '+d.total; renderInicio();
     if(d.proximo!=null) return rpBuscar(d.proximo);
     var sin=RP.itens.filter(rpSinal);
     if(sin.length){ EST='rp_conferir'; renderInicio(); } else rpCalcular();
@@ -1026,7 +1031,7 @@ function pintarConta(){
   el('cta-veiculo').textContent=MOTORISTA_LOGADO.modelo+' '+MOTORISTA_LOGADO.veicCor+' '+MOTORISTA_LOGADO.ano+' · '+MOTORISTA_LOGADO.placa;
   el('cta-cap').textContent=MOTORISTA_LOGADO.cap+' pacotes';
   el('cta-valor').textContent=moeda(MOTORISTA_LOGADO.valorPct)+' por pacote';
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm;
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max;
 }
 function salvarSenha(){
   var atual=(el('sn-atual').value||'').trim(), nova=(el('sn-nova').value||'').trim(), conf=(el('sn-conf').value||'').trim();
