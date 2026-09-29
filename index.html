@@ -416,7 +416,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-16-2809</p>
+      <p class="bld">DELTADIS-BASE-17-2809</p>
     </div>
   </div>
 </div>
@@ -724,7 +724,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-16-2809</div>
+<div class="bld-fix">DELTADIS-BASE-17-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1394,24 +1394,26 @@ function formatarQuandoRastreio(iso){
   if(!m) return iso||'';
   return m[3]+'/'+m[2]+' '+m[4]+':'+m[5];
 }
+/* identifica o evento de chegada no ponto de coleta/entrega (é o marco que importa no dia a dia) */
+function ehPontoDeColeta(descricao){ return /chegou ao ponto/i.test(descricao||''); }
 function montarTimelineRastreio(eventos){
-  var h='', i, e, ultimo=eventos.length-1;
-  for(i=0;i<eventos.length;i++){ e=eventos[i];
+  var h='', i, e, ultimo=eventos.length-1, ehPonto;
+  for(i=0;i<eventos.length;i++){ e=eventos[i]; ehPonto=ehPontoDeColeta(e.descricao);
     h+='<div style="display:flex;gap:10px">'+
          '<div style="display:flex;flex-direction:column;align-items:center;width:10px">'+
-           '<div style="width:9px;height:9px;border-radius:50%;background:'+(i===0?'var(--blue)':'var(--s3)')+';flex-shrink:0;margin-top:5px"></div>'+
+           '<div style="width:9px;height:9px;border-radius:50%;background:'+(ehPonto?'var(--roxo)':(i===0?'var(--blue)':'var(--s3)'))+';flex-shrink:0;margin-top:5px"></div>'+
            (i<ultimo?'<div style="flex:1;width:2px;background:var(--s3);margin-top:2px"></div>':'')+
          '</div>'+
          '<div style="flex:1;padding-bottom:14px">'+
            '<div style="font-size:11px;color:var(--muted)">'+esc(formatarQuandoRastreio(e.quando))+'</div>'+
-           '<div style="font-size:13px;font-weight:600;margin-top:1px">'+esc(e.descricao||'')+'</div>'+
+           '<div style="font-size:13px;font-weight:600;margin-top:1px">'+(ehPonto?'🏭 ':'')+esc(e.descricao||'')+(ehPonto?' <span style="font-size:10px;font-weight:700;color:var(--roxo);background:#F3E8FF;border-radius:6px;padding:1px 6px;margin-left:2px;vertical-align:middle;white-space:nowrap">ponto de coleta</span>':'')+'</div>'+
            (e.local?('<div style="font-size:12px;color:var(--muted);margin-top:1px">'+esc(e.local)+'</div>'):'')+
          '</div>'+
        '</div>';
   }
   return h;
 }
-/* mostra só os eventos mais recentes (o fim da rota, que é o que importa no dia a dia); o resto fica atrás de "ver histórico completo" */
+/* mostra por padrão a partir da chegada no ponto de coleta (é o que importa no dia a dia); se não achar esse marco, cai pra um número fixo de eventos recentes. O resto fica atrás de "ver histórico completo" */
 var HIST_VISIVEL=4;
 function carregarHistoricoRastreio(cod){
   var alvo=el('hist-rastreio'); if(!alvo) return;
@@ -1420,14 +1422,17 @@ function carregarHistoricoRastreio(cod){
     .then(function(d){
       var alvo2=el('hist-rastreio'); if(!alvo2) return;
       if(!d || !d.ok || !d.eventos || !d.eventos.length){ alvo2.innerHTML='<div class="empty" style="padding:8px 0">Ainda sem histórico de rastreio pra esse pacote.</div>'; return; }
-      var eventos=d.eventos, h='';
-      if(eventos.length<=HIST_VISIVEL){
+      var eventos=d.eventos, h='', idxPonto=-1, ii;
+      for(ii=0; ii<eventos.length; ii++){ if(ehPontoDeColeta(eventos[ii].descricao)){ idxPonto=ii; break; } }
+      var qtdVisivel = idxPonto>=0 ? (idxPonto+1) : HIST_VISIVEL;
+      if(eventos.length<=qtdVisivel){
         h=montarTimelineRastreio(eventos);
       } else {
-        h='<div id="hist-recentes">'+montarTimelineRastreio(eventos.slice(0,HIST_VISIVEL))+'</div>';
+        h='<div id="hist-recentes">'+montarTimelineRastreio(eventos.slice(0,qtdVisivel))+'</div>';
         h+='<div id="hist-mais-link"><span class="vertodos" onclick="expandirHistoricoCompleto()">+ ver histórico completo ('+eventos.length+' eventos)</span></div>';
         h+='<div id="hist-completo" style="display:none"></div>';
         window._histEventosCompletos=eventos;
+        window._histQtdVisivel=qtdVisivel;
       }
       alvo2.innerHTML=h;
     })
@@ -1436,7 +1441,7 @@ function carregarHistoricoRastreio(cod){
 function expandirHistoricoCompleto(){
   var alvoC=el('hist-completo'), link=el('hist-mais-link');
   if(!alvoC || !window._histEventosCompletos) return;
-  alvoC.innerHTML=montarTimelineRastreio(window._histEventosCompletos.slice(HIST_VISIVEL));
+  alvoC.innerHTML=montarTimelineRastreio(window._histEventosCompletos.slice(window._histQtdVisivel||HIST_VISIVEL));
   alvoC.style.display='block';
   if(link) link.style.display='none';
 }
