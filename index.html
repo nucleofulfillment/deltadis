@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-40-2809</p>
+      <p class="bld">DELTADIS-BASE-41-2809</p>
     </div>
   </div>
 </div>
@@ -669,6 +669,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Telefone</label><input class="inp" id="nm-tel" placeholder="(47) 9 0000-0000"></div>
       <div class="field"><label>Chave PIX</label><input class="inp" id="nm-pix" placeholder="CPF, e-mail, telefone..."></div>
     </div>
+    <div class="field"><label>E-mail</label><input class="inp" id="nm-email" type="email" placeholder="email@exemplo.com"></div>
     <div class="field"><label>Região de atuação</label><input class="inp" id="nm-regiao" placeholder="Ex: Centro">
       <div style="font-size:11px;color:var(--muted);margin-top:4px">Só pra localizar no mapa. O valor pago por região/CEP fica na ficha, depois de salvar.</div>
     </div>
@@ -686,7 +687,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Rua</label><input class="inp" id="nm-end-rua" placeholder="Rua"></div>
       <div class="field"><label>Número</label><input class="inp" id="nm-end-num" placeholder="Nº"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="field"><label>Complemento</label><input class="inp" id="nm-end-comp" placeholder="Apto, casa..."></div>
       <div class="field"><label>Bairro</label><input class="inp" id="nm-end-bairro" placeholder="Bairro"></div>
       <div class="field"><label>Cidade</label><input class="inp" id="nm-end-cidade" placeholder="Cidade"></div>
     </div>
@@ -879,7 +881,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-40-2809</div>
+<div class="bld-fix">DELTADIS-BASE-41-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2294,7 +2296,7 @@ function buscarCepMot(){
 }
 function abrirNovoMotorista(id){
   CEP_ULT=''; if(el('nm-cep-msg'))el('nm-cep-msg').textContent='';
-  var ids=['nm-nome','nm-tel','nm-pix','nm-regiao','nm-modelo','nm-cor','nm-ano','nm-placa','nm-cap','nm-end-rua','nm-end-num','nm-end-bairro','nm-end-cidade','nm-end-cep','nm-doc-obs'],i;
+  var ids=['nm-nome','nm-tel','nm-pix','nm-email','nm-end-comp','nm-regiao','nm-modelo','nm-cor','nm-ano','nm-placa','nm-cap','nm-end-rua','nm-end-num','nm-end-bairro','nm-end-cidade','nm-end-cep','nm-doc-obs'],i;
   for(i=0;i<ids.length;i++){ var e=el(ids[i]); if(e) e.value=''; }
   NM_FOTO_BASE64=null; NM_DOCUMENTOS=[]; NM_DOC_ARQ_TEMP=null;
   var pv=el('nm-foto-preview'); if(pv){ pv.style.display='none'; pv.src=''; }
@@ -2308,7 +2310,7 @@ function abrirNovoMotorista(id){
     el('nm-titulo').textContent='Editar motorista';
     el('nm-salvar-btn').textContent='Salvar alterações';
     el('nm-voltar-btn').textContent='Voltar';
-    el('nm-nome').value=m.n||''; el('nm-tel').value=(m.tel&&m.tel!=='—')?m.tel:''; el('nm-pix').value=m.pix||'';
+    el('nm-nome').value=m.n||''; el('nm-tel').value=(m.tel&&m.tel!=='—')?m.tel:''; el('nm-pix').value=m.pix||''; el('nm-email').value=m.email||''; el('nm-end-comp').value=m.enderecoComplemento||'';
     el('nm-regiao').value=(m.regiao&&m.regiao!=='—')?m.regiao:'';
     el('nm-modelo').value=(m.modelo&&m.modelo!=='—')?m.modelo:''; el('nm-cor').value=(m.veicCor&&m.veicCor!=='—')?m.veicCor:'';
     el('nm-ano').value=(m.ano&&m.ano!=='—')?m.ano:''; el('nm-placa').value=m.placa||'';
@@ -2338,7 +2340,7 @@ function salvarNovoMotorista(){
     var m=motorista(NM_EDITANDO);
     if(!m){ NM_EDITANDO=null; fecharTudo(); return; }
     m.n=nome; m.ini=iniciaisNome(nome);
-    m.tel=(el('nm-tel').value||'—').trim()||'—'; m.pix=(el('nm-pix').value||'').trim();
+    m.tel=(el('nm-tel').value||'—').trim()||'—'; m.pix=(el('nm-pix').value||'').trim(); m.email=(el('nm-email').value||'').trim(); m.enderecoComplemento=(el('nm-end-comp').value||'').trim();
     m.regiao=(el('nm-regiao').value||'—').trim()||'—';
     m.modelo=(el('nm-modelo').value||'—').trim()||'—'; m.veicCor=(el('nm-cor').value||'—').trim()||'—';
     m.ano=(el('nm-ano').value||'—').trim()||'—'; m.placa=(el('nm-placa').value||'').trim();
@@ -2365,6 +2367,7 @@ function salvarNovoMotorista(){
     enderecoRua: (el('nm-end-rua').value||'').trim(), enderecoNumero: (el('nm-end-num').value||'').trim(), enderecoBairro: (el('nm-end-bairro').value||'').trim(),
     enderecoCidade: (el('nm-end-cidade').value||'').trim(), enderecoCep: (el('nm-end-cep').value||'').trim(),
     documentos: NM_DOCUMENTOS.slice(),
+    email: (el('nm-email').value||'').trim(), enderecoComplemento: (el('nm-end-comp').value||'').trim(),
     tel: (el('nm-tel').value||'—').trim(), st:'na base', local:'Aguardando primeira rota',
     doc: NM_DOCUMENTOS.length?(NM_DOCUMENTOS.length+' documento(s)'):'a preencher', contrato: el('nm-contrato').value||'pendente', entregues:0, devolvidos:0, extraviados:0
   };
@@ -2500,7 +2503,7 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Veículo</span><span class="v">'+(m.modelo?(esc(m.modelo)+' '+esc(m.veicCor)+' '+esc(m.ano)+(m.placa?(' · '+esc(m.placa)):'')):'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Capacidade</span><span class="v">'+(m.cap?m.cap+' kg':'—')+'</span></div>';
   if(m.pix) h+='<div class="sh-row"><span class="k">Chave PIX</span><span class="v">'+esc(m.pix)+'</span></div>';
-  if(m.enderecoRua||m.enderecoBairro) h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc([(m.enderecoRua||'')+(m.enderecoNumero?', '+m.enderecoNumero:''),m.enderecoBairro,m.enderecoCidade,m.enderecoCep].filter(Boolean).join(' — '))+'</span></div>';
+  if(m.enderecoRua||m.enderecoBairro) h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc([(m.enderecoRua||'')+(m.enderecoNumero?', '+m.enderecoNumero:'')+(m.enderecoComplemento?' ('+m.enderecoComplemento+')':''),m.enderecoBairro,m.enderecoCidade,m.enderecoCep].filter(Boolean).join(' — '))+'</span></div>';
   if(REAL){
     var rsm=resumoFinanceiro().porMot[m.id]||{ent:0,val:0};
     if(m.logins && m.logins.jt) h+='<div class="sh-row"><span class="k">Nome na J&amp;T</span><span class="v">'+esc(m.logins.jt)+'</span></div>';
@@ -2509,6 +2512,7 @@ function abrirMotorista(id){
     h+='<div class="sh-row"><span class="k">A repassar (entregues × valor)</span><span class="v">'+moeda(rsm.val)+'</span></div>';
   }
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
+  if(m.email) h+='<div class="sh-row"><span class="k">E-mail</span><span class="v">'+esc(m.email)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Documentos</span><span class="v">'+esc(m.doc)+'</span></div>';
   var gm=[], gi; for(gi=0;gi<GRUPOS.length;gi++) if(GRUPOS[gi].ids.indexOf(m.id)>=0) gm.push(GRUPOS[gi].nome);
   if(gm.length) h+='<div class="sh-row"><span class="k">Grupos</span><span class="v">'+esc(gm.join(', '))+'</span></div>';
