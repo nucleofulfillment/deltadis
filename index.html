@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-68-2809</p>
+      <p class="bld">DELTADIS-BASE-69-2809</p>
     </div>
   </div>
 </div>
@@ -740,6 +740,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     </div>
     <div class="field"><label>Valor (R$)</label><input class="inp" id="lc-valor" placeholder="0,00"></div>
     <div class="field"><label>Descrição</label><input class="inp" id="lc-descricao" placeholder="Ex: Aluguel do galpão"></div>
+    <div class="field" id="lc-pix-box"><label>Chave Pix de quem vai receber (opcional)</label><input class="inp" id="lc-pix" placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória" autocomplete="off"></div>
     <div class="field"><label>Data de vencimento</label><input class="inp" type="date" id="lc-data"></div>
     <div class="field" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="lc-pago"><label style="margin:0">Pago</label></div>
     <div class="field" id="lc-rec-box" style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="lc-recorrente"><label style="margin:0">Recorrente mensal (12 meses)</label></div>
@@ -903,7 +904,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-68-2809</div>
+<div class="bld-fix">DELTADIS-BASE-69-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3105,7 +3106,7 @@ function pintarFluxoCaixa(){
   var h='', nSel=0, tSel=0, nSelecionaveis=0;
   for(i=0;i<lista.length;i++){var e=lista[i], ok=fcSelecionavel(e); if(ok) nSelecionaveis++; if(ok && FC_SEL[e.id]){ nSel++; tSel+=Number(e.vl)||0; }
     h+='<tr><td>'+(ok?('<input type="checkbox" '+(FC_SEL[e.id]?'checked ':'')+'onchange="fcMarcar('+e.id+',this.checked)">'):'')+'</td><td>'+dataBR(e.data)+'</td>'+
-       '<td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria)+'</span></td>'+
+       '<td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria)+'</span>'+(e.pix?(' <span style="font-size:11px;color:var(--muted)">Pix: '+esc(e.pix)+'</span>'):'')+'</td>'+
        '<td style="font-weight:800;color:'+(e.tp==='in'?'var(--green)':'var(--red)')+'">'+(e.tp==='in'?'+ ':'- ')+moeda(e.vl)+'</td>'+
        '<td>'+badgeStatus(e.status)+(e.decEm?('<br><span style="font-size:10.5px;color:var(--muted)">'+esc(e.decEm)+'</span>'):'')+'</td>'+
        '<td><div class="fc-acoes">'+
@@ -3127,7 +3128,7 @@ function duplicarLancamento(id){
   var e=null,i; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id===id) e=EXTRATO[i];
   if(!e) return;
   var maxId=0; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id>maxId) maxId=EXTRATO[i].id;
-  EXTRATO.push({id:maxId+1, tp:e.tp, tt:e.tt+' (cópia)', categoria:e.categoria, data:e.data, vl:e.vl, status:e.status});
+  EXTRATO.push({id:maxId+1, tp:e.tp, tt:e.tt+' (cópia)', categoria:e.categoria, data:e.data, vl:e.vl, status:e.status, pix:e.pix||''});
   pintarFluxoCaixa();
   if(REAL) salvarLocal();
   aviso('Lançamento duplicado');
@@ -3149,7 +3150,7 @@ function abrirNovoLancamento(){
   LC_EDIT=null; el('lc-titulo').textContent='Novo lançamento'; el('lc-rec-box').style.display='flex';
   LC_TIPO='out';
   preencherCategoriasLc();
-  el('lc-valor').value=''; el('lc-descricao').value='';
+  el('lc-valor').value=''; el('lc-descricao').value=''; el('lc-pix').value='';
   el('lc-data').value=new Date().toISOString().slice(0,10);
   el('lc-pago').checked=false; el('lc-recorrente').checked=false; el('lc-obs').value='';
   atualizarTipoLcVisual();
@@ -3161,17 +3162,18 @@ function abrirEditarLancamento(id){
   LC_EDIT=id; LC_TIPO=e.tp; preencherCategoriasLc();
   el('lc-titulo').textContent='Editar lançamento'; el('lc-rec-box').style.display='none';
   if(e.categoria && !Array.prototype.some.call(el('lc-categoria').options,function(o){return o.value===e.categoria;})) el('lc-categoria').innerHTML+='<option value="'+esc(e.categoria)+'">'+esc(e.categoria)+'</option>';
-  el('lc-categoria').value=e.categoria; el('lc-valor').value=String(e.vl).replace('.',','); el('lc-descricao').value=e.tt; el('lc-data').value=e.data;
+  el('lc-categoria').value=e.categoria; el('lc-valor').value=String(e.vl).replace('.',','); el('lc-descricao').value=e.tt; el('lc-pix').value=e.pix||''; el('lc-data').value=e.data;
   el('lc-pago').checked=(e.status==='pago'||e.status==='recebido'); el('lc-recorrente').checked=false; el('lc-obs').value='';
   atualizarTipoLcVisual(); abrir('sh-lancamento');
 }
 function selecionarTipoLc(t){ LC_TIPO=t; atualizarTipoLcVisual(); }
 function atualizarTipoLcVisual(){
+  var pb=el('lc-pix-box'); if(pb) pb.style.display=(LC_TIPO==='out')?'block':'none';
   el('lc-tipo-out').className='btn '+(LC_TIPO==='out'?'pri':'sec');
   el('lc-tipo-in').className='btn '+(LC_TIPO==='in'?'pri':'sec');
 }
 function limparLancamento(){
-  el('lc-valor').value=''; el('lc-descricao').value=''; el('lc-obs').value='';
+  el('lc-valor').value=''; el('lc-descricao').value=''; el('lc-obs').value=''; el('lc-pix').value='';
   el('lc-pago').checked=false; el('lc-recorrente').checked=false;
 }
 function salvarLancamento(){
@@ -3180,7 +3182,7 @@ function salvarLancamento(){
   if(!desc || !valor){ aviso('Preencha descrição e valor'); return; }
   if(LC_EDIT){
     var ed=null,q; for(q=0;q<EXTRATO.length;q++) if(EXTRATO[q].id===LC_EDIT) ed=EXTRATO[q];
-    if(ed){ ed.tp=LC_TIPO; ed.tt=desc; ed.categoria=el('lc-categoria').value; ed.data=el('lc-data').value||ed.data; ed.vl=valor; ed.status=el('lc-pago').checked?(LC_TIPO==='in'?'recebido':'pago'):((LC_TIPO==='out'&&(ed.status==='autorizado'||ed.status==='recusado'))?ed.status:'pendente'); if(el('lc-pago').checked) delete ed.decEm; }
+    if(ed){ ed.pix=(LC_TIPO==='out')?(el('lc-pix').value||'').trim():''; ed.tp=LC_TIPO; ed.tt=desc; ed.categoria=el('lc-categoria').value; ed.data=el('lc-data').value||ed.data; ed.vl=valor; ed.status=el('lc-pago').checked?(LC_TIPO==='in'?'recebido':'pago'):((LC_TIPO==='out'&&(ed.status==='autorizado'||ed.status==='recusado'))?ed.status:'pendente'); if(el('lc-pago').checked) delete ed.decEm; }
     LC_EDIT=null; if(REAL) salvarLocal(); fecharTudo(); pintarFinanceiro(); aviso('Lançamento atualizado!'); return;
   }
   var maxId=0,i; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id>maxId) maxId=EXTRATO[i].id;
@@ -3190,12 +3192,13 @@ function salvarLancamento(){
   var categoria=el('lc-categoria').value;
   var recorrente=el('lc-recorrente').checked;
   var nextId=maxId+1;
-  EXTRATO.push({id:nextId++, tp:LC_TIPO, tt:desc, categoria:categoria, data:dataBase, vl:valor, status:status});
+  var pixNv=(LC_TIPO==='out')?(el('lc-pix').value||'').trim():'';
+  EXTRATO.push({id:nextId++, tp:LC_TIPO, tt:desc, categoria:categoria, data:dataBase, vl:valor, status:status, pix:pixNv});
   if(recorrente){
     var base=new Date(dataBase+'T00:00:00');
     for(var k=1;k<12;k++){
       var dd=new Date(base); dd.setMonth(dd.getMonth()+k);
-      EXTRATO.push({id:nextId++, tp:LC_TIPO, tt:desc+' (recorrente)', categoria:categoria, data:dd.toISOString().slice(0,10), vl:valor, status:'pendente'});
+      EXTRATO.push({id:nextId++, tp:LC_TIPO, tt:desc+' (recorrente)', categoria:categoria, data:dd.toISOString().slice(0,10), vl:valor, status:'pendente', pix:pixNv});
     }
   }
   if(REAL) salvarLocal();
