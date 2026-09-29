@@ -311,6 +311,9 @@ a{color:inherit}
 .sh-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
 .sh-row .k{color:var(--muted);font-weight:600}
 .sh-row .v{font-weight:700;text-align:right}
+.cp{display:inline-block;vertical-align:middle;margin-left:6px;padding:2px;cursor:pointer;color:var(--muted);line-height:0;border-radius:6px}
+.cp:hover{color:var(--primary,#5b3fd1);background:rgba(120,90,220,.12)}
+.cp svg{width:14px;height:14px}
 
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--text);color:#fff;padding:11px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:.2s;z-index:100;pointer-events:none}
 .toast.on{opacity:1;transform:translate(-50%,0)}
@@ -432,7 +435,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-58-2809</p>
+      <p class="bld">DELTADIS-BASE-60-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +885,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-58-2809</div>
+<div class="bld-fix">DELTADIS-BASE-60-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1305,7 +1308,7 @@ function rastrearPacote(cod){
   fetch(DELTADIS_API+'/registrar?key='+encodeURIComponent(DELTADIS_API_KEY),{
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({codigos:[cod]})
   }).then(function(r){return r.json();}).then(function(d){
-    if(d && d.ok){ RASTREADOS[cod]=1; salvarLocal(); aviso('Pacote em acompanhamento! O histórico pode levar alguns minutos pra aparecer.'); abrirPedido(cod); }
+    if(d && d.ok){ RASTREADOS[cod]=1; salvarLocal(); aviso('Pacote em acompanhamento! Buscando o histórico...'); sincronizarAnjun(function(){ abrirPedido(cod); },cod); }
     else aviso('Não consegui ligar o rastreio agora.');
   }).catch(function(){ aviso('Não consegui falar com o serviço de rastreio agora.'); });
 }
@@ -1315,12 +1318,13 @@ function atualizarRastreioPacote(cod){
     if(mudou<0) aviso('Não consegui falar com o serviço de rastreio agora.');
     else aviso(mudou>0?'Rastreio atualizado!':'Consultado! Nada de novo por enquanto.');
     abrirPedido(cod);
-  });
+  },cod);
 }
 function ordemStatus(st){ if(st==='entregue'||st==='devolvido'||st==='extraviado') return 3; if(ehTentativa(st)) return 2; if(st==='em rota') return 1; return 0; }
 /* pergunta pro Worker o status mais recente dos pacotes em acompanhamento (Anjun em aberto + os que entraram por problema) */
-function sincronizarAnjun(cb){
+function sincronizarAnjun(cb,so){
   var codigos=[], i, p;
+  if(so) codigos.push(so); else
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
     if(p.st==='entregue' || p.st==='devolvido' || p.st==='extraviado') continue;
     if(p.tr==='anj' || RASTREADOS[p.cod]) codigos.push(p.cod);
@@ -1537,7 +1541,7 @@ function abrirDetalheFechamento(mid,fid){
   el('fc-valor').textContent=moeda(f.valor);
   el('fc-btn-pagar').style.display=f.status==='pago'?'none':'block';
   var h='',j,pd;
-  for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; h+='<tr><td>'+esc(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
+  for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; h+='<tr><td>'+esc(pd.cod)+cpBtn(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
   el('fc-linhas').innerHTML=h||'<tr><td colspan="3"><div class="empty">Sem pacotes</div></td></tr>';
   abrir('sh-fechamento');
 }
@@ -1736,7 +1740,7 @@ function pintarDashboard(){
   if(!probs.length) h='<div class="empty"><div class="em">✅</div><div>Nenhuma tratativa em aberto</div></div>';
   for(i=0;i<Math.min(probs.length,8);i++){var p=probs[i], t=transp(p.tr);
     h+='<div class="problema" onclick="ir(\'pedidos\')"><div class="ic">⚠</div>'+
-       '<div class="gr"><div class="tt">'+esc(p.cod)+(p.cliente?' · '+esc(p.cliente):'')+'</div>'+
+       '<div class="gr"><div class="tt">'+esc(p.cod)+cpBtn(p.cod)+(p.cliente?' · '+esc(p.cliente):'')+'</div>'+
        '<div class="dd">'+esc(t?t.n:'')+(p.bairro?' · '+esc(p.bairro):'')+(p.hora?' · entrada '+esc(p.hora):'')+'</div></div>'+badgeStatus(p.st)+'</div>';}
   el('db-problemas').innerHTML=h;
 
@@ -1876,11 +1880,20 @@ function pintarGraficoEvolucao(){
   el('db-grafico-total').textContent=total.toLocaleString('pt-BR')+' pacotes no período selecionado';
 }
 
+var CP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+var CP_OK='<svg viewBox="0 0 24 24" fill="none" stroke="#2e9e5b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+function cpBtn(cod){ return '<span class="cp" title="Copiar código" onclick="copiarCod(event,this,\''+esc(cod)+'\')">'+CP_SVG+'</span>'; }
+function copiarCod(ev,elx,cod){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+  var ok=function(){ if(elx){ elx.innerHTML=CP_OK; setTimeout(function(){ elx.innerHTML=CP_SVG; },1200); } aviso('Código copiado: '+cod); };
+  var fb=function(){ try{ var ta=document.createElement('textarea'); ta.value=cod; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok(); }catch(e){ aviso('Não consegui copiar.'); } };
+  try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cod).then(ok,fb); else fb(); }catch(e){ fb(); }
+}
 function abrirPedido(cod){
   var p=null,i; for(i=0;i<PEDIDOS.length;i++) if(PEDIDOS[i].cod===cod) p=PEDIDOS[i];
   if(!p) return;
   var t=transp(p.tr), m=motorista(p.mt);
-  el('pd-cod').textContent=p.cod;
+  el('pd-cod').innerHTML=esc(p.cod)+cpBtn(p.cod);
   var h='';
   h+='<div class="sh-row"><span class="k">Status</span><span class="v">'+badgeStatus(p.st)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Cliente</span><span class="v">'+esc(p.cliente||'—')+'</span></div>';
@@ -1892,7 +1905,7 @@ function abrirPedido(cod){
   h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc(p.bairro||'—')+((p.bairro && (!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11.5px;font-weight:600">⚠ '+(!p.num?'sem número — não dá pra roteirizar':'sem nome da rua — usar o CEP')+'</span>':'')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Valor da NF</span><span class="v">'+(p.vl==null?'—':moeda(p.vl))+'</span></div>';
   if(p.dia) h+='<div class="sh-row"><span class="k">Entrada no ponto</span><span class="v">'+dataBR(p.dia)+(p.hora?' '+esc(p.hora):'')+'</span></div>';
-  if(p.scan && p.scan!==p.cod) h+='<div class="sh-row"><span class="k">Código de escaneamento</span><span class="v">'+esc(p.scan)+'</span></div>';
+  if(p.scan && p.scan!==p.cod) h+='<div class="sh-row"><span class="k">Código de escaneamento</span><span class="v">'+esc(p.scan)+cpBtn(p.scan)+'</span></div>';
   if(p.obs) h+='<div class="sh-row"><span class="k">Observação</span><span class="v">'+esc(p.obs)+'</span></div>';
   h+='<div class="sh-row"><span class="k">1ª tentativa</span><span class="v">'+esc(p.t1||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">2ª tentativa</span><span class="v">'+esc(p.t2||'—')+'</span></div>';
@@ -2014,7 +2027,7 @@ function pintarPedidos(){
     if(busca && alvo.indexOf(busca)<0) continue;
     n++; if(n>LIM) continue;
     var t=transp(p.tr);
-    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b><br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
+    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b>'+cpBtn(p.cod)+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
        '<td>'+esc(t?t.n:'—')+'</td><td>'+esc(m?m.n:'sem motorista')+'</td><td>'+badgeStatus(p.st)+'</td><td>'+(p.vl==null?'—':moeda(p.vl))+'</td></tr>';}
   if(n>LIM) h+='<tr><td colspan="5"><div class="empty">Mostrando os primeiros '+LIM+' de '+n+' pacotes — use a busca ou os filtros para ver os outros</div></td></tr>';
   if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+'</div></td></tr>';
@@ -2686,7 +2699,7 @@ function abrirMotorista(id){
     else {
       h+='<div class="tb-wrap" style="margin-top:6px;max-height:260px;overflow:auto"><table class="tb"><tbody>';
       for(oi=0;oi<oc.length&&oi<100;oi++){ op=oc[oi];
-        h+='<tr style="cursor:pointer" onclick="fecharTudo();abrirPedido(\''+esc(op.cod)+'\')"><td><b>'+esc(op.cod)+'</b><br><span style="color:var(--muted);font-size:11.5px">'+esc(op.cliente||'')+'</span>'+((op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(op.obs)+'</span>':'')+'</td><td>'+badgeStatus(op.st)+'</td></tr>'; }
+        h+='<tr style="cursor:pointer" onclick="fecharTudo();abrirPedido(\''+esc(op.cod)+'\')"><td><b>'+esc(op.cod)+'</b>'+cpBtn(op.cod)+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(op.cliente||'')+'</span>'+((op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(op.obs)+'</span>':'')+'</td><td>'+badgeStatus(op.st)+'</td></tr>'; }
       h+='</tbody></table></div>';
       if(oc.length>100) h+='<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Mostrando 100 de '+oc.length+'</div>';
     }
@@ -2751,7 +2764,7 @@ function abrirListaFin(tipo){
     todas.push([p.cod,p.cliente||'—',m?m.n:'—',st,moeda(precoTransp(p.tr).recebe),moeda(m?valorMotorista(m,p):0)]); }
   for(i=0;i<n;i++){ p=lst[i]; m=p.mt?motorista(p.mt):null;
     st=(tipo==='repasse')?(p.fechId?'fechado':'a fechar'):p.st;
-    h+='<tr><td>'+esc(p.cod)+'</td><td>'+esc(p.cliente||'—')+'</td><td>'+esc(m?m.n:'—')+'</td><td>'+esc(st)+'</td><td>'+moeda(precoTransp(p.tr).recebe)+'</td><td>'+moeda(m?valorMotorista(m,p):0)+'</td></tr>';
+    h+='<tr><td>'+esc(p.cod)+cpBtn(p.cod)+'</td><td>'+esc(p.cliente||'—')+'</td><td>'+esc(m?m.n:'—')+'</td><td>'+esc(st)+'</td><td>'+moeda(precoTransp(p.tr).recebe)+'</td><td>'+moeda(m?valorMotorista(m,p):0)+'</td></tr>';
   }
   FIN_LISTA_DADOS={titulo:tit, info:'Financeiro', cols:['Código','Cliente','Motorista',(tipo==='repasse')?'Fechamento':'Status','Recebe','Repasse'], linhas:todas, resumo:lst.length+' pacote(s) · recebe '+moeda(tr)+' · repasse '+moeda(tp)};
   el('fl-titulo').textContent=tit;
