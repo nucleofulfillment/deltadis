@@ -261,6 +261,24 @@ a{color:inherit}
 .duo .saldo,.duo .kpi{margin-bottom:0}
 @media(max-width:760px){.duo{grid-template-columns:1fr}}
 .rp-mais{width:28px;height:28px;border-radius:50%;background:var(--s3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:800;font-size:17px;color:var(--roxo);flex:none}
+.sla-grid{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.sla-hero{background:var(--grad-arte);border-radius:var(--r);padding:20px 22px;color:#fff;box-shadow:var(--sh3);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sla-hero .lb{font-size:12px;opacity:.9;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.sla-hero .vl{font-size:30px;font-weight:800;margin-top:6px;line-height:1.1}
+.sla-hero .dl{font-size:12px;opacity:.9;margin-top:6px}
+.sla-clock{width:84px;height:84px;flex-shrink:0}
+.sla-hand{transform-origin:50px 50px;transition:transform 1.8s cubic-bezier(.22,.9,.25,1)}
+.sla-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh1)}
+.sla-card .lb{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
+.sla-card .vl{font-size:30px;font-weight:800;margin-top:6px;line-height:1.1}
+.sla-card .dl{font-size:12px;color:var(--muted);margin-top:6px}
+.sla-bar{height:6px;background:var(--s3);border-radius:4px;margin-top:12px;overflow:hidden}
+.sla-bar i{display:block;height:100%;width:0;border-radius:4px;transition:width 1.4s cubic-bezier(.22,.9,.25,1)}
+.sla-tb{overflow-x:auto}
+.sla-row{display:grid;grid-template-columns:minmax(140px,1.6fr) repeat(5,minmax(84px,1fr));gap:0 16px;align-items:center;padding:11px 4px;border-bottom:1px solid #EEEDF3;font-size:13px}
+.sla-row.h{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.3px;text-transform:uppercase;padding-top:4px}
+.sla-row:last-child{border-bottom:none}
+@media(max-width:900px){.sla-grid{grid-template-columns:1fr 1fr}.sla-hero{grid-column:1/-1}}
 .saldo{background:var(--grad-arte);border-radius:var(--r);padding:22px 24px;color:#fff;box-shadow:var(--sh3);margin-bottom:16px}
 .saldo .lb{font-size:12.5px;opacity:.9;font-weight:600}
 .saldo .vl{font-size:32px;font-weight:800;margin-top:6px}
@@ -438,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-79-2809</p>
+      <p class="bld">DELTADIS-BASE-80-2809</p>
     </div>
   </div>
 </div>
@@ -518,12 +536,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="pghd"><div><h1>Dashboard</h1></div></div>
         <div id="db-filtro"></div>
         <div class="kpis" id="db-kpis"></div>
-        <div class="card" id="db-sla" style="margin-bottom:20px"></div>
         <div class="card" style="margin-bottom:20px">
           <h3><span class="lft">Evolução de pedidos</span><span class="fc-filtros" id="db-grafico-filtros" style="margin-bottom:0"></span></h3>
           <div id="db-grafico-svg"></div>
           <div style="text-align:right;font-size:12px;color:var(--muted);margin-top:8px" id="db-grafico-total"></div>
         </div>
+        <div class="card" id="db-sla" style="margin-bottom:20px"></div>
         <div class="grid2">
           <div class="card">
             <h3><span class="lft" style="cursor:pointer" onclick="ir('pedidos')">Precisam de você <span class="n" id="pdv-n">0</span></span><span class="vertodos" onclick="ir('pedidos')">Ver todos</span></h3>
@@ -932,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-79-2809</div>
+<div class="bld-fix">DELTADIS-BASE-80-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1924,7 +1942,7 @@ function fmtDur(h){
 function statsSla(lst){
   var a=lst.slice().sort(function(x,y){return x-y;}), n=a.length, soma=0, i, d24=0, d48=0;
   for(i=0;i<n;i++){ soma+=a[i]; if(a[i]<=24) d24++; if(a[i]<=48) d48++; }
-  return {n:n, media:n?soma/n:0, mediana:n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0, p24:n?Math.round(d24/n*100):0, p48:n?Math.round(d48/n*100):0};
+  return {n:n, media:n?soma/n:0, mediana:n?(n%2?a[(n-1)/2]:(a[n/2-1]+a[n/2])/2):0, p24:n?Math.round(d24/n*100):0, p48:n?Math.round(d48/n*100):0, pmais:n?100-Math.round(d48/n*100):0};
 }
 function pintarSlaDash(){
   var alvo=el('db-sla'); if(!alvo) return;
@@ -1936,22 +1954,40 @@ function pintarSlaDash(){
   var cab='<h3><span class="lft">SLA de entrega'+(t?' · '+esc(t.n):' · consolidado')+'</span></h3>';
   if(!todas.length){ alvo.innerHTML=cab+'<div class="empty" style="padding:8px 0;font-size:12.5px">Sem dados ainda: o SLA usa pacotes entregues que tenham data e hora de entrada e de entrega na planilha.</div>'; return; }
   var st=statsSla(todas);
-  var kp=function(lb,vl,dl,cl){ return '<div class="kpi"><div class="lb '+(cl||'')+'">'+lb+'</div><div class="vl '+(cl?'v'+cl.slice(1):'')+'">'+vl+'</div><div class="dl">'+dl+'</div></div>'; };
-  var h2='<div class="kpis" style="margin-bottom:12px">'+
-    kp('Tempo médio',fmtDur(st.media),'da entrada até a entrega')+
-    kp('Mediana',fmtDur(st.mediana),'metade entrega mais rápido')+
-    kp('Em até 24h',st.p24+'%','dos entregues','cg')+
-    kp('Em até 48h',st.p48+'%','dos entregues','cg')+'</div>';
+  var cx=50, cy=50, tk='', a, x1, y1, x2, y2, big;
+  for(a=0;a<24;a++){ big=(a%6===0); var r1=big?36:40, r2=44, ang=a*15*Math.PI/180;
+    x1=cx+r1*Math.sin(ang); y1=cy-r1*Math.cos(ang); x2=cx+r2*Math.sin(ang); y2=cy-r2*Math.cos(ang);
+    tk+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#fff" stroke-width="'+(big?2.4:1.2)+'" stroke-linecap="round" opacity="'+(big?1:.6)+'"/>'; }
+  var clock='<svg class="sla-clock" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="rgba(255,255,255,.14)" stroke="#fff" stroke-width="2.5"/>'+tk+
+    '<line class="sla-hand" id="sla-hand" data-ang="'+Math.min(st.media/24*360,1440).toFixed(1)+'" x1="50" y1="50" x2="50" y2="20" stroke="#fff" stroke-width="3.6" stroke-linecap="round"/><circle cx="50" cy="50" r="4.5" fill="#fff"/></svg>';
+  var bar=function(pc,cor){ return '<div class="sla-bar"><i data-w="'+pc+'" style="background:'+cor+'"></i></div>'; };
+  var card=function(lb,vl,dl,cor,pc){ return '<div class="sla-card"><div class="lb">'+lb+'</div><div class="vl" style="color:'+cor+'">'+vl+'</div><div class="dl">'+dl+'</div>'+(pc!=null?bar(pc,cor):'')+'</div>'; };
+  var h2='<div class="sla-grid">'+
+    '<div class="sla-hero"><div><div class="lb">Tempo médio</div><div class="vl">'+fmtDur(st.media)+'</div><div class="dl">da entrada até a entrega</div></div>'+clock+'</div>'+
+    card('Mediana',fmtDur(st.mediana),'metade entrega mais rápido','var(--text)')+
+    card('Em até 24h',st.p24+'%','dos entregues','var(--green)',st.p24)+
+    card('Em até 48h',st.p48+'%','dos entregues · inclui as de 24h','var(--green)',st.p48)+
+    card('Acima de 48h',st.pmais+'%','dos entregues','var(--red)',st.pmais)+'</div>';
   var lin='';
   if(!DASH_TR){
     var ks=Object.keys(por).sort(function(a,b){return por[b].length-por[a].length;});
     if(ks.length>1){
-      lin='<div style="display:grid;grid-template-columns:1.4fr 0.6fr 0.9fr 0.7fr 0.7fr;gap:6px 10px;font-size:12.5px;align-items:center"><span style="color:var(--muted);font-size:11px;font-weight:700">TRANSPORTADORA</span><span style="color:var(--muted);font-size:11px;font-weight:700">PACOTES</span><span style="color:var(--muted);font-size:11px;font-weight:700">TEMPO MÉDIO</span><span style="color:var(--muted);font-size:11px;font-weight:700">ATÉ 24H</span><span style="color:var(--muted);font-size:11px;font-weight:700">ATÉ 48H</span>';
-      for(i=0;i<ks.length;i++){ var s2=statsSla(por[ks[i]]), tn=transp(ks[i]); lin+='<b>'+esc(tn?tn.n:ks[i])+'</b><span>'+s2.n+'</span><span>'+fmtDur(s2.media)+'</span><span>'+s2.p24+'%</span><span>'+s2.p48+'%</span>'; }
+      lin='<div class="sla-tb"><div class="sla-row h"><span>Transportadora</span><span>Pacotes</span><span>Tempo médio</span><span>Até 24h</span><span>Até 48h</span><span>Acima de 48h</span></div>';
+      for(i=0;i<ks.length;i++){ var s2=statsSla(por[ks[i]]), tn=transp(ks[i]); lin+='<div class="sla-row"><b>'+esc(tn?tn.n:ks[i])+'</b><span>'+s2.n+'</span><span>'+fmtDur(s2.media)+'</span><span>'+s2.p24+'%</span><span>'+s2.p48+'%</span><span>'+s2.pmais+'%</span></div>'; }
       lin+='</div>';
     }
   }
-  alvo.innerHTML=cab+h2+lin+'<div style="font-size:11.5px;color:var(--muted);margin-top:10px">Base: '+todas.length+' de '+ent+' entregues com data e hora dos dois lados. A entrada é a da planilha de cada transportadora (J&amp;T: saída pra entrega · Pichau: criação do pedido).</div>';
+  alvo.innerHTML=cab+h2+lin+'<div style="font-size:11.5px;color:var(--muted);margin-top:10px">Base: '+todas.length+' de '+ent+' entregues com data e hora dos dois lados. A entrada é a da planilha de cada transportadora (J&amp;T: saída pra entrega · Pichau: criação do pedido). Relógio: uma volta completa = 24h.</div>';
+  animarSla();
+}
+/* anima o ponteiro do relógio e as barrinhas até o valor */
+function animarSla(){
+  var h=el('sla-hand'), bs=document.querySelectorAll('#db-sla .sla-bar i');
+  if(!h) return;
+  window.requestAnimationFrame(function(){ window.requestAnimationFrame(function(){
+    var k; if(h) h.style.transform='rotate('+h.getAttribute('data-ang')+'deg)';
+    for(k=0;k<bs.length;k++) bs[k].style.width=bs[k].getAttribute('data-w')+'%';
+  }); });
 }
 function agregadoDash(){
   if(!DASH_TR) return DASH_AGG;
