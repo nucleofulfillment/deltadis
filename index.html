@@ -424,7 +424,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-30-2809</p>
+      <p class="bld">DELTADIS-BASE-31-2809</p>
     </div>
   </div>
 </div>
@@ -767,18 +767,18 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </div>
 
 <div class="sheet wide" id="sh-repasse">
-  <div class="sh-hd"><h3>Repasse — <span id="rp-nome"></span></h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirMotorista(RP_MOT_ATUAL)" title="Voltar à ficha do motorista">←</button><h3>Repasse — <span id="rp-nome"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <div class="kpis-sheet">
       <div class="kpi-mini"><div class="lb">Entregues</div><div class="vl" id="rp-ent-qtd">0</div><div class="pct" id="rp-ent-val">R$ 0,00</div></div>
-      <div class="kpi-mini"><div class="lb">Em rota (previsto)</div><div class="vl" id="rp-rota-qtd">0</div><div class="pct" id="rp-rota-val">R$ 0,00</div></div>
+      <div class="kpi-mini"><div class="lb">Previsto (base + rua)</div><div class="vl" id="rp-rota-qtd">0</div><div class="pct" id="rp-rota-val">R$ 0,00</div></div>
       <div class="kpi-mini"><div class="lb">Extraviados</div><div class="vl" id="rp-ext-qtd">0</div><div class="pct">não repassa</div></div>
     </div>
     <div class="sh-row" style="margin-top:14px"><span class="k">Saldo em aberto</span><span class="v" style="font-weight:800;font-size:16px" id="rp-saldo">R$ 0,00</span></div>
     <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
-      <input class="inp" placeholder="Ciclo de (ex: 01/09)" id="rp-ciclo-ini" style="width:120px">
-      <input class="inp" placeholder="até (ex: 07/09)" id="rp-ciclo-fim" style="width:120px">
-      <input class="inp" placeholder="Data de pagamento" id="rp-data-pg" style="width:140px">
+      <input class="inp" type="date" title="Ciclo de" id="rp-ciclo-ini" style="width:150px">
+      <input class="inp" type="date" title="Ciclo até" id="rp-ciclo-fim" style="width:150px">
+      <input class="inp" type="date" title="Data de pagamento" id="rp-data-pg" style="width:150px">
       <button class="btn pri" onclick="fecharCicloMotorista()">Fechar ciclo</button>
     </div>
     <p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Fechamento manual por enquanto — quando o Asaas estiver conectado, isso fecha e paga automático.</p>
@@ -787,7 +787,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 <div class="sheet wide" id="sh-fechamento">
-  <div class="sh-hd"><h3>Fechamento — <span id="fc-periodo"></span></h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirRepasseMotorista(FC_MOT_ATUAL)" title="Voltar ao repasse">←</button><h3>Fechamento — <span id="fc-periodo"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <div class="sh-row"><span class="k">Status</span><span class="v" id="fc-status"></span></div>
     <div class="sh-row"><span class="k">Data de pagamento</span><span class="v" id="fc-data"></span></div>
@@ -803,7 +803,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-30-2809</div>
+<div class="bld-fix">DELTADIS-BASE-31-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1229,7 +1229,7 @@ function adicionarAreaCep(){
 function resumoFinanceiro(){
   var out={receber:0, repasse:0, entregues:0, semMot:0, porMot:{}, rotaQtd:0, rotaReceber:0, rotaRepasse:0}, i, p, m, v, o;
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
-    if(p.st==='em rota' || ehTentativa(p.st)){   /* ainda na rua (mesmo em tentativa): valor previsto, entra quando for entregue */
+    if(p.st==='coletado' || p.st==='em rota' || ehTentativa(p.st)){   /* ainda não entregue (na base ou na rua): valor previsto, entra quando for entregue */
       out.rotaQtd++; out.rotaReceber+=Number(precoTransp(p.tr).recebe)||0;
       m=p.mt?motorista(p.mt):null;
       if(m){ v=valorMotorista(m,p); out.rotaRepasse+=v;
@@ -1273,11 +1273,13 @@ function abrirRepasseMotorista(id){
   pintarFechamentosMotorista(id);
   abrir('sh-repasse');
 }
+/* datas novas vêm do calendário (aaaa-mm-dd) e aparecem dd/mm/aaaa; texto antigo continua como estava */
+function dataBR(v){ var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v||'')); return m?(m[3]+'/'+m[2]+'/'+m[1]):(v||''); }
 function pintarFechamentosMotorista(id){
   var m=motorista(id); if(!m) return; m.fechamentos=m.fechamentos||[];
   var h='',i,f;
   for(i=m.fechamentos.length-1;i>=0;i--){ f=m.fechamentos[i];
-    h+='<div class="sh-row" style="cursor:pointer" onclick="abrirDetalheFechamento('+id+',\''+f.id+'\')"><span class="k">'+esc(f.cicloIni||'—')+' até '+esc(f.cicloFim||'—')+'</span><span class="v" style="display:flex;align-items:center;gap:10px"><b>'+moeda(f.valor)+'</b>'+badgeStatus(f.status==='pago'?'pago':'pendente')+'</span></div>';
+    h+='<div class="sh-row" style="cursor:pointer" onclick="abrirDetalheFechamento('+id+',\''+f.id+'\')"><span class="k">'+esc(dataBR(f.cicloIni)||'—')+' até '+esc(dataBR(f.cicloFim)||'—')+'</span><span class="v" style="display:flex;align-items:center;gap:10px"><b>'+moeda(f.valor)+'</b>'+badgeStatus(f.status==='pago'?'pago':'pendente')+'</span></div>';
   }
   el('rp-fechamentos').innerHTML=h||'<div class="empty">Nenhum fechamento ainda</div>';
 }
@@ -1301,9 +1303,9 @@ function abrirDetalheFechamento(mid,fid){
   var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===fid) f=m.fechamentos[i];
   if(!f) return;
   FC_MOT_ATUAL=mid; FC_ID_ATUAL=fid;
-  el('fc-periodo').textContent=(f.cicloIni||'—')+' até '+(f.cicloFim||'—');
+  el('fc-periodo').textContent=(dataBR(f.cicloIni)||'—')+' até '+(dataBR(f.cicloFim)||'—');
   el('fc-status').innerHTML=badgeStatus(f.status==='pago'?'pago':'pendente');
-  el('fc-data').textContent=f.dataPagamento||'—';
+  el('fc-data').textContent=dataBR(f.dataPagamento)||'—';
   el('fc-valor').textContent=moeda(f.valor);
   el('fc-btn-pagar').style.display=f.status==='pago'?'none':'block';
   var h='',j,pd;
@@ -1329,7 +1331,7 @@ function baixarPdfFechamento(){
   var htmlPg='<!doctype html><html><head><meta charset="utf-8"><title>Fechamento '+esc(m.n)+'</title>'+
     '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}</style></head>'+
     '<body><h1>Fechamento de repasse — '+esc(m.n)+'</h1>'+
-    '<p>Ciclo: '+esc(f.cicloIni||'—')+' até '+esc(f.cicloFim||'—')+' &nbsp;|&nbsp; Pagamento: '+esc(f.dataPagamento||'—')+' &nbsp;|&nbsp; Status: '+(f.status==='pago'?'Pago':'Pendente')+'</p>'+
+    '<p>Ciclo: '+esc(dataBR(f.cicloIni)||'—')+' até '+esc(dataBR(f.cicloFim)||'—')+' &nbsp;|&nbsp; Pagamento: '+esc(dataBR(f.dataPagamento)||'—')+' &nbsp;|&nbsp; Status: '+(f.status==='pago'?'Pago':'Pendente')+'</p>'+
     '<p><b>Valor total: '+moeda(f.valor)+'</b></p>'+
     '<table><thead><tr><th>Código</th><th>Cliente</th><th>Valor</th></tr></thead><tbody>'+linhas+'</tbody></table>'+
     '<script>window.onload=function(){window.print();}</'+'script></body></html>';
@@ -2167,7 +2169,7 @@ function pintarFinanceiroReal(){
   var rs=resumoFinanceiro(), i, h='', x, m, o, te=0, tv=0, tp=0;
   el('fin-resumo').innerHTML=
     '<div class="kpi"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(rs.receber)+'</div><div class="dl">'+rs.entregues+' entregues × valor de cada transportadora</div></div>'+
-    '<div class="kpi"><div class="lb cb">Em rota</div><div class="vl vb">'+moeda(rs.rotaReceber)+'</div><div class="dl">'+rs.rotaQtd+' pacotes na rua · repasse previsto '+moeda(rs.rotaRepasse)+'</div></div>'+
+    '<div class="kpi"><div class="lb cb">Previsto</div><div class="vl vb">'+moeda(rs.rotaReceber)+'</div><div class="dl">'+rs.rotaQtd+' pacotes ainda não entregues (base + rua) · repasse previsto '+moeda(rs.rotaRepasse)+'</div></div>'+
     '<div class="kpi"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(rs.repasse)+'</div><div class="dl">a pagar aos motoristas (só o que foi entregue)</div></div>'+
     '<div class="kpi"><div class="lb">Margem</div><div class="vl">'+moeda(rs.receber-rs.repasse)+'</div><div class="dl">o que sobra para o ponto</div></div>';
   el('fin-resumo').style.gridTemplateColumns=(window.innerWidth>760?'repeat(4,1fr)':'1fr');
