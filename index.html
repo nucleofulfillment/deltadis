@@ -416,7 +416,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-21-2809</p>
+      <p class="bld">DELTADIS-BASE-22-2809</p>
     </div>
   </div>
 </div>
@@ -712,7 +712,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet wide" id="sh-precos">
   <div class="sh-hd"><h3>Precificação por pacote</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Por transportadora: quanto ela paga ao ponto, por pacote <b>entregue</b>. O valor pago a cada motorista fica no cadastro dele (por código de região ou faixa de CEP).</p>
+    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Cadastre livremente as transportadoras que operam no seu ponto: nome, quanto paga por pacote <b>entregue</b>, e o ciclo de pagamento dela. O valor pago a cada motorista fica no cadastro dele (por código de região ou faixa de CEP).</p>
     <div id="pr-linhas"></div>
     <button class="btn pri wide" style="margin-top:6px" onclick="salvarPrecos()">Salvar valores</button>
   </div>
@@ -722,7 +722,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-21-2809</div>
+<div class="bld-fix">DELTADIS-BASE-22-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1553,20 +1553,60 @@ function enviarPlanilha(){
   rd.readAsArrayBuffer(f.files[0]);
 }
 function fmtNumBR(v){ return (v===undefined||v===null||v==='')?'':String(v).replace('.',','); }
+var PR_GRID='display:grid;grid-template-columns:1.2fr 0.8fr 1fr 0.55fr 0.55fr 0.6fr;gap:8px;align-items:center;';
 function abrirPrecos(){
-  var g='display:grid;grid-template-columns:1.3fr 1fr;gap:8px;align-items:center;';
-  var h='<div style="'+g+'font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px"><span>Transportadora</span><span>Recebe (R$/pacote)</span></div>',i;
+  var h='<div style="'+PR_GRID+'font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px"><span>Transportadora</span><span>Recebe (R$)</span><span>Pagamento</span><span>Ciclo de</span><span>até</span><span></span></div>',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i], pr=PRECOS[t.id]||{};
-    h+='<div style="'+g+'margin-bottom:8px"><b style="font-size:13px">'+esc(t.n)+'</b>'+
-       '<input class="inp" id="pr-r-'+t.id+'" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(pr.recebe)+'"></div>';}
+    h+=linhaPrecoTransp(t.id, t.n, pr.recebe, t.dataPagamento, t.cicloIni, t.cicloFim);}
+  h+='<button class="btn sec wide" type="button" style="margin:4px 0 10px" onclick="adicionarLinhaTransp()">+ Adicionar transportadora</button>';
   el('pr-linhas').innerHTML=h;
   abrir('sh-precos');
 }
+function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim){
+  return '<div class="pr-linha" style="'+PR_GRID+'margin-bottom:8px" data-id="'+(id||'')+'">'+
+    '<input class="inp" placeholder="Nome" value="'+esc(nome||'')+'">'+
+    '<input class="inp" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(recebe)+'">'+
+    '<input class="inp" placeholder="ex: toda sexta" value="'+esc(dataPg||'')+'">'+
+    '<input class="inp" placeholder="dia" value="'+esc(cicloIni||'')+'">'+
+    '<input class="inp" placeholder="dia" value="'+esc(cicloFim||'')+'">'+
+    '<span class="vertodos" style="white-space:nowrap" onclick="'+(id?('removerTransportadora(\''+id+'\')'):'this.closest(\'.pr-linha\').remove()')+'">remover</span></div>';
+}
+function adicionarLinhaTransp(){
+  var btn=el('pr-linhas').querySelector('button');
+  var div=document.createElement('div');
+  div.innerHTML=linhaPrecoTransp('','','','','','');
+  el('pr-linhas').insertBefore(div.firstChild, btn);
+}
+/* gera um id curto e único a partir do nome digitado, pra transportadora nova */
+function slugTransp(nome){
+  var base=String(nome).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'').slice(0,6) || 'tr';
+  var id=base, n=1; while(transp(id)){ id=base+n; n++; }
+  return id;
+}
+function removerTransportadora(id){
+  if(!window.confirm('Remover esta transportadora? Pedidos já importados dela ficam sem esse nome na tabela.')) return;
+  var idx=-1,i; for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].id===id) idx=i;
+  if(idx>=0) TRANSPORTADORAS.splice(idx,1);
+  delete PRECOS[id];
+  if(REAL) salvarLocal();
+  abrirPrecos();
+  pintarIndicadores(); pintarDashboard(); pintarPedidos();
+}
 function salvarPrecos(){
-  for(var i=0;i<TRANSPORTADORAS.length;i++){var id=TRANSPORTADORAS[i].id;
-    var r=Number(String(el('pr-r-'+id).value||'0').replace(',','.'))||0;
-    PRECOS[id]={recebe:r};}
-  salvarLocal(); fecharTudo(); pintarFinanceiro(); pintarMotoristas();
+  var linhas=el('pr-linhas').querySelectorAll('.pr-linha'), i;
+  var cores=['#6D28D9','#1D4ED8','#16A34A','#EC4899','#B08A00','#9333EA','#0F766E','#DC2626'];
+  for(i=0;i<linhas.length;i++){
+    var row=linhas[i], id=row.getAttribute('data-id')||'', inputs=row.querySelectorAll('input');
+    var nome=(inputs[0].value||'').trim();
+    if(!nome) continue;
+    var recebe=Number(String(inputs[1].value||'0').replace(',','.'))||0;
+    var dataPg=(inputs[2].value||'').trim(), cicloIni=(inputs[3].value||'').trim(), cicloFim=(inputs[4].value||'').trim();
+    var t=id?transp(id):null;
+    if(!t){ id=slugTransp(nome); t={id:id, n:nome, ini:nome.slice(0,2).toUpperCase(), cor:cores[TRANSPORTADORAS.length % cores.length], hoje:0, dominio:null, sla:0}; TRANSPORTADORAS.push(t); }
+    t.n=nome; t.dataPagamento=dataPg; t.cicloIni=cicloIni; t.cicloFim=cicloFim;
+    PRECOS[id]={recebe:recebe};
+  }
+  salvarLocal(); fecharTudo(); pintarFinanceiro(); pintarMotoristas(); pintarIndicadores(); pintarDashboard(); pintarPedidos();
   aviso('Valores salvos!');
 }
 function limparImportados(){
