@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-84-2809</p>
+      <p class="bld">DELTADIS-BASE-85-2809</p>
     </div>
   </div>
 </div>
@@ -950,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-84-2809</div>
+<div class="bld-fix">DELTADIS-BASE-85-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1086,8 +1086,9 @@ function idbLer(cb){
 var PED_SYNC={hash:'',ok:null,quando:0,n:0,erro:'',timer:null,enviando:false,avisou:false};
 function pedidoAtivo(p){ return p.st==='coletado'||p.st==='em rota'||ehTentativa(p.st); }
 function listaParaServidor(){
-  var out=[], i, p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(!pedidoAtivo(p)) continue;
-    out.push({cod:p.cod,tr:p.tr,mt:(p.mt==null?null:p.mt),st:p.st,cliente:p.cliente||'',tel:p.tel||'',rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||'',area:p.area||'',dia:p.dia||'',hora:p.hora||'',inc:incompletoDe(p)}); }
+  var out=[], nomes={}, i, p; for(i=0;i<MOTORISTAS.length;i++) nomes[MOTORISTAS[i].id]=MOTORISTAS[i].n||'';
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(!pedidoAtivo(p)) continue;
+    out.push({cod:p.cod,tr:p.tr,mt:(p.mt==null?null:p.mt),mtn:(p.mt==null?'':(nomes[p.mt]||'')),st:p.st,cliente:p.cliente||'',tel:p.tel||'',rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||'',area:p.area||'',dia:p.dia||'',hora:p.hora||'',inc:incompletoDe(p)}); }
   return out;
 }
 function agendarEnvioPedidos(){ if(!REAL || !PEDIDOS.length) return; if(PED_SYNC.timer) clearTimeout(PED_SYNC.timer); PED_SYNC.timer=setTimeout(function(){ PED_SYNC.timer=null; enviarPedidosServidor(); },4000); }
