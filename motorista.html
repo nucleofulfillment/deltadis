@@ -212,10 +212,23 @@ a{color:inherit}
 .rp-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}
 .rp-item:last-child{border-bottom:none} .rp-item input[type=checkbox]{width:19px;height:19px;margin-top:2px;accent-color:var(--roxo);flex:none}
 .rp-item b{display:block;font-size:13.5px} .rp-item small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.rp-cartao{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#F7F4FC;border:1px solid var(--border);border-radius:14px;padding:10px 8px;margin-bottom:8px;position:relative}
+.rp-cartao.arrastando{opacity:.4}.rp-cartao.alvo-acima{box-shadow:0 -3px 0 var(--roxo)}.rp-cartao.alvo-abaixo{box-shadow:0 3px 0 var(--roxo)}
+.rp-cartao .rp-txt{flex:1;min-width:0}.rp-cartao b{display:block;font-size:13.5px}.rp-cartao small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.rp-grip{cursor:grab;touch-action:none;color:var(--muted);font-size:18px;line-height:1;padding:6px 3px;user-select:none;-webkit-user-select:none;flex:none;letter-spacing:-2px}
+.rp-mais{border:none;background:none;color:var(--muted);font-size:20px;line-height:1;padding:4px 8px;flex:none;border-radius:8px}
+.rp-rem{flex-basis:100%;display:flex;justify-content:flex-end;gap:8px;padding-top:4px;border-top:1px dashed var(--border)}
+.rp-rem button{border:none;background:none;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;color:var(--muted2)}
+.rp-rem button.lx{color:#DC2626;background:#FEE2E2}
+.conteudo:has(.rota-tela){padding-bottom:0}
+.rota-tela{display:flex;flex-direction:column}
+.rota-tela .info-full{padding-bottom:0}
+.rota-tela .info-full{flex:1;display:flex;flex-direction:column}
+.acoes-fixas{position:sticky;bottom:0;margin:auto -16px 0;padding:6px 16px 10px;background:#F3ECFB;border-top:1px solid rgba(109,40,217,.12);z-index:7}
 .rp-x{margin-left:auto;flex:none;border:none;background:var(--s3);color:var(--muted2);border-radius:8px;font-size:11px;font-weight:700;padding:6px 9px}
 .rm-pin{width:24px;height:24px;border-radius:50%;background:#16A34A;border:2px solid #fff;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.35)}
 .rm-pin.aprox{background:#D97706}
-.rp-pos{width:46px;flex:none;text-align:center;font-weight:800;font-size:14px;padding:6px 2px;border:1.5px solid var(--border2);border-radius:9px;background:#fff;color:var(--roxo)}
+.rp-pos{width:40px;flex:none;text-align:center;font-weight:800;font-size:14px;padding:6px 2px;border:1.5px solid var(--border2);border-radius:9px;background:#fff;color:var(--roxo)}
 .rp-base{font-size:12px;color:var(--muted);margin:0 0 10px}.rp-base b{color:var(--text)}
 .rp-err{font-size:11.5px;color:#DC2626;margin:0 0 10px;word-break:break-word}.rp-sem{background:#FEF3C7;color:#92400E;border-radius:10px;padding:9px 11px;font-size:12px;margin:0 0 12px}
 .rm-pin.atual{background:var(--roxo);color:#fff;border-color:var(--roxo);box-shadow:0 0 0 5px rgba(109,40,217,.22)}
@@ -295,7 +308,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-6-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-7-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -649,6 +662,7 @@ function atualizarChromeApp(){
   var cheio = (PAG==='inicio' && EST==='em_rota' && !SAIU_TELA_CHEIA);
   t.style.display = cheio ? 'none' : 'flex';
   r.style.display = cheio ? 'none' : 'flex';
+  if(EST==='em_rota' && typeof rpAjustaAltura==='function') rpAjustaAltura();
 }
 function voltarDeTelaCheia(){ SAIU_TELA_CHEIA=true; atualizarChromeApp(); }
 
@@ -805,7 +819,8 @@ function rpCalcular(){
 function rpCartao(t,r,dica,rec){
   return '<div class="rp-opc'+(RP.opc===t?' on':'')+'" onclick="RP.opc=\''+t+'\';renderInicio()" style="--c:'+RP_COR[t]+'">'+(rec?'<span class="rp-rec">Recomendado, entregas mais rápidas</span>':'')+
     '<h3>'+(t==='linear'?'→ Linear':(t==='manual'?'✍ Personalizada':'↻ Circular'))+'</h3><p>'+dica+'</p>'+
-    '<div class="rp-ln"><span>Tempo médio até cada entrega</span><b>'+rpMin(r.mediaMin)+'</b></div>'+
+    '<div class="rp-ln"><span>Tempo médio por entrega</span><b>'+rpMin(r.idaMin/Math.max(1,r.ordem.length))+'</b></div>'+
+    '<div class="rp-ln"><span>Cliente recebe, em média, após</span><b>'+rpMin(r.mediaMin)+'</b></div>'+
     '<div class="rp-ln"><span>Até a última entrega</span><b>'+rpKm(r.idaKm)+' · '+rpMin(r.idaMin)+'</b></div>'+
     '<div class="rp-ln"><span>Volta à base</span><b>'+rpKm(r.voltaKm)+' · '+rpMin(r.voltaMin)+'</b></div>'+
     '<div class="rp-ln rp-tot"><span>Total</span><b>'+rpKm(r.totalKm)+' · '+rpMin(r.totalMin)+'</b></div></div>';
@@ -821,6 +836,28 @@ function rpReordenar(de,para){
     RP.res.manual=c.manual; RP.opc='manual'; EST='rp_escolher'; renderInicio();
   }).catch(function(){ EST='rp_escolher'; renderInicio(); aviso('Não consegui recalcular agora. Tente de novo.'); });
 }
+var _arr=null;
+function rpArrastoIni(ev,de){
+  ev.preventDefault(); var g=ev.currentTarget; try{ g.setPointerCapture(ev.pointerId); }catch(e){}
+  var card=g.closest('.rp-cartao'); card.classList.add('arrastando'); _arr={de:de,card:card,dest:null,acima:true};
+  g.onpointermove=rpArrastoMov; g.onpointerup=g.onpointercancel=rpArrastoFim;
+}
+function rpArrastoMov(ev){
+  if(!_arr) return;
+  var sc=document.querySelector('.conteudo'); if(sc){ var rc=sc.getBoundingClientRect(); if(ev.clientY<rc.top+50) sc.scrollTop-=12; else if(ev.clientY>rc.bottom-50) sc.scrollTop+=12; }
+  var o=document.elementFromPoint(ev.clientX,ev.clientY), c=o&&o.closest?o.closest('.rp-cartao'):null;
+  document.querySelectorAll('.rp-cartao').forEach(function(x){ x.classList.remove('alvo-acima','alvo-abaixo'); });
+  if(!c||c===_arr.card){ _arr.dest=null; return; }
+  var bx=c.getBoundingClientRect(); _arr.acima=(ev.clientY-bx.top)<bx.height/2; _arr.dest=parseInt(c.getAttribute('data-i'),10);
+  c.classList.add(_arr.acima?'alvo-acima':'alvo-abaixo');
+}
+function rpArrastoFim(ev){
+  var a=_arr; _arr=null; if(!a) return;
+  document.querySelectorAll('.rp-cartao').forEach(function(x){ x.classList.remove('arrastando','alvo-acima','alvo-abaixo'); });
+  if(a.dest==null||a.dest===a.de) return;
+  var pos=a.dest; if(a.de<a.dest) pos=a.dest-1; if(!a.acima) pos=pos+1;
+  rpReordenar(a.de,pos+1);
+}
 function rpTirar(cod){ RP.fora[cod]=true; rpCalcular(); }
 function rpTelaEscolher(){
   var c=RP.res, r=c[RP.opc], cf=rpCfg(), h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">'+RP.pts.length+' paradas · escolha o modelo da rota</p>';
@@ -830,10 +867,15 @@ function rpTelaEscolher(){
   if(c.manual) h+=rpCartao('manual',c.manual,'A sua ordem, com as posições que você ajustou.',false);
   h+='<p style="font-size:11.5px;color:var(--muted);margin:0 0 '+(r.real?'12':'4')+'px">'+(r.real?'Km e tempo pelo trajeto real das ruas, mais '+String(c.minPorParada).replace('.',',')+' min por parada.':'Km e tempo estimados em linha reta ('+String(c.minPorParada).replace('.',',')+' min por parada).')+'</p>';
   if(!r.real && r.realErro) h+='<p class="rp-err">Trajeto real indisponível: '+esc(r.realErro)+'</p>';
-  h+='<h4 style="margin:6px 0 2px">Paradas na ordem</h4><p style="margin:0 0 6px;font-size:11.5px;color:var(--muted)">Para mudar a ordem, digite a nova posição no número da parada.</p>';
+  h+='<h4 style="margin:6px 0 2px">Paradas na ordem</h4><p style="margin:0 0 8px;font-size:11.5px;color:var(--muted)">Arraste pelo ⣿ ou digite a nova posição no número.</p><div id="rp-lista">';
   var i, p;
-  for(i=0;i<r.ordem.length;i++){ p=RP.pts[r.ordem[i]];
-    h+='<div class="rp-item"><input class="rp-pos" type="number" inputmode="numeric" min="1" max="'+r.ordem.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rpReordenar('+i+',this.value)"><div><b>'+esc(p.cliente||p.cod)+(p.precisao&&p.precisao!=='numero'?' <span class="badge b-wt" style="margin-left:4px">aprox.</span>':'')+'</b><small>'+esc((p.rua||'')+(p.num?', '+p.num:'')+(p.bai?' — '+p.bai:''))+'</small></div><button class="rp-x" onclick="rpTirar(\''+esc(p.cod).replace(/'/g,'')+'\')">Remover</button></div>'; }
+  for(i=0;i<r.ordem.length;i++){ p=RP.pts[r.ordem[i]]; var cd=esc(p.cod).replace(/'/g,'');
+    h+='<div class="rp-cartao" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+')">⣿</span>'+
+      '<input class="rp-pos" type="number" inputmode="numeric" min="1" max="'+r.ordem.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rpReordenar('+i+',this.value)">'+
+      '<div class="rp-txt"><b>'+esc(p.cliente||p.cod)+(p.precisao&&p.precisao!=='numero'?' <span class="badge b-wt" style="margin-left:4px">aprox.</span>':'')+'</b><small>'+esc((p.rua||'')+(p.num?', '+p.num:'')+(p.bai?' — '+p.bai:''))+'</small></div>'+
+      '<button class="rp-mais" title="Mais opções" onclick="RP.menu=(RP.menu===\''+cd+'\'?null:\''+cd+'\');renderInicio()">⋮</button>'+
+      (RP.menu===p.cod?'<div class="rp-rem"><button onclick="RP.menu=null;renderInicio()">Cancelar</button><button class="lx" onclick="RP.menu=null;rpTirar(\''+cd+'\')">🗑 Remover esta parada</button></div>':'')+'</div>'; }
+  h+='</div>';
   h+='<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button><button class="btn pri" style="flex:1" onclick="rpComecar()">Começar entregas</button></div></div>';
   return h;
 }
@@ -854,13 +896,15 @@ function rpCarregarMapa(cb){
   if(!document.getElementById('rp-mlcss')){ var l=document.createElement('link'); l.id='rp-mlcss'; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'; document.head.appendChild(l); }
   var s=document.createElement('script'); s.src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'; s.onload=cb; document.head.appendChild(s);
 }
+function rpAjustaAltura(){ var sc=document.querySelector('.conteudo'), t=document.querySelector('.rota-tela'); if(sc&&t) t.style.minHeight=Math.max(300,sc.clientHeight-16)+'px'; }
+window.addEventListener('resize',function(){ if(EST==='em_rota') rpAjustaAltura(); });
 function rpMapaMontar(){
   var slot=el('rmapa-slot'); if(!slot) return;
   if(!RP.mapaEl){ RP.mapaEl=document.createElement('div'); RP.mapaEl.style.cssText='position:absolute;inset:0'; }
   slot.appendChild(RP.mapaEl);
   rpCarregarMapa(function(){
     var p0=LOTE_ATUAL[0];
-    if(!RP.mapa){ RP.mapa=new maplibregl.Map({container:RP.mapaEl,style:'https://tiles.openfreemap.org/styles/liberty',center:[p0.lng,p0.lat],zoom:12}); RP.mapaOk=false; RP.mapa.on('load',function(){ RP.mapaOk=true; rpMapaDesenhar(true); }); }
+    if(!RP.mapa){ RP.mapa=new maplibregl.Map({container:RP.mapaEl,style:'https://tiles.openfreemap.org/styles/liberty',center:[p0.lng,p0.lat],zoom:12,attributionControl:false}); try{ RP.mapa.addControl(new maplibregl.AttributionControl({compact:true}),'top-left'); RP.mapa.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right'); }catch(e){} RP.mapaOk=false; RP.mapa.on('load',function(){ RP.mapaOk=true; rpMapaDesenhar(true); }); }
     else { RP.mapa.resize(); if(RP.mapaOk) rpMapaDesenhar(false); }
   });
 }
@@ -920,7 +964,7 @@ function renderInicio(){
     h+=renderFinalizado();
   }
   box.innerHTML=h;
-  if(EST==='em_rota') rpMapaMontar();
+  if(EST==='em_rota'){ rpAjustaAltura(); rpMapaMontar(); }
   atualizarChromeApp();
 }
 function listaBipados(){
@@ -959,7 +1003,7 @@ function renderEmRota(){
        '<h2 style="margin:9px 0 2px;font-size:19px;line-height:1.28;color:var(--text)">'+esc(atual.endereco)+'</h2>'+
        '<p style="margin:0 0 3px;color:var(--muted2);font-size:13.5px;font-weight:700">'+esc(atual.cliente)+'</p>'+
        '<p style="margin:0;color:var(--muted);font-size:11.5px">Pacote '+esc(atual.cod)+' · '+esc(atual.bairro)+'</p>'+
-       '<div class="grade-acoes">'+
+       '<div class="acoes-fixas"><div class="grade-acoes">'+
          '<button class="acao-g" onclick="concluirParada(\'nao_localizado\')"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.3-4.3"/><path d="M10.5 8c1.2 0 1.8.7 1.8 1.5 0 1.3-1.8 1.4-1.8 2.7"/><circle cx="10.5" cy="14.6" r=".35" fill="#fff" stroke="none"/></svg><small>Não localiz.</small></button>'+
          '<button class="acao-g" onclick="concluirParada(\'ausente\')"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.2"/><path d="M5 20c1.1-3.6 3.9-5.4 7-5.4"/><path d="M15.5 14.5l5 5M20.5 14.5l-5 5"/></svg><small>Ausente</small></button>'+
          '<button class="acao-g entregue-btn" onclick="concluirParada(\'entregue\')"><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg><small>Entregue</small></button>'+
@@ -967,7 +1011,7 @@ function renderEmRota(){
          '<button class="acao-g" id="btn-foto-v" onclick="el(\'ft-comprovante\').click()"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.3 7l1.3-2.3h4.8L15.7 7"/><circle cx="12" cy="13.5" r="3.4"/></svg><small>Foto</small></button>'+
          (atual.telefone?('<a class="acao-g" href="https://wa.me/'+atual.telefone+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M20 12.3c0 4.1-3.6 7.4-8 7.4-1.2 0-2.3-.2-3.3-.6L4 20l1-4.4c-.7-1.1-1-2.4-1-3.7C4 7.8 7.6 4.5 12 4.5s8 3.3 8 7.8z"/><path d="M9 10.2c0 2.4 2.2 4.4 4.6 4.4"/></svg><small>Whats</small></a>'):'')+
        '</div>'+
-       '<button class="btn pri wide" style="margin-top:12px" onclick="abrirRemarcar()">🔁 Remarcar entrega</button>'+
+       '<button class="btn pri wide" style="margin-top:12px" onclick="abrirRemarcar()">🔁 Remarcar entrega</button></div>'+
      '</div>';
   }
   h+='</div>';
