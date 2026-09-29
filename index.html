@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-78-2809</p>
+      <p class="bld">DELTADIS-BASE-79-2809</p>
     </div>
   </div>
 </div>
@@ -606,7 +606,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- FINANCEIRO (GMV mora aqui) -->
       <section class="page" id="pg-financeiro">
-        <div class="pghd"><div><h1>Financeiro</h1><div class="sub">movimento do ponto de distribuição</div></div></div>
+        <div class="pghd"><div><h1>Financeiro</h1><div class="sub">movimento do ponto de distribuição</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirCustos()">+ Custo Operacional</button></div></div>
         <div class="finrow" id="fin-resumo"></div>
         <div class="duo"><div class="kpi"><div class="lb">TOTAL MOVIMENTADO</div><div class="vl" id="fin-mov">R$ 0,00</div></div><div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div><div class="lb" id="fin-saldo-info" style="margin-top:8px;font-weight:500;opacity:.85">Conectando ao Asaas...</div><div style="margin-top:10px;display:flex;gap:16px;font-size:12.5px;font-weight:700"><span style="cursor:pointer;text-decoration:underline" onclick="carregarSaldoAsaas(false)">atualizar</span><span style="cursor:pointer;text-decoration:underline" onclick="abrirExtratoAsaas()">ver extrato</span></div></div></div>
         <div class="card" id="fin-repasse-card" style="margin-bottom:16px">
@@ -647,7 +647,6 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="cfgcard"><div class="ic">🔌</div><h4>Integrações com transportadoras</h4><p>Conecte a API de cada transportadora para receber a pré-lista de pacotes automaticamente.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">🏢</div><h4>Bases e pontos</h4><p>Cadastre mais de um ponto de distribuição sob a mesma conta e alterne entre eles.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><span class="badge b-wt">desativado</span></div>
-          <div class="cfgcard" style="cursor:pointer" onclick="abrirCustos()"><div class="ic">💰</div><h4>Custos Operacionais</h4><p>Quanto cada categoria pesa nos custos do ponto, em %. Os dados vêm do Fluxo de Caixa.</p><span class="badge b-in">abrir</span></div>
         </div>
       </section>
 
@@ -933,7 +932,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-78-2809</div>
+<div class="bld-fix">DELTADIS-BASE-79-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
