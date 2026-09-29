@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-75-2809</p>
+      <p class="bld">DELTADIS-BASE-76-2809</p>
     </div>
   </div>
 </div>
@@ -918,7 +918,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-75-2809</div>
+<div class="bld-fix">DELTADIS-BASE-76-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3237,6 +3237,16 @@ function executarPagarPix(){
   prox();
 }
 function travadoPix(e){ return !!(e && e.pixId && e.pixSt!=='falhou' && e.pixSt!=='incerto'); }   /* Pix já enviado ou concluído: não edita nem exclui */
+function abrirComprovante(id){
+  var e=achaLanc(id); if(!e) return;
+  if(e.recibo){ window.open(e.recibo,'_blank'); return; }
+  if(!e.pixRef){ aviso('Sem comprovante pra esse lançamento'); return; }
+  aviso('Buscando o comprovante...');
+  fetch(DELTADIS_API+'/asaas/pix-status?key='+encodeURIComponent(DELTADIS_API_KEY)+'&ref='+encodeURIComponent(e.pixRef)).then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok && d.recibo){ e.recibo=d.recibo; if(REAL) salvarLocal(); window.open(d.recibo,'_blank'); }
+    else aviso('O comprovante ainda não está disponível no Asaas');
+  }).catch(function(){ aviso('Sem conexão com o serviço agora'); });
+}
 function aguardandoAsaas(e){ return !!(e && e.tp==='out' && e.pixId && e.status!=='pago' && e.pixSt!=='falhou' && e.pixSt!=='incerto'); }
 /* confere no Asaas todos os Pix enviados que ainda não foram aprovados/concluídos */
 function pixConferirPendentes(){ var i; for(i=0;i<EXTRATO.length;i++) if(aguardandoAsaas(EXTRATO[i]) && EXTRATO[i].pixRef) verificarPix(EXTRATO[i].id,true); }
@@ -3279,7 +3289,7 @@ function pintarFluxoCaixa(){
        '<td><div class="fc-acoes">'+
          (podePagarPix(e)?'<button onclick="abrirPagarPix(['+e.id+'])" title="Pagar via Pix" style="color:var(--green)">💸</button>':'')+
          ((e.pixId&&e.status!=='pago'&&e.pixSt!=='falhou')?'<button onclick="verificarPix('+e.id+')" title="Conferir com o Asaas">🔄</button>':'')+
-         (travadoPix(e)?'<button title="Pix efetivado: não pode mais ser alterado" style="cursor:default">🔒</button>':'<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>')+
+         (travadoPix(e)?'<button title="Pix efetivado: não pode mais ser alterado" style="cursor:default">🔒</button>'+(e.status==='pago'?'<button onclick="abrirComprovante('+e.id+')" title="Ver comprovante">📄</button>':''):'<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>')+
          '<button onclick="duplicarLancamento('+e.id+')" title="Duplicar">⧉</button>'+
          (travadoPix(e)?'':'<button class="del" onclick="excluirLancamento('+e.id+')" title="Excluir">🗑</button>')+
        '</div></td></tr>';}
