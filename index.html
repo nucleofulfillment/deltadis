@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-36-2809</p>
+      <p class="bld">DELTADIS-BASE-37-2809</p>
     </div>
   </div>
 </div>
@@ -789,10 +789,15 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
+<div class="sheet wide" id="sh-notif-hist">
+  <div class="sh-hd"><h3>Notificações — <span id="nh-nome"></span></h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd"><div id="nh-lista"></div></div>
+</div>
+
 <div class="sheet wide" id="sh-notif">
   <div class="sh-hd"><h3>Notificação de coleta</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Avisa os motoristas que já podem vir coletar os pacotes. Quem foi avisado hoje fica com o <b style="color:#16A34A">✔ verde</b> na lista, e o check some à meia-noite. <b>Por enquanto só registra o aviso</b> — o disparo pelo WhatsApp entra quando o módulo for ligado.</p>
+    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Avisa os motoristas que já podem vir coletar os pacotes. Quem foi avisado fica com o <b style="color:#16A34A">✔ verde</b> na lista. O check apaga quando o motorista pega os pacotes na base (aí você pode avisar de novo à tarde) e também à meia-noite. Clicando no ✔ você vê o histórico de avisos e horários. <b>Por enquanto só registra o aviso</b> — o disparo pelo WhatsApp entra quando o módulo for ligado.</p>
     <div class="field"><label>Avisar</label><select class="inp" id="nt-alvo" onchange="contarNotif()"></select></div>
     <div class="field"><label>Mensagem</label><textarea class="inp" id="nt-msg" rows="3" style="resize:vertical">Olá! Já pode vir coletar os pacotes no ponto de coleta.</textarea></div>
     <div id="nt-qtd" style="font-size:12.5px;color:var(--muted);margin-bottom:8px"></div>
@@ -871,7 +876,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-36-2809</div>
+<div class="bld-fix">DELTADIS-BASE-37-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1987,16 +1992,18 @@ function pintarMotoristas(){
   else if(FILTRO_MT_ORDEM==='sla') lista.sort(function(a,b){return slaMotorista(b)-slaMotorista(a);});
   else if(FILTRO_MT_ORDEM==='desempenho') lista.sort(function(a,b){return slaMotorista(a)-slaMotorista(b);});
 
-  var visiveis=[];
+  var visiveis=[], saiuMap=saiuPorMotorista();
+  NOTIF_MUDOU=false;
   for(i=0;i<lista.length;i++){var m=lista[i];
     if(busca && (m.n+' '+m.regiao).toLowerCase().indexOf(busca)<0) continue;
     if(!passaFiltrosMt(m)) continue;
     visiveis.push(m.id);
-    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b><span title="'+(notifHoje(m)?('Avisado hoje às '+m.notifColeta.hora):'Não avisado hoje')+'" style="margin-left:6px;font-weight:800;color:#16A34A;opacity:'+(notifHoje(m)?'1':'.22')+'">✔</span></td>'+
+    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b>'+(function(){ var na=notifAtiva(m,saiuMap); return '<span onclick="event.stopPropagation();abrirHistNotif('+m.id+')" title="'+(na?('Avisado hoje às '+na.hora+' — aguardando coleta (clique para ver o histórico)'):'Sem aviso ativo (clique para ver o histórico)')+'" style="margin-left:6px;font-weight:800;color:#16A34A;cursor:pointer;opacity:'+(na?'1':'.22')+'">✔</span>'; })()+'</td>'+
        '<td>'+esc(m.regiao)+'</td><td>'+m.pac+'</td>'+
        '<td><span class="veic-hover" onmouseenter="mostrarVeic(event,'+m.id+')" onmouseleave="esconderVeic()">'+veicCompacto(m)+'</span></td>'+
        '<td>'+badgeStatus(m.st)+'</td><td>'+slaMotorista(m)+'%</td></tr>';}
   MT_VISIVEIS=visiveis;
+  if(NOTIF_MUDOU && REAL) salvarLocal();
   if(!h) h='<tr><td colspan="7"><div class="empty">Nenhum motorista encontrado</div></td></tr>';
   el('mt-corpo').innerHTML=h;
   var ck=el('mt-todos'); if(ck){ var todos=visiveis.length>0, k; for(k=0;k<visiveis.length;k++) if(!MT_SEL[visiveis[k]]) todos=false; ck.checked=todos; }
@@ -2045,7 +2052,28 @@ function alternarFiltroMt(k,j){ var v=MT_OPTS[k][j].v, p=MT_FIL[k].indexOf(v); i
 document.addEventListener('click',function(){ if(MT_DD){ MT_DD=null; pintarFiltrosMt(); } });
 /* grupos de motoristas */
 /* notificação de coleta: marca o motorista como avisado HOJE (o ✔ some sozinho no dia seguinte) */
-function notifHoje(m){ return !!(m.notifColeta && m.notifColeta.dia===hojeISO()); }
+/* histórico: m.notifs = [{dia,hora,base,coletado,coletadoEm}]. O ✔ fica verde até o motorista tirar pacote da base (base = nº de pacotes dele já fora da "base" na hora do aviso) */
+function saiuPorMotorista(){ var r={}, i, p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.mt && p.st!=='coletado') r[p.mt]=(r[p.mt]||0)+1; } return r; }
+function notifsDe(m){
+  if(!m.notifs){ m.notifs=[]; if(m.notifColeta){ m.notifs.push({dia:m.notifColeta.dia, hora:m.notifColeta.hora, base:saiuPorMotorista()[m.id]||0}); } delete m.notifColeta; }
+  return m.notifs;
+}
+var NOTIF_MUDOU=false;
+function notifAtiva(m,saiu){
+  var ns=notifsDe(m), n=ns[ns.length-1], hh;
+  if(!n || n.dia!==hojeISO() || n.coletado) return null;
+  if((saiu[m.id]||0)>n.base){ var ag=new Date(); n.coletado=true; n.coletadoEm=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2); NOTIF_MUDOU=true; return null; }
+  return n;
+}
+function abrirHistNotif(id){
+  var m=motorista(id); if(!m) return;
+  var ns=notifsDe(m).slice().reverse(), h='', i, n, st;
+  for(i=0;i<ns.length;i++){ n=ns[i]; st=n.coletado?('<span style="color:var(--muted)">Coletou (detectado às '+esc(n.coletadoEm||'—')+')</span>'):((n.dia===hojeISO())?'<span style="color:#16A34A;font-weight:700">Aguardando coleta</span>':'<span style="color:var(--muted)">Sem coleta registrada</span>');
+    h+='<div class="sh-row"><span class="k">'+dataBR(n.dia)+' às '+esc(n.hora)+'</span><span class="v">'+st+'</span></div>'; }
+  el('nh-nome').textContent=m.n;
+  el('nh-lista').innerHTML=h||'<div class="empty">Nenhuma notificação enviada ainda</div>';
+  abrir('sh-notif-hist');
+}
 function idsDoAlvoNotif(v){
   var ids=[], i, k;
   if(v==='todos'){ for(i=0;i<MOTORISTAS.length;i++) ids.push(MOTORISTAS[i].id); }
@@ -2065,7 +2093,8 @@ function contarNotif(){ var ids=idsDoAlvoNotif(el('nt-alvo').value); el('nt-qtd'
 function enviarNotifColeta(){
   var ids=idsDoAlvoNotif(el('nt-alvo').value), i, m, ag=new Date(), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2);
   if(!ids.length){ aviso('Nenhum motorista nesse grupo'); return; }
-  for(i=0;i<ids.length;i++){ m=motorista(ids[i]); m.notifColeta={dia:hojeISO(), hora:hora}; }
+  var saiu=saiuPorMotorista();
+  for(i=0;i<ids.length;i++){ m=motorista(ids[i]); var lst=notifsDe(m); lst.push({dia:hojeISO(), hora:hora, base:saiu[m.id]||0}); if(lst.length>60) lst.shift(); }
   if(REAL) salvarLocal();
   fecharTudo(); pintarMotoristas();
   aviso('Notificação registrada para '+ids.length+' motorista(s). O envio pelo WhatsApp entra depois.');
