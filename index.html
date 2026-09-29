@@ -416,7 +416,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-20-2809</p>
+      <p class="bld">DELTADIS-BASE-21-2809</p>
     </div>
   </div>
 </div>
@@ -712,7 +712,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet wide" id="sh-precos">
   <div class="sh-hd"><h3>Precificação por pacote</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Por transportadora: quanto ela paga ao ponto e quanto o ponto paga ao motorista, por pacote <b>entregue</b>. A margem é a diferença. Motorista com valor próprio no cadastro usa o dele.</p>
+    <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Por transportadora: quanto ela paga ao ponto, por pacote <b>entregue</b>. O valor pago a cada motorista fica no cadastro dele (por código de região ou faixa de CEP).</p>
     <div id="pr-linhas"></div>
     <button class="btn pri wide" style="margin-top:6px" onclick="salvarPrecos()">Salvar valores</button>
   </div>
@@ -722,7 +722,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-20-2809</div>
+<div class="bld-fix">DELTADIS-BASE-21-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1066,10 +1066,23 @@ function infoPacote(p){
 }
 /* valores por pacote (Configurações → Precificação) */
 function precoTransp(id){ return PRECOS[id]||{recebe:0,paga:0}; }
-function valorMotorista(m,tr){
-  if(m && m.valorPct>0) return m.valorPct;
-  if(!tr && m && m.logins){ for(var k in m.logins){ tr=k; break; } }
-  return tr ? (Number(precoTransp(tr).paga)||0) : 0;
+/* quanto o motorista recebe por ESSE pedido: 1º bate o código de região exato, 2º a faixa de CEP, senão fica sem valor
+   (valorPct só existe pros motoristas de demonstração, mantido como último recurso) */
+function valorMotorista(m,p){
+  if(!m) return 0;
+  var area=(p && p.area)?String(p.area).trim().toLowerCase():'';
+  var cep=(p && p.cep)?String(p.cep).replace(/\D/g,''):'';
+  var i;
+  if(area && m.regioes){
+    for(i=0;i<m.regioes.length;i++){ if(String(m.regioes[i].cod||'').trim().toLowerCase()===area) return Number(m.regioes[i].valor)||0; }
+  }
+  if(cep && m.faixasCep){
+    var cn=parseInt(cep,10);
+    for(i=0;i<m.faixasCep.length;i++){ var f=m.faixasCep[i], fi=parseInt(String(f.ini).replace(/\D/g,''),10), ff=parseInt(String(f.fim).replace(/\D/g,''),10);
+      if(!isNaN(cn) && !isNaN(fi) && !isNaN(ff) && cn>=fi && cn<=ff) return Number(f.valor)||0; }
+  }
+  if(m.valorPct>0) return m.valorPct;
+  return 0;
 }
 /* o que entra e o que sai: só conta pacote ENTREGUE */
 function resumoFinanceiro(){
@@ -1077,7 +1090,7 @@ function resumoFinanceiro(){
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
     if(p.st==='em rota' || ehTentativa(p.st)){   /* ainda na rua (mesmo em tentativa): valor previsto, entra quando for entregue */
       out.rotaQtd++; out.rotaReceber+=Number(precoTransp(p.tr).recebe)||0;
-      m=p.mt?motorista(p.mt):null; if(m) out.rotaRepasse+=valorMotorista(m,p.tr);
+      m=p.mt?motorista(p.mt):null; if(m) out.rotaRepasse+=valorMotorista(m,p);
       continue;
     }
     if(p.st!=='entregue') continue;
@@ -1085,7 +1098,7 @@ function resumoFinanceiro(){
     out.receber+=Number(precoTransp(p.tr).recebe)||0;
     m=p.mt?motorista(p.mt):null;
     if(!m){ out.semMot++; continue; }
-    v=valorMotorista(m,p.tr);
+    v=valorMotorista(m,p);
     out.repasse+=v;
     o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0}); o.ent++; o.val+=v;
   }
@@ -1541,19 +1554,18 @@ function enviarPlanilha(){
 }
 function fmtNumBR(v){ return (v===undefined||v===null||v==='')?'':String(v).replace('.',','); }
 function abrirPrecos(){
-  var g='display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;align-items:center;';
-  var h='<div style="'+g+'font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px"><span>Transportadora</span><span>Recebe (R$/pacote)</span><span>Paga ao motorista</span></div>',i;
+  var g='display:grid;grid-template-columns:1.3fr 1fr;gap:8px;align-items:center;';
+  var h='<div style="'+g+'font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px"><span>Transportadora</span><span>Recebe (R$/pacote)</span></div>',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i], pr=PRECOS[t.id]||{};
     h+='<div style="'+g+'margin-bottom:8px"><b style="font-size:13px">'+esc(t.n)+'</b>'+
-       '<input class="inp" id="pr-r-'+t.id+'" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(pr.recebe)+'">'+
-       '<input class="inp" id="pr-p-'+t.id+'" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(pr.paga)+'"></div>';}
+       '<input class="inp" id="pr-r-'+t.id+'" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(pr.recebe)+'"></div>';}
   el('pr-linhas').innerHTML=h;
   abrir('sh-precos');
 }
 function salvarPrecos(){
   for(var i=0;i<TRANSPORTADORAS.length;i++){var id=TRANSPORTADORAS[i].id;
-    var r=Number(String(el('pr-r-'+id).value||'0').replace(',','.'))||0, p=Number(String(el('pr-p-'+id).value||'0').replace(',','.'))||0;
-    PRECOS[id]={recebe:r, paga:p};}
+    var r=Number(String(el('pr-r-'+id).value||'0').replace(',','.'))||0;
+    PRECOS[id]={recebe:r};}
   salvarLocal(); fecharTudo(); pintarFinanceiro(); pintarMotoristas();
   aviso('Valores salvos!');
 }
@@ -1754,7 +1766,10 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Localização atual</span><span class="v">'+esc(m.local)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Veículo</span><span class="v">'+(m.modelo?(esc(m.modelo)+' '+esc(m.veicCor)+' '+esc(m.ano)+(m.placa?(' · '+esc(m.placa)):'')):'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Capacidade</span><span class="v">'+(m.cap?m.cap+' pacotes':'—')+'</span></div>';
-  h+='<div class="sh-row"><span class="k">Valor por pacote</span><span class="v">'+moeda(valorMotorista(m))+'</span></div>';
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por código de região</span><span class="v" style="width:100%"><div id="mt-regioes-'+m.id+'"></div>'+
+       '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input class="inp" placeholder="Código (ex: Capoeiras)" id="mt-reg-cod-'+m.id+'" style="flex:1;min-width:120px"><input class="inp" placeholder="Valor R$" id="mt-reg-val-'+m.id+'" style="width:90px"><button class="btn sec" onclick="adicionarRegiaoMotorista('+m.id+')">+</button></div></span></div>';
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por faixa de CEP</span><span class="v" style="width:100%"><div id="mt-faixas-'+m.id+'"></div>'+
+       '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input class="inp" placeholder="CEP de" id="mt-cep-ini-'+m.id+'" style="width:90px"><input class="inp" placeholder="até" id="mt-cep-fim-'+m.id+'" style="width:90px"><input class="inp" placeholder="Valor R$" id="mt-cep-val-'+m.id+'" style="width:80px"><button class="btn sec" onclick="adicionarFaixaMotorista('+m.id+')">+</button></div></span></div>';
   if(REAL){
     var rsm=resumoFinanceiro().porMot[m.id]||{ent:0,val:0};
     if(m.logins && m.logins.jt) h+='<div class="sh-row"><span class="k">Nome na J&amp;T</span><span class="v">'+esc(m.logins.jt)+'</span></div>';
@@ -1773,6 +1788,54 @@ function abrirMotorista(id){
   h+='<div style="display:flex;justify-content:center;gap:12px;margin-top:16px"><button class="btn pri" onclick="fecharTudo();ir(\'financeiro\')">Ver repasse</button><button class="btn sec" onclick="aviso(\'Aqui edita o cadastro\')">Editar ficha</button></div>';
   el('mt-corpo-sheet').innerHTML=h;
   abrir('sh-motorista');
+  pintarValoresMotorista(m.id);
+}
+/* lista (e permite remover) os códigos de região e faixas de CEP já cadastrados na ficha do motorista */
+function pintarValoresMotorista(id){
+  var m=motorista(id); if(!m) return;
+  m.regioes=m.regioes||[]; m.faixasCep=m.faixasCep||[];
+  var hr='', i, r;
+  for(i=0;i<m.regioes.length;i++){ r=m.regioes[i];
+    hr+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12.5px;border-bottom:1px solid var(--border)"><span>'+esc(r.cod)+'</span><span style="display:flex;align-items:center;gap:10px"><b>'+moeda(r.valor)+'</b><span class="vertodos" onclick="removerRegiaoMotorista('+id+','+i+')">remover</span></span></div>';
+  }
+  var alvoR=el('mt-regioes-'+id); if(alvoR) alvoR.innerHTML=hr||'<div class="empty" style="padding:4px 0;font-size:12px">Nenhum código cadastrado</div>';
+  var hc='', j, f;
+  for(j=0;j<m.faixasCep.length;j++){ f=m.faixasCep[j];
+    hc+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12.5px;border-bottom:1px solid var(--border)"><span>'+esc(f.ini)+' até '+esc(f.fim)+'</span><span style="display:flex;align-items:center;gap:10px"><b>'+moeda(f.valor)+'</b><span class="vertodos" onclick="removerFaixaMotorista('+id+','+j+')">remover</span></span></div>';
+  }
+  var alvoC=el('mt-faixas-'+id); if(alvoC) alvoC.innerHTML=hc||'<div class="empty" style="padding:4px 0;font-size:12px">Nenhuma faixa cadastrada</div>';
+}
+function adicionarRegiaoMotorista(id){
+  var m=motorista(id); if(!m) return;
+  var elC=el('mt-reg-cod-'+id), elV=el('mt-reg-val-'+id);
+  var cod=(elC.value||'').trim(), val=Number((elV.value||'0').replace(',','.'));
+  if(!cod || !val){ aviso('Preencha o código e o valor'); return; }
+  m.regioes=m.regioes||[]; m.regioes.push({cod:cod, valor:val});
+  elC.value=''; elV.value='';
+  if(REAL) salvarLocal();
+  pintarValoresMotorista(id);
+}
+function removerRegiaoMotorista(id,idx){
+  var m=motorista(id); if(!m || !m.regioes) return;
+  m.regioes.splice(idx,1);
+  if(REAL) salvarLocal();
+  pintarValoresMotorista(id);
+}
+function adicionarFaixaMotorista(id){
+  var m=motorista(id); if(!m) return;
+  var elI=el('mt-cep-ini-'+id), elF=el('mt-cep-fim-'+id), elV=el('mt-cep-val-'+id);
+  var ini=String(elI.value||'').replace(/\D/g,''), fim=String(elF.value||'').replace(/\D/g,''), val=Number((elV.value||'0').replace(',','.'));
+  if(!ini || !fim || !val){ aviso('Preencha o CEP de, até e o valor'); return; }
+  m.faixasCep=m.faixasCep||[]; m.faixasCep.push({ini:ini, fim:fim, valor:val});
+  elI.value=''; elF.value=''; elV.value='';
+  if(REAL) salvarLocal();
+  pintarValoresMotorista(id);
+}
+function removerFaixaMotorista(id,idx){
+  var m=motorista(id); if(!m || !m.faixasCep) return;
+  m.faixasCep.splice(idx,1);
+  if(REAL) salvarLocal();
+  pintarValoresMotorista(id);
 }
 
 /* ══ financeiro (Receita/A receber/Repasse + Fluxo de caixa) ══ */
