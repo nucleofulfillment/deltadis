@@ -300,7 +300,9 @@ a{color:inherit}
   .sheet{top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-height:82vh;border-radius:18px;border:1px solid var(--border)}
   .sheet.wide{width:640px}
   .sheet.xwide{width:760px}
+  #sh-fin-lista{width:1040px;max-width:96vw}
 }
+#fl-corpo td{white-space:nowrap}
 @media (max-width:859px){
   .sheet{left:0;right:0;bottom:0;max-height:88vh;border-radius:18px 18px 0 0}
 }
@@ -435,7 +437,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-61-2809</p>
+      <p class="bld">DELTADIS-BASE-63-2809</p>
     </div>
   </div>
 </div>
@@ -610,7 +612,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
             <input type="date" class="inp" id="fin-rep-ini" onchange="mudarPeriodoRep()" title="De" style="width:150px"><span style="color:var(--muted);font-size:12px">até</span><input type="date" class="inp" id="fin-rep-fim" onchange="mudarPeriodoRep()" title="Até" style="width:150px">
             <span class="vertodos" onclick="FIN_REP_INI='';FIN_REP_FIM='';mudarPeriodoRep(true)">Todo o período</span>
-            <button class="btn pri" style="margin-left:auto" onclick="baixarRelatorioRepasse()">⬇ Baixar relatório</button>
+            <span style="margin-left:auto;display:flex;gap:8px"><button class="btn pri" onclick="baixarRelatorioRepasse()">⬇ PDF</button><button class="btn sec" onclick="baixarExcelRepasse()">⬇ Excel</button></span>
           </div>
           <div id="fin-repasse-aviso" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
           <div class="tb-wrap"><table class="tb">
@@ -832,6 +834,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-hd"><h3>Áreas de entrega</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Aqui mora o <b>valor pago ao motorista por pacote entregue</b>. As regiões que vêm na planilha aparecem sozinhas — é só preencher o valor. Você também pode cadastrar uma <b>faixa de CEP</b>. Se o motorista tiver <b>preço fixo</b> na ficha dele, esse vale no lugar da área.</p>
+    <div style="position:sticky;top:-1px;z-index:2;background:var(--s1);padding:6px 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="btn pri" onclick="salvarValoresAreas()">Salvar valores</button><span style="font-size:12px;color:var(--muted)">Preencha quantas quiser e salve de uma vez.</span></div>
     <div id="ar-lista"></div>
     <h4 style="margin:16px 0 6px;font-size:13px">Nova região (por nome)</h4>
     <div class="mt-cfg-linha" style="grid-template-columns:1fr 100px 38px"><input class="inp" id="ar-nome" placeholder="Nome da região"><input class="inp mt-cfg-valor" id="ar-nome-val" placeholder="Valor R$"><button class="btn sec mt-cfg-add" onclick="adicionarAreaNome()">+</button></div>
@@ -843,7 +846,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet wide" id="sh-fin-lista">
   <div class="sh-hd"><h3 id="fl-titulo">Pacotes</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span id="fl-resumo" style="font-size:12.5px;color:var(--muted)"></span><button class="btn pri" onclick="baixarRelatorioLista()">⬇ Baixar relatório</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span id="fl-resumo" style="font-size:12.5px;color:var(--muted)"></span><span style="display:flex;gap:8px"><button class="btn pri" onclick="baixarRelatorioLista()">⬇ PDF</button><button class="btn sec" onclick="baixarExcelLista()">⬇ Excel</button></span></div>
     <div class="tb-wrap"><table class="tb"><thead><tr><th>Código</th><th>Cliente</th><th>Motorista</th><th id="fl-th-st">Status</th><th>Recebe</th><th>Repasse</th></tr></thead><tbody id="fl-corpo"></tbody></table></div>
   </div>
 </div>
@@ -885,7 +888,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-61-2809</div>
+<div class="bld-fix">DELTADIS-BASE-63-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1478,12 +1481,23 @@ function pintarAreas(){
     var tit=a.nome?esc(a.nome):('CEP '+esc(a.ini)+' até '+esc(a.fim));
     var qt=a.nome?(cont[normTxt(a.nome)]||0):0;
     h+='<div class="mt-cfg-lista" style="display:grid;grid-template-columns:1fr 90px auto;gap:8px;align-items:center;padding:9px 4px;font-size:13px"><span>'+tit+(qt?(' <span style="color:var(--muted);font-size:11px">· '+qt+' pacote(s)</span>'):'')+(Number(a.valor)>0?'':' <span class="badge b-wt" style="margin-left:4px">sem valor</span>')+'</span>'+
-       '<input class="inp mt-cfg-valor" inputmode="decimal" placeholder="R$" value="'+(a.valor?String(a.valor).replace('.',','):'')+'" onchange="valorArea('+i+',this.value)"><span class="vertodos" onclick="removerArea('+i+')">remover</span></div>';
+       '<input class="inp mt-cfg-valor" inputmode="decimal" placeholder="R$" value="'+(a.valor?String(a.valor).replace('.',','):'')+'" data-ai="'+i+'"><span class="vertodos" onclick="removerArea('+i+')">remover</span></div>';
   }
   el('ar-lista').innerHTML=(sem?'<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+sem+' área(s) esperando valor</div>':'')+(h||'<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhuma área ainda. Importe uma planilha (as regiões aparecem aqui sozinhas) ou cadastre abaixo.</div>');
 }
 function areasMudou(){ if(REAL) salvarLocal(); pintarAreas(); pintarFinanceiro(); }
 function valorArea(i,v){ if(!AREAS[i]) return; AREAS[i].valor=Number(String(v||'0').replace(',','.'))||0; areasMudou(); aviso('Valor salvo!'); }
+/* salva todos os valores digitados de uma vez (nada é gravado enquanto digita) */
+function salvarValoresAreas(){
+  var ins=el('ar-lista').querySelectorAll('input[data-ai]'), k, n=0, i, v, antes;
+  for(k=0;k<ins.length;k++){
+    i=Number(ins[k].getAttribute('data-ai')); if(!AREAS[i]) continue;
+    v=Number(String(ins[k].value||'0').replace(',','.'))||0; antes=Number(AREAS[i].valor)||0;
+    if(v!==antes){ AREAS[i].valor=v; n++; }
+  }
+  if(!n){ aviso('Nenhum valor novo pra salvar'); return; }
+  areasMudou(); aviso(n+' valor'+(n>1?'es':'')+' salvo'+(n>1?'s':'')+'!');
+}
 function removerArea(i){ AREAS.splice(i,1); areasMudou(); }
 function adicionarAreaNome(){
   var n=(el('ar-nome').value||'').trim(), v=Number(String(el('ar-nome-val').value||'0').replace(',','.'))||0, k=normTxt(n), i;
@@ -1610,24 +1624,46 @@ function logoPdfHtml(){
   return h;
 }
 /* relatório em PDF (janela de impressão) no mesmo padrão do fechamento: logo + ponto de coleta */
-function abrirRelatorio(titulo, linhaInfo, cols, linhas, resumo){
-  var th='', tb='', i, j;
-  for(i=0;i<cols.length;i++) th+='<th>'+esc(cols[i])+'</th>';
-  for(i=0;i<linhas.length;i++){ tb+='<tr>'; for(j=0;j<linhas[i].length;j++) tb+='<td>'+esc(linhas[i][j])+'</td>'; tb+='</tr>'; }
-  if(!tb) tb='<tr><td colspan="'+cols.length+'">Nenhum registro</td></tr>';
-  var agora=new Date(), emitido=dataBR(isoDe(agora))+' '+('0'+agora.getHours()).slice(-2)+':'+('0'+agora.getMinutes()).slice(-2);
+var PDF_LIM=3000;   /* acima disso o PDF traz só os resumos (a lista completa vai no Excel) */
+function tabelaPdf(cols,linhas){
+  var t=['<table><thead><tr>'], i, j, r;
+  for(i=0;i<cols.length;i++) t.push('<th>'+esc(cols[i])+'</th>');
+  t.push('</tr></thead><tbody>');
+  for(i=0;i<linhas.length;i++){ r=linhas[i]; t.push('<tr>'); for(j=0;j<r.length;j++) t.push('<td>'+esc(r[j])+'</td>'); t.push('</tr>'); }
+  if(!linhas.length) t.push('<tr><td colspan="'+cols.length+'">Nenhum registro</td></tr>');
+  t.push('</tbody></table>');
+  return t.join('');
+}
+function abrirRelatorio(titulo, linhaInfo, cols, linhas, resumo, grupos){
+  var agora=new Date(), emitido=dataBR(isoDe(agora))+' '+('0'+agora.getHours()).slice(-2)+':'+('0'+agora.getMinutes()).slice(-2), i, corpo='';
+  grupos=grupos||[];
+  for(i=0;i<grupos.length;i++) corpo+='<h2>'+esc(grupos[i].titulo)+'</h2>'+tabelaPdf(grupos[i].cols,grupos[i].linhas);
+  if(linhas.length<=PDF_LIM) corpo+=(grupos.length?'<h2>Detalhe dos pacotes</h2>':'')+tabelaPdf(cols,linhas);
+  else corpo+='<p class="nota">São '+linhas.length+' pacotes — grande demais pra caber num PDF legível. Aqui vão só os resumos; a lista completa está no botão <b>Excel</b>.</p>';
   var htmlPg='<!doctype html><html><head><meta charset="utf-8"><title>'+esc(titulo)+'</title>'+
-    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}th{background:#f3effb}</style></head>'+
-    '<body><div class="cab">'+logoPdfHtml()+'<div style="text-align:right;font-size:12px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
-    '<h1>'+esc(titulo)+'</h1><p style="font-size:12px;color:#555">'+esc(linhaInfo||'')+' &nbsp;|&nbsp; Emitido em '+emitido+'</p>'+
-    (resumo?('<p><b>'+esc(resumo)+'</b></p>'):'')+
-    '<table><thead><tr>'+th+'</tr></thead><tbody>'+tb+'</tbody></table>'+
+    '<style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;padding:0;color:#111;font-size:9px}h1{font-size:15px;margin:6px 0 2px}h2{font-size:11px;margin:12px 0 2px;color:#4c1d95}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:8px;margin-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:4px}thead{display:table-header-group}tr{page-break-inside:avoid}td,th{border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:left;line-height:1.25}th{background:#f3effb}tbody tr:nth-child(even){background:#faf8fe}p{margin:3px 0;font-size:10px}.nota{background:#fff7e0;border:1px solid #e6c766;padding:6px 8px;margin-top:10px}</style></head>'+
+    '<body><div class="cab">'+logoPdfHtml()+'<div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
+    '<h1>'+esc(titulo)+'</h1><p style="color:#555">'+esc(linhaInfo||'')+' &nbsp;|&nbsp; Emitido em '+emitido+'</p>'+
+    (resumo?('<p><b>'+esc(resumo)+'</b></p>'):'')+corpo+
     '<script>window.onload=function(){window.print();}</'+'script></body></html>';
   var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups pra baixar o relatório'); return; }
   w.document.open(); w.document.write(htmlPg); w.document.close();
 }
+/* Excel: aceita número de verdade nas colunas de dinheiro (fmt = índices das colunas em R$) */
+function baixarExcel(nome, cols, linhas, fmt, larg){
+  if(typeof XLSX==='undefined'){ aviso('O gerador de Excel não carregou. Confira a internet e recarregue a página.'); return; }
+  try{
+    var ws=XLSX.utils.aoa_to_sheet([cols].concat(linhas)), k, r;
+    ws['!cols']=(larg||cols.map(function(){return 16;})).map(function(w){return {wch:w};});
+    if(fmt) for(r=1;r<=linhas.length;r++) for(k=0;k<fmt.length;k++){ var c=ws[XLSX.utils.encode_cell({r:r,c:fmt[k]})]; if(c && typeof c.v==='number') c.z='"R$" #,##0.00'; }
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Relatório');
+    XLSX.writeFile(wb,'DELTADIS-'+nome+'-'+isoDe(new Date())+'.xlsx');
+  }catch(e){ aviso('Não consegui gerar o Excel.'); }
+}
 var FIN_LISTA_DADOS=null, FIN_REP_DADOS=null;
-function baixarRelatorioLista(){ var d=FIN_LISTA_DADOS; if(!d){ return; } abrirRelatorio(d.titulo, d.info, d.cols, d.linhas, d.resumo); }
+function baixarRelatorioLista(){ var d=FIN_LISTA_DADOS; if(!d){ return; } aviso('Montando o PDF...'); setTimeout(function(){ abrirRelatorio(d.titulo, d.info, d.cols, d.linhas, d.resumo, d.grupos); },30); }
+function baixarExcelLista(){ var d=FIN_LISTA_DADOS; if(!d){ return; } baixarExcel(d.arquivo, d.xlCols, d.xl, [7,8], [22,26,16,24,14,12,12,12,12]); }
+function baixarExcelRepasse(){ var d=FIN_REP_DADOS; if(!d) return; baixarExcel('repasse-por-motorista', ['Motorista','Pacotes','Em rota','Entregues','A repassar'], d.linhas, null, [30,10,10,10,16]); }
 function baixarRelatorioRepasse(){
   var d=FIN_REP_DADOS; if(!d) return;
   abrirRelatorio('Repasse por motorista', d.info, ['Motorista','Pacotes','Em rota','Entregues','A repassar'], d.linhas, d.resumo);
@@ -2809,14 +2845,22 @@ function abrirListaFin(tipo){
     else { if(p.st!=='entregue') continue; if(tipo==='repasse' && !p.mt) continue; }
     lst.push(p); tr+=Number(precoTransp(p.tr).recebe)||0; m=p.mt?motorista(p.mt):null; tp+=m?valorMotorista(m,p):0;
   }
-  var h='', n=Math.min(lst.length,300), st, todas=[];
+  var h='', n=Math.min(lst.length,300), st, todas=[], xl=[], gm={}, gt={}, tn, rc, rp, gk;
   for(i=0;i<lst.length;i++){ p=lst[i]; m=p.mt?motorista(p.mt):null; st=(tipo==='repasse')?(p.fechId?'fechado':'a fechar'):p.st;
-    todas.push([p.cod,p.cliente||'—',m?m.n:'—',st,moeda(precoTransp(p.tr).recebe),moeda(m?valorMotorista(m,p):0)]); }
+    rc=Number(precoTransp(p.tr).recebe)||0; rp=m?valorMotorista(m,p):0; tn=transp(p.tr); tn=tn?tn.n:'—';
+    todas.push([p.cod,p.cliente||'—',m?m.n:'—',st,moeda(rc),moeda(rp)]);
+    xl.push([p.cod,p.cliente||'—',tn,m?m.n:'—',st,dataBR(p.dia||'')+(p.hora?' '+p.hora:''),String(p.ent||'').slice(0,16),rc,rp]);
+    gk=m?m.n:'sem motorista'; gm[gk]=gm[gk]||{q:0,rc:0,rp:0}; gm[gk].q++; gm[gk].rc+=rc; gm[gk].rp+=rp;
+    gt[tn]=gt[tn]||{q:0,rc:0}; gt[tn].q++; gt[tn].rc+=rc; }
+  var grM=Object.keys(gm).sort(function(a,b){return gm[b].rp-gm[a].rp;}).map(function(k){return [k,String(gm[k].q),moeda(gm[k].rc),moeda(gm[k].rp)];});
+  var grT=Object.keys(gt).sort(function(a,b){return gt[b].q-gt[a].q;}).map(function(k){return [k,String(gt[k].q),moeda(gt[k].rc)];});
   for(i=0;i<n;i++){ p=lst[i]; m=p.mt?motorista(p.mt):null;
     st=(tipo==='repasse')?(p.fechId?'fechado':'a fechar'):p.st;
     h+='<tr><td>'+esc(p.cod)+cpBtn(p.cod)+'</td><td>'+esc(p.cliente||'—')+'</td><td>'+esc(m?m.n:'—')+'</td><td>'+esc(st)+'</td><td>'+moeda(precoTransp(p.tr).recebe)+'</td><td>'+moeda(m?valorMotorista(m,p):0)+'</td></tr>';
   }
-  FIN_LISTA_DADOS={titulo:tit, info:'Financeiro', cols:['Código','Cliente','Motorista',(tipo==='repasse')?'Fechamento':'Status','Recebe','Repasse'], linhas:todas, resumo:lst.length+' pacote(s) · recebe '+moeda(tr)+' · repasse '+moeda(tp)};
+  FIN_LISTA_DADOS={titulo:tit, info:'Financeiro', cols:['Código','Cliente','Motorista',(tipo==='repasse')?'Fechamento':'Status','Recebe','Repasse'], linhas:todas, resumo:lst.length+' pacote(s) · recebe '+moeda(tr)+' · repasse '+moeda(tp),
+    grupos:[{titulo:'Por motorista',cols:['Motorista','Pacotes','Recebe','Repasse'],linhas:grM},{titulo:'Por transportadora',cols:['Transportadora','Pacotes','Recebe'],linhas:grT}],
+    arquivo:tipo, xlCols:['Código','Cliente','Transportadora','Motorista',(tipo==='repasse')?'Fechamento':'Status','Entrada no ponto','Entrega','Recebe (R$)','Repasse (R$)'], xl:xl};
   el('fl-titulo').textContent=tit;
   el('fl-resumo').textContent=lst.length+' pacote(s) · recebe '+moeda(tr)+' · repasse '+moeda(tp)+(lst.length>n?(' · mostrando os primeiros '+n):'');
   el('fl-th-st').textContent=(tipo==='repasse')?'Fechamento':'Status';
