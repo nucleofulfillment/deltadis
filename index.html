@@ -205,6 +205,10 @@ a{color:inherit}
 .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
 .pill{font-size:12px;font-weight:700;border:1px solid var(--border2);background:var(--s1);border-radius:99px;padding:6px 13px;cursor:pointer;color:var(--texto2)}
 .pill.on{background:var(--text);color:#fff;border-color:var(--text)}
+.dd{position:relative;display:inline-block}
+.dd-panel{position:absolute;top:calc(100% + 6px);left:0;z-index:40;background:var(--s1);border:1px solid var(--border2);border-radius:12px;box-shadow:0 8px 24px rgba(60,20,100,.16);padding:6px;min-width:220px;max-height:280px;overflow:auto}
+.dd-panel label{display:flex;gap:8px;align-items:center;padding:7px 8px;font-size:13px;cursor:pointer;border-radius:8px}
+.dd-panel label:hover{background:var(--s2)}
 .tb-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px}
 .tb{width:100%;min-width:600px;border-collapse:collapse}
 .tb th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:700;padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
@@ -424,7 +428,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-32-2809</p>
+      <p class="bld">DELTADIS-BASE-33-2809</p>
     </div>
   </div>
 </div>
@@ -575,13 +579,14 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MOTORISTAS -->
       <section class="page" id="pg-motoristas">
-        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div>
+        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn pri" onclick="abrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div></div>
         <div class="card">
           <div class="search"><span>🔎</span><input id="mt-busca" placeholder="buscar motorista" oninput="pintarMotoristas()"></div>
           <div class="pills" id="mt-pills"></div>
+          <div class="pills" id="mt-filtros" style="align-items:center"></div>
           <div class="tb-wrap"><table class="tb">
-            <colgroup><col style="width:22%"><col style="width:13%"><col style="width:11%"><col style="width:18%"><col style="width:15%"><col style="width:12%"></colgroup>
-            <thead><tr><th>Motorista</th><th>Região</th><th>Pacotes hoje</th><th>Veículo</th><th>Status</th><th>SLA</th></tr></thead>
+            <colgroup><col style="width:4%"><col style="width:21%"><col style="width:13%"><col style="width:10%"><col style="width:18%"><col style="width:14%"><col style="width:12%"></colgroup>
+            <thead><tr><th><input type="checkbox" id="mt-todos" onchange="selecionarTodosMt(this.checked)" title="Selecionar todos"></th><th>Motorista</th><th>Região</th><th>Pacotes hoje</th><th>Veículo</th><th>Status</th><th>SLA</th></tr></thead>
             <tbody id="mt-corpo"></tbody>
           </table></div>
         </div>
@@ -754,6 +759,19 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
+<div class="sheet wide" id="sh-grupo">
+  <div class="sh-hd"><h3>Criar grupo de motoristas</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Dê um nome ao grupo e marque quem faz parte (os que você já marcou na lista vêm marcados). Depois dá para criar regras e repasses específicos por grupo.</p>
+    <div class="field"><label>Nome do grupo</label><input class="inp" id="gr-nome" placeholder="ex: Utilitários — Norte da Ilha"></div>
+    <div class="search" style="max-width:none"><span>🔎</span><input id="gr-busca" placeholder="buscar motorista" oninput="pintarGrupoLista()"></div>
+    <div id="gr-lista" style="max-height:240px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:4px 8px"></div>
+    <button class="btn pri wide" style="margin-top:12px" onclick="salvarGrupo()">Salvar grupo</button>
+    <h4 style="margin:18px 0 6px;font-size:13px">Grupos criados</h4>
+    <div id="gr-existentes"></div>
+  </div>
+</div>
+
 <div class="sheet wide" id="sh-areas">
   <div class="sh-hd"><h3>Áreas de entrega</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
@@ -811,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-32-2809</div>
+<div class="bld-fix">DELTADIS-BASE-33-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -904,6 +922,7 @@ var EXTRATO=[
    Tudo fica guardado neste navegador.
    ══════════════════════════════════════════════════════════ */
 var REAL=true;
+var GRUPOS=[];   /* grupos de motoristas: {id,nome,ids:[id do motorista]} — base pra regras/repasses por grupo no futuro */
 var AREAS=[];   /* áreas de entrega: {nome,valor} por nome  ou  {ini,fim,valor} por faixa de CEP */
 var PRECOS={};   /* id da transportadora → {recebe: R$ por pacote que ela paga ao ponto, paga: R$ por pacote pago ao motorista} */
 var DIAS={};     /* dia (ISO) → {tot, por:{idTransportadora:qtd}} — alimenta o gráfico do Dashboard */
@@ -943,7 +962,7 @@ function salvarLocal(cb){
   var o;
   if(REAL){
     var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null]); }
-    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS};
+    o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
   idbGravar(o,function(ok){ if(cb) cb(ok); });
@@ -953,6 +972,7 @@ function aplicarSalvo(d){
   if(!d) return;
   if(d.precos) PRECOS=d.precos;
   if(d.areas) AREAS=d.areas;
+  if(d.grupos) GRUPOS=d.grupos;
   if((d.pedidos||d.pc) && d.motoristas){
     if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
@@ -1873,20 +1893,106 @@ function pintarMotoristas(){
   for(j=0;j<ordens.length;j++) ph+='<span class="pill'+(FILTRO_MT_ORDEM===ordens[j].k?' on':'')+'" onclick="ordenarMotoristas(\''+ordens[j].k+'\')">'+ordens[j].l+'</span>';
   el('mt-pills').innerHTML=ph;
 
+  pintarFiltrosMt();
   var busca=(el('mt-busca').value||'').toLowerCase().trim(), h='',i;
   var lista=MOTORISTAS.slice();
   if(FILTRO_MT_ORDEM==='entregas') lista.sort(function(a,b){return (b.entregues||0)-(a.entregues||0);});
   else if(FILTRO_MT_ORDEM==='sla') lista.sort(function(a,b){return slaMotorista(b)-slaMotorista(a);});
   else if(FILTRO_MT_ORDEM==='desempenho') lista.sort(function(a,b){return slaMotorista(a)-slaMotorista(b);});
 
+  var visiveis=[];
   for(i=0;i<lista.length;i++){var m=lista[i];
     if(busca && (m.n+' '+m.regiao).toLowerCase().indexOf(busca)<0) continue;
-    h+='<tr onclick="abrirMotorista('+m.id+')"><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b></td>'+
+    if(!passaFiltrosMt(m)) continue;
+    visiveis.push(m.id);
+    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b></td>'+
        '<td>'+esc(m.regiao)+'</td><td>'+m.pac+'</td>'+
        '<td><span class="veic-hover" onmouseenter="mostrarVeic(event,'+m.id+')" onmouseleave="esconderVeic()">'+veicCompacto(m)+'</span></td>'+
        '<td>'+badgeStatus(m.st)+'</td><td>'+slaMotorista(m)+'%</td></tr>';}
-  if(!h) h='<tr><td colspan="6"><div class="empty">Nenhum motorista encontrado</div></td></tr>';
+  MT_VISIVEIS=visiveis;
+  if(!h) h='<tr><td colspan="7"><div class="empty">Nenhum motorista encontrado</div></td></tr>';
   el('mt-corpo').innerHTML=h;
+  var ck=el('mt-todos'); if(ck){ var todos=visiveis.length>0, k; for(k=0;k<visiveis.length;k++) if(!MT_SEL[visiveis[k]]) todos=false; ck.checked=todos; }
+}
+/* seleção (checkbox) e filtros com lista (Região, Veículo, Grupo) da tela Motoristas */
+var MT_SEL={}, MT_VISIVEIS=[], MT_DD=null, MT_OPTS={reg:[],veic:[],grp:[]}, MT_FIL={reg:[],veic:[],grp:[]};
+function selecionarMt(id,on){ if(on) MT_SEL[id]=1; else delete MT_SEL[id]; pintarMotoristas(); }
+function selecionarTodosMt(on){ var i; for(i=0;i<MT_VISIVEIS.length;i++){ if(on) MT_SEL[MT_VISIVEIS[i]]=1; else delete MT_SEL[MT_VISIVEIS[i]]; } pintarMotoristas(); }
+function limparSelecaoMt(){ MT_SEL={}; pintarMotoristas(); }
+function veicChaveMt(m){ return m.modelo?String(m.modelo):'Sem veículo'; }
+function regChaveMt(m){ return (m.regiao&&m.regiao!=='—')?String(m.regiao):'Sem região'; }
+function passaFiltrosMt(m){
+  var f=MT_FIL, i, ok;
+  if(f.reg.length && f.reg.indexOf(regChaveMt(m))<0) return false;
+  if(f.veic.length && f.veic.indexOf(veicChaveMt(m))<0) return false;
+  if(f.grp.length){ ok=false; for(i=0;i<GRUPOS.length;i++){ if(f.grp.indexOf(GRUPOS[i].id)>=0 && GRUPOS[i].ids.indexOf(m.id)>=0) ok=true; } if(!ok) return false; }
+  return true;
+}
+function opcoesFiltrosMt(){
+  var r={}, v={}, i, m, o={reg:[],veic:[],grp:[]}, k;
+  for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; r[regChaveMt(m)]=1; v[veicChaveMt(m)]=1; }
+  for(k in r) o.reg.push({v:k,l:k}); for(k in v) o.veic.push({v:k,l:k});
+  o.reg.sort(function(a,b){return a.l.localeCompare(b.l);}); o.veic.sort(function(a,b){return a.l.localeCompare(b.l);});
+  for(i=0;i<GRUPOS.length;i++) o.grp.push({v:GRUPOS[i].id,l:GRUPOS[i].nome+' ('+GRUPOS[i].ids.length+')'});
+  return o;
+}
+function pintarFiltrosMt(){
+  MT_OPTS=opcoesFiltrosMt();
+  var defs=[{k:'reg',l:'Região'},{k:'veic',l:'Veículo'},{k:'grp',l:'Grupo'}], h='', d, j, n, o, sel;
+  for(d=0;d<defs.length;d++){ var k=defs[d].k; n=MT_FIL[k].length; o=MT_OPTS[k];
+    h+='<span class="dd" onclick="event.stopPropagation()"><span class="pill'+(n?' on':'')+'" onclick="abrirDdMt(\''+k+'\')">'+defs[d].l+(n?(' ('+n+')'):'')+' ▾</span>';
+    if(MT_DD===k){ h+='<div class="dd-panel">';
+      if(!o.length) h+='<div style="padding:8px;font-size:12.5px;color:var(--muted)">'+(k==='grp'?'Nenhum grupo criado ainda':'Nada cadastrado')+'</div>';
+      for(j=0;j<o.length;j++){ sel=MT_FIL[k].indexOf(o[j].v)>=0; h+='<label><input type="checkbox" '+(sel?'checked ':'')+'onchange="alternarFiltroMt(\''+k+'\','+j+')"> '+esc(o[j].l)+'</label>'; }
+      h+='</div>'; }
+    h+='</span>';
+  }
+  var nf=MT_FIL.reg.length+MT_FIL.veic.length+MT_FIL.grp.length;
+  if(nf) h+='<span class="vertodos" onclick="MT_FIL={reg:[],veic:[],grp:[]};pintarMotoristas()">Limpar filtros</span>';
+  var ns=0, x; for(x in MT_SEL) ns++;
+  if(ns) h+='<span style="font-size:12.5px;color:var(--muted);margin-left:8px">'+ns+' selecionado(s) · <span class="vertodos" onclick="limparSelecaoMt()">limpar seleção</span></span>';
+  el('mt-filtros').innerHTML=h;
+}
+function abrirDdMt(k){ MT_DD=(MT_DD===k)?null:k; pintarFiltrosMt(); }
+function alternarFiltroMt(k,j){ var v=MT_OPTS[k][j].v, p=MT_FIL[k].indexOf(v); if(p>=0) MT_FIL[k].splice(p,1); else MT_FIL[k].push(v); pintarMotoristas(); }
+document.addEventListener('click',function(){ if(MT_DD){ MT_DD=null; pintarFiltrosMt(); } });
+/* grupos de motoristas */
+function abrirGrupo(){
+  el('gr-nome').value=''; el('gr-busca').value=''; el('gr-lista').removeAttribute('data-ini');
+  pintarGrupoLista(); pintarGruposExistentes(); abrir('sh-grupo');
+}
+function pintarGrupoLista(){
+  var q=(el('gr-busca').value||'').toLowerCase().trim(), h='', i, m, marcados={};
+  var atuais=el('gr-lista').querySelectorAll('input:checked'); for(i=0;i<atuais.length;i++) marcados[atuais[i].value]=1;
+  var primeira=!el('gr-lista').getAttribute('data-ini');
+  for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; if(q && m.n.toLowerCase().indexOf(q)<0) continue;
+    var on=primeira?!!MT_SEL[m.id]:!!marcados[m.id];
+    h+='<label style="display:flex;gap:9px;align-items:center;padding:7px 4px;font-size:13px;cursor:pointer"><input type="checkbox" value="'+m.id+'" '+(on?'checked':'')+'> <span class="av" style="width:24px;height:24px;font-size:10px;background:'+m.cor+'">'+m.ini+'</span> '+esc(m.n)+'</label>';
+  }
+  el('gr-lista').innerHTML=h||'<div class="empty">Nenhum motorista</div>';
+  el('gr-lista').setAttribute('data-ini','1');
+}
+function salvarGrupo(){
+  var nome=(el('gr-nome').value||'').trim(), ck=el('gr-lista').querySelectorAll('input:checked'), ids=[], i;
+  if(!nome){ aviso('Digite o nome do grupo'); return; }
+  for(i=0;i<ck.length;i++) ids.push(Number(ck[i].value));
+  if(!ids.length){ aviso('Marque pelo menos um motorista'); return; }
+  GRUPOS.push({id:'g'+Date.now(), nome:nome, ids:ids});
+  if(REAL) salvarLocal();
+  el('gr-nome').value=''; el('gr-lista').removeAttribute('data-ini'); pintarGrupoLista();
+  pintarGruposExistentes(); pintarMotoristas(); aviso('Grupo "'+nome+'" criado com '+ids.length+' motorista(s)');
+}
+function pintarGruposExistentes(){
+  var h='', i, g;
+  for(i=0;i<GRUPOS.length;i++){ g=GRUPOS[i];
+    h+='<div class="mt-cfg-lista" style="display:flex;justify-content:space-between;align-items:center;padding:9px 4px;font-size:13px"><span><b>'+esc(g.nome)+'</b> <span style="color:var(--muted);font-size:11.5px">· '+g.ids.length+' motorista(s)</span></span><span class="vertodos" onclick="removerGrupo(\''+g.id+'\')">remover</span></div>';
+  }
+  el('gr-existentes').innerHTML=h||'<div class="empty" style="padding:6px 0;font-size:12.5px">Nenhum grupo ainda</div>';
+}
+function removerGrupo(id){
+  var i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].id===id){ GRUPOS.splice(i,1); break; }
+  var p=MT_FIL.grp.indexOf(id); if(p>=0) MT_FIL.grp.splice(p,1);
+  if(REAL) salvarLocal(); pintarGruposExistentes(); pintarMotoristas();
 }
 function mostrarVeic(ev,id){
   var m=motorista(id); if(!m || !m.modelo) return;
@@ -2152,6 +2258,8 @@ function abrirMotorista(id){
   }
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Documentos</span><span class="v">'+esc(m.doc)+'</span></div>';
+  var gm=[], gi; for(gi=0;gi<GRUPOS.length;gi++) if(GRUPOS[gi].ids.indexOf(m.id)>=0) gm.push(GRUPOS[gi].nome);
+  if(gm.length) h+='<div class="sh-row"><span class="k">Grupos</span><span class="v">'+esc(gm.join(', '))+'</span></div>';
   h+='<div class="sh-row"><span class="k">Contrato</span><span class="v">'+badgeStatus(m.contrato)+'</span></div>';
   h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Preço fixo por pacote<br><span style="font-size:10.5px;font-weight:500">opcional — se preenchido, vale no lugar da área</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 38px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-padrao-'+m.id+'" value="'+(m.valorPadrao?String(m.valorPadrao).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarValorPadraoMotorista('+m.id+')">✓</button></div></span></div>';
   if(!REAL) h+='<div class="mapa-mock" style="height:190px;margin-top:16px;margin-bottom:0">'+
