@@ -142,6 +142,9 @@ a{color:inherit}
 .card h3 .vertodos:hover{text-decoration:underline}
 .vertodos{font-size:12.5px;font-weight:700;color:var(--roxo);cursor:pointer}
 .vertodos:hover{text-decoration:underline}
+.mt-cfg-linha{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.mt-cfg-valor{width:90px;flex:0 0 90px}
+.mt-cfg-add{width:38px;flex:0 0 38px;padding:0;display:flex;align-items:center;justify-content:center}
 
 /* seleção da transportadora no upload de planilha */
 .transp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
@@ -416,7 +419,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-22-2809</p>
+      <p class="bld">DELTADIS-BASE-24-2809</p>
     </div>
   </div>
 </div>
@@ -636,12 +639,15 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-bd" id="mt-corpo-sheet"></div>
 </div>
 
-<!-- ══ MODAL: cadastrar motorista ══ -->
+<!-- ══ MODAL: cadastrar/editar motorista ══ -->
 <div class="sheet" id="sh-novo-motorista">
-  <div class="sh-hd"><h3>Cadastrar motorista</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-hd"><h3 id="nm-titulo">Cadastrar motorista</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <div class="field"><label>Nome completo</label><input class="inp" id="nm-nome" placeholder="Nome do motorista"></div>
-    <div class="field"><label>Telefone</label><input class="inp" id="nm-tel" placeholder="(47) 9 0000-0000"></div>
+    <div class="grid2c" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Telefone</label><input class="inp" id="nm-tel" placeholder="(47) 9 0000-0000"></div>
+      <div class="field"><label>Chave PIX</label><input class="inp" id="nm-pix" placeholder="CPF, e-mail, telefone..."></div>
+    </div>
     <div class="field"><label>Região de atuação</label><input class="inp" id="nm-regiao" placeholder="Ex: Centro"></div>
     <div class="grid3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
       <div class="field"><label>Veículo</label><input class="inp" id="nm-modelo" placeholder="Fiorino"></div>
@@ -649,11 +655,18 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Ano</label><input class="inp" id="nm-ano" placeholder="2022"></div>
     </div>
     <div class="grid2c" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Placa</label><input class="inp" id="nm-placa" placeholder="ABC1D23"></div>
       <div class="field"><label>Capacidade (pacotes)</label><input class="inp" id="nm-cap" placeholder="60"></div>
-      <div class="field"><label>Valor por pacote</label><input class="inp" id="nm-valor" placeholder="3,00"></div>
     </div>
-    <div class="field"><label>Foto do veículo (opcional)</label><input class="inp" id="nm-foto" placeholder="cole o link da foto"></div>
-    <button class="btn pri wide" onclick="salvarNovoMotorista()">Salvar motorista</button>
+    <div class="grid2c" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Documentos</label><select class="inp" id="nm-doc"><option value="em validação">em validação</option><option value="aprovado">aprovado</option><option value="pendente">pendente</option></select></div>
+      <div class="field"><label>Contrato</label><select class="inp" id="nm-contrato"><option value="pendente">pendente</option><option value="assinado">assinado</option></select></div>
+    </div>
+    <div class="field"><label>Foto do veículo (opcional)</label>
+      <input type="file" accept="image/*" class="inp" id="nm-foto-input" onchange="lerFotoMotorista(this)">
+      <img id="nm-foto-preview" style="display:none;max-width:100%;border-radius:10px;margin-top:8px;border:1px solid var(--border)">
+    </div>
+    <button class="btn pri wide" id="nm-salvar-btn" onclick="salvarNovoMotorista()">Salvar motorista</button>
   </div>
 </div>
 
@@ -718,11 +731,44 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
+<div class="sheet wide" id="sh-repasse">
+  <div class="sh-hd"><h3>Repasse — <span id="rp-nome"></span></h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div class="kpis-sheet">
+      <div class="kpi-mini"><div class="lb">Entregues</div><div class="vl" id="rp-ent-qtd">0</div><div class="pct" id="rp-ent-val">R$ 0,00</div></div>
+      <div class="kpi-mini"><div class="lb">Em rota (previsto)</div><div class="vl" id="rp-rota-qtd">0</div><div class="pct" id="rp-rota-val">R$ 0,00</div></div>
+      <div class="kpi-mini"><div class="lb">Extraviados</div><div class="vl" id="rp-ext-qtd">0</div><div class="pct">não repassa</div></div>
+    </div>
+    <div class="sh-row" style="margin-top:14px"><span class="k">Saldo em aberto</span><span class="v" style="font-weight:800;font-size:16px" id="rp-saldo">R$ 0,00</span></div>
+    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
+      <input class="inp" placeholder="Ciclo de (ex: 01/09)" id="rp-ciclo-ini" style="width:120px">
+      <input class="inp" placeholder="até (ex: 07/09)" id="rp-ciclo-fim" style="width:120px">
+      <input class="inp" placeholder="Data de pagamento" id="rp-data-pg" style="width:140px">
+      <button class="btn pri" onclick="fecharCicloMotorista()">Fechar ciclo</button>
+    </div>
+    <p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Fechamento manual por enquanto — quando o Asaas estiver conectado, isso fecha e paga automático.</p>
+    <h4 style="margin:18px 0 8px;font-size:13px">Fechamentos</h4>
+    <div id="rp-fechamentos"></div>
+  </div>
+</div>
+<div class="sheet wide" id="sh-fechamento">
+  <div class="sh-hd"><h3>Fechamento — <span id="fc-periodo"></span></h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div class="sh-row"><span class="k">Status</span><span class="v" id="fc-status"></span></div>
+    <div class="sh-row"><span class="k">Data de pagamento</span><span class="v" id="fc-data"></span></div>
+    <div class="sh-row"><span class="k">Valor total</span><span class="v" style="font-weight:800" id="fc-valor"></span></div>
+    <button class="btn sec wide" style="margin-top:10px" id="fc-btn-pagar" onclick="marcarFechamentoPago()">Marcar como pago</button>
+    <button class="btn pri wide" style="margin-top:8px" onclick="baixarPdfFechamento()">⬇ Baixar PDF</button>
+    <h4 style="margin:16px 0 8px;font-size:13px">Pacotes deste fechamento</h4>
+    <div class="tb-wrap"><table class="tb"><thead><tr><th>Código</th><th>Cliente</th><th>Valor</th></tr></thead><tbody id="fc-linhas"></tbody></table></div>
+  </div>
+</div>
+
 <div class="vtip" id="veic-tip"></div>
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-22-2809</div>
+<div class="bld-fix">DELTADIS-BASE-24-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -975,7 +1021,7 @@ function importarPlanilha(linhas,c){
     if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv) p.bairro=endComCep; if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; atualizados++; }
     else{
       p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'',
-         scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en};
+         scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en, fechId:null};
       PEDIDOS.push(p); idx[cod]=p; novos++; codigosNovos.push(cod);
     }
   }
@@ -1090,7 +1136,14 @@ function resumoFinanceiro(){
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
     if(p.st==='em rota' || ehTentativa(p.st)){   /* ainda na rua (mesmo em tentativa): valor previsto, entra quando for entregue */
       out.rotaQtd++; out.rotaReceber+=Number(precoTransp(p.tr).recebe)||0;
-      m=p.mt?motorista(p.mt):null; if(m) out.rotaRepasse+=valorMotorista(m,p);
+      m=p.mt?motorista(p.mt):null;
+      if(m){ v=valorMotorista(m,p); out.rotaRepasse+=v;
+        o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0}); o.rotaQtd++; o.rotaVal+=v; }
+      continue;
+    }
+    if(p.st==='extraviado'){
+      m=p.mt?motorista(p.mt):null;
+      if(m){ o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0}); o.extQtd++; }
       continue;
     }
     if(p.st!=='entregue') continue;
@@ -1100,9 +1153,93 @@ function resumoFinanceiro(){
     if(!m){ out.semMot++; continue; }
     v=valorMotorista(m,p);
     out.repasse+=v;
-    o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0}); o.ent++; o.val+=v;
+    o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0}); o.ent++; o.val+=v;
   }
   return out;
+}
+/* ══ repasse do motorista: saldo em aberto (entregues ainda sem fechamento) e ciclos de fechamento ══ */
+function saldoAbertoMotorista(id){
+  var m=motorista(id); if(!m) return 0;
+  var i,p,total=0;
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.mt===id && p.st==='entregue' && !p.fechId) total+=valorMotorista(m,p); }
+  return total;
+}
+var RP_MOT_ATUAL=null, FC_MOT_ATUAL=null, FC_ID_ATUAL=null;
+function abrirRepasseMotorista(id){
+  var m=motorista(id); if(!m) return;
+  RP_MOT_ATUAL=id; m.fechamentos=m.fechamentos||[];
+  var rs=resumoFinanceiro().porMot[id]||{ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0};
+  el('rp-nome').textContent=m.n;
+  el('rp-ent-qtd').textContent=rs.ent; el('rp-ent-val').textContent=moeda(rs.val);
+  el('rp-rota-qtd').textContent=rs.rotaQtd; el('rp-rota-val').textContent=moeda(rs.rotaVal);
+  el('rp-ext-qtd').textContent=rs.extQtd;
+  el('rp-saldo').textContent=moeda(saldoAbertoMotorista(id));
+  el('rp-ciclo-ini').value=''; el('rp-ciclo-fim').value=''; el('rp-data-pg').value='';
+  pintarFechamentosMotorista(id);
+  abrir('sh-repasse');
+}
+function pintarFechamentosMotorista(id){
+  var m=motorista(id); if(!m) return; m.fechamentos=m.fechamentos||[];
+  var h='',i,f;
+  for(i=m.fechamentos.length-1;i>=0;i--){ f=m.fechamentos[i];
+    h+='<div class="sh-row" style="cursor:pointer" onclick="abrirDetalheFechamento('+id+',\''+f.id+'\')"><span class="k">'+esc(f.cicloIni||'—')+' até '+esc(f.cicloFim||'—')+'</span><span class="v" style="display:flex;align-items:center;gap:10px"><b>'+moeda(f.valor)+'</b>'+badgeStatus(f.status==='pago'?'pago':'pendente')+'</span></div>';
+  }
+  el('rp-fechamentos').innerHTML=h||'<div class="empty">Nenhum fechamento ainda</div>';
+}
+function fecharCicloMotorista(){
+  var id=RP_MOT_ATUAL, m=motorista(id); if(!m) return;
+  var saldo=saldoAbertoMotorista(id);
+  if(saldo<=0){ aviso('Não há saldo em aberto pra fechar'); return; }
+  var i,p,pedidosDoFechamento=[];
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.mt===id && p.st==='entregue' && !p.fechId) pedidosDoFechamento.push(p); }
+  var fid='f'+Date.now();
+  var f={id:fid, cicloIni:(el('rp-ciclo-ini').value||'').trim(), cicloFim:(el('rp-ciclo-fim').value||'').trim(),
+    dataPagamento:(el('rp-data-pg').value||'').trim(), valor:saldo, status:'pendente', pedidos:[]};
+  for(i=0;i<pedidosDoFechamento.length;i++){ p=pedidosDoFechamento[i]; p.fechId=fid; f.pedidos.push({cod:p.cod, cliente:p.cliente||'', valor:valorMotorista(m,p)}); }
+  m.fechamentos=m.fechamentos||[]; m.fechamentos.push(f);
+  if(REAL) salvarLocal();
+  aviso('Ciclo fechado! '+pedidosDoFechamento.length+' pacote(s), '+moeda(saldo)+'.');
+  abrirRepasseMotorista(id);
+}
+function abrirDetalheFechamento(mid,fid){
+  var m=motorista(mid); if(!m) return;
+  var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===fid) f=m.fechamentos[i];
+  if(!f) return;
+  FC_MOT_ATUAL=mid; FC_ID_ATUAL=fid;
+  el('fc-periodo').textContent=(f.cicloIni||'—')+' até '+(f.cicloFim||'—');
+  el('fc-status').innerHTML=badgeStatus(f.status==='pago'?'pago':'pendente');
+  el('fc-data').textContent=f.dataPagamento||'—';
+  el('fc-valor').textContent=moeda(f.valor);
+  el('fc-btn-pagar').style.display=f.status==='pago'?'none':'block';
+  var h='',j,pd;
+  for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; h+='<tr><td>'+esc(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
+  el('fc-linhas').innerHTML=h||'<tr><td colspan="3"><div class="empty">Sem pacotes</div></td></tr>';
+  abrir('sh-fechamento');
+}
+function marcarFechamentoPago(){
+  var m=motorista(FC_MOT_ATUAL); if(!m) return;
+  var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===FC_ID_ATUAL) f=m.fechamentos[i];
+  if(!f) return;
+  f.status='pago'; f.pagoEm=hojeISO();
+  if(REAL) salvarLocal();
+  aviso('Marcado como pago!');
+  abrirDetalheFechamento(FC_MOT_ATUAL, FC_ID_ATUAL);
+}
+function baixarPdfFechamento(){
+  var m=motorista(FC_MOT_ATUAL); if(!m) return;
+  var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===FC_ID_ATUAL) f=m.fechamentos[i];
+  if(!f) return;
+  var linhas='',j,pd;
+  for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; linhas+='<tr><td>'+esc(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
+  var htmlPg='<!doctype html><html><head><meta charset="utf-8"><title>Fechamento '+esc(m.n)+'</title>'+
+    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}</style></head>'+
+    '<body><h1>Fechamento de repasse — '+esc(m.n)+'</h1>'+
+    '<p>Ciclo: '+esc(f.cicloIni||'—')+' até '+esc(f.cicloFim||'—')+' &nbsp;|&nbsp; Pagamento: '+esc(f.dataPagamento||'—')+' &nbsp;|&nbsp; Status: '+(f.status==='pago'?'Pago':'Pendente')+'</p>'+
+    '<p><b>Valor total: '+moeda(f.valor)+'</b></p>'+
+    '<table><thead><tr><th>Código</th><th>Cliente</th><th>Valor</th></tr></thead><tbody>'+linhas+'</tbody></table>'+
+    '<script>window.onload=function(){window.print();}</'+'script></body></html>';
+  var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups pra baixar o PDF'); return; }
+  w.document.open(); w.document.write(htmlPg); w.document.close();
 }
 PEDIDOS=[]; MOTORISTAS=[]; EXTRATO=[]; recalcularReal();
 carregarLocal();
@@ -1655,25 +1792,70 @@ function mostrarVeic(ev,id){
 }
 function esconderVeic(){ el('veic-tip').classList.remove('on'); }
 
-function abrirNovoMotorista(){
-  var ids=['nm-nome','nm-tel','nm-regiao','nm-modelo','nm-cor','nm-ano','nm-cap','nm-valor','nm-foto'],i;
+var NM_EDITANDO=null, NM_FOTO_BASE64=null;
+function lerFotoMotorista(inp){
+  var f=inp.files && inp.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){ NM_FOTO_BASE64=rd.result; var pv=el('nm-foto-preview'); if(pv){ pv.src=rd.result; pv.style.display='block'; } };
+  rd.readAsDataURL(f);
+}
+function abrirNovoMotorista(id){
+  var ids=['nm-nome','nm-tel','nm-pix','nm-regiao','nm-modelo','nm-cor','nm-ano','nm-placa','nm-cap'],i;
   for(i=0;i<ids.length;i++){ var e=el(ids[i]); if(e) e.value=''; }
+  NM_FOTO_BASE64=null;
+  var pv=el('nm-foto-preview'); if(pv){ pv.style.display='none'; pv.src=''; }
+  var fi=el('nm-foto-input'); if(fi) fi.value='';
+  if(el('nm-doc')) el('nm-doc').value='em validação';
+  if(el('nm-contrato')) el('nm-contrato').value='pendente';
+  var m=id?motorista(id):null;
+  if(m){
+    NM_EDITANDO=m.id;
+    el('nm-titulo').textContent='Editar motorista';
+    el('nm-salvar-btn').textContent='Salvar alterações';
+    el('nm-nome').value=m.n||''; el('nm-tel').value=(m.tel&&m.tel!=='—')?m.tel:''; el('nm-pix').value=m.pix||'';
+    el('nm-regiao').value=(m.regiao&&m.regiao!=='—')?m.regiao:'';
+    el('nm-modelo').value=(m.modelo&&m.modelo!=='—')?m.modelo:''; el('nm-cor').value=(m.veicCor&&m.veicCor!=='—')?m.veicCor:'';
+    el('nm-ano').value=(m.ano&&m.ano!=='—')?m.ano:''; el('nm-placa').value=m.placa||'';
+    el('nm-cap').value=m.cap||''; el('nm-doc').value=m.doc||'em validação'; el('nm-contrato').value=m.contrato||'pendente';
+    if(m.foto){ NM_FOTO_BASE64=m.foto; if(pv){ pv.src=m.foto; pv.style.display='block'; } }
+  } else {
+    NM_EDITANDO=null;
+    el('nm-titulo').textContent='Cadastrar motorista';
+    el('nm-salvar-btn').textContent='Salvar motorista';
+  }
   abrir('sh-novo-motorista');
 }
 function iniciaisNome(n){ var p=String(n||'?').trim().split(/\s+/); return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase(); }
 function salvarNovoMotorista(){
   var nome=(el('nm-nome').value||'').trim();
   if(!nome){ aviso('Informe o nome do motorista'); return; }
+  if(NM_EDITANDO){
+    var m=motorista(NM_EDITANDO);
+    if(!m){ NM_EDITANDO=null; fecharTudo(); return; }
+    m.n=nome; m.ini=iniciaisNome(nome);
+    m.tel=(el('nm-tel').value||'—').trim()||'—'; m.pix=(el('nm-pix').value||'').trim();
+    m.regiao=(el('nm-regiao').value||'—').trim()||'—';
+    m.modelo=(el('nm-modelo').value||'—').trim()||'—'; m.veicCor=(el('nm-cor').value||'—').trim()||'—';
+    m.ano=(el('nm-ano').value||'—').trim()||'—'; m.placa=(el('nm-placa').value||'').trim();
+    m.cap=Number(el('nm-cap').value)||0; m.doc=el('nm-doc').value||'em validação'; m.contrato=el('nm-contrato').value||'pendente';
+    if(NM_FOTO_BASE64) m.foto=NM_FOTO_BASE64;
+    if(REAL) salvarLocal();
+    pintarMotoristas();
+    fecharTudo();
+    aviso('Dados atualizados!');
+    abrirMotorista(m.id);
+    return;
+  }
   var cores=['#6D28D9','#1D4ED8','#16A34A','#EC4899','#B08A00','#9333EA','#0F766E','#DC2626'];
   var maxId=0,i; for(i=0;i<MOTORISTAS.length;i++) if(MOTORISTAS[i].id>maxId) maxId=MOTORISTAS[i].id;
   var novo={
     id: maxId+1, n: nome, ini: iniciaisNome(nome), cor: cores[MOTORISTAS.length % cores.length],
-    regiao: (el('nm-regiao').value||'—').trim(), pac: 0,
+    regiao: (el('nm-regiao').value||'—').trim(), pac: 0, pix: (el('nm-pix').value||'').trim(),
     modelo: (el('nm-modelo').value||'—').trim(), veicCor: (el('nm-cor').value||'—').trim(),
-    ano: (el('nm-ano').value||'—').trim(), placa:'', foto: (el('nm-foto').value||'').trim() || null,
-    cap: Number(el('nm-cap').value)||0, valorPct: Number((el('nm-valor').value||'0').replace(',','.'))||0,
+    ano: (el('nm-ano').value||'—').trim(), placa: (el('nm-placa').value||'').trim(), foto: NM_FOTO_BASE64 || null,
+    cap: Number(el('nm-cap').value)||0, valorPct: 0,
     tel: (el('nm-tel').value||'—').trim(), st:'na base', local:'Aguardando primeira rota',
-    doc:'em validação', contrato:'pendente', entregues:0, devolvidos:0, extraviados:0
+    doc: el('nm-doc').value||'em validação', contrato: el('nm-contrato').value||'pendente', entregues:0, devolvidos:0, extraviados:0
   };
   MOTORISTAS.push(novo);
   if(REAL) salvarLocal();
@@ -1806,10 +1988,7 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Localização atual</span><span class="v">'+esc(m.local)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Veículo</span><span class="v">'+(m.modelo?(esc(m.modelo)+' '+esc(m.veicCor)+' '+esc(m.ano)+(m.placa?(' · '+esc(m.placa)):'')):'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Capacidade</span><span class="v">'+(m.cap?m.cap+' pacotes':'—')+'</span></div>';
-  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por código de região</span><span class="v" style="width:100%"><div id="mt-regioes-'+m.id+'"></div>'+
-       '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input class="inp" placeholder="Código (ex: Capoeiras)" id="mt-reg-cod-'+m.id+'" style="flex:1;min-width:120px"><input class="inp" placeholder="Valor R$" id="mt-reg-val-'+m.id+'" style="width:90px"><button class="btn sec" onclick="adicionarRegiaoMotorista('+m.id+')">+</button></div></span></div>';
-  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por faixa de CEP</span><span class="v" style="width:100%"><div id="mt-faixas-'+m.id+'"></div>'+
-       '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input class="inp" placeholder="CEP de" id="mt-cep-ini-'+m.id+'" style="width:90px"><input class="inp" placeholder="até" id="mt-cep-fim-'+m.id+'" style="width:90px"><input class="inp" placeholder="Valor R$" id="mt-cep-val-'+m.id+'" style="width:80px"><button class="btn sec" onclick="adicionarFaixaMotorista('+m.id+')">+</button></div></span></div>';
+  if(m.pix) h+='<div class="sh-row"><span class="k">Chave PIX</span><span class="v">'+esc(m.pix)+'</span></div>';
   if(REAL){
     var rsm=resumoFinanceiro().porMot[m.id]||{ent:0,val:0};
     if(m.logins && m.logins.jt) h+='<div class="sh-row"><span class="k">Nome na J&amp;T</span><span class="v">'+esc(m.logins.jt)+'</span></div>';
@@ -1820,12 +1999,16 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Documentos</span><span class="v">'+esc(m.doc)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Contrato</span><span class="v">'+badgeStatus(m.contrato)+'</span></div>';
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por código de região</span><span class="v" style="width:100%"><div id="mt-regioes-'+m.id+'"></div>'+
+       '<div class="mt-cfg-linha"><input class="inp" placeholder="Código (ex: Capoeiras)" id="mt-reg-cod-'+m.id+'" style="flex:1;min-width:120px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-reg-val-'+m.id+'"><button class="btn sec mt-cfg-add" onclick="adicionarRegiaoMotorista('+m.id+')">+</button></div></span></div>';
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Valor por faixa de CEP</span><span class="v" style="width:100%"><div id="mt-faixas-'+m.id+'"></div>'+
+       '<div class="mt-cfg-linha"><input class="inp" placeholder="CEP de" id="mt-cep-ini-'+m.id+'" style="width:90px"><input class="inp" placeholder="até" id="mt-cep-fim-'+m.id+'" style="width:90px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-cep-val-'+m.id+'"><button class="btn sec mt-cfg-add" onclick="adicionarFaixaMotorista('+m.id+')">+</button></div></span></div>';
   if(!REAL) h+='<div class="mapa-mock" style="height:190px;margin-top:16px;margin-bottom:0">'+
      '<iframe class="mapa-iframe" src="https://www.google.com/maps?q=Itaja%C3%AD,SC&z=13&output=embed" loading="lazy" title="Mapa"></iframe>'+
      '<span class="mapa-regiao-label">'+esc(m.regiao)+'</span>'+
      '<span class="mapa-pin" style="left:'+pos.l+'%;top:'+pos.t+'%">📍</span>'+
      '<span class="mapa-legenda">Área de atuação — rastreamento em tempo real em breve</span></div>';
-  h+='<div style="display:flex;justify-content:center;gap:12px;margin-top:16px"><button class="btn pri" onclick="fecharTudo();ir(\'financeiro\')">Ver repasse</button><button class="btn sec" onclick="aviso(\'Aqui edita o cadastro\')">Editar ficha</button></div>';
+  h+='<div style="display:flex;justify-content:center;gap:12px;margin-top:16px"><button class="btn pri" onclick="fecharTudo();abrirRepasseMotorista('+m.id+')">Ver repasse</button><button class="btn sec" onclick="fecharTudo();abrirNovoMotorista('+m.id+')">Editar ficha</button></div>';
   el('mt-corpo-sheet').innerHTML=h;
   abrir('sh-motorista');
   pintarValoresMotorista(m.id);
