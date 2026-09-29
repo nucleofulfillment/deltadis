@@ -1,0 +1,123 @@
+/* ══════════════════════════════════════════════════════════
+   DELTADIS-API — Worker separado do Veltro OS, só pra rastreio automático.
+   Guarda a chave do 17TRACK em segredo e fica de olho no status dos pacotes.
+
+   BINDINGS que precisam existir no Worker (Configurações → Variáveis):
+   - KV Namespace ligado com o nome  DELTADIS_KV
+   - Secret (texto, "Encrypt")       TRACK17_TOKEN  = chave do 17TRACK
+   - Secret (texto, "Encrypt")       CHAVE          = senha simples escolhida por você (ex: deltadis2026)
+   ══════════════════════════════════════════════════════════ */
+const VERSAO = 'DELTADIS-API-3-2809';
+
+function cors(resp) {
+  resp.headers.set('Access-Control-Allow-Origin', '*');
+  resp.headers.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  resp.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  return resp;
+}
+function json(obj, status) {
+  return cors(new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json' } }));
+}
+
+/* status do 17TRACK → status do DELTADIS
+   (ainda não vimos um payload real do 17TRACK — se o mapeamento vier errado,
+   ele fica registrado em DELTADIS_KV sob a chave "_ultimo_bruto_<numero>" pra gente ajustar) */
+function statusDe17Track(info) {
+  var principal = String((info && (info.latest_status && info.latest_status.status)) || '').toLowerCase();
+  var sub = String((info && (info.latest_status && info.latest_status.sub_status)) || '').toLowerCase();
+  var junto = principal + ' ' + sub;
+  if (junto.indexOf('delivered') >= 0) return 'entregue';
+  if (junto.indexOf('exception') >= 0 || junto.indexOf('undelivered') >= 0 || junto.indexOf('returned') >= 0 || junto.indexOf('return') >= 0) return 'devolvido';
+  if (junto.indexOf('expired') >= 0 || junto.indexOf('notfound') >= 0 || junto.indexOf('lost') >= 0) return 'extraviado';
+  if (junto.indexOf('failed') >= 0 || junto.indexOf('attempt') >= 0 || junto.indexOf('alert') >= 0) return 'tentativa 1';
+  if (junto.indexOf('transit') >= 0 || junto.indexOf('pickup') >= 0 || junto.indexOf('outfordelivery') >= 0) return 'em rota';
+  return 'coletado';
+}
+
+async function registrar17Track(codigos, token) {
+  var corpo = codigos.map(function (c) { return { number: c }; });
+  var r = await fetch('https://api.17track.net/track/v2.2/register', {
+    method: 'POST',
+    headers: { '17token': token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(corpo)
+  });
+  var d = await r.json().catch(function () { return null; });
+  return { http: r.status, resp: d };
+}
+
+export default {
+  async fetch(req, env) {
+    var url = new URL(req.url);
+    var path = url.pathname;
+
+    if (req.method === 'OPTIONS') return cors(new Response(null, { status: 204 }));
+
+    if (path === '/' || path === '') return json({ ok: true, version: VERSAO });
+
+    /* ── recebe os pushes do 17TRACK (URL configurada em Configurações → Package Webhook) ── */
+    if (path === '/webhook' && req.method === 'POST') {
+      if (url.searchParams.get('key') !== env.CHAVE) return json({ erro: 'Nao autenticado' }, 401);
+      var corpo;
+      try { corpo = await req.json(); } catch (e) { return json({ erro: 'JSON invalido' }, 400); }
+      var dados = (corpo && corpo.data) || corpo || {};
+      var numero = dados.number || (dados.track_info && dados.number) || '';
+      if (!numero) return json({ ok: false, motivo: 'sem numero no payload' });
+      var st = statusDe17Track(dados.track_info || dados);
+      await env.DELTADIS_KV.put('pacote_' + numero, JSON.stringify({ st: st, atualizado: Date.now() }));
+      await env.DELTADIS_KV.put('_ultimo_bruto_' + numero, JSON.stringify(corpo).slice(0, 20000));
+      return json({ ok: true, numero: numero, st: st });
+    }
+
+    /* ── registra os códigos de uma leva (chamado pelo deltadis.html depois do upload da planilha) ── */
+    if (path === '/registrar' && req.method === 'POST') {
+      if (url.searchParams.get('key') !== env.CHAVE) return json({ erro: 'Nao autenticado' }, 401);
+      var body;
+      try { body = await req.json(); } catch (e) { return json({ erro: 'JSON invalido' }, 400); }
+      var codigos = (body && body.codigos || []).filter(Boolean).slice(0, 200);
+      if (!codigos.length) return json({ erro: 'Envie {codigos:[...]}' }, 400);
+      var resultado = await registrar17Track(codigos, env.TRACK17_TOKEN);
+      /* marca cada um como "coletado" se ainda não existir registro de status */
+      for (var i = 0; i < codigos.length; i++) {
+        var ja = await env.DELTADIS_KV.get('pacote_' + codigos[i]);
+        if (!ja) await env.DELTADIS_KV.put('pacote_' + codigos[i], JSON.stringify({ st: 'coletado', atualizado: Date.now() }));
+      }
+      return json({ ok: true, enviados: codigos.length, resposta17track: resultado });
+    }
+
+    /* ── devolve o status atual de uma lista de códigos (o deltadis.html chama pra sincronizar) ── */
+    if (path === '/status' && req.method === 'POST') {
+      if (url.searchParams.get('key') !== env.CHAVE) return json({ erro: 'Nao autenticado' }, 401);
+      var b2;
+      try { b2 = await req.json(); } catch (e) { return json({ erro: 'JSON invalido' }, 400); }
+      var lista = (b2 && b2.codigos || []).slice(0, 500);
+      var out = {};
+      for (var j = 0; j < lista.length; j++) {
+        var v = await env.DELTADIS_KV.get('pacote_' + lista[j]);
+        if (v) out[lista[j]] = JSON.parse(v);
+      }
+      return json({ ok: true, status: out });
+    }
+
+    /* ── diagnóstico: olha o payload cru que o 17TRACK mandou pra um código (pra ajustar o mapeamento) ── */
+    if (path === '/diag-bruto' && req.method === 'GET') {
+      if (url.searchParams.get('key') !== env.CHAVE) return json({ erro: 'Nao autenticado' }, 401);
+      var num = url.searchParams.get('numero') || '';
+      var raw = await env.DELTADIS_KV.get('_ultimo_bruto_' + num);
+      var brutoObj = null;
+      if (raw) {
+        try { brutoObj = JSON.parse(raw); } catch (e) { brutoObj = { erro_ao_ler: true, texto_cru: raw }; }
+      }
+      return json({ ok: true, numero: num, bruto: brutoObj });
+    }
+
+    /* ── diagnóstico: lista os números de pacote que já chegaram (pra achar o do teste do 17TRACK) ── */
+    if (path === '/diag-lista' && req.method === 'GET') {
+      if (url.searchParams.get('key') !== env.CHAVE) return json({ erro: 'Nao autenticado' }, 401);
+      var lista2 = await env.DELTADIS_KV.list({ prefix: '_ultimo_bruto_' });
+      var numeros = lista2.keys.map(function (k) { return k.name.replace('_ultimo_bruto_', ''); });
+      return json({ ok: true, numeros: numeros });
+    }
+
+    return json({ erro: 'rota nao encontrada' }, 404);
+  }
+};
