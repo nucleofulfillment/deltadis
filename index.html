@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-51-2809</p>
+      <p class="bld">DELTADIS-BASE-54-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-51-2809</div>
+<div class="bld-fix">DELTADIS-BASE-54-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1017,7 +1017,7 @@ function idbLer(cb){
 function salvarLocal(cb){
   var o;
   if(REAL){
-    var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null,p.tel||'',p.canal||'',p.vend||'']); }
+    var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null,p.tel||'',p.canal||'',p.vend||'',p.rua||'',p.num||'',p.comp||'',p.bai||'',p.cid||'',p.endOrig||'']); }
     o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
@@ -1032,7 +1032,7 @@ function aplicarSalvo(d){
   if(d.rast){ RASTREADOS={}; d.rast.forEach(function(c){ RASTREADOS[c]=1; }); }
   if(d.ciclos) CICLOS=d.ciclos; else if(d.ciclo && d.ciclo.modo) CICLOS=[{id:'c0',grupo:'todos',modo:d.ciclo.modo,tipo:d.ciclo.tipo,dia:d.ciclo.dia,prazo:d.ciclo.prazo}];
   if((d.pedidos||d.pc) && d.motoristas){
-    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
+    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', rua:a[18]||'', num:a[19]||'', comp:a[20]||'', bai:a[21]||'', cid:a[22]||'', endOrig:a[23]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
     MOTORISTAS=d.motoristas; EXTRATO=d.extrato||[];
     /* dados salvos antes: nome que era só o login "arrumado" volta a ser o login de verdade */
@@ -1078,6 +1078,7 @@ function lerColunas(cab,amostra){
       motivo:ach(function(t){return t.indexOf('motivos dos pacotes problematicos')===0;}),
       tel:ach(function(t){return t==='celular do destinatario';}),
       tel2:ach(function(t){return t==='tel fixo do destinatario';}),
+      cid:ach(function(t){return t==='cidade destino';}),
       canal:ach(function(t){return t==='origem do pedido';})};
   }
   var rem=ach(function(t){return t.indexOf('numero da remessa')===0;});
@@ -1106,6 +1107,9 @@ function lerColunas(cab,amostra){
     cep:ach(function(t){return t.indexOf('cep do destinatario')>=0;}),
     area:ach(function(t){return t.indexOf('area de recebimento')>=0;}),
     tel:ach(function(t){return t.indexOf('telefone')>=0||t.indexOf('celular')>=0||t.indexOf('phone')>=0;}),
+    num:ach(function(t){return t==='numero do destinatario';}),
+    cid:ach(function(t){return t==='cidade do destinatario';}),
+    bai:ach(function(t){return t.indexOf('area de recebimento')>=0;}),
     canal:ach(function(t){return t==='nome do cliente';}),
     vend:ach(function(t){return t==='nome do cliente merchant';})
   };
@@ -1152,6 +1156,39 @@ function acharOuCriarMotorista(login,tr,doc){
     entregues:0, devolvidos:0, extraviados:0, emrota:0, logins:lgs};
   MOTORISTAS.push(nv);
   return nv;
+}
+/* separa o endereço em rua / número / complemento (a roteirização precisa do número separado).
+   Anjun: número vem em coluna própria (às vezes vazio, com o número dentro do nome da rua). J&T: a rua já vem com o número no fim. */
+function separarEndereco(rua,num){
+  var r=String(rua==null?'':rua).replace(/\s+/g,' ').trim(), n=String(num==null?'':num).trim(), comp='', m, idx;
+  var KW='(bloco|bl\\.?|ap(?:to?)?\\.?|apartamento|casa|lote|lt\\.?|quadra|qd\\.?|fundos|sala|conj(?:unto)?\\.?|cond(?:om[ií]nio)?\\.?|residencial|edif[ií]cio|ed\\.?|torre|andar|sobrado|loja|frente|ao lado|pr[oó]ximo)';
+  m=r.match(new RegExp('(^|[\\s,;-])'+KW+'(?=[\\s\\d.,;-]|$)','i'));
+  if(m){ idx=m.index+m[1].length; if(idx>3){ comp=r.slice(idx).trim(); r=r.slice(0,idx).trim().replace(/[\s,;-]+$/,''); } }
+  function limpa(x){ return String(x).replace(/[\s,;.-]+$/,'').trim(); }
+  if(/^\d+[a-z]?$/i.test(n) || /^s\/?n$/i.test(n)) return {rua:limpa(r), num:n.toUpperCase(), comp:comp};
+  r=r.replace(/^[\s,;.-]+/,'');
+  /* só número no começo ("354 portaria", "170 - apto 1301"): não veio o nome da rua, a rua sai do CEP */
+  var ini=r.match(/^(\d{1,6}[A-Za-z]?|s\/n)(?:[\s,;.-]+(.*))?$/i);
+  if(ini) return {rua:'', num:ini[1].toUpperCase(), comp:[ini[2]||'',comp].filter(Boolean).join(' ')};
+  var sn=r.match(/[\s,;-]+(s\/n|s\.n\.?|sn)$/i);
+  if(sn) return {rua:limpa(r.slice(0,sn.index)), num:'S/N', comp:comp};
+  var re=/(^|[\s,;-])(?:n[º°o.]*\s*)?(\d{1,6}[A-Za-z]?)(?=$|[\s,;.-])/g, ach=[], x;
+  while((x=re.exec(r))!==null) ach.push({i:x.index+x[1].length, len:x[0].length-x[1].length, v:x[2]});
+  if(ach.length){
+    var u=ach[ach.length-1], antes=limpa(r.slice(0,u.i).replace(/\b(n[º°o]?\.?)\s*$/i,''));
+    if(!(ach.length===1 && antes.split(' ').length<2)){
+      var depois=r.slice(u.i+u.len).replace(/^[\s,;.-]+/,'').trim();
+      return {rua:antes, num:u.v.toUpperCase(), comp:[depois,comp].filter(Boolean).join(' ')};
+    }
+  }
+  var gl=r.match(/([A-Za-zÀ-ú])(\d{1,6}[A-Za-z]?)$/);
+  if(gl && r.length>6) return {rua:limpa(r.slice(0,gl.index+1)), num:gl[2].toUpperCase(), comp:comp};
+  /* número solto no fim do complemento ("Apto 505 bloco 4 1669" → 1669; "Apto 605" fica como complemento) */
+  var tk=comp.split(' ');
+  if(tk.length>=2 && /^\d{1,6}[A-Za-z]?$/.test(tk[tk.length-1]) && !new RegExp('^'+KW+'$','i').test(tk[tk.length-2].replace(/[,.;]$/,''))){
+    return {rua:limpa(r), num:tk[tk.length-1].toUpperCase(), comp:tk.slice(0,-1).join(' ')};
+  }
+  return {rua:limpa(r), num:'', comp:comp};
 }
 /* canal de venda: nome limpo (Anjun: "sheind2d" → Shein; J&T: "MERCADO CBT" → Mercado Livre CBT) */
 function canalLimpo(v){
@@ -1202,18 +1239,20 @@ function importarPlanilha(linhas,c){
     }
     var clienteNv=(c.cliente>=0)?String(r[c.cliente]==null?'':r[c.cliente]).trim():'';
     var endNv=(c.end>=0)?String(r[c.end]==null?'':r[c.end]).trim():'';
-    if(c.bairro>=0 && r[c.bairro]) endNv=(endNv?endNv+' — ':'')+String(r[c.bairro]).trim();
+    var numRaw=(c.num>=0)?r[c.num]:'', bairroNv=(c.bairro>=0)?String(r[c.bairro]==null?'':r[c.bairro]).trim():((c.bai>=0)?String(r[c.bai]==null?'':r[c.bai]).trim():''), cidNv=(c.cid>=0)?String(r[c.cid]==null?'':r[c.cid]).trim():'';
+    var sep=separarEndereco(endNv,numRaw), endOrig=endNv;
     var valorNv=(c.valor>=0)?(function(){var vv=r[c.valor]; if(vv==null||vv==='') return null; vv=String(vv).replace(/[^\d,.-]/g,''); if(vv.indexOf(',')>=0) vv=vv.replace(/\./g,'').replace(',','.'); vv=parseFloat(vv); return isNaN(vv)?null:vv;})():null;
     var cepNv=(c.cep>=0)?String(r[c.cep]==null?'':r[c.cep]).replace(/\D/g,''):'';
     var areaNv=(c.area>=0)?String(r[c.area]==null?'':r[c.area]).trim():'';
     var telNv=(c.tel>=0)?String(r[c.tel]==null?'':r[c.tel]).trim():''; if(!telNv && c.tel2>=0) telNv=String(r[c.tel2]==null?'':r[c.tel2]).trim();
     var canalNv=(c.canal>=0)?canalLimpo(r[c.canal]):'';
     var vendNv=(c.vend>=0)?String(r[c.vend]==null?'':r[c.vend]).trim():'';
-    var endComCep=endNv+(cepNv?(' — CEP '+cepNv):'');
+    var endComCep=[([sep.rua,sep.num].filter(Boolean).join(', ')+(sep.comp?' ('+sep.comp+')':'')), bairroNv, cidNv].filter(Boolean).join(' — ')+(cepNv?(' — CEP '+cepNv):'');
+    if(!sep.rua && !sep.num) endComCep='';
     p=idx[cod];
-    if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv) p.bairro=endComCep; if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; if(telNv) p.tel=telNv; if(canalNv) p.canal=canalNv; if(vendNv) p.vend=vendNv; atualizados++; }
+    if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv){ p.bairro=endComCep; p.rua=sep.rua; p.num=sep.num; p.comp=sep.comp; p.bai=bairroNv; p.cid=cidNv; p.endOrig=endOrig; } if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; if(telNv) p.tel=telNv; if(canalNv) p.canal=canalNv; if(vendNv) p.vend=vendNv; atualizados++; }
     else{
-      p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'', tel:telNv, canal:canalNv, vend:vendNv,
+      p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, rua:sep.rua, num:sep.num, comp:sep.comp, bai:bairroNv, cid:cidNv, endOrig:endOrig, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'', tel:telNv, canal:canalNv, vend:vendNv,
          scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en, fechId:null};
       PEDIDOS.push(p); idx[cod]=p; novos++; codigosNovos.push(cod);
     }
@@ -1678,10 +1717,10 @@ window.addEventListener('resize', ajustarAlturaIndbar);
 function pintarDashboard(){
   var i;
   el('db-kpis').innerHTML=
-    '<div class="kpi"><div class="lb">Base</div><div class="vl">'+DASH_AGG.coletado+'</div><div class="dl">na base, aguardando saída</div></div>'+
-    '<div class="kpi"><div class="lb cb">Em rota</div><div class="vl vb">'+DASH_AGG.emrota+'</div><div class="dl">com motoristas agora</div></div>'+
-    '<div class="kpi"><div class="lb cg">Entregue</div><div class="vl vg">'+DASH_AGG.entregue+'</div><div class="dl">concluídos hoje</div></div>'+
-    '<div class="kpi"><div class="lb cr">Precisa de ação</div><div class="vl vr">'+(DASH_AGG.tentativas+DASH_AGG.devolvido+DASH_AGG.extraviado)+'</div><div class="dl">tentativas, devolução ou extravio</div></div>';
+    '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'coletado\')"><div class="lb">Base</div><div class="vl">'+DASH_AGG.coletado+'</div><div class="dl">na base, aguardando saída</div></div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'em rota\')"><div class="lb cb">Em rota</div><div class="vl vb">'+DASH_AGG.emrota+'</div><div class="dl">com motoristas agora</div></div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'entregue\')"><div class="lb cg">Entregue</div><div class="vl vg">'+DASH_AGG.entregue+'</div><div class="dl">concluídos hoje</div></div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'acao\')"><div class="lb cr">Precisa de ação</div><div class="vl vr">'+(DASH_AGG.tentativas+DASH_AGG.devolvido+DASH_AGG.extraviado)+'</div><div class="dl">tentativas, devolução ou extravio</div></div>';
 
   var probs=[]; for(i=0;i<PEDIDOS.length;i++) if(ehTentativa(PEDIDOS[i].st)||PEDIDOS[i].st==='devolvido'||PEDIDOS[i].st==='extraviado') probs.push(PEDIDOS[i]);
   el('pdv-n').textContent=probs.length;
@@ -1842,14 +1881,14 @@ function abrirPedido(cod){
   if(p.vend) h+='<div class="sh-row"><span class="k">Loja / vendedor</span><span class="v">'+esc(p.vend)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Transportadora</span><span class="v">'+esc(t?t.n:'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Motorista</span><span class="v">'+(m?('<span class="vertodos" onclick="fecharTudo();abrirMotorista('+m.id+')">'+esc(m.n)+' ›</span>'):'sem motorista')+'</span></div>';
-  h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc(p.bairro||'—')+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc(p.bairro||'—')+((p.bairro && (!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11.5px;font-weight:600">⚠ '+(!p.num?'sem número — não dá pra roteirizar':'sem nome da rua — usar o CEP')+'</span>':'')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Valor da NF</span><span class="v">'+(p.vl==null?'—':moeda(p.vl))+'</span></div>';
   if(p.dia) h+='<div class="sh-row"><span class="k">Entrada no ponto</span><span class="v">'+dataBR(p.dia)+(p.hora?' '+esc(p.hora):'')+'</span></div>';
   if(p.scan && p.scan!==p.cod) h+='<div class="sh-row"><span class="k">Código de escaneamento</span><span class="v">'+esc(p.scan)+'</span></div>';
   if(p.obs) h+='<div class="sh-row"><span class="k">Observação</span><span class="v">'+esc(p.obs)+'</span></div>';
   h+='<div class="sh-row"><span class="k">1ª tentativa</span><span class="v">'+esc(p.t1||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">2ª tentativa</span><span class="v">'+esc(p.t2||'—')+'</span></div>';
-  if(!(REAL && p.tr==='anj')){
+  if(!REAL){
     h+='<div style="display:flex;gap:12px;margin-top:16px"><button class="btn pri" onclick="aviso(\'Aqui reagenda a entrega\')">Reagendar entrega</button><button class="btn sec" onclick="aviso(\'Aqui troca o motorista\')">Trocar motorista</button></div>';
   } else {
     h+='<div style="margin-top:18px;font-weight:700;font-size:13px">Histórico de rastreio</div>';
@@ -1859,7 +1898,7 @@ function abrirPedido(cod){
   }
   el('pd-corpo-sheet').innerHTML=h;
   abrir('sh-pedido');
-  if(REAL && p.tr==='anj') carregarHistoricoRastreio(p.cod);
+  if(REAL) carregarHistoricoRastreio(p.cod);
 }
 /* busca no Worker a linha do tempo de eventos do 17TRACK pra esse pacote */
 function formatarQuandoRastreio(iso){
@@ -1926,7 +1965,7 @@ function filtrarPorTransportadora(id){ FILTRO_TR=id; ir('pedidos'); pintarPedido
 function limparFiltroTransportadora(){ FILTRO_TR=null; pintarPedidos(); }
 function pintarPedidos(){
   var tf=FILTRO_TR?transp(FILTRO_TR):null;
-  el('pd-chip').innerHTML = tf ? ('<div class="chip-filtro">Transportadora: '+esc(tf.n)+' <span onclick="limparFiltroTransportadora()">✕</span></div>') : '';
+  el('pd-chip').innerHTML = (tf ? ('<div class="chip-filtro">Transportadora: '+esc(tf.n)+' <span onclick="limparFiltroTransportadora()">✕</span></div>') : '') + (FILTRO_PD==='acao' ? '<div class="chip-filtro">Precisa de ação: tentativas, devolvidos e extraviados <span onclick="filtrarPedidos(\'todos\')">✕</span></div>' : '');
 
   var dIni=(el('pd-data-ini')&&el('pd-data-ini').value)||'', dFim=(el('pd-data-fim')&&el('pd-data-fim').value)||'';
   function passaData(p2){ if(!p2.dia) return !dIni && !dFim; if(dIni && p2.dia<dIni) return false; if(dFim && p2.dia>dFim) return false; return true; }
@@ -1949,7 +1988,8 @@ function pintarPedidos(){
 
   var busca=(el('pd-busca').value||'').toLowerCase().trim(), h='', n=0, LIM=300;
   for(i=0;i<PEDIDOS.length;i++){var p=PEDIDOS[i];
-    if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
+    if(FILTRO_PD==='acao'){ if(!(ehTentativa(p.st)||p.st==='devolvido'||p.st==='extraviado')) continue; }
+    else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
     if(ocFiltro && p.obs!==ocFiltro) continue;
@@ -1965,6 +2005,13 @@ function pintarPedidos(){
   el('pd-corpo').innerHTML=h;
 }
 function filtrarPedidos(s){FILTRO_PD=s; pintarPedidos();}
+/* clicou num card do Dashboard: abre Pedidos já filtrado pelo status (limpa transportadora, datas e ocorrência pra bater com o número do card) */
+function dashParaPedidos(st){
+  FILTRO_TR=null; FILTRO_PD=st;
+  var a=el('pd-data-ini'), b=el('pd-data-fim'), o=el('pd-ocor'), q=el('pd-busca');
+  if(a) a.value=''; if(b) b.value=''; if(o) o.value=''; if(q) q.value='';
+  ir('pedidos'); pintarPedidos();
+}
 
 /* ══ upload de planilha (alimenta os pedidos) ══ */
 var UP_TRANSP=null;
