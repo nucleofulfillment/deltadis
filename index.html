@@ -419,7 +419,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-24-2809</p>
+      <p class="bld">DELTADIS-BASE-25-2809</p>
     </div>
   </div>
 </div>
@@ -768,7 +768,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-24-2809</div>
+<div class="bld-fix">DELTADIS-BASE-25-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -778,15 +778,35 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
    Sem domínio confirmado = mantém o quadradinho com as iniciais.
    ══════════════════════════════════════════════════════════ */
 var TRANSPORTADORAS=[
-  {id:'jt',  n:'J&T Express',  ini:'JT', cor:'#EC4899', hoje:214, dominio:'jtexpress.com.br', sla:96},
-  {id:'anj', n:'Anjun',        ini:'AJ', cor:'#16A34A', hoje:98,  dominio:'anjunexpress.com', sla:93},
-  {id:'azu', n:'Azul Cargo',   ini:'AZ', cor:'#1D4ED8', hoje:157, dominio:'azulcargas.com.br', sla:97},
-  {id:'eng', n:'Engloba',      ini:'EN', cor:'#B08A00', hoje:63,  dominio:null, sla:88},
-  {id:'ctl', n:'Central Log',  ini:'CT', cor:'#6D28D9', hoje:121, dominio:null, sla:91},
-  {id:'rsc', n:'Rápido SC',    ini:'RS', cor:'#DC2626', hoje:74,  dominio:null, sla:85},
-  {id:'vex', n:'Vex',          ini:'VX', cor:'#9333EA', hoje:142, dominio:null, sla:94},
-  {id:'tbr', n:'TransBR',      ini:'TB', cor:'#0F766E', hoje:56,  dominio:null, sla:89}
+  {id:'jt',  n:'J&T Express',        ini:'JT', cor:'#EC4899', hoje:214, dominio:'jtexpress.com.br', sla:96},
+  {id:'anj', n:'Anjun',              ini:'AJ', cor:'#16A34A', hoje:98,  dominio:'anjunexpress.com', sla:93},
+  {id:'dhl', n:'DHL',                ini:'DH', cor:'#FFCC00', hoje:41,  dominio:'dhl.com', sla:97},
+  {id:'pic', n:'Pichau',             ini:'PI', cor:'#1D4ED8', hoje:37,  dominio:'pichau.com.br', sla:92},
+  {id:'enq', n:'Expresso Nordeste',  ini:'EQ', cor:'#DC2626', hoje:52,  dominio:'expnordeste.com.br', sla:88},
+  {id:'kmc', n:'Km Cargo',           ini:'KM', cor:'#0F766E', hoje:44,  dominio:'kmcargo.com.br', sla:90},
+  {id:'lsl', n:'Ls Log',             ini:'LL', cor:'#9333EA', hoje:29,  dominio:'lslog.com.br', sla:91},
+  {id:'din', n:'Dinâmica',           ini:'DI', cor:'#B08A00', hoje:33,  dominio:'dinamicagroup.com.br', sla:87},
+  {id:'dia', n:'Diálogo Logística',  ini:'DL', cor:'#6D28D9', hoje:26,  dominio:'dialogologistica.com.br', sla:89},
+  {id:'lgb', n:'Log GB',             ini:'LG', cor:'#16A34A', hoje:21,  dominio:null, sla:85}
 ];
+/* domínios conhecidos, pra achar o favicon pelo NOME mesmo em transportadora criada depois
+   (em Configurações → Precificação) sem preencher domínio manualmente */
+var DOMINIOS_CONHECIDOS=[
+  {re:/pichau/i, dom:'pichau.com.br'},
+  {re:/\bdhl\b/i, dom:'dhl.com'},
+  {re:/nordeste/i, dom:'expnordeste.com.br'},
+  {re:/km\s*cargo/i, dom:'kmcargo.com.br'},
+  {re:/ls\s*log/i, dom:'lslog.com.br'},
+  {re:/din[aâ]mica/i, dom:'dinamicagroup.com.br'},
+  {re:/di[aá]logo/i, dom:'dialogologistica.com.br'},
+  {re:/j\s*&?\s*t\s*express|^jet$/i, dom:'jtexpress.com.br'},
+  {re:/anjun/i, dom:'anjunexpress.com'}
+];
+function dominioPorNome(n){
+  var s=String(n||''), i;
+  for(i=0;i<DOMINIOS_CONHECIDOS.length;i++) if(DOMINIOS_CONHECIDOS[i].re.test(s)) return DOMINIOS_CONHECIDOS[i].dom;
+  return null;
+}
 
 var MOTORISTAS=[
   {id:1,n:'Carlos Mendes',   ini:'CM', cor:'#6D28D9', regiao:'Centro',        pac:38, modelo:'Fiorino',  veicCor:'Branca', ano:2021, placa:'ABC1A23', foto:null, cap:80, valorPct:3.20, tel:'(47) 9 8811-2200', st:'em rota', local:'Rua XV de Novembro, próximo ao 900', doc:'CNH e antecedentes em dia', contrato:'ativo', entregues:512, devolvidos:14, extraviados:2},
@@ -806,14 +826,14 @@ var REGIAO_POS={
 var PEDIDOS=[
   {cod:'DX-88213', tr:'jt',  mt:1, cliente:'Fernanda Klein',  bairro:'Centro',       vl:189.90, st:'entregue', t1:'27/09 09:12 — entregue', t2:''},
   {cod:'DX-88214', tr:'anj', mt:2, cliente:'Ricardo Salles',  bairro:'Fazenda',      vl:349.00, st:'em rota',  t1:'', t2:''},
-  {cod:'DX-88215', tr:'azu', mt:null, cliente:'Tatiane Reis', bairro:'São Vicente',  vl:79.90,  st:'aguardando', t1:'', t2:''},
-  {cod:'DX-88216', tr:'ctl', mt:4, cliente:'Marcelo Dutra',   bairro:'Cordeiros',    vl:522.30, st:'tratativa', t1:'27/09 10:05 — ausente', t2:'27/09 14:20 — endereço não localizado'},
-  {cod:'DX-88217', tr:'vex', mt:5, cliente:'Camila Doretto',  bairro:'Praia Brava',  vl:129.00, st:'tratativa', t1:'27/09 11:30 — recusado', t2:''},
-  {cod:'DX-88218', tr:'rsc', mt:3, cliente:'Ubiratan Melo',   bairro:'Espinheiros',  vl:64.50,  st:'aguardando', t1:'', t2:''},
+  {cod:'DX-88215', tr:'dhl', mt:null, cliente:'Tatiane Reis', bairro:'São Vicente',  vl:79.90,  st:'aguardando', t1:'', t2:''},
+  {cod:'DX-88216', tr:'pic', mt:4, cliente:'Marcelo Dutra',   bairro:'Cordeiros',    vl:522.30, st:'tratativa', t1:'27/09 10:05 — ausente', t2:'27/09 14:20 — endereço não localizado'},
+  {cod:'DX-88217', tr:'enq', mt:5, cliente:'Camila Doretto',  bairro:'Praia Brava',  vl:129.00, st:'tratativa', t1:'27/09 11:30 — recusado', t2:''},
+  {cod:'DX-88218', tr:'kmc', mt:3, cliente:'Ubiratan Melo',   bairro:'Espinheiros',  vl:64.50,  st:'aguardando', t1:'', t2:''},
   {cod:'DX-88219', tr:'jt',  mt:1, cliente:'Priscila Zanotto',bairro:'Centro',       vl:210.00, st:'em rota',  t1:'', t2:''},
-  {cod:'DX-88220', tr:'eng', mt:6, cliente:'Otávio Brandão',  bairro:'Fazenda',      vl:98.90,  st:'entregue', t1:'27/09 08:40 — entregue', t2:''},
-  {cod:'DX-88221', tr:'tbr', mt:null, cliente:'Denise Kuhn',  bairro:'Vila Operária',vl:412.00, st:'tratativa', t1:'27/09 09:50 — objeto avariado', t2:''},
-  {cod:'DX-88222', tr:'azu', mt:2, cliente:'Grupo Molhes SA', bairro:'Centro',       vl:1290.00,st:'em rota',  t1:'', t2:''}
+  {cod:'DX-88220', tr:'lsl', mt:6, cliente:'Otávio Brandão',  bairro:'Fazenda',      vl:98.90,  st:'entregue', t1:'27/09 08:40 — entregue', t2:''},
+  {cod:'DX-88221', tr:'din', mt:null, cliente:'Denise Kuhn',  bairro:'Vila Operária',vl:412.00, st:'tratativa', t1:'27/09 09:50 — objeto avariado', t2:''},
+  {cod:'DX-88222', tr:'dia', mt:2, cliente:'Grupo Molhes SA', bairro:'Centro',       vl:1290.00,st:'em rota',  t1:'', t2:''}
 ];
 
 /* números agregados do dia, em escala real do ponto (os PEDIDOS acima são só a amostra exibida na tabela) */
@@ -1253,7 +1273,7 @@ function motorista(id){for(var i=0;i<MOTORISTAS.length;i++) if(MOTORISTAS[i].id=
 /* favicon real quando o domínio já foi confirmado; senão null (cai pras iniciais) */
 function favicon(dom){return dom ? ('https://www.google.com/s2/favicons?domain='+dom+'&sz=64') : null;}
 function iconeTransp(t){
-  var fv=favicon(t.dominio);
+  var fv=favicon(t.dominio||dominioPorNome(t.n));
   if(fv) return '<img src="'+fv+'" alt="" onerror="this.parentNode.textContent=\''+t.ini+'\';this.parentNode.style.background=\''+t.cor+'\';">';
   return t.ini;
 }
