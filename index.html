@@ -256,6 +256,7 @@ a{color:inherit}
 
 /* financeiro */
 .finrow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+.finrow.fc4{grid-template-columns:repeat(4,1fr)}
 .duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
 .duo .saldo,.duo .kpi{margin-bottom:0}
 @media(max-width:760px){.duo{grid-template-columns:1fr}}
@@ -326,7 +327,7 @@ a{color:inherit}
   .kpis{grid-template-columns:repeat(2,1fr)}
   .grid2{grid-template-columns:1fr}
   .cfgcards{grid-template-columns:1fr}
-  .finrow{grid-template-columns:1fr}
+  .finrow,.finrow.fc4{grid-template-columns:1fr}
   .main{padding:16px 14px 90px}
   #login{grid-template-columns:1fr;min-height:auto}
   .lg-arte{display:none}
@@ -437,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-67-2809</p>
+      <p class="bld">DELTADIS-BASE-68-2809</p>
     </div>
   </div>
 </div>
@@ -626,10 +627,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="card">
           <h3><span class="lft">Fluxo de caixa</span><span class="vertodos" onclick="abrirNovoLancamento()">+ Novo lançamento</span></h3>
           <div class="fc-filtros" id="fc-filtros"></div>
-          <div class="finrow" id="fc-periodo" style="margin-bottom:14px"></div>
+          <div class="finrow fc4" id="fc-periodo" style="margin-bottom:14px"></div>
+          <div id="fc-barra-sel"></div>
           <div class="tb-wrap"><table class="tb">
-            <colgroup><col style="width:13%"><col style="width:41%"><col style="width:15%"><col style="width:14%"><col style="width:17%"></colgroup>
-            <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+            <colgroup><col style="width:5%"><col style="width:12%"><col style="width:36%"><col style="width:15%"><col style="width:14%"><col style="width:18%"></colgroup>
+            <thead><tr><th><input type="checkbox" id="fc-sel-todos" onchange="fcSelecionarTodos(this.checked)" title="Selecionar todas as saídas em aberto"></th><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
             <tbody id="fc-corpo"></tbody>
           </table></div>
         </div>
@@ -901,7 +903,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-67-2809</div>
+<div class="bld-fix">DELTADIS-BASE-68-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1724,7 +1726,7 @@ function badgeStatus(st){
     coletado:['b-nu','Base'],'tentativa 1':['b-no','Tentativa 1'],'tentativa 2':['b-no','Tentativa 2'],'tentativa 3':['b-no','Tentativa 3'],
     devolvido:['b-no','Devolvido'],extraviado:['b-no','Extraviado'],
     ativo:['b-ok','ativo'],pendente:['b-wt','pendente'],'na base':['b-nu','Na base'],inativo:['b-no','Inativo'],
-    pago:['b-ok','Pago'],recebido:['b-ok','Recebido'],'a revisar':['b-wt','A revisar']};
+    pago:['b-ok','Pago'],recebido:['b-ok','Recebido'],'a revisar':['b-wt','A revisar'],autorizado:['b-in','Autorizado'],recusado:['b-no','Não pagar']};
   var m=map[st]||['b-nu',st];
   return '<span class="badge '+m[0]+'">'+esc(m[1])+'</span>';
 }
@@ -3031,6 +3033,7 @@ function pintarFiltrosFC(){
   el('fc-filtros').innerHTML=
     '<select onchange="mudarCatFC(this.value)">'+catOpts+'</select>'+
     '<button type="button" class="btn-cat-add" onclick="abrirNovaCategoria()" title="Cadastrar nova categoria">+</button>'+
+    '<select onchange="mudarStatusFC(this.value)" title="Status">'+[['todos','Todos os status'],['pendente','Pendente'],['autorizado','Autorizado'],['recusado','Não pagar'],['pago','Pago'],['recebido','Recebido']].map(function(o){return '<option value="'+o[0]+'"'+(FC_STATUS===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'+
     '<input type="month" value="'+((FC_DATA_INI&&FC_DATA_FIM&&FC_DATA_INI.slice(0,7)===FC_DATA_FIM.slice(0,7))?FC_DATA_INI.slice(0,7):'')+'" onchange="mudarMesFC(this.value)" title="Mês">'+
     '<input type="date" value="'+FC_DATA_INI+'" onchange="mudarDataIniFC(this.value)" title="Data inicial">'+
     '<input type="date" value="'+FC_DATA_FIM+'" onchange="mudarDataFimFC(this.value)" title="Data final">';
@@ -3063,35 +3066,61 @@ function filtrarEXTRATO(){
     if(FC_DATA_INI && e.data<FC_DATA_INI) continue;
     if(FC_DATA_FIM && e.data>FC_DATA_FIM) continue;
     if(FC_CAT!=='todas' && e.categoria!==FC_CAT) continue;
+    if(FC_STATUS && FC_STATUS!=='todos' && e.status!==FC_STATUS) continue;
     lista.push(e);
   }
   lista.sort(function(a,b){return a.data<b.data?1:-1;});
   return lista;
 }
 
+var FC_SEL={}, FC_STATUS='todos';   /* saídas marcadas pra autorizar / não pagar */
+function fcSelecionavel(e){ return e.tp==='out' && e.status!=='pago'; }
+function fcSelecionarTodos(on){ var lista=filtrarEXTRATO(), i; FC_SEL={}; if(on) for(i=0;i<lista.length;i++) if(fcSelecionavel(lista[i])) FC_SEL[lista[i].id]=1; pintarFluxoCaixa(); }
+function fcMarcar(id,on){ if(on) FC_SEL[id]=1; else delete FC_SEL[id]; pintarFluxoCaixa(); }
+function fcLimparSel(){ FC_SEL={}; pintarFluxoCaixa(); }
+function mudarStatusFC(v){ FC_STATUS=v; FC_SEL={}; pintarFiltrosFC(); pintarFluxoCaixa(); }
+/* decisão sobre as saídas marcadas: autorizado (pode pagar) · recusado (não pagar) · pendente (volta pra análise). Nenhum dinheiro se move aqui. */
+function fcDecidir(novo){
+  var ids=Object.keys(FC_SEL), i, e, sel=[], total=0;
+  for(i=0;i<EXTRATO.length;i++){ e=EXTRATO[i]; if(FC_SEL[e.id] && fcSelecionavel(e)){ sel.push(e); total+=Number(e.vl)||0; } }
+  if(!sel.length){ aviso('Marque as saídas primeiro'); return; }
+  var rot={autorizado:'AUTORIZAR o pagamento de',recusado:'marcar como NÃO PAGAR',pendente:'devolver pra pendente'}[novo];
+  if(!window.confirm('Confirma '+rot+' '+sel.length+' lançamento(s), somando '+moeda(total)+'?')) return;
+  var agora=new Date(), qd=isoDe(agora)+' '+('0'+agora.getHours()).slice(-2)+':'+('0'+agora.getMinutes()).slice(-2);
+  for(i=0;i<sel.length;i++){ sel[i].status=novo; if(novo==='pendente'){ delete sel[i].decEm; } else { sel[i].decEm=qd; } }
+  FC_SEL={}; if(REAL) salvarLocal(); pintarFluxoCaixa();
+  aviso(sel.length+' lançamento(s): '+({autorizado:'autorizado(s)',recusado:'marcado(s) como não pagar',pendente:'de volta pra pendente'}[novo]));
+}
 function pintarFluxoCaixa(){
-  var lista=filtrarEXTRATO(), entradas=0, saidas=0, i;
-  for(i=0;i<lista.length;i++){ if(lista[i].tp==='in') entradas+=lista[i].vl; else saidas+=lista[i].vl; }
+  var lista=filtrarEXTRATO(), entradas=0, saidas=0, aut=0, i;
+  for(i=0;i<lista.length;i++){ if(lista[i].tp==='in') entradas+=lista[i].vl; else { saidas+=lista[i].vl; if(lista[i].status==='autorizado') aut+=lista[i].vl; } }
   var saldoPeriodo=entradas-saidas;
   var corSaldo = saldoPeriodo<0 ? 'color:var(--red)' : (saldoPeriodo>0 ? 'color:var(--green)' : '');
   el('fc-periodo').innerHTML=
     '<div class="kpi"><div class="lb">Entradas no período</div><div class="vl">'+moeda(entradas)+'</div></div>'+
     '<div class="kpi"><div class="lb cr">Saídas no período</div><div class="vl vr">'+moeda(saidas)+'</div></div>'+
+    '<div class="kpi"><div class="lb cb">Autorizado pra pagar</div><div class="vl vb">'+moeda(aut)+'</div></div>'+
     '<div class="kpi"><div class="lb">Saldo no período</div><div class="vl" style="'+corSaldo+'">'+moeda(saldoPeriodo)+'</div></div>';
 
-  var h='';
-  for(i=0;i<lista.length;i++){var e=lista[i];
-    h+='<tr><td>'+dataBR(e.data)+'</td>'+
+  var h='', nSel=0, tSel=0, nSelecionaveis=0;
+  for(i=0;i<lista.length;i++){var e=lista[i], ok=fcSelecionavel(e); if(ok) nSelecionaveis++; if(ok && FC_SEL[e.id]){ nSel++; tSel+=Number(e.vl)||0; }
+    h+='<tr><td>'+(ok?('<input type="checkbox" '+(FC_SEL[e.id]?'checked ':'')+'onchange="fcMarcar('+e.id+',this.checked)">'):'')+'</td><td>'+dataBR(e.data)+'</td>'+
        '<td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria)+'</span></td>'+
        '<td style="font-weight:800;color:'+(e.tp==='in'?'var(--green)':'var(--red)')+'">'+(e.tp==='in'?'+ ':'- ')+moeda(e.vl)+'</td>'+
-       '<td>'+badgeStatus(e.status)+'</td>'+
+       '<td>'+badgeStatus(e.status)+(e.decEm?('<br><span style="font-size:10.5px;color:var(--muted)">'+esc(e.decEm)+'</span>'):'')+'</td>'+
        '<td><div class="fc-acoes">'+
          '<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>'+
          '<button onclick="duplicarLancamento('+e.id+')" title="Duplicar">⧉</button>'+
          '<button class="del" onclick="excluirLancamento('+e.id+')" title="Excluir">🗑</button>'+
        '</div></td></tr>';}
-  if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum lançamento neste período</div></td></tr>';
+  if(!h) h='<tr><td colspan="6"><div class="empty">Nenhum lançamento neste período</div></td></tr>';
   el('fc-corpo').innerHTML=h;
+  var ct=el('fc-sel-todos'); if(ct){ ct.checked=(nSelecionaveis>0 && nSel===nSelecionaveis); ct.indeterminate=(nSel>0 && nSel<nSelecionaveis); }
+  el('fc-barra-sel').innerHTML=nSel?('<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;border-radius:12px;background:#F3EFFB;border:1px solid var(--border)"><b>'+nSel+' selecionado(s) · '+moeda(tSel)+'</b>'+
+    '<button class="btn pri" onclick="fcDecidir(\'autorizado\')">✔ Autorizar pagamento</button>'+
+    '<button class="btn sec" onclick="fcDecidir(\'recusado\')">✖ Não pagar</button>'+
+    '<button class="btn sec" onclick="fcDecidir(\'pendente\')">↺ Voltar a pendente</button>'+
+    '<span class="vertodos" onclick="fcLimparSel()">limpar seleção</span></div>'):'';
 }
 
 function duplicarLancamento(id){
@@ -3151,7 +3180,7 @@ function salvarLancamento(){
   if(!desc || !valor){ aviso('Preencha descrição e valor'); return; }
   if(LC_EDIT){
     var ed=null,q; for(q=0;q<EXTRATO.length;q++) if(EXTRATO[q].id===LC_EDIT) ed=EXTRATO[q];
-    if(ed){ ed.tp=LC_TIPO; ed.tt=desc; ed.categoria=el('lc-categoria').value; ed.data=el('lc-data').value||ed.data; ed.vl=valor; ed.status=el('lc-pago').checked?(LC_TIPO==='in'?'recebido':'pago'):'pendente'; }
+    if(ed){ ed.tp=LC_TIPO; ed.tt=desc; ed.categoria=el('lc-categoria').value; ed.data=el('lc-data').value||ed.data; ed.vl=valor; ed.status=el('lc-pago').checked?(LC_TIPO==='in'?'recebido':'pago'):((LC_TIPO==='out'&&(ed.status==='autorizado'||ed.status==='recusado'))?ed.status:'pendente'); if(el('lc-pago').checked) delete ed.decEm; }
     LC_EDIT=null; if(REAL) salvarLocal(); fecharTudo(); pintarFinanceiro(); aviso('Lançamento atualizado!'); return;
   }
   var maxId=0,i; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id>maxId) maxId=EXTRATO[i].id;
