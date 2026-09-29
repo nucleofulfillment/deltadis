@@ -424,7 +424,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-31-2809</p>
+      <p class="bld">DELTADIS-BASE-32-2809</p>
     </div>
   </div>
 </div>
@@ -591,7 +591,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <section class="page" id="pg-financeiro">
         <div class="pghd"><div><h1>Financeiro</h1><div class="sub">movimento do ponto de distribuição</div></div></div>
         <div class="finrow" id="fin-resumo"></div>
-        <div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div></div>
+        <div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div><div class="lb" id="fin-mov" style="margin-top:8px;opacity:.9"></div></div>
         <div class="card" id="fin-repasse-card" style="margin-bottom:16px">
           <h3><span class="lft">Repasse por motorista</span></h3>
           <div id="fin-repasse-aviso" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
@@ -766,6 +766,14 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
+<div class="sheet wide" id="sh-fin-lista">
+  <div class="sh-hd"><h3 id="fl-titulo">Pacotes</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><span id="fl-resumo" style="font-size:12.5px;color:var(--muted)"></span><button class="btn pri" onclick="fecharTudo();abrirUploadPlanilha()">+ Upload planilha</button></div>
+    <div class="tb-wrap"><table class="tb"><thead><tr><th>Código</th><th>Cliente</th><th>Motorista</th><th id="fl-th-st">Status</th><th>Recebe</th><th>Repasse</th></tr></thead><tbody id="fl-corpo"></tbody></table></div>
+  </div>
+</div>
+
 <div class="sheet wide" id="sh-repasse">
   <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirMotorista(RP_MOT_ATUAL)" title="Voltar à ficha do motorista">←</button><h3>Repasse — <span id="rp-nome"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
@@ -803,7 +811,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-31-2809</div>
+<div class="bld-fix">DELTADIS-BASE-32-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1227,10 +1235,11 @@ function adicionarAreaCep(){
 }
 /* o que entra e o que sai: só conta pacote ENTREGUE */
 function resumoFinanceiro(){
-  var out={receber:0, repasse:0, entregues:0, semMot:0, porMot:{}, rotaQtd:0, rotaReceber:0, rotaRepasse:0}, i, p, m, v, o;
+  var out={receber:0, repasse:0, entregues:0, semMot:0, porMot:{}, rotaQtd:0, rotaReceber:0, rotaRepasse:0, ruaQtd:0, ruaReceber:0, baseQtd:0, baseReceber:0, abQtd:0, abVal:0, fechQtd:0, fechVal:0}, i, p, m, v, o;
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
     if(p.st==='coletado' || p.st==='em rota' || ehTentativa(p.st)){   /* ainda não entregue (na base ou na rua): valor previsto, entra quando for entregue */
       out.rotaQtd++; out.rotaReceber+=Number(precoTransp(p.tr).recebe)||0;
+      if(p.st==='coletado'){ out.baseQtd++; out.baseReceber+=Number(precoTransp(p.tr).recebe)||0; } else { out.ruaQtd++; out.ruaReceber+=Number(precoTransp(p.tr).recebe)||0; }
       m=p.mt?motorista(p.mt):null;
       if(m){ v=valorMotorista(m,p); out.rotaRepasse+=v;
         o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0}); o.rotaQtd++; o.rotaVal+=v; }
@@ -1248,6 +1257,7 @@ function resumoFinanceiro(){
     if(!m){ out.semMot++; continue; }
     v=valorMotorista(m,p);
     out.repasse+=v;
+    if(p.fechId){ out.fechQtd++; out.fechVal+=v; } else { out.abQtd++; out.abVal+=v; }
     o=out.porMot[m.id]||(out.porMot[m.id]={ent:0,val:0,rotaQtd:0,rotaVal:0,extQtd:0}); o.ent++; o.val+=v;
   }
   return out;
@@ -1259,6 +1269,7 @@ function saldoAbertoMotorista(id){
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.mt===id && p.st==='entregue' && !p.fechId) total+=valorMotorista(m,p); }
   return total;
 }
+var PONTO_NOME='Delta Express';   /* nome do ponto de coleta (sai no PDF do fechamento) */
 var RP_MOT_ATUAL=null, FC_MOT_ATUAL=null, FC_ID_ATUAL=null;
 function abrirRepasseMotorista(id){
   var m=motorista(id); if(!m) return;
@@ -1328,9 +1339,12 @@ function baixarPdfFechamento(){
   if(!f) return;
   var linhas='',j,pd;
   for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; linhas+='<tr><td>'+esc(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
+  var logoPdf='<b style="font-size:20px;color:#6D28D9">DELTADIS</b>';
+  try{ var tl=document.querySelector('.tb-logo'), im=tl.querySelector('img.mk'), wm=tl.querySelector('svg.wm');
+    logoPdf='<div style="display:flex;align-items:center;gap:10px">'+(im?'<img src="'+im.src+'" style="height:36px">':'')+(wm?wm.outerHTML.replace('<svg class="wm"','<svg style="height:20px;width:auto;color:#6D28D9"'):'')+'</div>'; }catch(e){}
   var htmlPg='<!doctype html><html><head><meta charset="utf-8"><title>Fechamento '+esc(m.n)+'</title>'+
-    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}</style></head>'+
-    '<body><h1>Fechamento de repasse — '+esc(m.n)+'</h1>'+
+    '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}</style></head>'+
+    '<body><div class="cab">'+logoPdf+'<div style="text-align:right;font-size:12px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div><h1>Fechamento de repasse — '+esc(m.n)+'</h1>'+
     '<p>Ciclo: '+esc(dataBR(f.cicloIni)||'—')+' até '+esc(dataBR(f.cicloFim)||'—')+' &nbsp;|&nbsp; Pagamento: '+esc(dataBR(f.dataPagamento)||'—')+' &nbsp;|&nbsp; Status: '+(f.status==='pago'?'Pago':'Pendente')+'</p>'+
     '<p><b>Valor total: '+moeda(f.valor)+'</b></p>'+
     '<table><thead><tr><th>Código</th><th>Cliente</th><th>Valor</th></tr></thead><tbody>'+linhas+'</tbody></table>'+
@@ -2165,13 +2179,35 @@ var FC_DATA_INI=inicioMesISO();
 var FC_DATA_FIM=hojeISO();
 var FC_CAT='todas';
 
+/* clicou num card do Financeiro: lista os pacotes que formam aquele valor */
+function abrirListaFin(tipo){
+  var tit={previsto:'Previsto — pacotes ainda não entregues', receber:'A receber — pacotes entregues', repasse:'Repasse — pacotes entregues por motorista'}[tipo]||'Pacotes';
+  var lst=[], i, p, m, tr=0, tp=0;
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
+    if(tipo==='previsto'){ if(!(p.st==='coletado'||p.st==='em rota'||ehTentativa(p.st))) continue; }
+    else { if(p.st!=='entregue') continue; if(tipo==='repasse' && !p.mt) continue; }
+    lst.push(p); tr+=Number(precoTransp(p.tr).recebe)||0; m=p.mt?motorista(p.mt):null; tp+=m?valorMotorista(m,p):0;
+  }
+  var h='', n=Math.min(lst.length,300), st;
+  for(i=0;i<n;i++){ p=lst[i]; m=p.mt?motorista(p.mt):null;
+    st=(tipo==='repasse')?(p.fechId?'fechado':'a fechar'):p.st;
+    h+='<tr><td>'+esc(p.cod)+'</td><td>'+esc(p.cliente||'—')+'</td><td>'+esc(m?m.n:'—')+'</td><td>'+esc(st)+'</td><td>'+moeda(precoTransp(p.tr).recebe)+'</td><td>'+moeda(m?valorMotorista(m,p):0)+'</td></tr>';
+  }
+  el('fl-titulo').textContent=tit;
+  el('fl-resumo').textContent=lst.length+' pacote(s) · recebe '+moeda(tr)+' · repasse '+moeda(tp)+(lst.length>n?(' · mostrando os primeiros '+n):'');
+  el('fl-th-st').textContent=(tipo==='repasse')?'Fechamento':'Status';
+  el('fl-corpo').innerHTML=h||'<tr><td colspan="6"><div class="empty">Nenhum pacote</div></td></tr>';
+  abrir('sh-fin-lista');
+}
 function pintarFinanceiroReal(){
   var rs=resumoFinanceiro(), i, h='', x, m, o, te=0, tv=0, tp=0;
+  var lin=function(q,t,v){ return '<div class="dl" style="margin-top:5px"><b>'+q+'</b> '+t+' › '+moeda(v)+'</div>'; };
   el('fin-resumo').innerHTML=
-    '<div class="kpi"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(rs.receber)+'</div><div class="dl">'+rs.entregues+' entregues × valor de cada transportadora</div></div>'+
-    '<div class="kpi"><div class="lb cb">Previsto</div><div class="vl vb">'+moeda(rs.rotaReceber)+'</div><div class="dl">'+rs.rotaQtd+' pacotes ainda não entregues (base + rua) · repasse previsto '+moeda(rs.rotaRepasse)+'</div></div>'+
-    '<div class="kpi"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(rs.repasse)+'</div><div class="dl">a pagar aos motoristas (só o que foi entregue)</div></div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'previsto\')"><div class="lb cb">Previsto</div><div class="vl vb">'+moeda(rs.rotaReceber)+'</div>'+lin(rs.ruaQtd,'Não entregues (na rua)',rs.ruaReceber)+lin(rs.baseQtd,'Não coletados (na base)',rs.baseReceber)+'</div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'receber\')"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(rs.receber)+'</div>'+lin(rs.entregues,'Entregues',rs.receber)+'</div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="abrirListaFin(\'repasse\')"><div class="lb cr">Repasse</div><div class="vl vr">'+moeda(rs.repasse)+'</div>'+lin(rs.abQtd,'A fechar',rs.abVal)+lin(rs.fechQtd,'Fechados',rs.fechVal)+'</div>'+
     '<div class="kpi"><div class="lb">Margem</div><div class="vl">'+moeda(rs.receber-rs.repasse)+'</div><div class="dl">o que sobra para o ponto</div></div>';
+  var mv=el('fin-mov'); if(mv) mv.textContent='Total movimentado: '+moeda(rs.receber+rs.rotaReceber)+'  ·  entregue '+moeda(rs.receber)+' + previsto '+moeda(rs.rotaReceber);
   el('fin-resumo').style.gridTemplateColumns=(window.innerWidth>760?'repeat(4,1fr)':'1fr');
   var card=el('fin-repasse-card'); if(card) card.style.display='block';
   var lista=[];
