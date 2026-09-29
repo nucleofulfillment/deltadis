@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-74-2809</p>
+      <p class="bld">DELTADIS-BASE-75-2809</p>
     </div>
   </div>
 </div>
@@ -903,7 +903,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirRepasseMotorista(FC_MOT_ATUAL)" title="Voltar ao repasse">←</button><h3>Fechamento — <span id="fc-per-fech"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <div class="sh-row"><span class="k">Status</span><span class="v" id="fc-status"></span></div>
-    <div class="sh-row"><span class="k">Data de pagamento</span><span class="v" id="fc-data"></span></div>
+    <div class="sh-row"><span class="k">Data de pagamento</span><span class="v" style="display:flex;align-items:center;gap:12px"><span id="fc-data"></span><span class="vertodos" id="fc-data-ed" onclick="editarDataFechamento()">✎ Editar</span></span></div>
     <div class="sh-row"><span class="k">Valor total</span><span class="v" style="font-weight:800" id="fc-valor"></span></div>
     <button class="btn pri wide" style="margin-top:10px;background:#16A34A" id="fc-btn-pix" onclick="pagarFechamentoPix()">💸 Pagar via Pix</button>
     <div id="fc-pix-nota" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
@@ -918,7 +918,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-74-2809</div>
+<div class="bld-fix">DELTADIS-BASE-75-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1592,7 +1592,7 @@ function abrirRepasseMotorista(id){
   el('rp-saldo').textContent=moeda(saldoAbertoMotorista(id));
   var rg=cicloDoMotorista(id), auto=!!(rg && rg.modo==='auto'), cc=auto?cicloAtual(rg):{ini:'',fim:'',pag:''};
   el('rp-ciclo-ini').value=cc.ini; el('rp-ciclo-fim').value=cc.fim; el('rp-data-pg').value=cc.pag;
-  el('rp-ciclo-ini').disabled=el('rp-ciclo-fim').disabled=el('rp-data-pg').disabled=auto;
+  el('rp-ciclo-ini').disabled=el('rp-ciclo-fim').disabled=auto; el('rp-data-pg').disabled=false;
   el('rp-ciclo-nota').textContent=auto?('Ciclo automático — regra: '+nomeGrupoCi(rg.grupo)+' ('+textoRegraCi(rg).replace('Automático · ','')+'). Para mudar, vá em Configurações → Ciclo de repasse.'):'Ciclo manual — digite as datas. (Para preencher sozinho, crie uma regra automática em Configurações → Ciclo de repasse.)';
   pintarFechamentosMotorista(id);
   abrir('sh-repasse');
@@ -1634,6 +1634,7 @@ function abrirDetalheFechamento(mid,fid){
   el('fc-valor').textContent=moeda(f.valor);
   var lz=f.lancId?achaLanc(f.lancId):null, trav=travadoPix(lz), mp=motorista(mid);
   el('fc-btn-pagar').style.display=(f.status==='pago'||trav)?'none':'block';
+  el('fc-data-ed').style.display=(f.status==='pago'||trav)?'none':'inline';
   el('fc-btn-pix').style.display=f.status==='pago'?'none':'block';
   el('fc-btn-pix').disabled=trav; el('fc-btn-pix').textContent=trav?'Aguardando aprovação do Pix':'💸 Pagar via Pix';
   el('fc-pix-nota').textContent=f.status==='pago'?'':(trav?'Aprove o Pix no app do Asaas. Quando concluir, este fechamento vira Pago sozinho.':(mp&&mp.pix?('Chave Pix do motorista: '+mp.pix):'Cadastre a chave Pix na ficha do motorista pra pagar por aqui.'));
@@ -1655,6 +1656,21 @@ function sincronizarFechamentosFC(){
   var i,j,m,f,n=0;
   for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; for(j=0;j<(m.fechamentos||[]).length;j++){ f=m.fechamentos[j]; if(f.status!=='pago' && !(f.lancId && achaLanc(f.lancId))){ lancDoFechamento(m,f); n++; } } }
   if(n){ if(REAL) salvarLocal(); pintarFluxoCaixa(); }
+}
+function fechamentoAtual(){ var m=motorista(FC_MOT_ATUAL), i; if(!m) return null; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===FC_ID_ATUAL) return m.fechamentos[i]; return null; }
+function editarDataFechamento(){
+  var f=fechamentoAtual(); if(!f) return;
+  var v=/^\d{4}-\d{2}-\d{2}$/.test(String(f.dataPagamento||''))?f.dataPagamento:hojeISO();
+  el('fc-data-ed').style.display='none';
+  el('fc-data').innerHTML='<input type="date" class="inp" id="fc-data-in" value="'+v+'" style="width:150px"> <span class="vertodos" onclick="salvarDataFechamento()">Salvar</span>';
+}
+function salvarDataFechamento(){
+  var f=fechamentoAtual(), v=(el('fc-data-in')||{}).value||''; if(!f) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){ aviso('Escolha a data'); return; }
+  f.dataPagamento=v;
+  var l=f.lancId?achaLanc(f.lancId):null; if(l && !travadoPix(l)) l.data=v;
+  if(REAL) salvarLocal(); pintarFluxoCaixa();
+  aviso('Data de pagamento atualizada!'); abrirDetalheFechamento(FC_MOT_ATUAL,FC_ID_ATUAL);
 }
 function pagarFechamentoPix(){
   var m=motorista(FC_MOT_ATUAL); if(!m) return;
@@ -2909,7 +2925,7 @@ function abrirMotorista(id){
     h+='<div style="margin-top:14px;font-weight:700;font-size:13px">Ocorrências ('+oc.length+')</div>';
     if(!oc.length) h+='<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhum pacote com problema.</div>';
     else {
-      h+='<div class="tb-wrap" style="margin-top:6px;max-height:260px;overflow:auto"><table class="tb"><tbody>';
+      h+='<div class="tb-wrap" style="margin-top:6px;overflow:visible;max-height:none"><table class="tb"><tbody>';
       for(oi=0;oi<oc.length&&oi<100;oi++){ op=oc[oi];
         h+='<tr style="cursor:pointer" onclick="fecharTudo();abrirPedido(\''+esc(op.cod)+'\')"><td><b>'+esc(op.cod)+'</b>'+cpBtn(op.cod)+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(op.cliente||'')+'</span>'+((op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(op.obs)+'</span>':'')+'</td><td>'+badgeStatus(op.st)+'</td></tr>'; }
       h+='</tbody></table></div>';
