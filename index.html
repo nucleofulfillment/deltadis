@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-70-2809</p>
+      <p class="bld">DELTADIS-BASE-72-2809</p>
     </div>
   </div>
 </div>
@@ -625,7 +625,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           </div>
         </div>
         <div class="card">
-          <h3><span class="lft">Fluxo de caixa</span><span class="vertodos" onclick="abrirNovoLancamento()">+ Novo lançamento</span></h3>
+          <h3><span class="lft">Fluxo de caixa</span><span style="display:flex;gap:18px"><span class="vertodos" onclick="atualizarFluxoCaixa()" id="fc-atualizar">↻ Atualizar</span><span class="vertodos" onclick="abrirNovoLancamento()">+ Novo lançamento</span></span></h3>
           <div class="fc-filtros" id="fc-filtros"></div>
           <div class="finrow fc4" id="fc-periodo" style="margin-bottom:14px"></div>
           <div id="fc-barra-sel"></div>
@@ -864,8 +864,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-bd">
     <div id="pp-aviso" style="font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.5"></div>
     <div id="pp-lista" style="margin-bottom:12px"></div>
-    <label style="font-size:12.5px;font-weight:700">Senha de pagamento</label>
-    <input type="password" class="inp" id="pp-pin" autocomplete="new-password" placeholder="Digite a senha de pagamento" style="width:100%;margin:4px 0 12px">
+    <div id="pp-pin-box"><label style="font-size:12.5px;font-weight:700">Senha de pagamento</label>
+    <input type="password" class="inp" id="pp-pin" autocomplete="new-password" placeholder="Digite a senha de pagamento" style="width:100%;margin:4px 0 12px"></div>
     <div id="pp-res" style="font-size:12.5px;margin-bottom:10px;line-height:1.5"></div>
   </div>
   <div style="flex-shrink:0;border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;background:var(--s1);border-radius:0 0 18px 18px"><button class="btn pri" id="pp-btn" onclick="executarPagarPix()">Pagar agora</button></div>
@@ -916,7 +916,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-70-2809</div>
+<div class="bld-fix">DELTADIS-BASE-72-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3123,7 +3123,7 @@ function tipoChavePixJs(bruta){
   if((d.length===12||d.length===13)&&d.indexOf('55')===0) return 'Telefone';
   return '';
 }
-function podePagarPix(e){ return !!(e && e.tp==='out' && e.status==='autorizado' && String(e.pix||'').trim() && !(e.pixId && e.pixSt!=='falhou')); }
+function podePagarPix(e){ return !!(e && e.tp==='out' && (e.status==='autorizado'||e.status==='pendente') && String(e.pix||'').trim() && !(e.pixId && e.pixSt!=='falhou')); }
 function achaLanc(id){ for(var i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id===id) return EXTRATO[i]; return null; }
 var PP_IDS=[], PP_OCUPADO=false;
 function pagarSelecionadosPix(){ abrirPagarPix(Object.keys(FC_SEL).map(Number)); }
@@ -3131,21 +3131,21 @@ function abrirPagarPix(ids){
   var i,e,h='',tot=0,n=0,sem=[],jaEnv=[];
   PP_IDS=[]; PP_OCUPADO=false;
   for(i=0;i<ids.length;i++){ e=achaLanc(ids[i]); if(!e) continue;
-    if(e.status!=='autorizado') continue;
+    if(e.status!=='autorizado' && e.status!=='pendente') continue;
     if(!String(e.pix||'').trim()){ sem.push(e.tt); continue; }
     if(e.pixId && e.pixSt!=='falhou'){ jaEnv.push(e.tt); continue; }
     if(e.pixSt==='incerto' && !window.confirm('O Pix "'+e.tt+'" ficou com resultado incerto. Você JÁ CONFERIU no extrato do Asaas que ele NÃO saiu?')) continue;
     PP_IDS.push(e.id); tot+=Number(e.vl)||0; n++;
     h+='<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div><b>'+esc(e.tt)+'</b><br><span style="font-size:11.5px;color:var(--muted)">'+esc(tipoChavePixJs(e.pix)||'Chave?')+': '+esc(e.pix)+'</span><div id="pp-r-'+e.id+'" style="font-size:12px"></div></div><b>'+moeda(e.vl)+'</b></div>';
   }
-  if(!n){ aviso(sem.length?'Sem chave Pix no lançamento: '+sem[0]:(jaEnv.length?'Esse Pix já foi enviado — use o botão 🔄 pra conferir':'Só dá pra pagar lançamentos AUTORIZADOS')); return; }
+  if(!n){ aviso(sem.length?'Sem chave Pix no lançamento: '+sem[0]:(jaEnv.length?'Esse Pix já foi enviado — use o botão 🔄 pra conferir':'Só dá pra pagar saídas pendentes ou autorizadas')); return; }
   el('pp-lista').innerHTML=h+'<div style="display:flex;justify-content:space-between;padding:10px 0;font-size:15px"><b>Total</b><b>'+moeda(tot)+'</b></div>';
   var amb=(SALDO_AMB&&SALDO_AMB!=='producao')?' <b style="color:#B45309">(ambiente de TESTE: '+esc(SALDO_AMB)+' — dinheiro de mentira)</b>':'';
   var av='Sai da conta do Asaas'+amb+'. '+(SALDO_OK?('Saldo agora: '+moeda(SALDO_BANCO)+'.'):'');
   if(SALDO_OK && tot>SALDO_BANCO) av+=' <b style="color:var(--red)">Atenção: o total é maior que o saldo.</b>';
   if(sem.length) av+='<br>Ficaram de fora (sem chave Pix): '+esc(sem.join(', '))+'.';
   if(jaEnv.length) av+='<br>Ficaram de fora (já enviados): '+esc(jaEnv.join(', '))+'.';
-  el('pp-aviso').innerHTML=av; el('pp-pin').value=''; el('pp-res').innerHTML='';
+  el('pp-aviso').innerHTML=av; el('pp-pin').value=''; el('pp-res').innerHTML=''; el('pp-pin-box').style.display='block';
   var b=el('pp-btn'); b.disabled=false; b.onclick=executarPagarPix; b.textContent='Pagar agora '+moeda(tot);
   abrir('sh-pagar-pix');
 }
@@ -3165,8 +3165,9 @@ function executarPagarPix(){
   function fim(msg){ PP_OCUPADO=false; el('pp-pin').value=''; btn.disabled=false; btn.textContent='Fechar'; btn.onclick=function(){ btn.onclick=executarPagarPix; fecharTudo(); }; if(REAL) salvarLocal(); pintarFluxoCaixa(); if(msg) el('pp-res').innerHTML=msg; }
   function prox(){
     if(!fila.length){
-      fim('<b>'+feitos+' de '+PP_IDS.length+' enviado(s) ao Asaas.</b>'+(pend.length?' Alguns ainda estão processando — use o botão 🔄 no lançamento pra conferir.':''));
-      if(pend.length) setTimeout(function(){ var k; for(k=0;k<pend.length;k++) verificarPix(pend[k],true); },4000);
+      el('pp-pin-box').style.display='none';
+      var ok=(feitos===PP_IDS.length);
+      fim(feitos?('<div style="padding:12px 14px;border-radius:12px;background:'+(ok?'#ECFDF3':'#FFF7ED')+';font-size:13.5px"><b>'+(ok?'✔ Pix enviado ao Asaas':('✔ '+feitos+' de '+PP_IDS.length+' enviado(s) ao Asaas'))+'</b><br>'+(pend.length?'Falta <b>aprovar no app do Asaas</b>. O sistema confere sozinho e muda pra <b>Pago</b> quando você aprovar.':'Já está pago.')+'</div>'):'');
       carregarSaldoAsaas(true); return; }
     var id=fila.shift(), e2=achaLanc(id); if(!e2){ prox(); return; }
     if(!e2.pixRef || e2.pixSt==='falhou' || e2.pixSt==='incerto'){ e2.pixRef='p'+Date.now().toString(36)+id; e2.pixId=''; e2.pixSt=''; if(REAL) salvarLocal(); }
@@ -3185,26 +3186,37 @@ function executarPagarPix(){
   }
   prox();
 }
+function aguardandoAsaas(e){ return !!(e && e.tp==='out' && e.pixId && e.status!=='pago' && e.pixSt!=='falhou' && e.pixSt!=='incerto'); }
+/* confere no Asaas todos os Pix enviados que ainda não foram aprovados/concluídos */
+function pixConferirPendentes(){ var i; for(i=0;i<EXTRATO.length;i++) if(aguardandoAsaas(EXTRATO[i]) && EXTRATO[i].pixRef) verificarPix(EXTRATO[i].id,true); }
+function atualizarFluxoCaixa(){
+  var b=el('fc-atualizar'); if(b) b.textContent='↻ Atualizando...';
+  carregarSaldoAsaas(true); pixConferirPendentes();
+  setTimeout(function(){ var b2=el('fc-atualizar'); if(b2) b2.textContent='↻ Atualizar'; pintarFluxoCaixa(); aviso('Atualizado!'); },1500);
+}
+setInterval(function(){ if(REAL && !document.hidden) pixConferirPendentes(); },15000);
+setTimeout(function(){ if(REAL) pixConferirPendentes(); },2500);
 /* confere no Asaas como ficou um Pix já enviado */
 function verificarPix(id,silencioso){
   var e=achaLanc(id); if(!e||!e.pixRef) return;
   if(!silencioso) aviso('Conferindo com o Asaas...');
   fetch(DELTADIS_API+'/asaas/pix-status?key='+encodeURIComponent(DELTADIS_API_KEY)+'&ref='+encodeURIComponent(e.pixRef)).then(function(r){return r.json();}).then(function(d){
     if(!d||!d.ok||!d.status){ if(!silencioso) aviso((d&&d.mensagem)||'Ainda sem resposta do Asaas'); return; }
+    var antes=e.status+'|'+e.pixSt;
     pixMarcar(e,String(d.status),d.recibo); if(e.pixSt==='falhou'&&d.motivo) e.pixMotivo=String(d.motivo);
-    if(REAL) salvarLocal(); pintarFluxoCaixa();
+    if(antes!==e.status+'|'+e.pixSt){ if(REAL) salvarLocal(); pintarFluxoCaixa(); if(e.status==='pago') carregarSaldoAsaas(true); }
     if(!silencioso) aviso(e.status==='pago'?'Pix concluído — marcado como pago':(e.pixSt==='falhou'?'O Asaas não concluiu esse Pix':'Ainda processando no Asaas'));
   }).catch(function(){ if(!silencioso) aviso('Sem conexão com o serviço agora'); });
 }
 function pintarFluxoCaixa(){
   var lista=filtrarEXTRATO(), entradas=0, saidas=0, aut=0, i;
-  for(i=0;i<lista.length;i++){ if(lista[i].tp==='in') entradas+=lista[i].vl; else { saidas+=lista[i].vl; if(lista[i].status==='autorizado') aut+=lista[i].vl; } }
+  for(i=0;i<lista.length;i++){ if(lista[i].tp==='in') entradas+=lista[i].vl; else { saidas+=lista[i].vl; if(aguardandoAsaas(lista[i])) aut+=lista[i].vl; } }
   var saldoPeriodo=entradas-saidas;
   var corSaldo = saldoPeriodo<0 ? 'color:var(--red)' : (saldoPeriodo>0 ? 'color:var(--green)' : '');
   el('fc-periodo').innerHTML=
     '<div class="kpi"><div class="lb">Entradas no período</div><div class="vl">'+moeda(entradas)+'</div></div>'+
     '<div class="kpi"><div class="lb cr">Saídas no período</div><div class="vl vr">'+moeda(saidas)+'</div></div>'+
-    '<div class="kpi"><div class="lb cb">Autorizado pra pagar</div><div class="vl vb">'+moeda(aut)+'</div></div>'+
+    '<div class="kpi"><div class="lb cb">Aguardando aprovação no Asaas</div><div class="vl vb">'+moeda(aut)+'</div></div>'+
     '<div class="kpi"><div class="lb">Saldo no período</div><div class="vl" style="'+corSaldo+'">'+moeda(saldoPeriodo)+'</div></div>';
 
   var h='', nSel=0, tSel=0, nSelecionaveis=0;
@@ -3212,7 +3224,7 @@ function pintarFluxoCaixa(){
     h+='<tr><td>'+(ok?('<input type="checkbox" '+(FC_SEL[e.id]?'checked ':'')+'onchange="fcMarcar('+e.id+',this.checked)">'):'')+'</td><td>'+dataBR(e.data)+'</td>'+
        '<td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria)+'</span>'+(e.pix?(' <span style="font-size:11px;color:var(--muted)">Pix: '+esc(e.pix)+'</span>'):'')+'</td>'+
        '<td style="font-weight:800;color:'+(e.tp==='in'?'var(--green)':'var(--red)')+'">'+(e.tp==='in'?'+ ':'- ')+moeda(e.vl)+'</td>'+
-       '<td>'+badgeStatus(e.status)+(e.decEm?('<br><span style="font-size:10.5px;color:var(--muted)">'+esc(e.decEm)+'</span>'):'')+(e.pixSt?('<br><span style="font-size:10.5px;color:'+(e.pixSt==='falhou'||e.pixSt==='incerto'?'var(--red)':'var(--muted)')+'">'+(e.pixSt==='falhou'?'Pix falhou'+(e.pixMotivo?': '+esc(e.pixMotivo):'')+' — pode tentar de novo':(e.pixSt==='incerto'?'Pix incerto — confira o extrato do Asaas':'Pix em processamento'))+'</span>'):'')+'</td>'+
+       '<td>'+(aguardandoAsaas(e)?'<span class="badge b-in">Aguardando Asaas</span>':badgeStatus(e.status))+(e.decEm?('<br><span style="font-size:10.5px;color:var(--muted)">'+esc(e.decEm)+'</span>'):'')+(e.pixSt?('<br><span style="font-size:10.5px;color:'+(e.pixSt==='falhou'||e.pixSt==='incerto'?'var(--red)':'var(--muted)')+'">'+(e.pixSt==='falhou'?'Pix falhou'+(e.pixMotivo?': '+esc(e.pixMotivo):'')+' — pode tentar de novo':(e.pixSt==='incerto'?'Pix incerto — confira o extrato do Asaas':'Aprove o Pix no app do Asaas'))+'</span>'):'')+'</td>'+
        '<td><div class="fc-acoes">'+
          (podePagarPix(e)?'<button onclick="abrirPagarPix(['+e.id+'])" title="Pagar via Pix" style="color:var(--green)">💸</button>':'')+
          ((e.pixId&&e.status!=='pago'&&e.pixSt!=='falhou')?'<button onclick="verificarPix('+e.id+')" title="Conferir com o Asaas">🔄</button>':'')+
@@ -3224,7 +3236,6 @@ function pintarFluxoCaixa(){
   el('fc-corpo').innerHTML=h;
   var ct=el('fc-sel-todos'); if(ct){ ct.checked=(nSelecionaveis>0 && nSel===nSelecionaveis); ct.indeterminate=(nSel>0 && nSel<nSelecionaveis); }
   el('fc-barra-sel').innerHTML=nSel?('<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;border-radius:12px;background:#F3EFFB;border:1px solid var(--border)"><b>'+nSel+' selecionado(s) · '+moeda(tSel)+'</b>'+
-    '<button class="btn pri" onclick="fcDecidir(\'autorizado\')">✔ Autorizar pagamento</button>'+
     '<button class="btn sec" onclick="fcDecidir(\'recusado\')">✖ Não pagar</button>'+
     '<button class="btn pri" onclick="pagarSelecionadosPix()" style="background:#16A34A">💸 Pagar via Pix</button>'+
     '<button class="btn sec" onclick="fcDecidir(\'pendente\')">↺ Voltar a pendente</button>'+
