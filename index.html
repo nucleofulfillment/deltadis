@@ -415,7 +415,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-10-2809</p>
+      <p class="bld">DELTADIS-BASE-11-2809</p>
     </div>
   </div>
 </div>
@@ -714,7 +714,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-10-2809</div>
+<div class="bld-fix">DELTADIS-BASE-11-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1368,9 +1368,31 @@ function abrirPedido(cod){
   if(p.obs) h+='<div class="sh-row"><span class="k">Observação</span><span class="v">'+esc(p.obs)+'</span></div>';
   h+='<div class="sh-row"><span class="k">1ª tentativa</span><span class="v">'+esc(p.t1||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">2ª tentativa</span><span class="v">'+esc(p.t2||'—')+'</span></div>';
-  h+='<div style="display:flex;gap:12px;margin-top:16px"><button class="btn pri" onclick="aviso(\'Aqui reagenda a entrega\')">Reagendar entrega</button><button class="btn sec" onclick="aviso(\'Aqui troca o motorista\')">Trocar motorista</button></div>';
+  if(!(REAL && p.tr==='anj')){
+    h+='<div style="display:flex;gap:12px;margin-top:16px"><button class="btn pri" onclick="aviso(\'Aqui reagenda a entrega\')">Reagendar entrega</button><button class="btn sec" onclick="aviso(\'Aqui troca o motorista\')">Trocar motorista</button></div>';
+  } else {
+    h+='<div style="margin-top:18px;font-weight:700;font-size:13px">Histórico de rastreio</div>';
+    h+='<div id="hist-rastreio" style="margin-top:6px">Carregando...</div>';
+  }
   el('pd-corpo-sheet').innerHTML=h;
   abrir('sh-pedido');
+  if(REAL && p.tr==='anj') carregarHistoricoRastreio(p.cod);
+}
+/* busca no Worker a linha do tempo de eventos do 17TRACK pra esse pacote */
+function carregarHistoricoRastreio(cod){
+  var alvo=el('hist-rastreio'); if(!alvo) return;
+  fetch(DELTADIS_API+'/historico?key='+encodeURIComponent(DELTADIS_API_KEY)+'&numero='+encodeURIComponent(cod))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!alvo || alvo!==el('hist-rastreio')) return;
+      if(!d || !d.ok || !d.eventos || !d.eventos.length){ alvo.innerHTML='<div class="empty" style="padding:8px 0">Ainda sem histórico de rastreio pra esse pacote.</div>'; return; }
+      var h='', i, e;
+      for(i=0;i<d.eventos.length;i++){ e=d.eventos[i];
+        h+='<div class="sh-row" style="align-items:flex-start"><span class="k" style="min-width:150px;font-size:11px;color:var(--muted)">'+esc(e.quando||'')+'</span><span class="v">'+esc(e.descricao||'')+(e.local?(' · '+esc(e.local)):'')+'</span></div>';
+      }
+      alvo.innerHTML=h;
+    })
+    .catch(function(){ if(alvo===el('hist-rastreio')) alvo.innerHTML='<div class="empty" style="padding:8px 0">Não consegui buscar o histórico agora.</div>'; });
 }
 
 /* ══ pedidos ══ */
