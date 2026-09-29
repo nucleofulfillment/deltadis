@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-76-2809</p>
+      <p class="bld">DELTADIS-BASE-77-2809</p>
     </div>
   </div>
 </div>
@@ -907,6 +907,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="sh-row"><span class="k">Valor total</span><span class="v" style="font-weight:800" id="fc-valor"></span></div>
     <button class="btn pri wide" style="margin-top:10px;background:#16A34A" id="fc-btn-pix" onclick="pagarFechamentoPix()">💸 Pagar via Pix</button>
     <div id="fc-pix-nota" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+    <div id="fc-comp-box" style="display:none;gap:8px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="abrirComprovante(fechamentoAtual().lancId)">📄 Ver comprovante</button><button class="btn sec" style="flex:1" onclick="enviarComprovanteWhats(fechamentoAtual().lancId)">💬 Enviar no WhatsApp</button></div>
     <button class="btn sec wide" style="margin-top:10px" id="fc-btn-pagar" onclick="marcarFechamentoPago()">Marcar como pago</button>
     <button class="btn pri wide" style="margin-top:8px" onclick="baixarPdfFechamento()">⬇ Baixar PDF</button>
     <h4 style="margin:16px 0 8px;font-size:13px">Pacotes deste fechamento</h4>
@@ -918,7 +919,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-76-2809</div>
+<div class="bld-fix">DELTADIS-BASE-77-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1635,6 +1636,7 @@ function abrirDetalheFechamento(mid,fid){
   var lz=f.lancId?achaLanc(f.lancId):null, trav=travadoPix(lz), mp=motorista(mid);
   el('fc-btn-pagar').style.display=(f.status==='pago'||trav)?'none':'block';
   el('fc-data-ed').style.display=(f.status==='pago'||trav)?'none':'inline';
+  el('fc-comp-box').style.display=(f.status==='pago'&&lz&&lz.pixId)?'flex':'none';
   el('fc-btn-pix').style.display=f.status==='pago'?'none':'block';
   el('fc-btn-pix').disabled=trav; el('fc-btn-pix').textContent=trav?'Aguardando aprovação do Pix':'💸 Pagar via Pix';
   el('fc-pix-nota').textContent=f.status==='pago'?'':(trav?'Aprove o Pix no app do Asaas. Quando concluir, este fechamento vira Pago sozinho.':(mp&&mp.pix?('Chave Pix do motorista: '+mp.pix):'Cadastre a chave Pix na ficha do motorista pra pagar por aqui.'));
@@ -3202,6 +3204,7 @@ function ppMsg(id,txt,cor){ var x=el('pp-r-'+id); if(x) x.innerHTML='<span style
 function pixMarcar(e,st,recibo){
   e.pixSt=st;
   if(st==='DONE'){ e.status='pago'; e.pixSt=''; var ag=new Date(); e.decEm=isoDe(ag)+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2); if(recibo) e.recibo=recibo;
+    try{ aoEfetivarPix(e); }catch(x){}
     if(e.fech){ var mm=motorista(e.fech.m), q; if(mm) for(q=0;q<(mm.fechamentos||[]).length;q++) if(mm.fechamentos[q].id===e.fech.f){ mm.fechamentos[q].status='pago'; mm.fechamentos[q].pagoEm=hojeISO(); } } }
   else if(/FAIL|CANCEL|REFUS/i.test(st)) e.pixSt='falhou';
 }
@@ -3237,16 +3240,38 @@ function executarPagarPix(){
   prox();
 }
 function travadoPix(e){ return !!(e && e.pixId && e.pixSt!=='falhou' && e.pixSt!=='incerto'); }   /* Pix já enviado ou concluído: não edita nem exclui */
+/* busca o link do comprovante (guarda no lançamento) e entrega pra quem chamou */
+function obterRecibo(e,cb){
+  if(e.recibo){ cb(e.recibo); return; }
+  if(!e.pixRef){ cb(''); return; }
+  fetch(DELTADIS_API+'/asaas/pix-status?key='+encodeURIComponent(DELTADIS_API_KEY)+'&ref='+encodeURIComponent(e.pixRef)).then(function(r){return r.json();}).then(function(d){
+    if(d && d.ok && d.recibo){ e.recibo=d.recibo; if(REAL) salvarLocal(); cb(e.recibo); } else cb('');
+  }).catch(function(){ cb(''); });
+}
 function abrirComprovante(id){
   var e=achaLanc(id); if(!e) return;
   if(e.recibo){ window.open(e.recibo,'_blank'); return; }
-  if(!e.pixRef){ aviso('Sem comprovante pra esse lançamento'); return; }
   aviso('Buscando o comprovante...');
-  fetch(DELTADIS_API+'/asaas/pix-status?key='+encodeURIComponent(DELTADIS_API_KEY)+'&ref='+encodeURIComponent(e.pixRef)).then(function(r){return r.json();}).then(function(d){
-    if(d && d.ok && d.recibo){ e.recibo=d.recibo; if(REAL) salvarLocal(); window.open(d.recibo,'_blank'); }
-    else aviso('O comprovante ainda não está disponível no Asaas');
-  }).catch(function(){ aviso('Sem conexão com o serviço agora'); });
+  obterRecibo(e,function(u){ if(u) window.open(u,'_blank'); else aviso('O comprovante ainda não está disponível no Asaas'); });
 }
+/* ── WhatsApp do entregador: hoje abre a conversa com a mensagem pronta; o envio automático entra em aoEfetivarPix ── */
+function telWhats(t){ var d=String(t||'').replace(/\D/g,''); if(d.length===10||d.length===11) d='55'+d; return (d.length>=12&&d.length<=13)?d:''; }
+function mensagemComprovante(e,link){
+  var m=(e.fech&&motorista(e.fech.m))||null, nome=m?String(m.n||'').split(' ')[0]:'';
+  return 'Olá'+(nome?', '+nome:'')+'! Pagamento de '+moeda(e.vl)+' realizado — '+String(e.tt||'').replace(/^Repasse motorista — [^(]*/,'Repasse ').trim()+'.\nComprovante: '+link+'\n— Delta Express';
+}
+function enviarComprovanteWhats(id){
+  var e=achaLanc(id); if(!e) return;
+  var m=(e.fech&&motorista(e.fech.m))||null, tel=telWhats(m&&m.tel);
+  if(!tel){ aviso('Cadastre o telefone do motorista pra enviar no WhatsApp'); return; }
+  aviso('Preparando a mensagem...');
+  obterRecibo(e,function(u){
+    if(!u){ aviso('O comprovante ainda não está disponível no Asaas'); return; }
+    window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(mensagemComprovante(e,u)),'_blank');
+  });
+}
+/* gancho: chamado quando o Pix é efetivado. Aqui entra o envio AUTOMÁTICO do comprovante pelo WhatsApp (API) quando ligarmos */
+function aoEfetivarPix(e){ /* futuro: enviar mensagemComprovante(e, link) ao telefone do motorista */ }
 function aguardandoAsaas(e){ return !!(e && e.tp==='out' && e.pixId && e.status!=='pago' && e.pixSt!=='falhou' && e.pixSt!=='incerto'); }
 /* confere no Asaas todos os Pix enviados que ainda não foram aprovados/concluídos */
 function pixConferirPendentes(){ var i; for(i=0;i<EXTRATO.length;i++) if(aguardandoAsaas(EXTRATO[i]) && EXTRATO[i].pixRef) verificarPix(EXTRATO[i].id,true); }
@@ -3289,7 +3314,7 @@ function pintarFluxoCaixa(){
        '<td><div class="fc-acoes">'+
          (podePagarPix(e)?'<button onclick="abrirPagarPix(['+e.id+'])" title="Pagar via Pix" style="color:var(--green)">💸</button>':'')+
          ((e.pixId&&e.status!=='pago'&&e.pixSt!=='falhou')?'<button onclick="verificarPix('+e.id+')" title="Conferir com o Asaas">🔄</button>':'')+
-         (travadoPix(e)?'<button title="Pix efetivado: não pode mais ser alterado" style="cursor:default">🔒</button>'+(e.status==='pago'?'<button onclick="abrirComprovante('+e.id+')" title="Ver comprovante">📄</button>':''):'<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>')+
+         (travadoPix(e)?'<button title="Pix efetivado: não pode mais ser alterado" style="cursor:default">🔒</button>'+(e.status==='pago'?'<button onclick="abrirComprovante('+e.id+')" title="Ver comprovante">📄</button>'+(e.fech?'<button onclick="enviarComprovanteWhats('+e.id+')" title="Enviar comprovante no WhatsApp do motorista">💬</button>':''):''):'<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>')+
          '<button onclick="duplicarLancamento('+e.id+')" title="Duplicar">⧉</button>'+
          (travadoPix(e)?'':'<button class="del" onclick="excluirLancamento('+e.id+')" title="Excluir">🗑</button>')+
        '</div></td></tr>';}
