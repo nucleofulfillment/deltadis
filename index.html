@@ -68,8 +68,8 @@ a{color:inherit}
 .field{margin-bottom:16px}
 .field label{display:block;font-size:12px;font-weight:700;color:var(--texto2);margin-bottom:6px}
 .inp{width:100%;padding:11px 13px;border-radius:10px;border:1.5px solid var(--border2);background:var(--s2);font-size:13.5px;color:var(--text);font-family:var(--fbody)}
-.inp::placeholder{color:#BDB3D4;opacity:1}
-.inp::-webkit-input-placeholder{color:#BDB3D4;opacity:1}
+.inp::placeholder{color:#C7BFDB;opacity:.7;font-style:italic}
+.inp::-webkit-input-placeholder{color:#C7BFDB;opacity:.7;font-style:italic}
 .inp:focus{outline:none;border-color:var(--roxo)}
 .btn{border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:var(--fbody);font-size:13.5px;padding:11px 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:filter .15s}
 .btn:hover{filter:brightness(1.06)}
@@ -424,7 +424,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-27-2809</p>
+      <p class="bld">DELTADIS-BASE-28-2809</p>
     </div>
   </div>
 </div>
@@ -592,7 +592,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="pghd"><div><h1>Financeiro</h1><div class="sub">movimento do ponto de distribuição</div></div></div>
         <div class="finrow" id="fin-resumo"></div>
         <div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">R$ 0</div></div>
-        <div class="card" id="fin-repasse-card" style="display:none;margin-bottom:16px">
+        <div class="card" id="fin-repasse-card" style="margin-bottom:16px">
           <h3><span class="lft">Repasse por motorista</span></h3>
           <div id="fin-repasse-aviso" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
           <div class="tb-wrap"><table class="tb">
@@ -663,7 +663,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     </div>
     <div class="grid2c" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="field"><label>Placa</label><input class="inp" id="nm-placa" placeholder="ABC1D23"></div>
-      <div class="field"><label>Capacidade (pacotes)</label><input class="inp" id="nm-cap" placeholder="60"></div>
+      <div class="field"><label>Capacidade (kg)</label><input class="inp" id="nm-cap" placeholder="300"></div>
     </div>
     <div class="field"><label>Endereço</label><input class="inp" id="nm-end-rua" placeholder="Rua e número"></div>
     <div class="grid3" style="display:grid;grid-template-columns:1.4fr 1fr 0.8fr;gap:10px">
@@ -791,7 +791,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-27-2809</div>
+<div class="bld-fix">DELTADIS-BASE-28-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -921,7 +921,7 @@ function idbLer(cb){
 function salvarLocal(cb){
   var o;
   if(REAL){
-    var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'']); }
+    var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null]); }
     o={real:true, v:2, pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
@@ -932,7 +932,7 @@ function aplicarSalvo(d){
   if(!d) return;
   if(d.precos) PRECOS=d.precos;
   if((d.pedidos||d.pc) && d.motoristas){
-    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:'', bairro:'', vl:null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
+    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
     MOTORISTAS=d.motoristas; EXTRATO=d.extrato||[];
     /* dados salvos antes: nome que era só o login "arrumado" volta a ser o login de verdade */
@@ -1163,7 +1163,8 @@ function valorMotorista(m,p){
   var cep=(p && p.cep)?String(p.cep).replace(/\D/g,''):'';
   var i;
   if(area && m.regioes){
-    for(i=0;i<m.regioes.length;i++){ if(String(m.regioes[i].cod||'').trim().toLowerCase()===area) return Number(m.regioes[i].valor)||0; }
+    var areaN=normTxt(area);
+    for(i=0;i<m.regioes.length;i++){ if(normTxt(m.regioes[i].cod)===areaN) return Number(m.regioes[i].valor)||0; }
   }
   if(cep && m.faixasCep){
     var cn=parseInt(cep,10);
@@ -1826,7 +1827,7 @@ function mostrarVeic(ev,id){
   var fotoHTML = m.foto ? '<img src="'+m.foto+'" alt="">' : '<div class="vtip-noimg">🚐</div>';
   tt.innerHTML = fotoHTML+'<div class="vtip-info"><div class="vtip-modelo">'+esc(m.modelo)+' · '+esc(m.ano)+'</div>'+
     '<div class="vtip-cor">'+esc(m.veicCor)+(m.placa?(' · '+esc(m.placa)):'')+'</div>'+
-    '<div class="vtip-cap">'+m.cap+' pacotes de capacidade</div></div>';
+    '<div class="vtip-cap">'+m.cap+' kg de capacidade</div></div>';
   var x=ev.clientX+14, y=ev.clientY+14;
   if(x>window.innerWidth-250) x=ev.clientX-250-14;
   if(y>window.innerHeight-110) y=ev.clientY-110-14;
@@ -2072,7 +2073,7 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Região</span><span class="v">'+esc(m.regiao)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Localização atual</span><span class="v">'+esc(m.local)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Veículo</span><span class="v">'+(m.modelo?(esc(m.modelo)+' '+esc(m.veicCor)+' '+esc(m.ano)+(m.placa?(' · '+esc(m.placa)):'')):'—')+'</span></div>';
-  h+='<div class="sh-row"><span class="k">Capacidade</span><span class="v">'+(m.cap?m.cap+' pacotes':'—')+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Capacidade</span><span class="v">'+(m.cap?m.cap+' kg':'—')+'</span></div>';
   if(m.pix) h+='<div class="sh-row"><span class="k">Chave PIX</span><span class="v">'+esc(m.pix)+'</span></div>';
   if(m.enderecoRua||m.enderecoBairro) h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc([m.enderecoRua,m.enderecoBairro,m.enderecoCidade,m.enderecoCep].filter(Boolean).join(' — '))+'</span></div>';
   if(REAL){
@@ -2174,7 +2175,12 @@ function pintarFinanceiroReal(){
   if(rs.semMot) h+='<tr><td colspan="5" style="color:var(--muted);font-size:12px">'+rs.semMot+' pacote(s) entregue(s) sem motorista no arquivo — não entram no repasse.</td></tr>';
   el('fin-repasse-corpo').innerHTML=h||'<tr><td colspan="5"><div class="empty">Nenhum motorista com pacotes ainda</div></td></tr>';
   var av=el('fin-repasse-aviso');
-  if(av) av.textContent=(rs.entregues>0 && rs.receber===0 && rs.repasse===0)?'Defina os valores por pacote em Configurações → Precificação para calcular o repasse.':'';
+  var semValor=0, areasSem={}, pp, mm2;
+  for(i=0;i<PEDIDOS.length;i++){ pp=PEDIDOS[i]; if(pp.st!=='entregue' || !pp.mt) continue; mm2=motorista(pp.mt); if(!mm2 || valorMotorista(mm2,pp)>0) continue;
+    semValor++; var kk=pp.area?('região "'+pp.area+'"'):(pp.cep?'CEP '+pp.cep:'sem região/CEP na planilha'); areasSem[kk]=(areasSem[kk]||0)+1; }
+  var msg=(rs.entregues>0 && rs.receber===0 && rs.repasse===0)?'Defina os valores por pacote em Configurações → Precificação para calcular o repasse. ':'';
+  if(semValor){ var lst=[], kx; for(kx in areasSem) lst.push(kx+' ('+areasSem[kx]+')'); msg+=semValor+' entregue(s) sem valor de motorista casando. Em aberto: '+lst.slice(0,6).join(', ')+'.'; }
+  if(av) av.textContent=msg;
 }
 function pintarFinanceiro(){
   if(REAL) pintarFinanceiroReal();
