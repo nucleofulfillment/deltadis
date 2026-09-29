@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-39-2809</p>
+      <p class="bld">DELTADIS-BASE-40-2809</p>
     </div>
   </div>
 </div>
@@ -879,7 +879,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-39-2809</div>
+<div class="bld-fix">DELTADIS-BASE-40-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2274,14 +2274,23 @@ function buscarCepMot(){
   i.value=d.length>5?d.slice(0,5)+'-'+d.slice(5):d;
   if(d.length<8){msg.textContent='';CEP_ULT='';return;}
   if(d===CEP_ULT)return; CEP_ULT=d; msg.textContent='Buscando endereço...';
-  fetch('https://viacep.com.br/ws/'+d+'/json/').then(function(r){return r.json();}).then(function(j){
-    if(j.erro){msg.textContent='CEP não encontrado. Preencha manualmente.';return;}
-    if(j.logradouro)el('nm-end-rua').value=j.logradouro;
+  var ok=false,falhas=0;
+  function fim(j){
+    if(ok)return; ok=true;
+    if(j.rua)el('nm-end-rua').value=j.rua;
     if(j.bairro)el('nm-end-bairro').value=j.bairro;
-    if(j.localidade)el('nm-end-cidade').value=j.localidade+(j.uf?' - '+j.uf:'');
+    if(j.cidade)el('nm-end-cidade').value=j.cidade+(j.uf?' - '+j.uf:'');
     msg.textContent='Endereço preenchido. Informe o número.';
     var n=el('nm-end-num'); if(n)n.focus();
-  }).catch(function(){msg.textContent='Não consegui buscar o CEP. Preencha manualmente.';});
+  }
+  function falhou(){ falhas++; if(falhas>=2&&!ok)msg.textContent='CEP não encontrado ou sem conexão. Preencha manualmente.'; }
+  /* busca nas duas fontes ao mesmo tempo; vale a que responder primeiro */
+  fetch('https://brasilapi.com.br/api/cep/v1/'+d).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(j){
+    fim({rua:j.street,bairro:j.neighborhood,cidade:j.city,uf:j.state});
+  }).catch(falhou);
+  fetch('https://viacep.com.br/ws/'+d+'/json/').then(function(r){return r.json();}).then(function(j){
+    if(j.erro)throw 0; fim({rua:j.logradouro,bairro:j.bairro,cidade:j.localidade,uf:j.uf});
+  }).catch(falhou);
 }
 function abrirNovoMotorista(id){
   CEP_ULT=''; if(el('nm-cep-msg'))el('nm-cep-msg').textContent='';
