@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-54-2809</p>
+      <p class="bld">DELTADIS-BASE-55-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-54-2809</div>
+<div class="bld-fix">DELTADIS-BASE-55-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1268,7 +1268,7 @@ var DELTADIS_API_KEY='deltadis2026';
 /* rastreio automático só pros pacotes com problema (não gasta com o que foi entregue no mesmo dia):
    tentativa 1/2/3, devolvido, extraviado, ou não entregue há mais de RASTREIO_DIAS dias. Vale pra Anjun e J&T. */
 function precisaRastrear(p){
-  if(p.st==='entregue' || RASTREADOS[p.cod]) return false;
+  if(p.st==='entregue' || RASTREADOS[p.cod] || p.tr==='jt') return false;   /* J&T: o rastreio pede CPF do cliente; por enquanto vale só o status da planilha */
   if(ehTentativa(p.st) || p.st==='devolvido' || p.st==='extraviado') return true;
   return !!(p.dia && p.dia<=addDiasISO(hojeISO(),-RASTREIO_DIAS));
 }
@@ -1892,13 +1892,16 @@ function abrirPedido(cod){
     h+='<div style="display:flex;gap:12px;margin-top:16px"><button class="btn pri" onclick="aviso(\'Aqui reagenda a entrega\')">Reagendar entrega</button><button class="btn sec" onclick="aviso(\'Aqui troca o motorista\')">Trocar motorista</button></div>';
   } else {
     h+='<div style="margin-top:18px;font-weight:700;font-size:13px">Histórico de rastreio</div>';
+    if(p.tr==='jt') h+='<div class="empty" style="padding:8px 0;font-size:12.5px">J&amp;T: o status vem da planilha. O rastreio automático pede o CPF do cliente, então por enquanto não está ligado.</div>';
+    else {
     if(!RASTREADOS[p.cod] && p.st!=='entregue') h+='<div style="margin-top:6px"><button class="btn sec" onclick="rastrearPacote(\''+esc(p.cod)+'\')">Acompanhar rastreio deste pacote</button></div>';
     if(RASTREADOS[p.cod]) h+='<div style="margin-top:6px"><button class="btn sec" onclick="atualizarRastreioPacote(\''+esc(p.cod)+'\')">Atualizar rastreio</button></div>';
     h+='<div id="hist-rastreio" style="margin-top:6px">Carregando...</div>';
+    }
   }
   el('pd-corpo-sheet').innerHTML=h;
   abrir('sh-pedido');
-  if(REAL) carregarHistoricoRastreio(p.cod);
+  if(REAL && p.tr!=='jt') carregarHistoricoRastreio(p.cod);
 }
 /* busca no Worker a linha do tempo de eventos do 17TRACK pra esse pacote */
 function formatarQuandoRastreio(iso){
