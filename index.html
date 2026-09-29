@@ -432,7 +432,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-56-2809</p>
+      <p class="bld">DELTADIS-BASE-57-2809</p>
     </div>
   </div>
 </div>
@@ -882,7 +882,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-56-2809</div>
+<div class="bld-fix">DELTADIS-BASE-57-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1902,7 +1902,7 @@ function abrirPedido(cod){
     h+='<div style="margin-top:18px;font-weight:700;font-size:13px">Histórico de rastreio</div>';
     if(p.tr==='jt') h+='<div class="empty" style="padding:8px 0;font-size:12.5px">J&amp;T: o status vem da planilha. O rastreio automático pede o CPF do cliente, então por enquanto não está ligado.</div>';
     else {
-    if(!RASTREADOS[p.cod] && p.st!=='entregue') h+='<div style="margin-top:6px"><button class="btn sec" onclick="rastrearPacote(\''+esc(p.cod)+'\')">Acompanhar rastreio deste pacote</button></div>';
+    if(!RASTREADOS[p.cod]) h+='<div style="margin-top:6px"><button class="btn sec" onclick="rastrearPacote(\''+esc(p.cod)+'\')">Acompanhar rastreio deste pacote</button></div>';
     if(RASTREADOS[p.cod]) h+='<div style="margin-top:6px"><button class="btn sec" onclick="atualizarRastreioPacote(\''+esc(p.cod)+'\')">Atualizar rastreio</button></div>';
     h+='<div id="hist-rastreio" style="margin-top:6px">Carregando...</div>';
     }
@@ -1986,10 +1986,13 @@ function pintarPedidos(){
   for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var ocSel=el('pd-ocor'), ocAtual=ocSel.value, ocCont={}, ocN=0, ocH='';
   for(j=0;j<PEDIDOS.length;j++){ var po=PEDIDOS[j]; if(FILTRO_TR && po.tr!==FILTRO_TR) continue; if(!passaData(po)) continue; if(po.obs && po.obs!=='em aberto' && po.st!=='entregue'){ ocCont[po.obs]=(ocCont[po.obs]||0)+1; } }
-  var ocLista=Object.keys(ocCont).sort(function(a,b){return ocCont[b]-ocCont[a];});
+  var ocLista=Object.keys(ocCont).sort(function(a,b){return ocCont[b]-ocCont[a];}), nSemNum=0, nSemRua=0;
+  for(j=0;j<PEDIDOS.length;j++){ var pe=PEDIDOS[j]; if(FILTRO_TR && pe.tr!==FILTRO_TR) continue; if(!passaData(pe)) continue; if(pe.st==='entregue'||!pe.bairro) continue; if(!pe.num) nSemNum++; else if(!pe.rua) nSemRua++; }
   ocH='<option value="">Todas as ocorrências</option>';
+  if(nSemNum) ocH+='<option value="__semnum">⚠ Endereço sem número ('+nSemNum+')</option>';
+  if(nSemRua) ocH+='<option value="__semrua">⚠ Endereço sem nome da rua ('+nSemRua+')</option>';
   for(j=0;j<ocLista.length;j++) ocH+='<option value="'+esc(ocLista[j])+'">'+esc(ocLista[j])+' ('+ocCont[ocLista[j]]+')</option>';
-  ocSel.innerHTML=ocH; ocSel.value=(ocCont[ocAtual]?ocAtual:'');
+  ocSel.innerHTML=ocH; ocSel.value=((ocCont[ocAtual]||(ocAtual==='__semnum'&&nSemNum)||(ocAtual==='__semrua'&&nSemRua))?ocAtual:'');
   var ocFiltro=ocSel.value;
   var pills='';
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
@@ -2003,7 +2006,9 @@ function pintarPedidos(){
     else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
-    if(ocFiltro && p.obs!==ocFiltro) continue;
+    if(ocFiltro==='__semnum'){ if(p.st==='entregue'||!p.bairro||p.num) continue; }
+    else if(ocFiltro==='__semrua'){ if(p.st==='entregue'||!p.bairro||!p.num||p.rua) continue; }
+    else if(ocFiltro && p.obs!==ocFiltro) continue;
     var m=motorista(p.mt);
     var alvo=(p.cod+' '+p.cliente+' '+(p.scan||'')+' '+(m?m.n:'')).toLowerCase();
     if(busca && alvo.indexOf(busca)<0) continue;
