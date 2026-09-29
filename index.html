@@ -24,6 +24,7 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--fbody);-webkit-font-smoothing:antialiased}
+html{scrollbar-gutter:stable}
 body{isolation:isolate}
 h1,h2,h3,.fhead{font-family:var(--fhead)}
 button,input,select,textarea{font-family:var(--fbody)}
@@ -415,7 +416,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-13-2809</p>
+      <p class="bld">DELTADIS-BASE-16-2809</p>
     </div>
   </div>
 </div>
@@ -516,13 +517,17 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="pghd"><div><h1>Pedidos</h1><div class="sub">todos os pacotes recebidos hoje, por status</div></div><span class="vertodos" onclick="abrirUploadPlanilha()">+ Upload planilha</span> <span class="vertodos" onclick="sincronizarAnjunClique()">🔄 Sincronizar rastreio</span></div>
         <div id="pd-chip"></div>
         <div class="card">
-          <div class="search"><span>🔎</span><input id="pd-busca" placeholder="buscar por código, cliente ou motorista" oninput="pintarPedidos()"></div>
-          <div style="display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap">
-            <label style="font-size:11.5px;color:var(--muted)">De <input type="date" id="pd-data-ini" onchange="pintarPedidos()" style="margin-left:4px"></label>
-            <label style="font-size:11.5px;color:var(--muted)">Até <input type="date" id="pd-data-fim" onchange="pintarPedidos()" style="margin-left:4px"></label>
-            <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';pintarPedidos()">Limpar datas</span>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <div class="search" style="margin-bottom:0"><span>🔎</span><input id="pd-busca" placeholder="buscar por código, cliente ou motorista" oninput="pintarPedidos()"></div>
+            <div class="search" style="margin-bottom:0;max-width:none;gap:6px">
+              <span>📅</span>
+              <input type="date" id="pd-data-ini" onchange="pintarPedidos()" style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text)">
+              <span style="color:var(--muted);font-size:12px">até</span>
+              <input type="date" id="pd-data-fim" onchange="pintarPedidos()" style="border:none;background:transparent;outline:none;font-size:13px;color:var(--text)">
+              <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';pintarPedidos()" style="margin-left:4px;white-space:nowrap">Limpar</span>
+            </div>
           </div>
-          <div class="pills" id="pd-pills"></div>
+          <div class="pills" id="pd-pills" style="margin-top:12px"></div>
           <div class="tb-wrap"><table class="tb">
             <thead><tr><th>Pacote</th><th>Transportadora</th><th>Motorista</th><th>Status</th><th>Valor NF</th></tr></thead>
             <tbody id="pd-corpo"></tbody>
@@ -719,7 +724,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-13-2809</div>
+<div class="bld-fix">DELTADIS-BASE-16-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -937,7 +942,7 @@ function acharOuCriarMotorista(login,tr,doc){
 /* junta a planilha na base: código novo entra, código que já existe só atualiza status, motorista e data da entrega */
 function importarPlanilha(linhas,c){
   if(!REAL){ PEDIDOS=[]; MOTORISTAS=[]; EXTRATO=[]; REAL=true; }
-  var tr=c.tr, idx={}, i, r, cod, s, mot, e, p, en, novos=0, atualizados=0, desconhecidos=0, ignorados=0;
+  var tr=c.tr, idx={}, i, r, cod, s, mot, e, p, en, novos=0, atualizados=0, desconhecidos=0, ignorados=0, codigosNovos=[];
   for(i=0;i<PEDIDOS.length;i++) idx[PEDIDOS[i].cod]=PEDIDOS[i];
   for(i=1;i<linhas.length;i++){
     r=linhas[i]; cod=String(r[c.cod]==null?'':r[c.cod]).trim();
@@ -962,11 +967,11 @@ function importarPlanilha(linhas,c){
     else{
       p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:'', bairro:'', vl:null, st:s.st, t1:'', t2:'',
          scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en};
-      PEDIDOS.push(p); idx[cod]=p; novos++;
+      PEDIDOS.push(p); idx[cod]=p; novos++; codigosNovos.push(cod);
     }
   }
   recalcularReal(); var gravou=true; salvarLocal(function(ok){ if(!ok) aviso('ATENÇÃO: não consegui guardar no navegador, ao recarregar precisa importar de novo'); });
-  return {tr:tr, novos:novos, atualizados:atualizados, desconhecidos:desconhecidos, ignorados:ignorados, gravou:gravou};
+  return {tr:tr, novos:novos, atualizados:atualizados, desconhecidos:desconhecidos, ignorados:ignorados, gravou:gravou, codigosNovos:codigosNovos};
 }
 /* ══════════════════════════════════════════════════════════
    RASTREIO AUTOMÁTICO (Worker deltadis-api) — elimina a dupla bipagem da Anjun
@@ -1452,7 +1457,9 @@ function pintarPedidos(){
   for(i=0;i<stAll.length;i++) cont[stAll[i]]=0;
   for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var pills='';
-  for(i=0;i<stAll.length;i++) pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i][0].toUpperCase()+stAll[i].slice(1))+' ('+cont[stAll[i]]+')</span>';
+  for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
+    pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
+  }
   el('pd-pills').innerHTML=pills;
 
   var busca=(el('pd-busca').value||'').toLowerCase().trim(), h='', n=0, LIM=300;
@@ -1511,10 +1518,8 @@ function enviarPlanilha(){
     pintarIndicadores(); pintarDashboard(); pintarPedidos(); pintarMotoristas(); pintarFinanceiro(); pintarMapeamento();
     ir('pedidos');
     aviso((r.tr==='jt'?'J&T: ':'Anjun: ')+r.novos+' pacotes novos, '+r.atualizados+' atualizados · '+MOTORISTAS.length+' motoristas'+(r.ignorados?(' · '+r.ignorados+' ainda não chegaram (fora)'):'')+(r.desconhecidos?(' · '+r.desconhecidos+' com status desconhecido'):'')+(r.gravou?'':' · ATENÇÃO: não coube guardar no navegador, ao recarregar precisa importar de novo'));
-    if(r.tr==='anj'){
-      var codigosReg=[], ii, cc;
-      for(ii=1; ii<linhas.length; ii++){ cc=String(linhas[ii][col.cod]==null?'':linhas[ii][col.cod]).trim(); if(cc) codigosReg.push(cc); }
-      registrarAnjunNoWorker(codigosReg);
+    if(r.tr==='anj' && r.codigosNovos && r.codigosNovos.length){
+      registrarAnjunNoWorker(r.codigosNovos);
     }
   };
   rd.onerror=function(){ aviso('Não consegui ler o arquivo.'); };
