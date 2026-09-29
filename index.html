@@ -438,7 +438,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-72-2809</p>
+      <p class="bld">DELTADIS-BASE-74-2809</p>
     </div>
   </div>
 </div>
@@ -900,11 +900,13 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 <div class="sheet wide" id="sh-fechamento">
-  <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirRepasseMotorista(FC_MOT_ATUAL)" title="Voltar ao repasse">←</button><h3>Fechamento — <span id="fc-periodo"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirRepasseMotorista(FC_MOT_ATUAL)" title="Voltar ao repasse">←</button><h3>Fechamento — <span id="fc-per-fech"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <div class="sh-row"><span class="k">Status</span><span class="v" id="fc-status"></span></div>
     <div class="sh-row"><span class="k">Data de pagamento</span><span class="v" id="fc-data"></span></div>
     <div class="sh-row"><span class="k">Valor total</span><span class="v" style="font-weight:800" id="fc-valor"></span></div>
+    <button class="btn pri wide" style="margin-top:10px;background:#16A34A" id="fc-btn-pix" onclick="pagarFechamentoPix()">💸 Pagar via Pix</button>
+    <div id="fc-pix-nota" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
     <button class="btn sec wide" style="margin-top:10px" id="fc-btn-pagar" onclick="marcarFechamentoPago()">Marcar como pago</button>
     <button class="btn pri wide" style="margin-top:8px" onclick="baixarPdfFechamento()">⬇ Baixar PDF</button>
     <h4 style="margin:16px 0 8px;font-size:13px">Pacotes deste fechamento</h4>
@@ -916,7 +918,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-72-2809</div>
+<div class="bld-fix">DELTADIS-BASE-74-2809</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1616,6 +1618,7 @@ function fecharCicloMotorista(){
     dataPagamento:(el('rp-data-pg').value||'').trim(), valor:saldo, status:'pendente', pedidos:[]};
   for(i=0;i<pedidosDoFechamento.length;i++){ p=pedidosDoFechamento[i]; p.fechId=fid; f.pedidos.push({cod:p.cod, cliente:p.cliente||'', valor:valorMotorista(m,p)}); }
   m.fechamentos=m.fechamentos||[]; m.fechamentos.push(f);
+  lancDoFechamento(m,f);
   if(REAL) salvarLocal();
   aviso('Ciclo fechado! '+pedidosDoFechamento.length+' pacote(s), '+moeda(saldo)+'.');
   abrirRepasseMotorista(id);
@@ -1625,21 +1628,51 @@ function abrirDetalheFechamento(mid,fid){
   var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===fid) f=m.fechamentos[i];
   if(!f) return;
   FC_MOT_ATUAL=mid; FC_ID_ATUAL=fid;
-  el('fc-periodo').textContent=(dataBR(f.cicloIni)||'—')+' até '+(dataBR(f.cicloFim)||'—');
+  el('fc-per-fech').textContent=(dataBR(f.cicloIni)||'—')+' até '+(dataBR(f.cicloFim)||'—');
   el('fc-status').innerHTML=badgeStatus(f.status==='pago'?'pago':'pendente');
   el('fc-data').textContent=dataBR(f.dataPagamento)||'—';
   el('fc-valor').textContent=moeda(f.valor);
-  el('fc-btn-pagar').style.display=f.status==='pago'?'none':'block';
+  var lz=f.lancId?achaLanc(f.lancId):null, trav=travadoPix(lz), mp=motorista(mid);
+  el('fc-btn-pagar').style.display=(f.status==='pago'||trav)?'none':'block';
+  el('fc-btn-pix').style.display=f.status==='pago'?'none':'block';
+  el('fc-btn-pix').disabled=trav; el('fc-btn-pix').textContent=trav?'Aguardando aprovação do Pix':'💸 Pagar via Pix';
+  el('fc-pix-nota').textContent=f.status==='pago'?'':(trav?'Aprove o Pix no app do Asaas. Quando concluir, este fechamento vira Pago sozinho.':(mp&&mp.pix?('Chave Pix do motorista: '+mp.pix):'Cadastre a chave Pix na ficha do motorista pra pagar por aqui.'));
   var h='',j,pd;
   for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; h+='<tr><td>'+esc(pd.cod)+cpBtn(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
   el('fc-linhas').innerHTML=h||'<tr><td colspan="3"><div class="empty">Sem pacotes</div></td></tr>';
   abrir('sh-fechamento');
+}
+/* todo fechamento de motorista vira uma saída (pendente) no Fluxo de Caixa; devolve o lançamento */
+function lancDoFechamento(m,f){
+  var l=f.lancId?achaLanc(f.lancId):null, i, mx=0;
+  if(l) return l;
+  for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id>mx) mx=EXTRATO[i].id;
+  l={id:mx+1,tp:'out',tt:'Repasse motorista — '+m.n+' ('+dataBR(f.cicloIni)+' a '+dataBR(f.cicloFim)+')',categoria:'Repasse motorista',
+     data:/^\d{4}-\d{2}-\d{2}$/.test(String(f.dataPagamento||''))?f.dataPagamento:hojeISO(),vl:f.valor,status:(f.status==='pago'?'pago':'pendente'),pix:m.pix||'',fech:{m:m.id,f:f.id}};
+  EXTRATO.push(l); f.lancId=l.id; return l;
+}
+function sincronizarFechamentosFC(){
+  var i,j,m,f,n=0;
+  for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; for(j=0;j<(m.fechamentos||[]).length;j++){ f=m.fechamentos[j]; if(f.status!=='pago' && !(f.lancId && achaLanc(f.lancId))){ lancDoFechamento(m,f); n++; } } }
+  if(n){ if(REAL) salvarLocal(); pintarFluxoCaixa(); }
+}
+function pagarFechamentoPix(){
+  var m=motorista(FC_MOT_ATUAL); if(!m) return;
+  var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===FC_ID_ATUAL) f=m.fechamentos[i];
+  if(!f || f.status==='pago') return;
+  if(!String(m.pix||'').trim()){ aviso('Cadastre a chave Pix na ficha do motorista'); return; }
+  var l=lancDoFechamento(m,f);
+  if(travadoPix(l)){ aviso('Esse Pix já foi enviado — aguardando aprovação'); return; }
+  l.vl=f.valor; l.pix=m.pix;
+  if(REAL) salvarLocal();
+  fecharTudo(); abrirPagarPix([l.id]);
 }
 function marcarFechamentoPago(){
   var m=motorista(FC_MOT_ATUAL); if(!m) return;
   var f=null,i; for(i=0;i<(m.fechamentos||[]).length;i++) if(m.fechamentos[i].id===FC_ID_ATUAL) f=m.fechamentos[i];
   if(!f) return;
   f.status='pago'; f.pagoEm=hojeISO();
+  var lm=f.lancId?achaLanc(f.lancId):null; if(lm && !travadoPix(lm)){ lm.status='pago'; }
   if(REAL) salvarLocal();
   aviso('Marcado como pago!');
   abrirDetalheFechamento(FC_MOT_ATUAL, FC_ID_ATUAL);
@@ -3087,7 +3120,7 @@ function filtrarEXTRATO(){
 }
 
 var FC_SEL={}, FC_STATUS='todos';   /* saídas marcadas pra autorizar / não pagar */
-function fcSelecionavel(e){ return e.tp==='out' && e.status!=='pago'; }
+function fcSelecionavel(e){ return e.tp==='out' && e.status!=='pago' && !travadoPix(e); }
 function fcSelecionarTodos(on){ var lista=filtrarEXTRATO(), i; FC_SEL={}; if(on) for(i=0;i<lista.length;i++) if(fcSelecionavel(lista[i])) FC_SEL[lista[i].id]=1; pintarFluxoCaixa(); }
 function fcMarcar(id,on){ if(on) FC_SEL[id]=1; else delete FC_SEL[id]; pintarFluxoCaixa(); }
 function fcLimparSel(){ FC_SEL={}; pintarFluxoCaixa(); }
@@ -3152,7 +3185,8 @@ function abrirPagarPix(ids){
 function ppMsg(id,txt,cor){ var x=el('pp-r-'+id); if(x) x.innerHTML='<span style="color:'+(cor||'var(--muted)')+'">'+txt+'</span>'; }
 function pixMarcar(e,st,recibo){
   e.pixSt=st;
-  if(st==='DONE'){ e.status='pago'; e.pixSt=''; var ag=new Date(); e.decEm=isoDe(ag)+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2); if(recibo) e.recibo=recibo; }
+  if(st==='DONE'){ e.status='pago'; e.pixSt=''; var ag=new Date(); e.decEm=isoDe(ag)+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2); if(recibo) e.recibo=recibo;
+    if(e.fech){ var mm=motorista(e.fech.m), q; if(mm) for(q=0;q<(mm.fechamentos||[]).length;q++) if(mm.fechamentos[q].id===e.fech.f){ mm.fechamentos[q].status='pago'; mm.fechamentos[q].pagoEm=hojeISO(); } } }
   else if(/FAIL|CANCEL|REFUS/i.test(st)) e.pixSt='falhou';
 }
 function executarPagarPix(){
@@ -3186,6 +3220,7 @@ function executarPagarPix(){
   }
   prox();
 }
+function travadoPix(e){ return !!(e && e.pixId && e.pixSt!=='falhou' && e.pixSt!=='incerto'); }   /* Pix já enviado ou concluído: não edita nem exclui */
 function aguardandoAsaas(e){ return !!(e && e.tp==='out' && e.pixId && e.status!=='pago' && e.pixSt!=='falhou' && e.pixSt!=='incerto'); }
 /* confere no Asaas todos os Pix enviados que ainda não foram aprovados/concluídos */
 function pixConferirPendentes(){ var i; for(i=0;i<EXTRATO.length;i++) if(aguardandoAsaas(EXTRATO[i]) && EXTRATO[i].pixRef) verificarPix(EXTRATO[i].id,true); }
@@ -3195,7 +3230,7 @@ function atualizarFluxoCaixa(){
   setTimeout(function(){ var b2=el('fc-atualizar'); if(b2) b2.textContent='↻ Atualizar'; pintarFluxoCaixa(); aviso('Atualizado!'); },1500);
 }
 setInterval(function(){ if(REAL && !document.hidden) pixConferirPendentes(); },15000);
-setTimeout(function(){ if(REAL) pixConferirPendentes(); },2500);
+setTimeout(function(){ if(REAL){ sincronizarFechamentosFC(); pixConferirPendentes(); } },2500);
 /* confere no Asaas como ficou um Pix já enviado */
 function verificarPix(id,silencioso){
   var e=achaLanc(id); if(!e||!e.pixRef) return;
@@ -3216,7 +3251,7 @@ function pintarFluxoCaixa(){
   el('fc-periodo').innerHTML=
     '<div class="kpi"><div class="lb">Entradas no período</div><div class="vl">'+moeda(entradas)+'</div></div>'+
     '<div class="kpi"><div class="lb cr">Saídas no período</div><div class="vl vr">'+moeda(saidas)+'</div></div>'+
-    '<div class="kpi"><div class="lb cb">Aguardando aprovação no Asaas</div><div class="vl vb">'+moeda(aut)+'</div></div>'+
+    '<div class="kpi"><div class="lb cb">Aguardando aprovação</div><div class="vl vb">'+moeda(aut)+'</div></div>'+
     '<div class="kpi"><div class="lb">Saldo no período</div><div class="vl" style="'+corSaldo+'">'+moeda(saldoPeriodo)+'</div></div>';
 
   var h='', nSel=0, tSel=0, nSelecionaveis=0;
@@ -3224,13 +3259,13 @@ function pintarFluxoCaixa(){
     h+='<tr><td>'+(ok?('<input type="checkbox" '+(FC_SEL[e.id]?'checked ':'')+'onchange="fcMarcar('+e.id+',this.checked)">'):'')+'</td><td>'+dataBR(e.data)+'</td>'+
        '<td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria)+'</span>'+(e.pix?(' <span style="font-size:11px;color:var(--muted)">Pix: '+esc(e.pix)+'</span>'):'')+'</td>'+
        '<td style="font-weight:800;color:'+(e.tp==='in'?'var(--green)':'var(--red)')+'">'+(e.tp==='in'?'+ ':'- ')+moeda(e.vl)+'</td>'+
-       '<td>'+(aguardandoAsaas(e)?'<span class="badge b-in">Aguardando Asaas</span>':badgeStatus(e.status))+(e.decEm?('<br><span style="font-size:10.5px;color:var(--muted)">'+esc(e.decEm)+'</span>'):'')+(e.pixSt?('<br><span style="font-size:10.5px;color:'+(e.pixSt==='falhou'||e.pixSt==='incerto'?'var(--red)':'var(--muted)')+'">'+(e.pixSt==='falhou'?'Pix falhou'+(e.pixMotivo?': '+esc(e.pixMotivo):'')+' — pode tentar de novo':(e.pixSt==='incerto'?'Pix incerto — confira o extrato do Asaas':'Aprove o Pix no app do Asaas'))+'</span>'):'')+'</td>'+
+       '<td>'+(aguardandoAsaas(e)?'<span class="badge b-in">Aguardando aprovação</span>':badgeStatus(e.status))+(e.decEm?('<br><span style="font-size:10.5px;color:var(--muted)">'+esc(e.decEm)+'</span>'):'')+(e.pixSt?('<br><span style="font-size:10.5px;color:'+(e.pixSt==='falhou'||e.pixSt==='incerto'?'var(--red)':'var(--muted)')+'">'+(e.pixSt==='falhou'?'Pix falhou'+(e.pixMotivo?': '+esc(e.pixMotivo):'')+' — pode tentar de novo':(e.pixSt==='incerto'?'Pix incerto — confira o extrato do Asaas':'Aprove o Pix no app do Asaas'))+'</span>'):'')+'</td>'+
        '<td><div class="fc-acoes">'+
          (podePagarPix(e)?'<button onclick="abrirPagarPix(['+e.id+'])" title="Pagar via Pix" style="color:var(--green)">💸</button>':'')+
          ((e.pixId&&e.status!=='pago'&&e.pixSt!=='falhou')?'<button onclick="verificarPix('+e.id+')" title="Conferir com o Asaas">🔄</button>':'')+
-         '<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>'+
+         (travadoPix(e)?'<button title="Pix efetivado: não pode mais ser alterado" style="cursor:default">🔒</button>':'<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>')+
          '<button onclick="duplicarLancamento('+e.id+')" title="Duplicar">⧉</button>'+
-         '<button class="del" onclick="excluirLancamento('+e.id+')" title="Excluir">🗑</button>'+
+         (travadoPix(e)?'':'<button class="del" onclick="excluirLancamento('+e.id+')" title="Excluir">🗑</button>')+
        '</div></td></tr>';}
   if(!h) h='<tr><td colspan="6"><div class="empty">Nenhum lançamento neste período</div></td></tr>';
   el('fc-corpo').innerHTML=h;
@@ -3252,6 +3287,7 @@ function duplicarLancamento(id){
   aviso('Lançamento duplicado');
 }
 function excluirLancamento(id){
+  var ex=achaLanc(id); if(travadoPix(ex)){ aviso('Pix já efetivado: não pode ser excluído'); return; }
   for(var i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id===id){ EXTRATO.splice(i,1); break; }
   if(REAL) salvarLocal();
   pintarFinanceiro();
@@ -3277,6 +3313,7 @@ function abrirNovoLancamento(){
 function abrirEditarLancamento(id){
   var e=null,i; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id===id) e=EXTRATO[i];
   if(!e) return;
+  if(travadoPix(e)){ aviso('Pix já efetivado: não pode mais ser alterado'); return; }
   LC_EDIT=id; LC_TIPO=e.tp; preencherCategoriasLc();
   el('lc-titulo').textContent='Editar lançamento'; el('lc-rec-box').style.display='none';
   if(e.categoria && !Array.prototype.some.call(el('lc-categoria').options,function(o){return o.value===e.categoria;})) el('lc-categoria').innerHTML+='<option value="'+esc(e.categoria)+'">'+esc(e.categoria)+'</option>';
