@@ -159,6 +159,8 @@ a{color:inherit}
 .meta-fill{height:100%;background:var(--grad);border-radius:99px}
 .progresso{margin-bottom:14px}
 .progresso-txt{font-size:12px;font-weight:700;color:var(--muted2);margin-bottom:6px}
+.progresso-topo{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.progresso-topo .progresso-txt{margin-bottom:0}
 
 /* lista de pacotes bipados */
 .bp-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
@@ -327,7 +329,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-23-3009</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-24-3009</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1089,7 +1091,7 @@ function rpRegistrarRemarcado(cod){ var m=rpRemarcados(), d=new Date(); d.setDat
 function rpParada(p,seq){
   var t=String(p.tel||'').replace(/\D/g,''); if(t && t.length<=11) t='55'+t;
   var sem=(p.lat==null||!!p.inc||!!p._longe);
-  return {seq:seq,cod:p.cod,cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||(p.inc?'[rua não informada]':''))+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':'')+((!p.rua&&p.cep)?' · CEP '+p.cep:''),telefone:t,status:'pendente',lat:sem?null:p.lat,lng:sem?null:p.lng,aprox:sem?false:rpAprox(p),origem:'painel',remarcado:!!rpRemarcados()[p.cod],
+  return {seq:seq,cod:p.cod,cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||(p.inc?'[rua não informada]':''))+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':'')+((!p.rua&&p.cep)?' · CEP '+p.cep:''),telefone:t,canal:p.canal||'',status:'pendente',lat:sem?null:p.lat,lng:sem?null:p.lng,aprox:sem?false:rpAprox(p),origem:'painel',remarcado:!!rpRemarcados()[p.cod],
     semLocal:sem,motivo:sem?(p._longe?'Endereço fora da cidade da rota':rpTag(p)):'',raw:{rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||''}};
 }
 /* ══ pedido sem localização: NUNCA some — o motorista corrige o endereço ou remarca ══ */
@@ -1260,7 +1262,8 @@ function renderEmRota(){
      (atual?('<a class="mapa-abrir-maps" href="'+linkNavegar(atual)+'" target="_blank" rel="noopener">📍 Abrir no Maps ↗</a>'):'')+
      (mapaReal?'':'<div class="rota-pins">'+pins+'</div>')+
      '<span class="mapa-legenda">'+ROTA_KM+' km '+((RP.rota&&RP.rota.real&&mapaReal)?'pelas ruas':'estimados')+' · ~'+ROTA_MIN+' min de rota</span></div>';
-  h+='<div class="progresso"><div class="progresso-txt">'+PONTEIRO+' de '+LOTE_ATUAL.length+' entregues</div>'+
+  var csM=atual&&atual.canal?(CANAL_STYLE[atual.canal]||{bg:'var(--s3)',cor:'var(--muted2)'}):null;
+  h+='<div class="progresso"><div class="progresso-topo"><div class="progresso-txt">'+PONTEIRO+' de '+LOTE_ATUAL.length+' entregues</div>'+(csM?'<span class="canal-tag" style="background:'+csM.bg+';color:'+csM.cor+'">'+esc(atual.canal)+'</span>':'')+'</div>'+
      '<div class="meta-barra"><div class="meta-fill" style="width:'+Math.round(PONTEIRO/LOTE_ATUAL.length*100)+'%"></div></div></div>';
   if(atual){
     var distProx=(1.1+(hashSeed(atual.cod)%30)/10).toFixed(1);
@@ -1270,7 +1273,6 @@ function renderEmRota(){
        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'+
          '<span class="parada-tag">Parada '+(PONTEIRO+1)+' de '+LOTE_ATUAL.length+' · a '+distProx+' km</span>'+
          (atual.semLocal?'<span class="selo-acao">⚠ Ação necessária</span>':'')+(atual.remarcadaHoje?'<span class="selo-rem">🔁 Remarcada hoje</span>':(atual.remarcado?'<span class="selo-rem">🔁 Remarcada ontem</span>':''))+
-         (atual.canal?('<span class="canal-tag" style="background:'+cs.bg+';color:'+cs.cor+'">'+esc(atual.canal)+'</span>'):'')+
        '</div>'+
        '<h2 class="end-2l">'+esc(atual.endereco)+'</h2>'+
        '<p style="margin:0 0 3px;color:var(--muted2);font-size:13.5px;font-weight:700">'+esc(atual.cliente)+'</p>'+
