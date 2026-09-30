@@ -1,0 +1,9 @@
+{
+  "appId": "br.com.deltadis.motorista",
+  "appName": "DELTADIS Motorista",
+  "webDir": "www",
+  "server": {
+    "url": "https://nucleofulfillment.github.io/deltadis/motorista.html",
+    "cleartext": false
+  }
+}
