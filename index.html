@@ -245,6 +245,18 @@ a{color:inherit}
 .mapa-pin .nome-pin{display:block;font-size:9.5px;font-weight:800;color:#fff;background:var(--roxo-esc);border-radius:6px;padding:1px 7px;margin-top:-3px;white-space:nowrap}
 .mapa-pin-entrega{position:absolute;transform:translate(-50%,-50%);font-size:18px;line-height:1;filter:drop-shadow(0 2px 3px rgba(31,10,61,.45))}
 @keyframes pulsePin{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-108%)}}
+.mp-wrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border2);background:var(--s3)}
+.mp-mapa{height:420px;width:100%}
+.mp-full-btn{position:absolute;top:10px;left:10px;z-index:5;width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);background:#fff;font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(31,10,61,.25)}
+.mp-wrap.cheio{position:fixed;inset:0;z-index:95;border-radius:0;border:0}
+.mp-wrap.cheio .mp-mapa{height:100vh}
+.mp-base{width:38px;height:38px;border-radius:12px;background:#1F0A3D;border:3px solid #fff;box-shadow:0 3px 8px rgba(31,10,61,.4);display:flex;align-items:center;justify-content:center;font-size:19px}
+.mp-mk{width:34px;height:34px;border-radius:50%;background:#fff;border:3px solid #16A34A;box-shadow:0 3px 8px rgba(31,10,61,.35);display:flex;align-items:center;justify-content:center;overflow:visible;position:relative;font-size:10px;font-weight:800;color:#fff;cursor:pointer}
+.mp-mk img{width:20px;height:20px;border-radius:4px;display:block}
+.mp-mk.pop{animation:mpPop .55s cubic-bezier(.2,1.4,.4,1) both}
+.mp-mk.novo::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:3px solid #16A34A;animation:mpOnda 1.4s ease-out 3}
+@keyframes mpPop{0%{opacity:0;transform:translateY(46px) scale(.2)}70%{opacity:1;transform:translateY(-6px) scale(1.12)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes mpOnda{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(2.6)}}
 .mapa-legenda{position:absolute;bottom:8px;left:12px;right:12px;font-size:10.5px;color:var(--muted2);background:rgba(255,255,255,.88);padding:4px 9px;border-radius:8px}
 
 /* mini-cards de desempenho (dentro do modal do motorista) */
@@ -456,7 +468,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-91-3009</p>
+      <p class="bld">DELTADIS-BASE-94-3009</p>
     </div>
   </div>
 </div>
@@ -600,7 +612,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         </div>
         <div class="card">
           <div id="mp-real">
-            <div id="mp-map" style="height:420px;border-radius:12px;overflow:hidden;background:var(--s3);border:1px solid var(--border2)"></div>
+            <div id="mp-wrap" class="mp-wrap"><div id="mp-map" class="mp-mapa"></div><button class="mp-full-btn" id="mp-full-btn" onclick="mpTelaCheia()" title="Tela cheia">⛶</button></div>
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
               <span id="mp-status" style="font-size:12.5px;color:var(--muted)"></span>
               <button class="btn pri" id="mp-loc" style="display:none"></button>
@@ -673,6 +685,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <section class="page" id="pg-config">
         <div class="pghd"><div><h1>Configurações</h1><div class="sub">integrações e estrutura do ponto</div></div></div>
         <div class="cfgcards">
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirPonto()"><div class="ic">📍</div><h4>Ponto de coleta</h4><p>Endereço da base (Delta Express). É de onde o app do motorista sai e o centro do Mapeamento.</p><span class="badge b-in" id="pt-badge">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
@@ -814,6 +827,16 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <p style="margin:0 0 14px;font-size:12.5px;color:var(--muted);line-height:1.5">Cadastre livremente as transportadoras que operam no seu ponto: nome, quanto paga por pacote <b>entregue</b>, e o ciclo de pagamento dela. O valor pago ao motorista por região fica em Configurações → Áreas de entrega.</p>
     <div id="pr-linhas"></div>
     <button class="btn pri wide" style="margin-top:6px" onclick="salvarPrecos()">Salvar valores</button>
+  </div>
+</div>
+
+<div class="sheet wide" id="sh-ponto">
+  <div class="sh-hd"><h3>Ponto de coleta</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Endereço da base onde os motoristas coletam e saem para entregar. O <b>app do motorista</b> usa esse endereço como saída da rota (o motorista ainda pode trocar no app dele) e o <b>Mapeamento</b> abre centrado aqui.</p>
+    <div class="field"><label>Endereço completo</label><input class="inp" id="pt-end" placeholder="Rua, número - bairro, cidade - UF, CEP"></div>
+    <div id="pt-res" style="font-size:12.5px;color:var(--muted);margin:2px 0 10px;line-height:1.5"></div>
+    <button class="btn pri wide" id="pt-salvar" onclick="salvarPonto()">Salvar e localizar</button>
   </div>
 </div>
 
@@ -964,7 +987,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-91-3009</div>
+<div class="bld-fix">DELTADIS-BASE-94-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1925,7 +1948,7 @@ function aviso(t){var e=el('toast'); e.innerHTML=t; e.classList.add('on');
 function entrar(){
   el('login').style.display='none';
   el('app').style.display='block';
-  montarTudo();
+  montarTudo(); carregarPonto();
 }
 function sair(){
   fecharTudo();
@@ -2655,6 +2678,29 @@ function enviarNotifColeta(){
   fecharTudo(); pintarMotoristas();
   aviso('Notificação registrada para '+ids.length+' motorista(s). O envio pelo WhatsApp entra depois.');
 }
+/* ponto de coleta (base): fica no servidor; o app do motorista e o mapa daqui leem de lá */
+var PONTO=null;
+function carregarPonto(){
+  fetch(DELTADIS_API+'/config/ponto?key='+encodeURIComponent(DELTADIS_API_KEY)).then(function(r){return r.json();}).then(function(d){
+    if(d&&d.ok){ PONTO=d.ponto||null; pintarBadgePonto(); if(MP_MAP&&MP_MAPA_OK) mpPintarBase(true); }
+  }).catch(function(){});
+}
+function pintarBadgePonto(){ var b=el('pt-badge'); if(b) b.textContent=PONTO?'ok':'configurar'; }
+function abrirPonto(){
+  el('pt-end').value=PONTO?PONTO.endereco:'';
+  el('pt-res').innerHTML=PONTO?('Localizado em: <b>'+esc(PONTO.achado||PONTO.endereco)+'</b>'):'Ainda não configurado — o app usa um endereço padrão.';
+  el('pt-salvar').disabled=false; el('pt-salvar').textContent='Salvar e localizar'; abrir('sh-ponto');
+}
+function salvarPonto(){
+  var v=(el('pt-end').value||'').trim(); if(!v){ aviso('Digite o endereço do ponto de coleta'); return; }
+  var b=el('pt-salvar'); b.disabled=true; b.textContent='Localizando…';
+  fetch(DELTADIS_API+'/config/ponto?key='+encodeURIComponent(DELTADIS_API_KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endereco:v})})
+  .then(function(r){return r.json();}).then(function(d){
+    b.disabled=false; b.textContent='Salvar e localizar';
+    if(d&&d.ok){ PONTO=d.ponto; pintarBadgePonto(); el('pt-res').innerHTML='✔ Salvo. Localizado em: <b>'+esc(PONTO.achado||PONTO.endereco)+'</b><br>Confira se é mesmo o lugar certo. Os apps pegam o novo endereço em até 10 minutos.'; if(MP_MAP&&MP_MAPA_OK) mpPintarBase(true); aviso('Ponto de coleta salvo'); }
+    else el('pt-res').innerHTML='<span style="color:#DC2626">'+esc((d&&d.mensagem)||'Não consegui salvar. Tente de novo.')+'</span>';
+  }).catch(function(){ b.disabled=false; b.textContent='Salvar e localizar'; el('pt-res').innerHTML='<span style="color:#DC2626">Sem conexão com o servidor.</span>'; });
+}
 var GR_EDIT=null, GR_PRE=null;
 /* ciclo de repasse (Configurações): várias regras, cada uma para "todos" ou para um grupo de motoristas */
 var CI_MODO='auto', CI_EDIT=null;
@@ -2984,7 +3030,7 @@ function pintarMapeamento(){
   var ant=sel.value; sel.innerHTML=h; if(ant) sel.value=ant; if(sel.value!==ant) sel.value='todos';
   if(REAL) mpRender(); else atualizarMapaEntregas();
 }
-function mudarMotoristaMapa(){ if(REAL){ MP_LIM=50; MP_ENQ=true; mpRender(); } else desenharPinsMapeamento(); }
+function mudarMotoristaMapa(){ if(REAL){ MP_LIM=50; MP_ENQ=true; MP_MK_DIA=''; mpRender(); } else desenharPinsMapeamento(); }
 /* simula o "cron": a cada chamada, marca a hora da última checagem e redesenha os pontos */
 function atualizarMapaEntregas(){
   if(REAL){ return; }
@@ -3036,13 +3082,14 @@ function mpBuscar(){
   var dia=MP_DIA; if(dia!==MP_EVT_DIA){ MP_EVT=[]; MP_EVT_DIA=dia; }
   mpRender();
   if(MP_BUSCANDO) return; MP_BUSCANDO=true;
-  fetch(DELTADIS_API+'/entregas?dia='+encodeURIComponent(dia)+'&key='+encodeURIComponent(DELTADIS_API_KEY))
+  var ctl=(window.AbortController?new AbortController():null), tmo=setTimeout(function(){ try{ if(ctl) ctl.abort(); }catch(e){} MP_BUSCANDO=false; },15000);   /* se travar, libera a próxima busca */
+  fetch(DELTADIS_API+'/entregas?dia='+encodeURIComponent(dia)+'&key='+encodeURIComponent(DELTADIS_API_KEY)+'&_='+Date.now(),{cache:'no-store',signal:ctl?ctl.signal:undefined})
   .then(function(r){return r.json();}).then(function(d){
-    MP_BUSCANDO=false;
+    clearTimeout(tmo); MP_BUSCANDO=false;
     if(d && d.ok){ if(dia===MP_DIA){ MP_EVT=d.itens||[]; MP_EVT_DIA=dia; MP_QUANDO=Date.now(); MP_ERRO=''; } }
     else MP_ERRO=(d&&d.erro)||'falhou';
     mpRender(); if(dia!==MP_DIA) mpBuscar();
-  }).catch(function(){ MP_BUSCANDO=false; MP_ERRO='sem conexão'; mpRender(); });
+  }).catch(function(){ clearTimeout(tmo); MP_BUSCANDO=false; MP_ERRO='sem conexão'; mpRender(); });
 }
 function mpEntregas(){
   var f=(el('mp-motorista')&&el('mp-motorista').value)||'todos', out=[], i;
@@ -3050,6 +3097,7 @@ function mpEntregas(){
   return out;
 }
 function mpHora(t){ var d=new Date(t); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function mpHoraS(t){ var d=new Date(t); return mpHora(t)+':'+('0'+d.getSeconds()).slice(-2); }
 function mpRender(){
   if(!REAL) return;
   var box=el('mp-real'), mock=el('mp-mock'); if(!box) return;
@@ -3068,7 +3116,7 @@ function mpRender(){
   el('mp-entregues-n').textContent=n;
   el('mp-mais').style.display=(n>MP_LIM)?'flex':'none'; el('mp-mais').textContent='Ver mais ('+(n-MP_LIM)+' restantes)';
   el('mp-loc').style.display='none';
-  el('mp-status').innerHTML='<span style="color:#16A34A;font-weight:800">● ao vivo</span> · '+n+' entrega(s) pelo app'+(n?' · '+noMapa+' no mapa':'')+(MP_QUANDO?' · atualizado '+mpHora(MP_QUANDO):'')+(MP_ERRO?' · <span style="color:#DC2626">'+esc(MP_ERRO)+'</span>':'');
+  el('mp-status').innerHTML='<span style="color:#16A34A;font-weight:800">● ao vivo</span> · '+n+' entrega(s) pelo app'+(n?' · '+noMapa+' no mapa':'')+(MP_QUANDO?' · atualizado '+mpHoraS(MP_QUANDO)+' (a cada 30 s)':'')+(MP_ERRO?' · <span style="color:#DC2626">'+esc(MP_ERRO)+'</span>':'');
   mpDesenhar(lista);
 }
 function mpCarregarMapa(cb){
@@ -3080,34 +3128,59 @@ function mpDesenhar(lista){
   if(!el('pg-mapeamento').classList.contains('on')) return;   /* só monta o mapa quando a tela está aberta */
   mpCarregarMapa(function(){
     if(!MP_MAP){
-      MP_MAP=new maplibregl.Map({container:'mp-map',style:'https://tiles.openfreemap.org/styles/liberty',center:[-48.66,-26.91],zoom:11,attributionControl:false});
+      MP_MAP=new maplibregl.Map({container:'mp-map',style:'https://tiles.openfreemap.org/styles/liberty',center:(PONTO&&PONTO.lat!=null)?[PONTO.lng,PONTO.lat]:[-48.66,-26.91],zoom:(PONTO&&PONTO.lat!=null)?13:11,attributionControl:false});
       try{ MP_MAP.addControl(new maplibregl.AttributionControl({compact:true}),'bottom-right'); MP_MAP.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right'); }catch(e){}
-      MP_MAP.on('load',function(){
-        MP_MAP.addSource('ent',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
-        MP_MAP.addLayer({id:'ent-c',type:'circle',source:'ent',paint:{'circle-radius':6,'circle-color':'#16A34A','circle-stroke-width':2,'circle-stroke-color':'#fff'}});
-        MP_MAP.on('click','ent-c',function(ev){
-          var f=ev.features[0].properties;
-          if(MP_POP) MP_POP.remove();
-          MP_POP=new maplibregl.Popup({closeButton:true,maxWidth:'240px'}).setLngLat(ev.lngLat).setHTML('<b>'+esc(f.cliente)+'</b><br>'+esc(f.hora)+' · '+esc(f.mot)).addTo(MP_MAP);
-        });
-        MP_MAP.on('mouseenter','ent-c',function(){ MP_MAP.getCanvas().style.cursor='pointer'; });
-        MP_MAP.on('mouseleave','ent-c',function(){ MP_MAP.getCanvas().style.cursor=''; });
-        MP_MAPA_OK=true; mpPintarPontos(mpEntregas(),true);
-      });
+      MP_MAP.on('load',function(){ MP_MAPA_OK=true; mpPintarBase(false); mpPintarPontos(mpEntregas(),true); });
     } else { MP_MAP.resize(); if(MP_MAPA_OK) mpPintarPontos(lista,MP_ENQ); }
   });
 }
 var MP_ENQ=true;
+var MP_BASE_MK=null;
+function mpPintarBase(centrar){
+  if(!MP_MAP||!PONTO||PONTO.lat==null) return;
+  if(MP_BASE_MK) MP_BASE_MK.remove();
+  var d=document.createElement('div'); d.className='mp-base'; d.textContent='🏢';
+  MP_BASE_MK=new maplibregl.Marker({element:d}).setLngLat([PONTO.lng,PONTO.lat]).setPopup(new maplibregl.Popup({offset:24,closeButton:false}).setHTML('<b>Ponto de coleta</b><br>'+esc(PONTO.endereco))).addTo(MP_MAP);
+  if(centrar && !Object.keys(MP_MK).length){ try{ MP_MAP.easeTo({center:[PONTO.lng,PONTO.lat],zoom:13}); }catch(e){} }
+}
+function mpTelaCheia(){
+  var w=el('mp-wrap'), on=!w.classList.contains('cheio');
+  w.classList.toggle('cheio',on); el('mp-full-btn').textContent=on?'✕':'⛶'; el('mp-full-btn').title=on?'Sair da tela cheia':'Tela cheia';
+  document.body.style.overflow=on?'hidden':'';
+  if(MP_MAP){ setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },60); }
+}
+document.addEventListener('keydown',function(ev){ if(ev.key==='Escape' && el('mp-wrap') && el('mp-wrap').classList.contains('cheio')) mpTelaCheia(); });
+var MP_MK={}, MP_MK_DIA='', MP_PRIM=true;
+/* cada entrega vira um marcador com o favicon da transportadora; entrega nova "sobe" com uma onda verde (efeito ao vivo) */
+function mpMarcador(e,animar,atraso,novo){
+  var pd=null, i; for(i=0;i<PEDIDOS.length;i++) if(PEDIDOS[i].cod===e.cod){ pd=PEDIDOS[i]; break; }
+  var t=pd?TRANSPORTADORAS.filter(function(x){return x.id===pd.tr;})[0]:null;
+  var d=document.createElement('div'); d.className='mp-mk'+(animar?' pop':'')+(novo?' novo':'');
+  if(atraso) d.style.animationDelay=atraso+'ms';
+  var fv=t?favicon(t.dominio||dominioPorNome(t.n)):null;
+  if(fv){ var im=document.createElement('img'); im.src=fv; im.alt=''; im.onerror=function(){ d.removeChild(im); d.textContent=t.ini; d.style.background=t.cor; }; d.appendChild(im); }
+  else if(t){ d.textContent=t.ini; d.style.background=t.cor; }
+  var m=motorista(e.mt)||motorista(Number(e.mt));
+  var pop=new maplibregl.Popup({offset:22,closeButton:false,maxWidth:'240px'}).setHTML('<b>'+esc((pd&&pd.cliente)||e.cli||e.cod)+'</b><br>'+esc(t?t.n:'—')+' · '+mpHora(e.t)+'<br>'+esc(m?m.n:(e.mtn||'—')));
+  var mk=new maplibregl.Marker({element:d}).setLngLat([e.lng,e.lat]).setPopup(pop).addTo(MP_MAP);
+  if(novo) setTimeout(function(){ d.classList.remove('novo'); },4500);
+  return mk;
+}
 function mpPintarPontos(lista,enquadrar){
-  var fs=[], i, e, m, b=new maplibregl.LngLatBounds();
-  for(i=0;i<lista.length;i++){ e=lista[i]; if(e.lat==null||e.lng==null) continue; m=motorista(e.mt)||motorista(Number(e.mt));
-    fs.push({type:'Feature',geometry:{type:'Point',coordinates:[e.lng,e.lat]},properties:{cliente:e.cli||e.cod,hora:mpHora(e.t),mot:m?m.n:(e.mtn||'—')}}); b.extend([e.lng,e.lat]); }
-  var src=MP_MAP.getSource('ent'); if(src) src.setData({type:'FeatureCollection',features:fs});
-  if(enquadrar && fs.length){ try{ MP_MAP.fitBounds(b,{padding:50,maxZoom:15,duration:400}); }catch(e2){} }
+  var i, e, k, b=new maplibregl.LngLatBounds(), quer={}, n=0, atraso=0; if(PONTO&&PONTO.lat!=null) b.extend([PONTO.lng,PONTO.lat]);
+  if(MP_MK_DIA!==MP_DIA){ for(k in MP_MK) MP_MK[k].remove(); MP_MK={}; MP_MK_DIA=MP_DIA; MP_PRIM=true; }
+  for(i=0;i<lista.length && n<800;i++){ e=lista[i]; if(e.lat==null||e.lng==null) continue; quer[e.cod]=1; n++; b.extend([e.lng,e.lat]); }
+  for(k in MP_MK) if(!quer[k]){ MP_MK[k].remove(); delete MP_MK[k]; }
+  var temNovo=false;
+  for(i=lista.length-1;i>=0;i--){ e=lista[i]; if(!quer[e.cod] || MP_MK[e.cod]) continue;
+    atraso=MP_PRIM?Math.min(700,atraso+25):0;
+    MP_MK[e.cod]=mpMarcador(e,true,atraso,!MP_PRIM); temNovo=true; }
+  if(lista.length) MP_PRIM=false;
+  if((enquadrar||temNovo&&!MP_PRIM&&false) && n){ try{ MP_MAP.fitBounds(b,{padding:50,maxZoom:15,duration:400}); }catch(e2){} }
   MP_ENQ=false;
 }
-/* a cada 1 minuto puxa as entregas novas do dia de hoje (só com a tela aberta e a aba visível) */
-setInterval(function(){ if(REAL && !document.hidden && el('pg-mapeamento') && el('pg-mapeamento').classList.contains('on') && MP_DIA===hojeISO()) mpBuscar(); },60000);
+/* a cada 30 segundos puxa as entregas novas do dia de hoje (só com a tela aberta e a aba visível) */
+setInterval(function(){ if(REAL && !document.hidden && el('pg-mapeamento') && el('pg-mapeamento').classList.contains('on') && MP_DIA===hojeISO()) mpBuscar(); },30000);
 function mostrarMpTip(ev,idx){
   var e=ENTREGAS_HOJE[idx]; if(!e) return;
   var m=motorista(e.motoristaId), cs=CANAL_STYLE_MAPA[e.canal]||{bg:'var(--s3)',cor:'var(--muted2)'};

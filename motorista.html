@@ -327,7 +327,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-22-3009</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-23-3009</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -885,12 +885,21 @@ var RP={on:false,mt:null,mtn:'',lista:[],total:0,itens:[],sel:{},fora:{},msg:'',
 try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
 function rpApi(caminho,opts){ return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();}); }
 var RP_TESTE=/[?&]teste=1/.test(location.search);   /* modo teste: só com ?teste=1 no endereço aparece o limite de paradas */
-function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:c.base||RP_BASE_PADRAO, pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
+/* ponto de coleta: o endereço vem do painel (Configurações → Ponto de coleta). O motorista pode trocar o dele; se não trocar, vale o do painel. */
+function rpPonto(){ try{ return JSON.parse(localStorage.getItem('dd_ponto')||'null'); }catch(e){ return null; } }
+function rpBasePonto(){ var pt=rpPonto(); return (pt&&pt.endereco)?pt.endereco:RP_BASE_PADRAO; }
+function rpCarregarPonto(){
+  rpApi('/config/ponto').then(function(d){
+    if(d&&d.ok&&d.ponto&&d.ponto.endereco){ try{ localStorage.setItem('dd_ponto',JSON.stringify(d.ponto)); }catch(e){} if(d.ponto.lat!=null) RP.baseGeo[d.ponto.endereco]={ok:true,lat:d.ponto.lat,lng:d.ponto.lng,achado:d.ponto.achado||''}; }
+  }).catch(function(){});
+}
+setTimeout(rpCarregarPonto,1500); setInterval(rpCarregarPonto,600000);
+function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(c.base&&c.base!==RP_BASE_PADRAO)?c.base:rpBasePonto(), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
 function rpSalvarCfg(){
   var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30; if(!RP_TESTE){ try{ mx=(JSON.parse(localStorage.getItem('dd_cfg')||'{}').max); }catch(e){} if(mx==null) mx=30; }
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:b||RP_BASE_PADRAO,pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear'})); }catch(e){}
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear'})); }catch(e){}
   rpAtualizar();
   aviso('Configurações salvas');
 }
