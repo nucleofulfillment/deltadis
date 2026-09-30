@@ -468,7 +468,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-96-3009</p>
+      <p class="bld">DELTADIS-BASE-98-3009</p>
     </div>
   </div>
 </div>
@@ -616,6 +616,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
               <span id="mp-status" style="font-size:12.5px;color:var(--muted)"></span>
               <button class="btn pri" id="mp-loc" style="display:none"></button>
+              <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px">Ritmo das bolinhas
+                <select class="inp" id="mp-ritmo" onchange="mpRitmo()" style="width:auto;padding:5px 9px;font-size:12px"><option value="auto">Automático (espalha no intervalo)</option><option value="rapido">Rápido (0,3 s cada)</option><option value="lento">Lento (2 s cada)</option></select></label>
             </div>
           </div>
           <div class="mapa-mock" id="mp-mock" style="height:280px;display:none">
@@ -987,7 +989,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-96-3009</div>
+<div class="bld-fix">DELTADIS-BASE-98-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3100,6 +3102,7 @@ function mpHora(t){ var d=new Date(t); return ('0'+d.getHours()).slice(-2)+':'+(
 function mpHoraS(t){ var d=new Date(t); return mpHora(t)+':'+('0'+d.getSeconds()).slice(-2); }
 function mpRender(){
   if(!REAL) return;
+  try{ var rs=localStorage.getItem('dd_mp_ritmo'); if(rs && el('mp-ritmo') && !el('mp-ritmo').getAttribute('data-ok')){ el('mp-ritmo').value=rs; el('mp-ritmo').setAttribute('data-ok','1'); } }catch(e){}
   var box=el('mp-real'), mock=el('mp-mock'); if(!box) return;
   box.style.display='block'; mock.style.display='none';
   if(!MP_DIA) MP_DIA=hojeISO();
@@ -3128,7 +3131,7 @@ function mpDesenhar(lista){
   if(!el('pg-mapeamento').classList.contains('on')) return;   /* só monta o mapa quando a tela está aberta */
   mpCarregarMapa(function(){
     if(!MP_MAP){
-      MP_MAP=new maplibregl.Map({container:'mp-map',style:'https://tiles.openfreemap.org/styles/liberty',center:(PONTO&&PONTO.lat!=null)?[PONTO.lng,PONTO.lat]:[-48.66,-26.91],zoom:(PONTO&&PONTO.lat!=null)?13:11,attributionControl:false});
+      MP_MAP=new maplibregl.Map({container:'mp-map',style:'https://tiles.openfreemap.org/styles/liberty',center:(PONTO&&PONTO.lat!=null)?[PONTO.lng,PONTO.lat]:[-48.55,-27.60],zoom:(PONTO&&PONTO.lat!=null)?13:11,attributionControl:false});
       try{ MP_MAP.addControl(new maplibregl.AttributionControl({compact:true}),'bottom-right'); MP_MAP.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right'); }catch(e){}
       MP_MAP.on('load',function(){ MP_MAPA_OK=true; mpPintarBase(false); mpPintarPontos(mpEntregas(),true); });
     } else { MP_MAP.resize(); if(MP_MAPA_OK) mpPintarPontos(lista,MP_ENQ); }
@@ -3163,6 +3166,19 @@ function mpSaiuFullscreen(){ if(!document.fullscreenElement && !document.webkitF
 var MP_FS_ENTROU=false;
 document.addEventListener('fullscreenchange',mpSaiuFullscreen); document.addEventListener('webkitfullscreenchange',mpSaiuFullscreen);
 document.addEventListener('keydown',function(ev){ if(ev.key==='Escape' && el('mp-wrap') && el('mp-wrap').classList.contains('cheio') && !document.fullscreenElement) mpTelaCheia(); });
+var MP_FILA=[], MP_ENF={}, MP_TMR=null, MP_IV=300, MP_QUER={}, MP_NOVO_ANIM=false;
+function mpProximoMarcador(){
+  MP_TMR=null;
+  while(MP_FILA.length){
+    var e=MP_FILA.shift();
+    if(!MP_QUER[e.cod] || MP_MK[e.cod] || !MP_MAP) continue;
+    MP_MK[e.cod]=mpMarcador(e,true,0,MP_NOVO_ANIM);
+    break;
+  }
+  if(MP_FILA.length) MP_TMR=setTimeout(mpProximoMarcador,MP_IV);
+}
+function mpLimparFila(){ MP_FILA=[]; MP_ENF={}; if(MP_TMR){ clearTimeout(MP_TMR); MP_TMR=null; } }
+function mpRitmo(){ try{ localStorage.setItem('dd_mp_ritmo',el('mp-ritmo').value); }catch(e){} }
 var MP_MK={}, MP_MK_DIA='', MP_PRIM=true;
 /* cada entrega vira um marcador com o favicon da transportadora; entrega nova "sobe" com uma onda verde (efeito ao vivo) */
 function mpMarcador(e,animar,atraso,novo){
@@ -3182,15 +3198,24 @@ function mpMarcador(e,animar,atraso,novo){
 }
 function mpPintarPontos(lista,enquadrar){
   var i, e, k, b=new maplibregl.LngLatBounds(), quer={}, n=0, atraso=0; if(PONTO&&PONTO.lat!=null) b.extend([PONTO.lng,PONTO.lat]);
-  if(MP_MK_DIA!==MP_DIA){ for(k in MP_MK) MP_MK[k].remove(); MP_MK={}; MP_MK_DIA=MP_DIA; MP_PRIM=true; }
+  if(MP_MK_DIA!==MP_DIA){ mpLimparFila(); for(k in MP_MK) MP_MK[k].remove(); MP_MK={}; MP_MK_DIA=MP_DIA; MP_PRIM=true; }
   for(i=0;i<lista.length && n<800;i++){ e=lista[i]; if(e.lat==null||e.lng==null) continue; quer[e.cod]=1; n++; b.extend([e.lng,e.lat]); }
-  for(k in MP_MK) if(!quer[k]){ MP_MK[k].remove(); delete MP_MK[k]; }
-  var temNovo=false;
-  for(i=lista.length-1;i>=0;i--){ e=lista[i]; if(!quer[e.cod] || MP_MK[e.cod]) continue;
-    atraso=MP_PRIM?Math.min(700,atraso+25):0;
-    MP_MK[e.cod]=mpMarcador(e,true,atraso,!MP_PRIM); temNovo=true; }
+  for(k in MP_MK) if(!quer[k]){ MP_MK[k].remove(); delete MP_MK[k]; delete MP_ENF[k]; }
+  MP_QUER=quer;
+  /* as entregas novas entram na fila e sobem UMA POR VEZ, espalhadas no tempo (efeito contínuo) */
+  var novos=[];
+  for(i=lista.length-1;i>=0;i--){ e=lista[i]; if(!quer[e.cod] || MP_MK[e.cod] || MP_ENF[e.cod]) continue; MP_ENF[e.cod]=1; novos.push(e); }
+  if(novos.length){
+    var inicial=MP_PRIM, r=(el('mp-ritmo')&&el('mp-ritmo').value)||'auto', N=novos.length+MP_FILA.length, iv;
+    if(inicial) iv=Math.max(15,Math.min(120,6000/N));                       /* carga do dia: sobe rápido (até ~6 s no total) */
+    else if(r==='rapido') iv=300; else if(r==='lento') iv=2000;
+    else iv=Math.max(200,Math.min(2500,25000/N));                           /* automático: espalha no intervalo de 30 s */
+    MP_IV=iv; MP_NOVO_ANIM=!inicial;
+    for(i=0;i<novos.length;i++) MP_FILA.push(novos[i]);
+    if(!MP_TMR) mpProximoMarcador();
+  }
   if(lista.length) MP_PRIM=false;
-  if((enquadrar||temNovo&&!MP_PRIM&&false) && n){ try{ MP_MAP.fitBounds(b,{padding:50,maxZoom:15,duration:400}); }catch(e2){} }
+  if(enquadrar && n){ try{ MP_MAP.fitBounds(b,{padding:50,maxZoom:15,duration:400}); }catch(e2){} }
   MP_ENQ=false;
 }
 /* a cada 30 segundos puxa as entregas novas do dia de hoje (só com a tela aberta e a aba visível) */
