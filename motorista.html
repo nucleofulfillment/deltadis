@@ -327,7 +327,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-16-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-17-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -594,6 +594,8 @@ function montarApp(){
    segue a sequência de entregas → finaliza e o lote entra no Financeiro
    ══════════════════════════════════════════════════════════ */
 var EST='sem_lote';          /* sem_lote | bipando | calculando | em_rota | finalizado */
+/* bipagem manual escondida (código mantido): a rota vem automática do painel. Mude para true para reativar */
+var BIP_MANUAL=false;
 var LOTE_ATUAL=[];
 var SAIDAS=[]; /* pedidos que saíram da rota hoje sem entrega: devolvidos à base ou remarcados */
 var PONTEIRO=0;
@@ -1130,8 +1132,8 @@ function renderInicio(){
     h+='<div class="card" style="text-align:center;padding:34px 18px">'+
        '<div style="font-size:34px;margin-bottom:10px">📦</div>'+
        '<h3 style="margin:0 0 6px">Nenhum lote em aberto</h3>'+
-       '<p style="color:var(--muted);font-size:13px;margin:0 0 18px">Toque abaixo pra começar a bipar os pacotes recebidos</p>'+
-       '<button class="btn pri wide" onclick="iniciarBipagem()">Iniciar bipagem</button></div>';
+       (BIP_MANUAL?'<p style="color:var(--muted);font-size:13px;margin:0 0 18px">Toque abaixo pra começar a bipar os pacotes recebidos</p>'+
+       '<button class="btn pri wide" onclick="iniciarBipagem()">Iniciar bipagem</button>':'<p style="color:var(--muted);font-size:13px;margin:0">Quando houver pedidos para você no painel, a rota aparece aqui automaticamente.</p>')+'</div>';
   } else if(EST==='bipando'){
     h+='<div class="card"><h3 style="margin:0 0 2px">Bipando pacotes</h3>'+
        '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">'+LOTE_ATUAL.length+' pacotes no lote</p>'+
