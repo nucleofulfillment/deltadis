@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-88-2909</p>
+      <p class="bld">DELTADIS-BASE-89-2909</p>
     </div>
   </div>
 </div>
@@ -812,7 +812,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Vale para</label><select class="inp" id="ci-grupo"></select></div>
     <div class="pills"><span class="pill" id="ci-auto" onclick="escolherModoCiclo('auto')">Automático</span><span class="pill" id="ci-manual" onclick="escolherModoCiclo('manual')">Manual</span></div>
     <div id="ci-campos">
-      <div class="field"><label>Frequência</label><select class="inp" id="ci-tipo" onchange="ajustarCamposCiclo()"><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal (1–15 e 16–fim do mês)</option><option value="mensal">Mensal</option></select></div>
+      <div class="field"><label>Frequência</label><select class="inp" id="ci-tipo" onchange="ajustarCamposCiclo()"><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal (1–15 e 16–fim do mês)</option><option value="mensal">Mensal (dia 1 ao último dia do mês)</option></select></div>
       <div class="field" id="ci-dia-sem"><label>Dia da semana em que fecha</label><select class="inp" id="ci-dia-s"><option value="1">Segunda</option><option value="2">Terça</option><option value="3">Quarta</option><option value="4">Quinta</option><option value="5">Sexta</option><option value="6">Sábado</option><option value="0">Domingo</option></select></div>
       <div class="field" id="ci-dia-mes"><label>Dia do mês em que fecha (1 a 28)</label><input class="inp" id="ci-dia-m" inputmode="numeric" placeholder="ex: 5"></div>
       <div class="field"><label>Pagar quantos dias depois de fechar</label><input class="inp" id="ci-prazo" inputmode="numeric" placeholder="ex: 2 (0 = no mesmo dia)"></div>
@@ -950,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-88-2909</div>
+<div class="bld-fix">DELTADIS-BASE-89-2909</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2647,7 +2647,7 @@ var DIAS_SEM=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 function nomeGrupoCi(g){ if(g==='todos') return 'Todos os motoristas'; var i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].id===g) return 'Grupo '+GRUPOS[i].nome; return 'Grupo removido'; }
 function textoRegraCi(r){
   if(r.modo!=='auto') return 'Manual';
-  var t={semanal:'Semanal, fecha '+String(DIAS_SEM[r.dia]||'').toLowerCase(), quinzenal:'Quinzenal (1–15 e 16–fim)', mensal:'Mensal, fecha dia '+r.dia}[r.tipo]||r.tipo;
+  var t={semanal:'Semanal, fecha '+String(DIAS_SEM[r.dia]||'').toLowerCase(), quinzenal:'Quinzenal (1–15 e 16–fim)', mensal:'Mensal (do dia 1 ao último dia do mês)'}[r.tipo]||r.tipo;
   return 'Automático · '+t+' · paga '+(r.prazo||0)+' dia(s) depois';
 }
 function abrirCiclo(){ CI_EDIT=null; limparFormCiclo(); pintarRegrasCiclo(); abrir('sh-ciclo'); }
@@ -2670,7 +2670,7 @@ function pintarModoCiclo(){
   el('ci-auto').className='pill'+(CI_MODO==='auto'?' on':''); el('ci-manual').className='pill'+(CI_MODO==='manual'?' on':'');
   el('ci-campos').style.display=(CI_MODO==='auto')?'block':'none'; ajustarCamposCiclo();
 }
-function ajustarCamposCiclo(){ var t=el('ci-tipo').value; el('ci-dia-sem').style.display=(t==='semanal')?'block':'none'; el('ci-dia-mes').style.display=(t==='mensal')?'block':'none'; }
+function ajustarCamposCiclo(){ var t=el('ci-tipo').value; el('ci-dia-sem').style.display=(t==='semanal')?'block':'none'; el('ci-dia-mes').style.display='none'; }
 function editarRegraCiclo(id){
   var r=null,i; for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===id) r=CICLOS[i]; if(!r) return;
   limparFormCiclo(); CI_EDIT=id; el('ci-grupo').value=r.grupo; CI_MODO=r.modo; el('ci-tipo').value=r.tipo||'semanal';
@@ -2681,10 +2681,9 @@ function removerRegraCiclo(id){ var i; for(i=0;i<CICLOS.length;i++) if(CICLOS[i]
 function salvarCiclo(){
   var t=el('ci-tipo').value, g=el('ci-grupo').value, i, alvo=null, outra=null, auto=(CI_MODO==='auto');
   var dia=0, prazo=0, pz=String(el('ci-prazo').value).trim();
-  if(t==='semanal') dia=Number(el('ci-dia-s').value)||0; else if(t==='mensal') dia=parseInt(el('ci-dia-m').value,10)||0;
+  if(t==='semanal') dia=Number(el('ci-dia-s').value)||0; else if(t==='mensal') dia=0;
   prazo=(pz===''?0:parseInt(pz,10)); if(isNaN(prazo)) prazo=0;
   if(auto){   /* no Manual esses campos não valem, então só valida no Automático */
-    if(t==='mensal' && !(dia>=1 && dia<=28)){ aviso('Mensal: digite o dia do mês (de 1 a 28) em que o ciclo fecha'); try{ el('ci-dia-m').focus(); }catch(e){} return; }
     if(!(prazo>=0 && prazo<=60)){ aviso('Prazo de pagamento: digite de 0 a 60 dias'); try{ el('ci-prazo').focus(); }catch(e){} return; }
   }
   for(i=0;i<CICLOS.length;i++){ if(CICLOS[i].grupo===g && CICLOS[i].id!==CI_EDIT) outra=CICLOS[i]; }
@@ -2712,7 +2711,7 @@ function cicloAtual(CICLO){
     if(h.getDate()>=15){ ini=isoDe(new Date(y,m,1,12)); fim=isoDe(new Date(y,m,15,12)); }
     else { ini=isoDe(new Date(y,m-1,16,12)); fim=isoDe(new Date(y,m,0,12)); }
   } else {
-    var d=Number(CICLO.dia)||1, fm=(h.getDate()>=d)?m:m-1; fim=isoDe(new Date(y,fm,d,12)); ini=addDiasISO(isoDe(new Date(y,fm-1,d,12)),1);
+    ini=isoDe(new Date(y,m,1,12)); fim=isoDe(new Date(y,m+1,0,12));   /* mês corrente: 1º ao último dia */
   }
   return {ini:ini, fim:fim, pag:addDiasISO(fim,Number(CICLO.prazo)||0)};
 }
