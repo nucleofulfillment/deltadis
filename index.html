@@ -250,11 +250,11 @@ a{color:inherit}
 .mp-full-btn{position:absolute;top:10px;left:10px;z-index:5;width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);background:#fff;font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(31,10,61,.25)}
 .mp-wrap.cheio{position:fixed;inset:0;z-index:95;border-radius:0;border:0}
 .mp-wrap.cheio .mp-mapa{height:100vh}
-.mp-base{width:38px;height:38px;border-radius:12px;background:#1F0A3D;border:3px solid #fff;box-shadow:0 3px 8px rgba(31,10,61,.4);display:flex;align-items:center;justify-content:center;font-size:19px}
-.mp-mk{width:34px;height:34px;border-radius:50%;background:#fff;border:3px solid #16A34A;box-shadow:0 3px 8px rgba(31,10,61,.35);display:flex;align-items:center;justify-content:center;overflow:visible;position:relative;font-size:10px;font-weight:800;color:#fff;cursor:pointer}
-.mp-mk img{width:20px;height:20px;border-radius:4px;display:block}
+.mp-base{width:30px;height:30px;border-radius:10px;background:#1F0A3D;border:2px solid #fff;box-shadow:0 3px 8px rgba(31,10,61,.4);display:flex;align-items:center;justify-content:center;font-size:15px}
+.mp-mk{width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid #16A34A;box-shadow:0 2px 5px rgba(31,10,61,.35);display:flex;align-items:center;justify-content:center;overflow:visible;position:relative;font-size:8px;font-weight:800;color:#fff;cursor:pointer}
+.mp-mk img{width:13px;height:13px;border-radius:3px;display:block}
 .mp-mk.pop{animation:mpPop .55s cubic-bezier(.2,1.4,.4,1) both}
-.mp-mk.novo::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:3px solid #16A34A;animation:mpOnda 1.4s ease-out 3}
+.mp-mk.novo::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:2px solid #16A34A;animation:mpOnda 1.4s ease-out 3}
 @keyframes mpPop{0%{opacity:0;transform:translateY(46px) scale(.2)}70%{opacity:1;transform:translateY(-6px) scale(1.12)}100%{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes mpOnda{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(2.6)}}
 .mapa-legenda{position:absolute;bottom:8px;left:12px;right:12px;font-size:10.5px;color:var(--muted2);background:rgba(255,255,255,.88);padding:4px 9px;border-radius:8px}
@@ -468,7 +468,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-98-3009</p>
+      <p class="bld">DELTADIS-BASE-100-3009</p>
     </div>
   </div>
 </div>
@@ -989,7 +989,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-98-3009</div>
+<div class="bld-fix">DELTADIS-BASE-100-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3119,7 +3119,7 @@ function mpRender(){
   el('mp-entregues-n').textContent=n;
   el('mp-mais').style.display=(n>MP_LIM)?'flex':'none'; el('mp-mais').textContent='Ver mais ('+(n-MP_LIM)+' restantes)';
   el('mp-loc').style.display='none';
-  el('mp-status').innerHTML='<span style="color:#16A34A;font-weight:800">● ao vivo</span> · '+n+' entrega(s) pelo app'+(n?' · '+noMapa+' no mapa':'')+(MP_QUANDO?' · atualizado '+mpHoraS(MP_QUANDO)+' (a cada 30 s)':'')+(MP_FONTE==='d1'?' · banco D1 (instantâneo)':(MP_FONTE==='kv'?' · <span style="color:#B45309">KV (pode atrasar 1–2 min)</span>':''))+' · <span class="vertodos" onclick="mpBuscar()">↻ agora</span>'+(MP_ERRO?' · <span style="color:#DC2626">'+esc(MP_ERRO)+'</span>':'');
+  el('mp-status').innerHTML='<span style="color:#16A34A;font-weight:800">● ao vivo</span> · '+n+' entrega(s) pelo app'+(n?' · '+noMapa+' no mapa':'')+(MP_QUANDO?' · atualizado '+mpHoraS(MP_QUANDO)+' (a cada 15 s)':'')+(MP_FONTE==='d1'?' · banco D1 (instantâneo)':(MP_FONTE==='kv'?' · <span style="color:#B45309">KV (pode atrasar 1–2 min)</span>':''))+' · <span class="vertodos" onclick="mpBuscar()">↻ agora</span>'+(MP_ERRO?' · <span style="color:#DC2626">'+esc(MP_ERRO)+'</span>':'');
   mpDesenhar(lista);
 }
 function mpCarregarMapa(cb){
@@ -3189,9 +3189,9 @@ function mpMarcador(e,animar,atraso,novo){
   var fv=t?favicon(t.dominio||dominioPorNome(t.n)):null;
   if(fv){ var im=document.createElement('img'); im.src=fv; im.alt=''; im.onerror=function(){ d.removeChild(im); d.textContent=t.ini; d.style.background=t.cor; }; d.appendChild(im); }
   else if(t){ d.textContent=t.ini; d.style.background=t.cor; }
-  else { d.textContent='✓'; d.style.color='#16A34A'; d.style.fontSize='16px'; }
+  else { d.textContent='✓'; d.style.color='#16A34A'; d.style.fontSize='12px'; }
   var m=motorista(e.mt)||motorista(Number(e.mt));
-  var pop=new maplibregl.Popup({offset:22,closeButton:false,maxWidth:'240px'}).setHTML('<b>'+esc((pd&&pd.cliente)||e.cli||e.cod)+'</b><br>'+esc(t?t.n:'—')+' · '+mpHora(e.t)+'<br>'+esc(m?m.n:(e.mtn||'—')));
+  var pop=new maplibregl.Popup({offset:14,closeButton:false,maxWidth:'240px'}).setHTML('<b>'+esc((pd&&pd.cliente)||e.cli||e.cod)+'</b><br>'+esc(t?t.n:'—')+' · '+mpHora(e.t)+'<br>'+esc(m?m.n:(e.mtn||'—')));
   var mk=new maplibregl.Marker({element:fora}).setLngLat([e.lng,e.lat]).setPopup(pop).addTo(MP_MAP);
   if(novo) setTimeout(function(){ d.classList.remove('novo'); },4500);
   return mk;
@@ -3209,7 +3209,7 @@ function mpPintarPontos(lista,enquadrar){
     var inicial=MP_PRIM, r=(el('mp-ritmo')&&el('mp-ritmo').value)||'auto', N=novos.length+MP_FILA.length, iv;
     if(inicial) iv=Math.max(15,Math.min(120,6000/N));                       /* carga do dia: sobe rápido (até ~6 s no total) */
     else if(r==='rapido') iv=300; else if(r==='lento') iv=2000;
-    else iv=Math.max(200,Math.min(2500,25000/N));                           /* automático: espalha no intervalo de 30 s */
+    else iv=Math.max(200,Math.min(2500,12000/N));                           /* automático: espalha no intervalo de 15 s */
     MP_IV=iv; MP_NOVO_ANIM=!inicial;
     for(i=0;i<novos.length;i++) MP_FILA.push(novos[i]);
     if(!MP_TMR) mpProximoMarcador();
@@ -3218,8 +3218,8 @@ function mpPintarPontos(lista,enquadrar){
   if(enquadrar && n){ try{ MP_MAP.fitBounds(b,{padding:50,maxZoom:15,duration:400}); }catch(e2){} }
   MP_ENQ=false;
 }
-/* a cada 30 segundos puxa as entregas novas do dia de hoje (só com a tela aberta e a aba visível) */
-setInterval(function(){ if(REAL && !document.hidden && el('pg-mapeamento') && el('pg-mapeamento').classList.contains('on') && MP_DIA===hojeISO()) mpBuscar(); },30000);
+/* a cada 15 segundos puxa as entregas novas do dia de hoje (só com a tela aberta e a aba visível) */
+setInterval(function(){ if(REAL && !document.hidden && el('pg-mapeamento') && el('pg-mapeamento').classList.contains('on') && MP_DIA===hojeISO()) mpBuscar(); },15000);
 function mostrarMpTip(ev,idx){
   var e=ENTREGAS_HOJE[idx]; if(!e) return;
   var m=motorista(e.motoristaId), cs=CANAL_STYLE_MAPA[e.canal]||{bg:'var(--s3)',cor:'var(--muted2)'};
