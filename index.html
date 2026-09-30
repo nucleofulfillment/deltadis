@@ -468,7 +468,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-95-3009</p>
+      <p class="bld">DELTADIS-BASE-96-3009</p>
     </div>
   </div>
 </div>
@@ -987,7 +987,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-95-3009</div>
+<div class="bld-fix">DELTADIS-BASE-96-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3072,7 +3072,7 @@ function desenharPinsMapeamento(){
 
 /* ══ Mapeamento ao vivo: cada "Entregue" marcado no APP do motorista chega ao servidor (com a posição da parada) e aparece aqui.
    Atualiza sozinho a cada 1 minuto. Não usa a planilha e não gasta Google. ══ */
-var MP_DIA='', MP_LIM=50, MP_MAP=null, MP_MAPA_OK=false, MP_POP=null, MP_EVT=[], MP_EVT_DIA='', MP_QUANDO=0, MP_BUSCANDO=false, MP_ERRO='';
+var MP_FONTE='', MP_DIA='', MP_LIM=50, MP_MAP=null, MP_MAPA_OK=false, MP_POP=null, MP_EVT=[], MP_EVT_DIA='', MP_QUANDO=0, MP_BUSCANDO=false, MP_ERRO='';
 function mpHoje(){ MP_DIA=hojeISO(); MP_LIM=50; mpBuscar(); }
 function mpEscolherDia(){ var v=el('mp-dia').value; if(v){ MP_DIA=v; MP_LIM=50; mpBuscar(); } }
 function mpMudarDia(n){ MP_DIA=addDiasISO(MP_DIA||hojeISO(),n); MP_LIM=50; mpBuscar(); }
@@ -3086,7 +3086,7 @@ function mpBuscar(){
   fetch(DELTADIS_API+'/entregas?dia='+encodeURIComponent(dia)+'&key='+encodeURIComponent(DELTADIS_API_KEY)+'&_='+Date.now(),{cache:'no-store',signal:ctl?ctl.signal:undefined})
   .then(function(r){return r.json();}).then(function(d){
     clearTimeout(tmo); MP_BUSCANDO=false;
-    if(d && d.ok){ if(dia===MP_DIA){ MP_EVT=d.itens||[]; MP_EVT_DIA=dia; MP_QUANDO=Date.now(); MP_ERRO=''; } }
+    if(d && d.ok){ if(dia===MP_DIA){ MP_EVT=d.itens||[]; MP_EVT_DIA=dia; MP_QUANDO=Date.now(); MP_ERRO=''; MP_FONTE=d.fonte||''; } }
     else MP_ERRO=(d&&d.erro)||'falhou';
     mpRender(); if(dia!==MP_DIA) mpBuscar();
   }).catch(function(){ clearTimeout(tmo); MP_BUSCANDO=false; MP_ERRO='sem conexão'; mpRender(); });
@@ -3116,7 +3116,7 @@ function mpRender(){
   el('mp-entregues-n').textContent=n;
   el('mp-mais').style.display=(n>MP_LIM)?'flex':'none'; el('mp-mais').textContent='Ver mais ('+(n-MP_LIM)+' restantes)';
   el('mp-loc').style.display='none';
-  el('mp-status').innerHTML='<span style="color:#16A34A;font-weight:800">● ao vivo</span> · '+n+' entrega(s) pelo app'+(n?' · '+noMapa+' no mapa':'')+(MP_QUANDO?' · atualizado '+mpHoraS(MP_QUANDO)+' (a cada 30 s)':'')+(MP_ERRO?' · <span style="color:#DC2626">'+esc(MP_ERRO)+'</span>':'');
+  el('mp-status').innerHTML='<span style="color:#16A34A;font-weight:800">● ao vivo</span> · '+n+' entrega(s) pelo app'+(n?' · '+noMapa+' no mapa':'')+(MP_QUANDO?' · atualizado '+mpHoraS(MP_QUANDO)+' (a cada 30 s)':'')+(MP_FONTE==='d1'?' · banco D1 (instantâneo)':(MP_FONTE==='kv'?' · <span style="color:#B45309">KV (pode atrasar 1–2 min)</span>':''))+' · <span class="vertodos" onclick="mpBuscar()">↻ agora</span>'+(MP_ERRO?' · <span style="color:#DC2626">'+esc(MP_ERRO)+'</span>':'');
   mpDesenhar(lista);
 }
 function mpCarregarMapa(cb){
