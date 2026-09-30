@@ -316,7 +316,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-10-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-11-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -849,6 +849,12 @@ function rpCartao(t,r,dica,rec){
     '<div class="rp-ln rp-tot"><span>Total</span><b>'+rpKm(r.totalKm)+' · '+rpMin(r.totalMin)+'</b></div></div>';
 }
 function rpApito(){ _tom(660,0,0.16,0.5); _tom(440,0.2,0.16,0.5); _tom(660,0.4,0.16,0.5); _tom(440,0.6,0.28,0.5); try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]); }catch(e){} }
+function rpMedirLocal(o){
+  var pm=rpCfg().pm, b=RP.res.base, seq=[b].concat(o.map(function(i){ return RP.pts[i]; })), n=o.length, F=1.35, V=28, acc=0, cum=0, i, d;
+  for(i=1;i<seq.length;i++){ d=rpKmEntre(seq[i-1],seq[i]); acc+=d; cum+=acc; }
+  var volta=rpKmEntre(seq[seq.length-1],b), idaKm=acc*F, voltaKm=volta*F, idaMin=idaKm/V*60+n*pm, voltaMin=voltaKm/V*60;
+  return {ordem:o,idaKm:idaKm,idaMin:idaMin,voltaKm:voltaKm,voltaMin:voltaMin,totalKm:idaKm+voltaKm,totalMin:idaMin+voltaMin,mediaMin:cum/Math.max(1,n)*F/V*60+(n+1)/2*pm,real:false,realErro:''};
+}
 function rpReordenar(de,para){
   var r=RP.res[RP.opc], n=r.ordem.length; para=parseInt(para,10); if(!isFinite(para)) { renderInicio(); return; }
   para=Math.max(1,Math.min(n,para)); if(para-1===de){ renderInicio(); return; }
@@ -857,7 +863,10 @@ function rpReordenar(de,para){
   rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:RP.res.base,pontos:RP.pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:rpCfg().pm,ordem:o})}).then(function(c){
     if(!c.ok||!c.manual) throw new Error('falhou');
     RP.res.manual=c.manual; RP.opc='manual'; EST='rp_escolher'; renderInicio();
-  }).catch(function(){ EST='rp_escolher'; renderInicio(); aviso('Não consegui recalcular agora. Tente de novo.'); });
+  }).catch(function(){
+    /* servidor não respondeu: recalcula aqui mesmo, em linha reta, pra nunca travar o reposicionamento */
+    RP.res.manual=rpMedirLocal(o); RP.opc='manual'; EST='rp_escolher'; renderInicio(); aviso('Ordem alterada (km e tempo estimados)');
+  });
 }
 var _arr=null;
 function rpArrastoIni(ev,de){
