@@ -323,7 +323,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-13-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-14-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -380,6 +380,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <h4 style="margin:0 0 8px">Minhas rotas</h4>
         <div class="field"><label>Endereço de saída (base)</label><input class="inp" id="cfg-base" placeholder="Rua, número, cidade"></div>
         <div class="field"><label>Máximo de paradas por rota (0 = sem limite)</label><input class="inp" id="cfg-max" type="number" min="0" max="500" step="1"></div>
+        <div class="field"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
@@ -590,8 +591,17 @@ var POOL_BAIRROS=['Centro','Fazenda','São Vicente','Cordeiros','Praia Brava','E
 var POOL_CLIENTES=['Fernanda Klein','Ricardo Salles','Tatiane Reis','Marcelo Dutra','Camila Doretto','Ubiratan Melo','Priscila Zanotto','Otávio Brandão','Denise Kuhn','Grupo Molhes SA','Juliana Fontes','Bruno Kramer','Aline Petry','Diego Souza'];
 
 function metaHoje(){
-  var loteHoje=null,i; for(i=0;i<LOTES.length;i++) if(LOTES[i].data===hojeISO()) loteHoje=LOTES[i];
-  return {feitos: loteHoje?loteHoje.entregues:0, meta:35};
+  /* meta real do dia = o que já foi entregue hoje + o que ainda falta entregar hoje */
+  var h=hojeISO(), feitos=0, i;
+  for(i=0;i<LOTES.length;i++) if(LOTES[i].data===h) feitos+=(LOTES[i].entregues||0);
+  var emRota=(EST==='em_rota'||EST==='rp_lista'), falta=0;
+  if(emRota){
+    var painel=0; for(i=0;i<LOTE_ATUAL.length;i++){ var st=LOTE_ATUAL[i].status;
+      if(st==='entregue') feitos++; else if(st==='pendente'||st==null) falta++;
+      if(LOTE_ATUAL[i].origem==='painel') painel++; }
+    falta+=Math.max(0,(RP.total||0)-painel);   /* pacotes do motorista que ficaram fora da rota (limite de paradas) */
+  } else falta=RP.total||0;
+  return {feitos:feitos, meta:Math.max(feitos+falta,feitos)};
 }
 
 var SAIU_TELA_CHEIA=false;
@@ -664,7 +674,7 @@ function finalizarRota(){
     entregues:entregues, devolvidos:devolvidos, naoLocalizados:naoLoc, remarcados:remarc, valorPct:MOTORISTA_LOGADO.valorPct,
     km:ROTA_KM, tempoMin:ROTA_MIN, fechamento:'aberto', pagamento:'a pagar', _detalhe:detalhe});
   var cp=[]; for(i=0;i<LOTE_ATUAL.length;i++) if(LOTE_ATUAL[i].origem==='painel') cp.push(LOTE_ATUAL[i].cod);
-  if(cp.length){ rpMarcarFeitos(cp); RP.total=0; }
+  if(cp.length){ rpMarcarFeitos(cp); RP.total=Math.max(0,(RP.total||0)-cp.length); rpAtualizar(); }
   EST='finalizado';
   renderInicio();
 }
@@ -774,12 +784,12 @@ var RP_COR={linear:'#6D28D9',circular:'#EC4899',manual:'#0EA5E9'};
 var RP={on:false,mt:null,mtn:'',lista:[],total:0,itens:[],sel:{},fora:{},msg:'',res:null,pts:[],extra:[],opc:'linear',baseGeo:{},rota:null,mapa:null,mapaEl:null,mapaOk:false,marc:[],ajustou:false};
 try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
 function rpApi(caminho,opts){ return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();}); }
-function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:c.base||RP_BASE_PADRAO, pm:(c.pm==null||c.pm==='')?2:Number(c.pm), max:(c.max==null||c.max==='')?30:Number(c.max)}; }
+function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:c.base||RP_BASE_PADRAO, pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), max:(c.max==null||c.max==='')?30:Number(c.max)}; }
 function rpSalvarCfg(){
   var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30;
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:b||RP_BASE_PADRAO,pm:pm,max:mx})); }catch(e){}
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:b||RP_BASE_PADRAO,pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao'})); }catch(e){}
   rpAtualizar();
   aviso('Configurações salvas');
 }
@@ -879,13 +889,15 @@ function rpCalcular(){
   }).catch(function(){ rpErro('Não consegui calcular a rota agora. Tente de novo.'); });
 }
 function rpCartao(t,r,dica,rec){
+  var v=rpCfg().volta==='sim', km=v?r.totalKm:r.idaKm, mn=v?r.totalMin:r.idaMin;
+  if(!v){ if(t==='linear') dica='Entrega mais rápido para os primeiros clientes.'; else if(t==='circular') dica='Termina perto da base, roda menos e gasta menos combustível.'; }
   return '<div class="rp-opc'+(RP.opc===t?' on':'')+'" onclick="RP.opc=\''+t+'\';renderInicio()" style="--c:'+RP_COR[t]+'">'+(rec?'<span class="rp-rec">Recomendado, entregas mais rápidas</span>':'')+
     '<h3>'+(t==='linear'?'→ Linear':(t==='manual'?'✍ Personalizada':'↻ Circular'))+'</h3><p>'+dica+'</p>'+
     '<div class="rp-ln"><span>Tempo médio por entrega</span><b>'+rpMin(r.idaMin/Math.max(1,r.ordem.length))+'</b></div>'+
     '<div class="rp-ln"><span>Cliente recebe, em média, após</span><b>'+rpMin(r.mediaMin)+'</b></div>'+
     '<div class="rp-ln"><span>Até a última entrega</span><b>'+rpKm(r.idaKm)+' · '+rpMin(r.idaMin)+'</b></div>'+
-    '<div class="rp-ln"><span>Volta à base</span><b>'+rpKm(r.voltaKm)+' · '+rpMin(r.voltaMin)+'</b></div>'+
-    '<div class="rp-ln rp-tot"><span>Total</span><b>'+rpKm(r.totalKm)+' · '+rpMin(r.totalMin)+'</b></div></div>';
+    (v?'<div class="rp-ln"><span>Volta à base</span><b>'+rpKm(r.voltaKm)+' · '+rpMin(r.voltaMin)+'</b></div>':'')+
+    '<div class="rp-ln rp-tot"><span>'+(v?'Total':'Total (sem a volta)')+'</span><b>'+rpKm(km)+' · '+rpMin(mn)+'</b></div></div>';
 }
 function rpApito(){ _tom(660,0,0.16,0.5); _tom(440,0.2,0.16,0.5); _tom(660,0.4,0.16,0.5); _tom(440,0.6,0.28,0.5); try{ if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]); }catch(e){} }
 function rpMedirLocal(o){
@@ -999,7 +1011,7 @@ function rpComecar(){
   var r=RP.res[RP.opc], i;
   LOTE_ATUAL=[]; for(i=0;i<r.ordem.length;i++) LOTE_ATUAL.push(rpParada(RP.pts[r.ordem[i]],i+1));
   for(i=0;i<RP.extra.length;i++) LOTE_ATUAL.push(rpParada(RP.extra[i],LOTE_ATUAL.length+1));
-  ROTA_KM=Math.round(r.totalKm*10)/10; ROTA_MIN=Math.round(r.totalMin); RP.rota=r; RP.baseLL=RP.res.base||null; RP.ajustou=false;
+  var vlt=rpCfg().volta==='sim'; ROTA_KM=Math.round((vlt?r.totalKm:r.idaKm)*10)/10; ROTA_MIN=Math.round(vlt?r.totalMin:r.idaMin); RP.rota=r; RP.baseLL=RP.res.base||null; RP.ajustou=false;
   PONTEIRO=0; SAIU_TELA_CHEIA=false; EST='em_rota'; renderInicio();
 }
 /* mapa real (OpenFreeMap) da rota em andamento — o elemento fica guardado pra não recarregar a cada parada */
@@ -1029,7 +1041,7 @@ function rpMapaDesenhar(ajustar){
     RP.marc.push(new maplibregl.Marker({element:e}).setLngLat([p.lng,p.lat]).addTo(m)); bounds.extend([p.lng,p.lat]); linha.push([p.lng,p.lat]); }
   if(RP.baseLL){ e=document.createElement('div'); e.className='rm-pin base'; e.textContent='B'; RP.marc.push(new maplibregl.Marker({element:e}).setLngLat([RP.baseLL.lng,RP.baseLL.lat]).addTo(m)); bounds.extend([RP.baseLL.lng,RP.baseLL.lat]); linha.unshift([RP.baseLL.lng,RP.baseLL.lat]); }
   if(r && r.real && r.linha && r.linha.length) linha=r.linha;
-  var geoV={type:'Feature',geometry:{type:'LineString',coordinates:(r&&r.real&&r.linhaVolta)||[]}};
+  var geoV={type:'Feature',geometry:{type:'LineString',coordinates:(r&&r.real&&r.linhaVolta&&rpCfg().volta==='sim')?r.linhaVolta:[]}};
   if(m.getSource('rota-v')) m.getSource('rota-v').setData(geoV); else { m.addSource('rota-v',{type:'geojson',data:geoV}); m.addLayer({id:'rota-vl',type:'line',source:'rota-v',paint:{'line-color':'#EC4899','line-width':3,'line-opacity':.8,'line-dasharray':[2,2]}}); }
   var geo={type:'Feature',geometry:{type:'LineString',coordinates:linha}};
   if(m.getSource('rota')) m.getSource('rota').setData(geo); else { m.addSource('rota',{type:'geojson',data:geo}); m.addLayer({id:'rota-l',type:'line',source:'rota',paint:{'line-color':'#6D28D9','line-width':4,'line-opacity':.85}}); }
@@ -1228,7 +1240,7 @@ function pintarConta(){
   el('cta-veiculo').textContent=MOTORISTA_LOGADO.modelo+' '+MOTORISTA_LOGADO.veicCor+' '+MOTORISTA_LOGADO.ano+' · '+MOTORISTA_LOGADO.placa;
   el('cta-cap').textContent=MOTORISTA_LOGADO.cap+' pacotes';
   el('cta-valor').textContent=moeda(MOTORISTA_LOGADO.valorPct)+' por pacote';
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max;
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-volta').value=cf.volta;
 }
 function salvarSenha(){
   var atual=(el('sn-atual').value||'').trim(), nova=(el('sn-nova').value||'').trim(), conf=(el('sn-conf').value||'').trim();
