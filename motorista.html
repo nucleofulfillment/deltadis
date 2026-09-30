@@ -329,7 +329,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-24-3009</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-25-3009</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1160,6 +1160,15 @@ function rpCarregarMapa(cb){
   if(!document.getElementById('rp-mlcss')){ var l=document.createElement('link'); l.id='rp-mlcss'; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'; document.head.appendChild(l); }
   var s=document.createElement('script'); s.src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'; s.onload=cb; document.head.appendChild(s);
 }
+/* rota já em andamento (montada antes de o canal existir): busca o canal dos pedidos no servidor, no máximo 1 vez por minuto */
+function rpCompletarCanais(){
+  if(!RP.mt || (RP._canTent && Date.now()-RP._canTent<60000)) return; RP._canTent=Date.now();
+  rpApi('/pedidos?mt='+encodeURIComponent(RP.mt)).then(function(d){
+    if(!d||!d.ok) return; var mp={}, i, mud=false; (d.pedidos||[]).forEach(function(p){ if(p.canal) mp[p.cod]=p.canal; });
+    for(i=0;i<LOTE_ATUAL.length;i++){ if(!LOTE_ATUAL[i].canal && mp[LOTE_ATUAL[i].cod]){ LOTE_ATUAL[i].canal=mp[LOTE_ATUAL[i].cod]; mud=true; } }
+    if(mud && EST==='em_rota') renderInicio();
+  }).catch(function(){});
+}
 function rpAjustaAltura(){ var sc=document.querySelector('.conteudo'), t=document.querySelector('.rota-tela'); if(sc&&t) t.style.minHeight=Math.max(300,sc.clientHeight-16)+'px'; }
 window.addEventListener('resize',function(){ if(EST==='em_rota') rpAjustaAltura(); });
 function rpMapaMontar(){
@@ -1262,6 +1271,7 @@ function renderEmRota(){
      (atual?('<a class="mapa-abrir-maps" href="'+linkNavegar(atual)+'" target="_blank" rel="noopener">📍 Abrir no Maps ↗</a>'):'')+
      (mapaReal?'':'<div class="rota-pins">'+pins+'</div>')+
      '<span class="mapa-legenda">'+ROTA_KM+' km '+((RP.rota&&RP.rota.real&&mapaReal)?'pelas ruas':'estimados')+' · ~'+ROTA_MIN+' min de rota</span></div>';
+  if(atual&&!atual.canal) rpCompletarCanais();
   var csM=atual&&atual.canal?(CANAL_STYLE[atual.canal]||{bg:'var(--s3)',cor:'var(--muted2)'}):null;
   h+='<div class="progresso"><div class="progresso-topo"><div class="progresso-txt">'+PONTEIRO+' de '+LOTE_ATUAL.length+' entregues</div>'+(csM?'<span class="canal-tag" style="background:'+csM.bg+';color:'+csM.cor+'">'+esc(atual.canal)+'</span>':'')+'</div>'+
      '<div class="meta-barra"><div class="meta-fill" style="width:'+Math.round(PONTEIRO/LOTE_ATUAL.length*100)+'%"></div></div></div>';
