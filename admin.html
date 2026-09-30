@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <input id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-5-3009</div>
+      <div class="bld">DELTADIS-ADMIN-6-3009</div>
     </div>
   </div>
 </div>
@@ -282,7 +282,6 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="tb-av" id="av-ini" onclick="menuAv(event)" title="Minha conta">A</button>
       <div class="menu-lista" id="menu-lista">
         <div class="quem"><b id="ola-nome">—</b><small id="ola-mail"></small></div>
-        <button onclick="menuFecha();abrirCriarUsuario()">👤 Criar usuário</button>
         <button onclick="menuFecha();abrirAsaasCfg()">💳 Conta Asaas</button>
         <button onclick="menuFecha();abrirTrocarSenha()">🔑 Trocar minha senha</button>
         <button class="sair" onclick="menuFecha();sair()">⎋ Sair</button>
@@ -311,7 +310,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-5-3009</div>
+    <div class="bld">DELTADIS-ADMIN-6-3009</div>
   </main>
 </div>
 
@@ -409,9 +408,10 @@ function abrirCliente(id){
   '<div class="linha2"><div><label>Mensalidade (R$)</label><input id="ec-men" inputmode="decimal" value="'+esc(deCentavos(c.mensalidade_centavos))+'"></div><div><label>Taxa por motorista (R$)</label><input id="ec-taxa" inputmode="decimal" value="'+esc(deCentavos(c.taxa_app_centavos))+'"></div></div>'+
   '<div class="erro" id="ec-erro"></div>'+
   '<div class="acoes" style="margin-top:10px;justify-content:space-between"><button class="btn peq '+(c.ativo?'perigo':'')+'" onclick="alternarCliente(\''+esc(c.id)+'\','+(c.ativo?0:1)+')">'+(c.ativo?'Desativar cliente':'Reativar cliente')+'</button><button class="btn pri" onclick="salvarCliente(\''+esc(c.id)+'\')">Salvar dados</button></div>'+
-  '<div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between"><b>Usuários</b><button class="btn peq pri" onclick="abrirNovoUsuario(\''+esc(c.id)+'\')">+ Novo usuário</button></div><div id="ec-usuarios"><div class="vazio">Carregando...</div></div>'+
+  '<div style="margin-top:20px"><b>Acesso do dono ao painel</b></div><div id="ec-dono"><div class="vazio">Carregando...</div></div>'+
+  '<p class="sub" style="margin-top:6px">Os motoristas e os acessos do app são cadastrados pelo próprio cliente, dentro do painel dele.</p>'+
   '<div class="acoes"><button class="btn" onclick="fechar()">Fechar</button></div>');
-  carregarUsuarios(c.id);
+  carregarDono(c.id);
 }
 function salvarCliente(id){
   chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{nome:el('ec-nome').value.trim(),mensalidade_centavos:paraCentavos(el('ec-men').value),taxa_app_centavos:paraCentavos(el('ec-taxa').value)}).then(function(d){
@@ -430,56 +430,20 @@ function recarregarMantendo(id){
   chamar('GET','/admin/clientes').then(function(d){ if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarFluxo();abrirCliente(id);} }).catch(function(){});
 }
 var USUARIOS_CLI={};
-function carregarUsuarios(cid){
+function carregarDono(cid){
   chamar('GET','/admin/clientes/'+encodeURIComponent(cid)+'/usuarios').then(function(d){
-    if(!d.ok){el('ec-usuarios').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro.')+'</div>';return;}
+    if(!d.ok){el('ec-dono').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro.')+'</div>';return;}
     USUARIOS_CLI[cid]=d.usuarios||[];
-    if(!d.usuarios.length){el('ec-usuarios').innerHTML='<div class="vazio">Nenhum usuário.</div>';return;}
-    el('ec-usuarios').innerHTML=d.usuarios.map(function(u){
-      var cont=u.perfil==='motorista'?('📱 '+esc(u.telefone)+(u.mt_ref?' · motorista nº '+esc(u.mt_ref):'')):('✉️ '+esc(u.email));
-      return '<div class="usr"><div class="u1"><b>'+esc(u.nome)+'</b><small>'+cont+'</small></div><span class="tag per">'+esc(u.perfil)+'</span><span class="tag '+(u.ativo?'on':'off')+'">'+(u.ativo?'Ativo':'Desativado')+'</span>'+
-        (u.perfil==='motorista'?'<button class="btn peq" onclick="ligarRota(\''+esc(cid)+'\',\''+esc(u.id)+'\')">Nº da rota</button>':'')+'<button class="btn peq" onclick="redefinir(\''+esc(cid)+'\',\''+esc(u.id)+'\')">'+(u.perfil==='motorista'?'Novo PIN':'Nova senha')+'</button>'+
-        '<button class="btn peq '+(u.ativo?'perigo':'')+'" onclick="alternarUsuario(\''+esc(cid)+'\',\''+esc(u.id)+'\','+(u.ativo?0:1)+')">'+(u.ativo?'Desativar':'Reativar')+'</button></div>';
-    }).join('');
+    var dn=(d.usuarios||[]).filter(function(u){return u.perfil==='dono';});
+    if(!dn.length){el('ec-dono').innerHTML='<div class="vazio">Sem dono cadastrado.</div>';return;}
+    el('ec-dono').innerHTML=dn.map(function(u){return '<div class="usr"><div class="u1"><b>'+esc(u.nome)+'</b><small>✉️ '+esc(u.email)+'</small></div><span class="tag '+(u.ativo?'on':'off')+'">'+(u.ativo?'Ativo':'Desativado')+'</span><button class="btn peq" onclick="redefinir(\''+esc(cid)+'\',\''+esc(u.id)+'\')">Nova senha</button></div>';}).join('');
   }).catch(function(){});
-}
-function abrirNovoUsuario(cid){
-  var c=CLIENTES.filter(function(x){return x.id===cid;})[0];
-  abrirModal('<h3>Novo usuário</h3><p class="sub">'+esc(c?c.nome:'')+'</p>'+
-  '<label>Perfil</label><select id="nu-perfil" onchange="trocaPerfilNU()"><option value="gerente">Gerente (painel)</option><option value="dono">Dono (painel)</option><option value="motorista">Motorista (app)</option></select>'+
-  '<label>Nome</label><input id="nu-nome">'+
-  '<div id="nu-painel"><label>E-mail</label><input id="nu-email" type="email"><label>Senha (mínimo 8 caracteres)</label><input id="nu-senha" type="text" autocomplete="off"></div>'+
-  '<div id="nu-app" style="display:none"><label>Telefone (com DDD)</label><input id="nu-fone" inputmode="tel" placeholder="(47) 99999-9999"><div class="linha2"><div><label>PIN (4 a 6 números)</label><input id="nu-pin" inputmode="numeric" maxlength="6"></div><div><label>Nº do motorista no painel</label><input id="nu-mt" placeholder="opcional"></div></div></div>'+
-  '<div class="erro" id="nu-erro"></div><div class="acoes"><button class="btn" onclick="abrirCliente(\''+esc(cid)+'\')">Voltar</button><button class="btn pri" id="nu-btn" onclick="salvarNovoUsuario(\''+esc(cid)+'\')">Criar usuário</button></div>');
-}
-function trocaPerfilNU(){var m=el('nu-perfil').value==='motorista';el('nu-painel').style.display=m?'none':'block';el('nu-app').style.display=m?'block':'none';}
-function salvarNovoUsuario(cid){
-  var p=el('nu-perfil').value, corpo={perfil:p,nome:el('nu-nome').value.trim()};
-  if(p==='motorista'){corpo.telefone=el('nu-fone').value;corpo.pin=el('nu-pin').value;corpo.mt_ref=el('nu-mt').value.trim();}
-  else{corpo.email=el('nu-email').value.trim();corpo.senha=el('nu-senha').value;}
-  el('nu-btn').disabled=true;el('nu-erro').textContent='';
-  chamar('POST','/admin/clientes/'+encodeURIComponent(cid)+'/usuarios',corpo).then(function(d){
-    if(!d.ok){el('nu-erro').textContent=d.mensagem||d.erro||'Erro ao criar.';el('nu-btn').disabled=false;return;}
-    toast('Usuário criado!');recarregarMantendo(cid);
-  }).catch(function(){el('nu-btn').disabled=false;});
 }
 function redefinir(cid,uid){
   var u=(USUARIOS_CLI[cid]||[]).filter(function(x){return x.id===uid;})[0]; if(!u) return;
-  var mot=u.perfil==='motorista', novo=prompt(mot?'Novo PIN para '+u.nome+' (4 a 6 números):':'Nova senha para '+u.nome+' (mínimo 8 caracteres):');
+  var novo=prompt('Nova senha para '+u.nome+' (mínimo 8 caracteres):');
   if(novo==null||novo==='') return;
-  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),mot?{pin:novo}:{senha:novo}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast(mot?'PIN alterado.':'Senha alterada.'); }).catch(function(){});
-}
-function ligarRota(cid,uid){
-  var u=(USUARIOS_CLI[cid]||[]).filter(function(x){return x.id===uid;})[0]; if(!u) return;
-  var n=prompt('Número do motorista no painel (tela Motoristas, ao lado do nome) para '+u.nome+':',u.mt_ref||'');
-  if(n==null) return;
-  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{mt_ref:String(n).trim()}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast('Número da rota salvo.'); carregarUsuarios(cid); }).catch(function(){});
-}
-function alternarUsuario(cid,uid,ativo){
-  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{ativo:ativo}).then(function(d){
-    if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;}
-    toast(ativo?'Usuário reativado.':'Usuário desativado.');carregarUsuarios(cid);recarregarLista();
-  }).catch(function(){});
+  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{senha:novo}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast('Senha alterada.'); }).catch(function(){});
 }
 function recarregarLista(){chamar('GET','/admin/clientes').then(function(d){if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarFluxo();}}).catch(function(){});}
 
@@ -536,12 +500,34 @@ function pintarTabela(){
   el('fc-corpo').innerHTML=L.map(function(x){
     var s=statusDe(x), auto=String(x.origem).indexOf('cob_')===0, rot=s==='ok'?(x.tp==='in'?'Recebido':'Pago'):(s==='atr'?'Atrasado':'Pendente');
     var bt=s==='ok'?'<button class="btn" title="Voltar pra pendente" onclick="fcStatus(\''+esc(x.id)+'\',\'pendente\')">↺</button>':'<button class="btn" title="'+(x.tp==='in'?'Marcar como recebido':'Marcar como pago')+'" onclick="fcStatus(\''+esc(x.id)+'\',\''+(x.tp==='in'?'recebido':'pago')+'\')">✓ '+(x.tp==='in'?'Recebi':'Paguei')+'</button>';
-    return '<tr><td>'+fmtData(x.data)+'</td><td>'+esc(x.tt)+'<span class="cat'+(auto?' au':'')+'">'+esc(auto?'automático':x.categoria)+'</span></td><td class="'+(x.tp==='in'?'vin':'vout')+'">'+(x.tp==='in'?'+ ':'− ')+reais(x.vl_centavos)+'</td><td><span class="tg '+s+'">'+rot+'</span></td>'+
+    return '<tr><td>'+fmtData(x.data)+'</td><td>'+esc(x.tt)+'<span class="cat'+(auto?' au':'')+'">'+esc(auto?'automático':x.categoria)+'</span>'+(x.pix?'<div class="sub2" style="margin-top:3px">Pix: '+esc(x.pix)+' <span class="lnk" onclick="copiarPix(\''+esc(x.id)+'\')">copiar</span></div>':'')+'</td><td class="'+(x.tp==='in'?'vin':'vout')+'">'+(x.tp==='in'?'+ ':'− ')+reais(x.vl_centavos)+'</td><td><span class="tg '+s+'">'+rot+'</span></td>'+
       '<td><div class="acs">'+bt+'<button class="btn" title="Editar" onclick="abrirLanc(\''+esc(x.id)+'\')">✎</button>'+(auto?'':'<button class="btn" title="Duplicar" onclick="duplicarLanc(\''+esc(x.id)+'\')">⧉</button>')+'<button class="btn perigo" title="Excluir" onclick="excluirLanc(\''+esc(x.id)+'\')">🗑</button></div></td></tr>';
   }).join('');
 }
 function fcStatus(id,st){chamar('PATCH','/admin/fluxo/'+encodeURIComponent(id),{status:st}).then(function(d){if(!d.ok){toast(d.mensagem||'Erro.',true);return;}carregarFluxo();}).catch(function(){});}
 function achaLanc(id){return ITENS.filter(function(x){return x.id===id;})[0];}
+
+/* chave Pix: reconhece o tipo (mesma regra do painel) */
+function cpfOk(n){
+  if(!/^\d{11}$/.test(n)||/^(\d)\1{10}$/.test(n)) return false;
+  var t,c,soma,dv; for(t=9;t<11;t++){ soma=0; for(c=0;c<t;c++) soma+=Number(n.charAt(c))*(t+1-c); dv=((soma*10)%11)%10; if(dv!==Number(n.charAt(t))) return false; }
+  return true;
+}
+function tipoChavePix(bruta){
+  var t=String(bruta||'').trim(), d;
+  if(!t) return '';
+  if(t.indexOf('@')>0) return 'E-mail';
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) return 'Chave aleatória';
+  d=t.replace(/\D/g,'');
+  if(t.charAt(0)==='+') return d.length>=12?'Telefone':'';
+  if(d.length===14) return 'CNPJ';
+  if(d.length===11) return cpfOk(d)?'CPF':'Telefone';
+  if(d.length===10) return 'Telefone';
+  if((d.length===12||d.length===13)&&d.indexOf('55')===0) return 'Telefone';
+  return '';
+}
+function lcPixDica(){var v=el('lc-pix').value.trim(),t=tipoChavePix(v);el('lc-pix-dica').textContent=!v?'':(t?'Reconhecida como: '+t:'Não reconheci esse formato — confira a chave.');}
+function copiarPix(id){var x=achaLanc(id);if(!x||!x.pix)return;try{navigator.clipboard.writeText(x.pix).then(function(){toast('Chave Pix copiada.');});}catch(e){toast(x.pix);}}
 function abrirLanc(id,pre){
   var x=id?achaLanc(id):null, auto=x&&String(x.origem).indexOf('cob_')===0; LC_ID=x?x.id:null;
   var v=x||pre||{tp:'out',tt:'',categoria:'',data:hojeIso(),vl_centavos:0,status:'pendente',obs:''};
@@ -550,6 +536,7 @@ function abrirLanc(id,pre){
    (auto?'':'<label>Tipo</label><div class="tgl"><button type="button" class="btn" id="lc-in" onclick="lcTipo(\'in\')">↑ Entrada</button><button type="button" class="btn" id="lc-out" onclick="lcTipo(\'out\')">↓ Saída</button></div>')+
    '<div class="linha2"><div><label>Categoria</label><select id="lc-cat">'+CATS.map(function(c){return '<option'+(c===(v.categoria||'Outros')?' selected':'')+'>'+esc(c)+'</option>';}).join('')+'</select></div><div><label>Valor (R$)</label><input id="lc-vl" inputmode="decimal" placeholder="0,00" value="'+esc(deCentavos(v.vl_centavos))+'"></div></div>'+
    '<label>Descrição</label><input id="lc-tt" placeholder="Ex: Servidor, domínio..." value="'+esc(v.tt)+'"'+(auto?' disabled':'')+'>'+
+   (auto?'':'<div id="lc-pix-box"><label>Chave Pix de quem vai receber (opcional)</label><input id="lc-pix" placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória" autocomplete="off" value="'+esc(v.pix||'')+'" oninput="lcPixDica()"><div class="sub2" id="lc-pix-dica" style="margin-top:4px"></div></div>')+
    '<div class="linha2"><div><label>Data de vencimento</label><input type="date" id="lc-data" value="'+esc(v.data)+'"></div><div><label>Status</label><select id="lc-st"></select></div></div>'+
    (x?'':'<label style="display:flex;align-items:center;gap:8px;font-weight:700"><input type="checkbox" id="lc-rec" style="width:auto"> Repetir todo mês (12 meses) — fluxo futuro</label>')+
    '<label>Observações (opcional)</label><input id="lc-obs" value="'+esc(v.obs||'')+'">'+
@@ -559,6 +546,7 @@ function abrirLanc(id,pre){
 function lcTipo(t){
   LC_TP=t; var a=el('lc-in'),b=el('lc-out');
   if(a){a.classList.toggle('on',t==='in');b.classList.toggle('on',t==='out');b.classList.toggle('sai',t==='out');}
+  var pb=el('lc-pix-box'); if(pb){pb.style.display=t==='out'?'block':'none';lcPixDica();}
   var o=el('lc-st'); if(o){var cur=o.value;o.innerHTML='<option value="pendente">Pendente</option><option value="feito">'+(t==='in'?'Recebido':'Pago')+'</option>';if(cur)o.value=cur;}
 }
 function salvarLanc(){
@@ -566,8 +554,8 @@ function salvarLanc(){
   if(!vl){el('lc-erro').textContent='Informe o valor.';return;} if(!data){el('lc-erro').textContent='Informe a data.';return;}
   var st=feito?(LC_TP==='in'?'recebido':'pago'):'pendente', p;
   el('lc-btn').disabled=true;
-  if(LC_ID){var b={categoria:el('lc-cat').value,vl_centavos:vl,data:data,status:st,obs:el('lc-obs').value}; if(!el('lc-tt').disabled)b.tt=tt; p=chamar('PATCH','/admin/fluxo/'+encodeURIComponent(LC_ID),b);}
-  else{if(!tt){el('lc-erro').textContent='Informe a descrição.';el('lc-btn').disabled=false;return;} p=chamar('POST','/admin/fluxo',{tp:LC_TP,tt:tt,categoria:el('lc-cat').value,vl_centavos:vl,data:data,status:st,obs:el('lc-obs').value,recorrente:!!(el('lc-rec')&&el('lc-rec').checked)});}
+  if(LC_ID){var b={categoria:el('lc-cat').value,vl_centavos:vl,data:data,status:st,obs:el('lc-obs').value}; if(el('lc-pix')) b.pix=el('lc-pix').value.trim(); if(!el('lc-tt').disabled)b.tt=tt; p=chamar('PATCH','/admin/fluxo/'+encodeURIComponent(LC_ID),b);}
+  else{if(!tt){el('lc-erro').textContent='Informe a descrição.';el('lc-btn').disabled=false;return;} p=chamar('POST','/admin/fluxo',{tp:LC_TP,tt:tt,categoria:el('lc-cat').value,vl_centavos:vl,data:data,status:st,obs:el('lc-obs').value,pix:(el('lc-pix')?el('lc-pix').value.trim():''),recorrente:!!(el('lc-rec')&&el('lc-rec').checked)});}
   p.then(function(d){if(!d.ok){el('lc-erro').textContent=d.mensagem||'Erro ao salvar.';el('lc-btn').disabled=false;return;}fechar();toast(d.criados>1?d.criados+' lançamentos criados.':'Lançamento salvo.');carregarFluxo();}).catch(function(){el('lc-btn').disabled=false;});
 }
 function duplicarLanc(id){var x=achaLanc(id);if(!x)return;var d=x.data;abrirLanc(null,{tp:x.tp,tt:x.tt,categoria:x.categoria,data:somaMesJs(d.slice(0,7),1)+'-'+d.slice(8),vl_centavos:x.vl_centavos,status:'pendente',obs:x.obs});}
@@ -621,11 +609,6 @@ function removerAsaas(){if(!confirm('Remover a chave do Asaas da DeltaDis?'))ret
 function menuAv(e){e.stopPropagation();el('menu-lista').classList.toggle('on');}
 function menuFecha(){el('menu-lista').classList.remove('on');}
 document.addEventListener('click',function(){var m=el('menu-lista');if(m)m.classList.remove('on');});
-function abrirCriarUsuario(){
-  var at=CLIENTES.filter(function(c){return c.ativo;});
-  if(!at.length){toast('Crie um cliente primeiro.',true);return;}
-  abrirModal('<h3>Criar usuário</h3><p class="sub">Escolha de qual cliente é o novo acesso.</p><label>Cliente</label><select id="cu-cli">'+at.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>';}).join('')+'</select><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" onclick="abrirNovoUsuario(el(\'cu-cli\').value)">Continuar</button></div>');
-}
 function abrirTrocarSenha(){
   abrirModal('<h3>Trocar minha senha</h3><label>Senha atual</label><input id="ts-a" type="password" autocomplete="current-password"><label>Nova senha (mínimo 8 caracteres)</label><input id="ts-n" type="password" autocomplete="new-password"><div class="erro" id="ts-erro"></div><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" id="ts-btn" onclick="salvarSenha()">Trocar senha</button></div>');
 }
