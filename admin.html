@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <input id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-6-3009</div>
+      <div class="bld">DELTADIS-ADMIN-7-3009</div>
     </div>
   </div>
 </div>
@@ -310,7 +310,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-6-3009</div>
+    <div class="bld">DELTADIS-ADMIN-7-3009</div>
   </main>
 </div>
 
@@ -376,7 +376,7 @@ function desenharClientes(){
   if(!L.length){el('lista-clientes').innerHTML='<div class="vazio">'+(CLIENTES.length?'Nenhum cliente encontrado.':'Nenhum cliente ainda.')+'</div>';return;}
   el('lista-clientes').innerHTML=L.map(function(c){
     return '<div class="cli"><div class="av">'+esc((c.nome||'?').charAt(0).toUpperCase())+'</div><div style="min-width:160px"><div class="nome">'+esc(c.nome)+'</div><div class="id">'+esc(c.id)+' · <span class="tag '+(c.ativo?'on':'off')+'">'+(c.ativo?'Ativo':'Desativado')+'</span></div></div>'+
-      '<div class="dados"><div><b>'+(c.motoristas_ativos||0)+'</b>motoristas</div><div><b>'+(c.equipe||0)+'</b>equipe painel</div><div><b>'+reais(c.mensalidade_centavos)+'</b>mensalidade</div><div><b>'+reais(c.taxa_app_centavos)+'</b>por motorista</div></div>'+
+      '<div class="dados"><div><b>'+(c.motoristas_ativos||0)+'</b>motoristas</div><div><b>'+(c.equipe||0)+'</b>equipe painel</div><div><b>'+reais(c.mensalidade_centavos)+'</b>mensalidade</div><div><b>'+reais(c.taxa_app_centavos)+'</b>por motorista</div><div><b>dia '+(c.dia_venc||10)+'</b>vencimento</div></div>'+
       '<button class="btn pri peq" onclick="abrirCliente(\''+esc(c.id)+'\')">Abrir</button></div>';
   }).join('');
 }
@@ -388,13 +388,14 @@ function abrirNovoCliente(){
   abrirModal('<h3>Novo cliente</h3><p class="sub">Cria a empresa e o acesso do dono dela ao painel.</p>'+
   '<label>Nome da empresa</label><input id="nc-nome">'+
   '<div class="linha2"><div><label>Mensalidade (R$)</label><input id="nc-men" inputmode="decimal" placeholder="0,00"></div><div><label>Taxa por motorista no app (R$)</label><input id="nc-taxa" inputmode="decimal" placeholder="0,00"></div></div>'+
+  '<div class="linha2"><div><label>Dia do vencimento (1 a 31)</label><input id="nc-dia" inputmode="numeric" maxlength="2" value="10"></div><div></div></div>'+
   '<div style="margin-top:16px;font-weight:800">Dono (acesso ao painel)</div>'+
   '<label>Nome do dono</label><input id="nc-dn"><label>E-mail do dono</label><input id="nc-de" type="email"><label>Senha inicial (mínimo 8 caracteres)</label><input id="nc-ds" type="text" autocomplete="off">'+
   '<div class="erro" id="nc-erro"></div><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" id="nc-btn" onclick="salvarNovoCliente()">Criar cliente</button></div>');
 }
 function salvarNovoCliente(){
   var nome=el('nc-nome').value.trim(); if(!nome){el('nc-erro').textContent='Informe o nome da empresa.';return;}
-  var corpo={nome:nome,mensalidade_centavos:paraCentavos(el('nc-men').value),taxa_app_centavos:paraCentavos(el('nc-taxa').value),dono:{nome:el('nc-dn').value.trim(),email:el('nc-de').value.trim(),senha:el('nc-ds').value}};
+  var corpo={nome:nome,mensalidade_centavos:paraCentavos(el('nc-men').value),taxa_app_centavos:paraCentavos(el('nc-taxa').value),dia_venc:parseInt(el('nc-dia').value,10)||10,dono:{nome:el('nc-dn').value.trim(),email:el('nc-de').value.trim(),senha:el('nc-ds').value}};
   el('nc-btn').disabled=true;el('nc-erro').textContent='';
   chamar('POST','/admin/clientes',corpo).then(function(d){
     if(!d.ok){el('nc-erro').textContent=d.mensagem||'Erro ao criar.';el('nc-btn').disabled=false;return;}
@@ -406,6 +407,7 @@ function abrirCliente(id){
   abrirModal('<h3>'+esc(c.nome)+'</h3><p class="sub">'+esc(c.id)+'</p>'+
   '<label>Nome da empresa</label><input id="ec-nome" value="'+esc(c.nome)+'">'+
   '<div class="linha2"><div><label>Mensalidade (R$)</label><input id="ec-men" inputmode="decimal" value="'+esc(deCentavos(c.mensalidade_centavos))+'"></div><div><label>Taxa por motorista (R$)</label><input id="ec-taxa" inputmode="decimal" value="'+esc(deCentavos(c.taxa_app_centavos))+'"></div></div>'+
+  '<div class="linha2"><div><label>Dia do vencimento (1 a 31)</label><input id="ec-dia" inputmode="numeric" maxlength="2" value="'+esc(c.dia_venc||10)+'"></div><div></div></div>'+
   '<div class="erro" id="ec-erro"></div>'+
   '<div class="acoes" style="margin-top:10px;justify-content:space-between"><button class="btn peq '+(c.ativo?'perigo':'')+'" onclick="alternarCliente(\''+esc(c.id)+'\','+(c.ativo?0:1)+')">'+(c.ativo?'Desativar cliente':'Reativar cliente')+'</button><button class="btn pri" onclick="salvarCliente(\''+esc(c.id)+'\')">Salvar dados</button></div>'+
   '<div style="margin-top:20px"><b>Acesso do dono ao painel</b></div><div id="ec-dono"><div class="vazio">Carregando...</div></div>'+
@@ -414,7 +416,7 @@ function abrirCliente(id){
   carregarDono(c.id);
 }
 function salvarCliente(id){
-  chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{nome:el('ec-nome').value.trim(),mensalidade_centavos:paraCentavos(el('ec-men').value),taxa_app_centavos:paraCentavos(el('ec-taxa').value)}).then(function(d){
+  chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{nome:el('ec-nome').value.trim(),mensalidade_centavos:paraCentavos(el('ec-men').value),taxa_app_centavos:paraCentavos(el('ec-taxa').value),dia_venc:parseInt(el('ec-dia').value,10)||10}).then(function(d){
     if(!d.ok){el('ec-erro').textContent=d.mensagem||d.erro||'Erro ao salvar.';return;}
     toast('Dados salvos.');recarregarMantendo(id);
   }).catch(function(){});
