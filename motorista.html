@@ -225,6 +225,9 @@ a{color:inherit}
 .rota-tela .info-full{padding-bottom:0}
 .rota-tela .info-full{display:flex;flex-direction:column}
 .acao-off{display:none!important}
+.aviso-acao{background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:14px;padding:11px 12px;margin:10px 0 0}
+.aviso-acao b{display:block;color:#B91C1C;font-size:13px;margin-bottom:3px}.aviso-acao p{margin:0 0 9px;font-size:12px;color:#7F1D1D}
+.selo-acao{display:inline-flex;align-items:center;gap:4px;background:#FEE2E2;color:#B91C1C;font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px}
 .selo-rem{display:inline-flex;align-items:center;gap:4px;background:#DBEAFE;color:#1D4ED8;font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px}
 .end-2l{margin:9px 0 2px;font-size:17px;line-height:1.28;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.56em;word-break:break-word}
 .rota-tela .mapa-mock{flex:1 1 auto;min-height:46vh}
@@ -313,7 +316,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-9-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-10-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -417,6 +420,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet" id="sh-remarcar">
   <div class="sh-hd"><h3>Remarcar entrega</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd" id="sh-remarcar-corpo"></div>
+</div>
+
+<!-- ══ MODAL: cadastrar/corrigir endereço ══ -->
+<div class="sheet" id="sh-endereco">
+  <div class="sh-hd"><h3>Cadastrar endereço</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd" id="sh-endereco-corpo"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -816,7 +825,7 @@ function rpTelaConferir(){
 }
 function rpCalcular(){
   var sel=RP.itens.filter(function(p){ return !RP.fora[p.cod]; });
-  rpMarcarLonge(sel); var pts=sel.filter(function(p){ return p.lat!=null && !p.inc && !p._longe; }), extra=[]; RP.semLoc=sel.length-pts.length; RP.semNomes=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); }).map(function(p){ return p.cliente||p.cod; });
+  rpMarcarLonge(sel); var pts=sel.filter(function(p){ return p.lat!=null && !p.inc && !p._longe; }), extra=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); }); RP.semLoc=sel.length-pts.length; RP.semNomes=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); }).map(function(p){ return p.cliente||p.cod; });
   if(!pts.length){ rpErro('Nenhum endereço da rota foi localizado no mapa.'); return; }
   EST='rp_calc'; RP.msg='Calculando a melhor rota pelas ruas...'; renderInicio();
   var cfg=rpCfg(), bt=cfg.base;
@@ -876,7 +885,7 @@ function rpTirar(cod){ RP.fora[cod]=true; rpCalcular(); }
 function rpTelaEscolher(){
   var c=RP.res, r=c[RP.opc], cf=rpCfg(), h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">'+RP.pts.length+' paradas · escolha o modelo da rota</p>';
   h+='<p class="rp-base">Saindo de: <b>'+esc(cf.base)+'</b></p>';
-  if(RP.semLoc){ h+='<div class="rp-sem"><b>'+RP.semLoc+' pedido'+(RP.semLoc>1?'s':'')+' sem localização '+(RP.semLoc>1?'ficaram':'ficou')+' de fora:</b><br>'+esc((RP.semNomes||[]).slice(0,8).join(', '))+((RP.semNomes||[]).length>8?' e mais '+((RP.semNomes||[]).length-8):'')+'</div>'; }
+  if(RP.semLoc){ h+='<div class="rp-sem"><b>'+RP.semLoc+' pedido'+(RP.semLoc>1?'s':'')+' sem localização '+(RP.semLoc>1?'vão':'vai')+' para o final da lista, com selo pedindo ação:</b><br>'+esc((RP.semNomes||[]).slice(0,8).join(', '))+((RP.semNomes||[]).length>8?' e mais '+((RP.semNomes||[]).length-8):'')+'</div>'; }
   h+=rpCartao('linear',c.linear,'Entrega mais rápido, mas pode demorar mais para voltar à base.',!c.manual)+rpCartao('circular',c.circular,'Últimas entregas demoram mais, mas roda menos e gasta menos combustível.',false);
   if(c.manual) h+=rpCartao('manual',c.manual,'A sua ordem, com as posições que você ajustou.',false);
   h+='<p style="font-size:11.5px;color:var(--muted);margin:0 0 '+(r.real?'12':'4')+'px">'+(r.real?'Km e tempo pelo trajeto real das ruas, mais '+String(c.minPorParada).replace('.',',')+' min por parada.':'Km e tempo estimados em linha reta ('+String(c.minPorParada).replace('.',',')+' min por parada).')+'</p>';
@@ -897,7 +906,31 @@ function rpRemarcados(){ var m={}; try{ m=JSON.parse(localStorage.getItem('dd_re
 function rpRegistrarRemarcado(cod){ var m=rpRemarcados(), d=new Date(); d.setDate(d.getDate()+1); var iso=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); m[cod]=iso; try{ localStorage.setItem('dd_remarc',JSON.stringify(m)); }catch(e){} }
 function rpParada(p,seq){
   var t=String(p.tel||'').replace(/\D/g,''); if(t && t.length<=11) t='55'+t;
-  return {seq:seq,cod:p.cod,cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||'')+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':''),telefone:t,status:'pendente',lat:p.lat,lng:p.lng,aprox:rpAprox(p),origem:'painel',remarcado:!!rpRemarcados()[p.cod]};
+  var sem=(p.lat==null||!!p.inc||!!p._longe);
+  return {seq:seq,cod:p.cod,cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||'')+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':''),telefone:t,status:'pendente',lat:sem?null:p.lat,lng:sem?null:p.lng,aprox:sem?false:rpAprox(p),origem:'painel',remarcado:!!rpRemarcados()[p.cod],
+    semLocal:sem,motivo:sem?(p._longe?'Endereço fora da cidade da rota':rpTag(p)):'',raw:{rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||''}};
+}
+/* ══ pedido sem localização: NUNCA some — o motorista corrige o endereço ou remarca ══ */
+function abrirEndereco(){
+  var p=LOTE_ATUAL[PONTEIRO]; if(!p) return; var w=p.raw||{};
+  function f(id,lb,v,ph){ return '<div class="field"><label>'+lb+'</label><input class="inp" id="'+id+'" value="'+esc(v)+'" placeholder="'+(ph||'')+'"></div>'; }
+  var h='<p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">Corrija o endereço de <b>'+esc(p.cliente||p.cod)+'</b>. O app procura de novo no mapa.</p>'+
+    f('ed-rua','Rua / avenida',w.rua)+f('ed-num','Número',w.num)+f('ed-comp','Complemento',w.comp)+f('ed-bai','Bairro',w.bai)+f('ed-cid','Cidade',w.cid)+f('ed-cep','CEP',w.cep)+
+    '<button class="btn pri wide" style="margin-top:6px" id="ed-ok" onclick="salvarEndereco()">Procurar e salvar</button>';
+  el('sh-endereco-corpo').innerHTML=h; abrir('sh-endereco');
+}
+function salvarEndereco(){
+  var p=LOTE_ATUAL[PONTEIRO]; if(!p) return;
+  var w={rua:el('ed-rua').value.trim(),num:el('ed-num').value.trim(),comp:el('ed-comp').value.trim(),bai:el('ed-bai').value.trim(),cid:el('ed-cid').value.trim(),cep:el('ed-cep').value.replace(/\D/g,'')};
+  if(!w.rua){ aviso('Digite a rua'); return; }
+  var b=el('ed-ok'); b.disabled=true; b.textContent='Procurando...';
+  p.raw=w; p.endereco=w.rua+(w.num?', '+w.num:'')+(w.comp?' ('+w.comp+')':''); p.bairro=w.bai; p.cid=w.cid;
+  rpApi('/rota/localizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:[{cod:p.cod,rua:w.rua,num:w.num,comp:w.comp,bai:w.bai,cid:w.cid,cep:w.cep}]})}).then(function(d){
+    var g=d&&d.ok&&d.itens&&d.itens[0], ok=g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0&&(g.flags||[]).indexOf('longe_da_base')<0;
+    if(ok){ p.lat=g.lat; p.lng=g.lng; p.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); p.semLocal=false; p.motivo=''; fecharTudo(); aviso('Endereço localizado no mapa'); }
+    else { fecharTudo(); aviso('Endereço salvo, mas não achei no mapa. Use "Abrir no Maps" ou remarque.'); }
+    RP.ajustou=false; renderInicio();
+  }).catch(function(){ b.disabled=false; b.textContent='Procurar e salvar'; aviso('Sem conexão. Tente de novo.'); });
 }
 function rpComecar(){
   var r=RP.res[RP.opc], i;
@@ -1014,12 +1047,13 @@ function renderEmRota(){
        '<input type="file" accept="image/*" capture="environment" id="ft-comprovante" style="display:none" onchange="fotoComprovanteSelecionada()">'+
        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'+
          '<span class="parada-tag">Parada '+(PONTEIRO+1)+' de '+LOTE_ATUAL.length+' · a '+distProx+' km</span>'+
-         (atual.remarcadaHoje?'<span class="selo-rem">🔁 Remarcada hoje</span>':(atual.remarcado?'<span class="selo-rem">🔁 Remarcada ontem</span>':''))+
+         (atual.semLocal?'<span class="selo-acao">⚠ Ação necessária</span>':'')+(atual.remarcadaHoje?'<span class="selo-rem">🔁 Remarcada hoje</span>':(atual.remarcado?'<span class="selo-rem">🔁 Remarcada ontem</span>':''))+
          (atual.canal?('<span class="canal-tag" style="background:'+cs.bg+';color:'+cs.cor+'">'+esc(atual.canal)+'</span>'):'')+
        '</div>'+
        '<h2 class="end-2l">'+esc(atual.endereco)+'</h2>'+
        '<p style="margin:0 0 3px;color:var(--muted2);font-size:13.5px;font-weight:700">'+esc(atual.cliente)+'</p>'+
        '<p style="margin:0;color:var(--muted);font-size:11.5px">Pacote '+esc(atual.cod)+' · '+esc(atual.bairro)+'</p>'+
+       (atual.semLocal?'<div class="aviso-acao"><b>'+esc(atual.motivo||'Sem localização')+'</b><p>Este pacote não foi achado no mapa. Cadastre o endereço certo, ou remarque a entrega.</p><button class="btn pri wide" onclick="abrirEndereco()">✏️ Cadastrar / corrigir endereço</button></div>':'')+
        '<div class="acoes-fixas"><div class="grade-acoes">'+
          '<button class="acao-g acao-off" onclick="concluirParada(\'nao_localizado\')"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.3-4.3"/><path d="M10.5 8c1.2 0 1.8.7 1.8 1.5 0 1.3-1.8 1.4-1.8 2.7"/><circle cx="10.5" cy="14.6" r=".35" fill="#fff" stroke="none"/></svg><small>Não localiz.</small></button>'+
          '<button class="acao-g acao-off" onclick="concluirParada(\'ausente\')"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.2"/><path d="M5 20c1.1-3.6 3.9-5.4 7-5.4"/><path d="M15.5 14.5l5 5M20.5 14.5l-5 5"/></svg><small>Ausente</small></button>'+
