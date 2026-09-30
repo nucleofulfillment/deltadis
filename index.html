@@ -471,7 +471,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-108-3009</p>
+      <p class="bld">DELTADIS-BASE-109-3009</p>
     </div>
   </div>
 </div>
@@ -992,7 +992,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-108-3009</div>
+<div class="bld-fix">DELTADIS-BASE-109-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3399,8 +3399,21 @@ function acessoAppPintar(id){
   box.innerHTML=h+'<div id="aa-msg" style="font-size:12px;color:#c0392b;font-weight:700;margin-top:6px"></div></div>';
 }
 function acessoAppMsg(t,ok){ var e=el('aa-msg'); if(e){ e.style.color=ok?'#16A34A':'#c0392b'; e.textContent=t; } }
+function acessoAppNorm(v){ var d=acessoAppFone(v); return (d.length===10||d.length===11)?'55'+d:d; }
 function acessoAppCriar(id){
-  var m=motorista(id); if(!m) return; var b=el('aa-btn'); b.disabled=true;
+  var m=motorista(id); if(!m) return; var b=el('aa-btn');
+  /* telefone já existe neste cliente? se estiver livre (sem motorista ou desativado), reaproveita em vez de dar erro */
+  var fn=acessoAppNorm(el('aa-tel').value), lista=ACESSO_APP.lista||[], ex=null, i;
+  for(i=0;i<lista.length;i++){ if(fn&&acessoAppNorm(lista[i].telefone)===fn) ex=lista[i]; }
+  if(ex){
+    if(ex.ativo && ex.mt_ref && String(ex.mt_ref)!==String(m.id)){ acessoAppMsg('Este telefone já está em uso por outro motorista ('+(ex.nome||'sem nome')+'). Use outro número.'); return; }
+    b.disabled=true;
+    fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(ex.id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:m.n,mt_ref:String(m.id),ativo:1,pin:el('aa-pin').value})})
+      .then(function(r){return r.json();}).then(function(d){ b.disabled=false; if(!d.ok){ acessoAppMsg(d.mensagem||'Não foi possível criar.'); return; } aviso('Acesso ao app criado'); acessoAppCarregar(id); })
+      .catch(function(){ b.disabled=false; acessoAppMsg('Sem conexão com o servidor.'); });
+    return;
+  }
+  b.disabled=true;
   fetch(DELTADIS_API+'/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({perfil:'motorista',nome:m.n,telefone:el('aa-tel').value,pin:el('aa-pin').value,mt_ref:String(m.id)})})
     .then(function(r){return r.json();}).then(function(d){ b.disabled=false; if(!d.ok){ acessoAppMsg(d.mensagem||'Não foi possível criar.'); return; } aviso('Acesso ao app criado'); acessoAppCarregar(id); })
     .catch(function(){ b.disabled=false; acessoAppMsg('Sem conexão com o servidor.'); });
