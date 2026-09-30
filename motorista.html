@@ -327,7 +327,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-17-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-19-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -385,6 +385,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="field"><label>Endereço de saída (base)</label><input class="inp" id="cfg-base" placeholder="Rua, número, cidade"></div>
         <div class="field" id="cfg-max-box" style="display:none"><label>Máximo de paradas por rota (só teste)</label><input class="inp" id="cfg-max" type="number" min="0" max="500" step="1"></div>
         <div class="field"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
+        <div class="field"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
@@ -710,7 +711,21 @@ function atualizarChromeApp(){
   if(EST==='em_rota' && typeof rpAjustaAltura==='function') rpAjustaAltura();
 }
 function voltarDeTelaCheia(){ EST='rp_lista'; renderInicio(); }
-function rlContinuar(){ EST='em_rota'; SAIU_TELA_CHEIA=false; renderInicio(); }
+function rlVoltarMapa(){ EST='em_rota'; SAIU_TELA_CHEIA=false; renderInicio(); }
+/* mudou a ordem (ou tirou/corrigiu parada) durante a rota: refaz o trajeto do mapa e os totais na nova ordem, uma vez só ao voltar */
+function rlContinuar(){
+  if(!RP.reord || !RP.rota){ rlVoltarMapa(); return; }
+  var pts=[], i, p; for(i=0;i<LOTE_ATUAL.length;i++){ p=LOTE_ATUAL[i]; if(p.lat!=null) pts.push({lat:p.lat,lng:p.lng}); }
+  if(!pts.length){ rlVoltarMapa(); return; }
+  EST='rp_calc'; RP.msg='Atualizando o trajeto no mapa...'; renderInicio();
+  rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:RP.baseLL||null,pontos:pts,minPorParada:rpCfg().pm,ordem:pts.map(function(x,k){return k;})})}).then(function(c){
+    if(!c.ok||!c.manual) throw new Error('falhou');
+    RP.rota=c.manual; var vlt=rpCfg().volta==='sim'; ROTA_KM=Math.round((vlt?c.manual.totalKm:c.manual.idaKm)*10)/10; ROTA_MIN=Math.round(vlt?c.manual.totalMin:c.manual.idaMin); RP.reord=false; rlVoltarMapa();
+  }).catch(function(){
+    /* sem servidor: não deixa a linha antiga (ordem velha) no mapa — liga os pinos na ordem nova, em linha reta */
+    RP.rota=Object.assign({},RP.rota,{real:false,linha:null,linhaVolta:null}); RP.reord=false; aviso('Trajeto do mapa em linha reta (sem conexão)'); rlVoltarMapa();
+  });
+}
 function rlMover(de,para){
   var n=LOTE_ATUAL.length; para=parseInt(para,10); if(!isFinite(para)||de<PONTEIRO){ renderInicio(); return; }
   para=Math.max(PONTEIRO+1,Math.min(n,para)); if(para-1===de){ renderInicio(); return; }
@@ -843,12 +858,12 @@ var RP={on:false,mt:null,mtn:'',lista:[],total:0,itens:[],sel:{},fora:{},msg:'',
 try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
 function rpApi(caminho,opts){ return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();}); }
 var RP_TESTE=/[?&]teste=1/.test(location.search);   /* modo teste: só com ?teste=1 no endereço aparece o limite de paradas */
-function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:c.base||RP_BASE_PADRAO, pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
+function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:c.base||RP_BASE_PADRAO, pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
 function rpSalvarCfg(){
   var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30; if(!RP_TESTE){ try{ mx=(JSON.parse(localStorage.getItem('dd_cfg')||'{}').max); }catch(e){} if(mx==null) mx=30; }
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:b||RP_BASE_PADRAO,pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao'})); }catch(e){}
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:b||RP_BASE_PADRAO,pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear'})); }catch(e){}
   rpAtualizar();
   aviso('Configurações salvas');
 }
@@ -941,9 +956,9 @@ function rpCalcular(){
   pB.then(function(b){
     if(b&&b.ok) RP.baseGeo[bt]=b;
     var base=(b&&b.ok)?{lat:b.lat,lng:b.lng}:null;
-    return rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,pontos:pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:cfg.pm})}).then(function(c){
+    return rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,pontos:pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:cfg.pm,modelo:cfg.modelo})}).then(function(c){
       if(!c.ok) throw new Error('falhou');
-      RP.res=c; RP.pts=pts; RP.extra=extra; RP.opc='linear'; EST='rp_escolher'; renderInicio(); if(RP.semLoc>0 && !RP._bipou){ RP._bipou=true; rpApito(); }
+      RP.res=c; RP.pts=pts; RP.extra=extra; RP.opc=c[cfg.modelo]?cfg.modelo:(c.linear?'linear':'circular'); EST='rp_escolher'; renderInicio(); if(RP.semLoc>0 && !RP._bipou){ RP._bipou=true; rpApito(); }
     });
   }).catch(function(){ rpErro('Não consegui calcular a rota agora. Tente de novo.'); });
 }
@@ -1002,10 +1017,13 @@ function rpArrastoFim(ev){
 }
 function rpTirar(cod){ RP.fora[cod]=true; rpCalcular(); }
 function rpTelaEscolher(){
-  var c=RP.res, r=c[RP.opc], cf=rpCfg(), h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">'+RP.pts.length+' paradas · escolha o modelo da rota</p>';
+  var c=RP.res, r=c[RP.opc], cf=rpCfg(), h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">'+RP.pts.length+' paradas · modelo '+(RP.opc==='circular'?'Circular':'Linear')+' (troque em Minha conta)</p>';
   h+='<p class="rp-base">Saindo de: <b>'+esc(cf.base)+'</b></p>';
   if(RP.semLoc){ h+='<div class="rp-sem"><b>'+RP.semLoc+' pedido'+(RP.semLoc>1?'s':'')+' sem localização '+(RP.semLoc>1?'vão':'vai')+' para o final da lista, com selo pedindo ação:</b><br>'+esc((RP.semNomes||[]).slice(0,8).join(', '))+((RP.semNomes||[]).length>8?' e mais '+((RP.semNomes||[]).length-8):'')+'</div>'; }
-  h+=rpCartao('linear',c.linear,'Entrega mais rápido, mas pode demorar mais para voltar à base.',!c.manual)+rpCartao('circular',c.circular,'Últimas entregas demoram mais, mas roda menos e gasta menos combustível.',false);
+  var mod=cf.modelo;  /* um modelo só, escolhido em Minha conta (nunca os dois) */
+  if(mod==='circular' && c.circular) h+=rpCartao('circular',c.circular,'Últimas entregas demoram mais, mas roda menos e gasta menos combustível.',false);
+  else if(c.linear) h+=rpCartao('linear',c.linear,'Entrega mais rápido, mas pode demorar mais para voltar à base.',false);
+  else if(c.circular) h+=rpCartao('circular',c.circular,'Últimas entregas demoram mais, mas roda menos e gasta menos combustível.',false);
   if(c.manual) h+=rpCartao('manual',c.manual,'A sua ordem, com as posições que você ajustou.',false);
   h+='<p style="font-size:11.5px;color:var(--muted);margin:0 0 '+(r.real?'12':'4')+'px">'+(r.real?'Km e tempo pelo trajeto real das ruas, mais '+String(c.minPorParada).replace('.',',')+' min por parada.':'Km e tempo estimados em linha reta ('+String(c.minPorParada).replace('.',',')+' min por parada).')+'</p>';
   if(!r.real && r.realErro) h+='<p class="rp-err">Trajeto real indisponível: '+esc(r.realErro)+'</p>';
@@ -1066,7 +1084,7 @@ function salvarEndereco(){
   rpApi('/rota/localizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:[{cod:p.cod,rua:w.rua,num:w.num,comp:w.comp,bai:w.bai,cid:w.cid,cep:w.cep}]})}).then(function(d){
     var g=d&&d.ok&&d.itens&&d.itens[0], ok=g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0&&(g.flags||[]).indexOf('longe_da_base')<0;
     if(!ok){ fecharTudo(); aviso('Endereço salvo, mas não achei no mapa. Tente outro CEP/rua, remarque ou devolva.'); RP.ajustou=false; renderInicio(); return; }
-    if(lote){ p.lat=g.lat; p.lng=g.lng; p.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); p.semLocal=false; p.motivo=''; fecharTudo(); aviso('Endereço localizado no mapa'); RP.ajustou=false; renderInicio(); }
+    if(lote){ p.lat=g.lat; p.lng=g.lng; p.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); p.semLocal=false; p.motivo=''; RP.reord=true; fecharTudo(); aviso('Endereço localizado no mapa'); RP.ajustou=false; renderInicio(); }
     else { p.lat=g.lat; p.lng=g.lng; p.precisao=g.precisao; p.flags=g.flags||[]; p.inc=false; p._longe=false; fecharTudo(); aviso('Endereço localizado. Refazendo a rota...'); rpCalcular(); }
   }).catch(function(){ b.disabled=false; b.textContent='Procurar e salvar'; aviso('Sem conexão. Tente de novo.'); });
 }
@@ -1310,7 +1328,7 @@ function pintarConta(){
   el('cta-veiculo').textContent=MOTORISTA_LOGADO.modelo+' '+MOTORISTA_LOGADO.veicCor+' '+MOTORISTA_LOGADO.ano+' · '+MOTORISTA_LOGADO.placa;
   el('cta-cap').textContent=MOTORISTA_LOGADO.cap+' pacotes';
   el('cta-valor').textContent=moeda(MOTORISTA_LOGADO.valorPct)+' por pacote';
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta;
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo;
 }
 function salvarSenha(){
   var atual=(el('sn-atual').value||'').trim(), nova=(el('sn-nova').value||'').trim(), conf=(el('sn-conf').value||'').trim();
