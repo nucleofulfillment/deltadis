@@ -466,11 +466,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="lg-form">
       <h2>Entrar</h2>
       <p class="sub">Use o e-mail cadastrado no ponto de distribuição.</p>
-      <div class="field"><label>E-mail</label><input class="inp" type="email" placeholder="voce@ponto.com.br"></div>
-      <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
-      <button class="btn pri wide" onclick="entrar()">Entrar</button>
-      <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-104-3009</p>
+      <div class="field"><label>E-mail</label><input class="inp" id="lg-email" type="email" autocomplete="username" placeholder="voce@ponto.com.br"></div>
+      <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+      <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
+      <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
+      <p class="bld">DELTADIS-BASE-105-3009</p>
     </div>
   </div>
 </div>
@@ -529,7 +529,7 @@ c156 -2 176 -1 187 15 10 13 13 166 13 690 l0 673 25 10 c14 5 137 8 276 7
 m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 -106 -153 -136 -80 -40 -147 -47 -423 -44 l-255 3 -3 494 c-2 370 1 497 10
 508 10 12 59 14 298 11 l286 -3 76 -38z"/>
-</g></svg><span class="tb-tenant" id="tb-tenant">Ponto Itajaí Centro</span>
+</g></svg><span class="tb-tenant" id="tb-tenant"></span>
     </div>
     <div class="tb-right">
       <div class="tb-data" id="tb-data-topo"></div>
@@ -991,7 +991,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-104-3009</div>
+<div class="bld-fix">DELTADIS-BASE-105-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1459,6 +1459,26 @@ function importarPlanilha(linhas,c){
    ══════════════════════════════════════════════════════════ */
 var DELTADIS_API='https://deltadis-api.iliveyou.com.br';
 var DELTADIS_API_KEY='deltadis2026';
+/* ── LOGIN (etapa B1c): token do usuário vai no cabeçalho; a chave antiga só segue nas rotas /asaas/ (por enquanto) ── */
+var DD_TOKEN=''; try{ DD_TOKEN=localStorage.getItem('dd_jwt')||''; }catch(e){}
+var DD_USER=null; try{ DD_USER=JSON.parse(localStorage.getItem('dd_user')||'null'); }catch(e){}
+(function(){
+  var f0=window.fetch.bind(window);
+  window.fetch=function(u,o){
+    try{
+      /* /asaas/ segue só com a chave antiga (o Asaas por cliente vem na etapa C); /auth/login não leva token */
+      if(typeof u==='string' && u.indexOf(DELTADIS_API)===0 && DD_TOKEN && u.indexOf(DELTADIS_API+'/asaas/')!==0 && u.indexOf(DELTADIS_API+'/auth/login')!==0){
+        u=u.replace(/([?&])key=[^&]*&?/,'$1').replace(/[?&]$/,'');
+        o=o||{}; var h={}; var h0=o.headers||{}; for(var k in h0){ h[k]=h0[k]; }
+        h['Authorization']='Bearer '+DD_TOKEN; o.headers=h;
+        return f0(u,o).then(function(r){ if(r.status===401){ ddSessaoExpirou(); } return r; });
+      }
+    }catch(e){}
+    return f0(u,o);
+  };
+})();
+function ddGuardar(tk,us){ DD_TOKEN=tk||''; DD_USER=us||null; try{ if(tk){ localStorage.setItem('dd_jwt',tk); localStorage.setItem('dd_user',JSON.stringify(us||null)); } else { localStorage.removeItem('dd_jwt'); localStorage.removeItem('dd_user'); } }catch(e){} }
+function ddSessaoExpirou(){ if(!DD_TOKEN) return; ddGuardar('',null); sair(); var m=el('lg-msg'); if(m) m.textContent='Sua sessão acabou. Entre de novo.'; }
 /* rastreio automático só pros pacotes com problema (não gasta com o que foi entregue no mesmo dia):
    tentativa 1/2/3, devolvido, extraviado, ou não entregue há mais de RASTREIO_DIAS dias. Vale pra Anjun e J&T. */
 function precisaRastrear(p){
@@ -1949,15 +1969,39 @@ function aviso(t){var e=el('toast'); e.innerHTML=t; e.classList.add('on');
   clearTimeout(window._tt); window._tt=setTimeout(function(){e.classList.remove('on');},2600);}
 
 /* ══ entrar / sair ══ */
-function entrar(){
+function abrirApp(){
   el('login').style.display='none';
   el('app').style.display='block';
+  var t=el('tb-tenant'); if(t) t.textContent=(DD_USER&&DD_USER.cliente_nome)||'';
+  var av=document.querySelector('.tb-av'); if(av&&DD_USER&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
   montarTudo(); carregarPonto();
+}
+function entrar(){
+  var em=el('lg-email').value.trim(), se=el('lg-senha').value, m=el('lg-msg'), b=el('lg-btn');
+  m.textContent='';
+  if(!em||!se){ m.textContent='Digite o e-mail e a senha.'; return; }
+  b.disabled=true; b.textContent='Entrando...';
+  fetch(DELTADIS_API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,senha:se})})
+    .then(function(r){return r.json().catch(function(){return {ok:false};});})
+    .then(function(d){
+      b.disabled=false; b.textContent='Entrar';
+      if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível entrar. Tente de novo.'; return; }
+      if(d.usuario.perfil==='master'){ m.textContent='Este acesso é do administrador. Use a página admin.'; return; }
+      ddGuardar(d.token,d.usuario); el('lg-senha').value=''; abrirApp();
+    }).catch(function(){ b.disabled=false; b.textContent='Entrar'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
 function sair(){
   fecharTudo();
+  ddGuardar('',null);
   el('app').style.display='none';
   el('login').style.display='block';
+}
+/* já tem sessão guardada? confere no servidor e entra direto */
+function retomarSessao(){
+  if(!DD_TOKEN) return;
+  fetch(DELTADIS_API+'/auth/me').then(function(r){return r.json().catch(function(){return null;});}).then(function(d){
+    if(d&&d.ok&&d.usuario&&(d.usuario.perfil==='dono'||d.usuario.perfil==='gerente')){ DD_USER=d.usuario; try{localStorage.setItem('dd_user',JSON.stringify(d.usuario));}catch(e){} abrirApp(); }
+  }).catch(function(){});
 }
 function relogio(){
   var d=new Date();
@@ -3852,6 +3896,9 @@ function initCurves(){
 
 document.addEventListener('DOMContentLoaded',function(){
   initCurves(); fundoSegueCursor();
+  var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
+  var le=el('lg-email'); if(le) le.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
+  retomarSessao();
 });
 </script>
 </body>
