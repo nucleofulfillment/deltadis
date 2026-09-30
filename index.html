@@ -247,6 +247,8 @@ a{color:inherit}
 @keyframes pulsePin{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-108%)}}
 .mp-wrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border2);background:var(--s3)}
 .mp-mapa{height:420px;width:100%}
+.mp-3d-btn{position:absolute;top:54px;left:10px;z-index:5;width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);background:#fff;font-size:12px;font-weight:800;color:var(--roxo,#6D28D9);cursor:pointer;box-shadow:0 2px 6px rgba(31,10,61,.25)}
+.mp-3d-btn.on{background:#6D28D9;color:#fff}
 .mp-full-btn{position:absolute;top:10px;left:10px;z-index:5;width:36px;height:36px;border-radius:9px;border:1px solid var(--border2);background:#fff;font-size:18px;cursor:pointer;box-shadow:0 2px 6px rgba(31,10,61,.25)}
 .mp-wrap.cheio{position:fixed;inset:0;z-index:95;border-radius:0;border:0}
 .mp-wrap.cheio .mp-mapa{height:100vh}
@@ -468,7 +470,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-103-3009</p>
+      <p class="bld">DELTADIS-BASE-104-3009</p>
     </div>
   </div>
 </div>
@@ -612,7 +614,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         </div>
         <div class="card">
           <div id="mp-real">
-            <div id="mp-wrap" class="mp-wrap"><div id="mp-map" class="mp-mapa"></div><button class="mp-full-btn" id="mp-full-btn" onclick="mpTelaCheia()" title="Tela cheia">⛶</button></div>
+            <div id="mp-wrap" class="mp-wrap"><div id="mp-map" class="mp-mapa"></div><button class="mp-full-btn" id="mp-full-btn" onclick="mpTelaCheia()" title="Tela cheia">⛶</button><button class="mp-3d-btn" id="mp-3d-btn" onclick="mpInclinar()" title="Visão inclinada (3D) / de cima">3D</button></div>
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
               <span id="mp-status" style="font-size:12.5px;color:var(--muted)"></span>
               <button class="btn pri" id="mp-loc" style="display:none"></button>
@@ -989,7 +991,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-103-3009</div>
+<div class="bld-fix">DELTADIS-BASE-104-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3197,6 +3199,12 @@ function mpMarcador(e,animar,atraso,novo){
   return mk;
 }
 var MP_BOUNDS=null;
+/* botão 3D: inclina o mapa (visão diagonal) ou volta a olhar de cima */
+function mpInclinar(){
+  if(!MP_MAP) return; var on=MP_MAP.getPitch()<10;
+  try{ MP_MAP.easeTo({pitch:on?55:0,bearing:0,duration:800}); }catch(e){}
+  var b=el('mp-3d-btn'); if(b) b.classList.toggle('on',on);
+}
 /* enquadra todas as entregas (com o tamanho REAL atual da tela do mapa) deixando só uma borda fina */
 function mpEnquadrar(dur){
   if(!MP_MAP||!MP_BOUNDS) return;
