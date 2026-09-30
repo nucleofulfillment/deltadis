@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-89-2909</p>
+      <p class="bld">DELTADIS-BASE-91-3009</p>
     </div>
   </div>
 </div>
@@ -589,22 +589,36 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MAPEAMENTO — mapa com a posição de cada motorista (visual, região aproximada — GPS em tempo real ainda não integrado) -->
       <section class="page" id="pg-mapeamento">
-        <div class="pghd"><div><h1>Mapeamento</h1><div class="sub">entregas finalizadas hoje — atualiza a cada 5 min</div></div>
-          <select class="inp" id="mp-motorista" style="max-width:220px" onchange="mudarMotoristaMapa()"></select>
+        <div class="pghd"><div><h1>Mapeamento</h1><div class="sub">entregas marcadas no app do motorista, ao vivo</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn sec" style="padding:9px 13px" onclick="mpMudarDia(-1)" title="Dia anterior">‹</button>
+            <input class="inp" type="date" id="mp-dia" style="width:160px" onchange="mpEscolherDia()">
+            <button class="btn sec" style="padding:9px 13px" onclick="mpMudarDia(1)" title="Próximo dia">›</button>
+            <button class="btn sec" style="padding:9px 13px" onclick="mpHoje()">Hoje</button>
+            <select class="inp" id="mp-motorista" style="max-width:220px" onchange="mudarMotoristaMapa()"></select>
+          </div>
         </div>
         <div class="card">
-          <div class="mapa-mock" style="height:280px">
+          <div id="mp-real">
+            <div id="mp-map" style="height:420px;border-radius:12px;overflow:hidden;background:var(--s3);border:1px solid var(--border2)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px">
+              <span id="mp-status" style="font-size:12.5px;color:var(--muted)"></span>
+              <button class="btn pri" id="mp-loc" style="display:none"></button>
+            </div>
+          </div>
+          <div class="mapa-mock" id="mp-mock" style="height:280px;display:none">
             <iframe class="mapa-iframe" src="https://www.google.com/maps?q=Itaja%C3%AD,SC&z=12&output=embed" loading="lazy" title="Mapa"></iframe>
             <div id="mp-pins"></div>
             <span class="mapa-legenda">Cada ponto verde é uma entrega finalizada hoje (amostra) — <span id="mp-atualizado"></span></span>
           </div>
         </div>
         <div class="card" style="margin-top:16px">
-          <h3><span class="lft">Pedidos entregues hoje <span class="n" id="mp-entregues-n">0</span></span></h3>
+          <h3><span class="lft">Entregas do dia (registradas pelo app) <span class="n" id="mp-entregues-n">0</span></span></h3>
           <div class="tb-wrap"><table class="tb">
             <thead><tr><th>Cliente</th><th>Canal</th><th>Transportadora</th><th>Data/Hora</th><th>Entregador</th></tr></thead>
             <tbody id="mp-entregues-corpo"></tbody>
           </table></div>
+          <button class="btn sec wide" id="mp-mais" style="display:none;margin-top:10px" onclick="MP_LIM+=50;mpRender()">Ver mais</button>
         </div>
       </section>
 
@@ -950,7 +964,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-89-2909</div>
+<div class="bld-fix">DELTADIS-BASE-91-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1896,6 +1910,7 @@ function ir(p){
   for(i=0;i<ps.length;i++) ps[i].classList.toggle('on', ps[i].id==='pg-'+p);
   var bs=document.querySelectorAll('.side button,.tabbar button');
   for(i=0;i<bs.length;i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-p')===p);
+  if(p==='mapeamento' && typeof mpBuscar==='function'){ MP_ENQ=true; setTimeout(mpBuscar,30); }
   window.scrollTo(0,0);
 }
 function abrir(id){el('ovl').classList.add('on'); el(id).classList.add('on');}
@@ -2966,12 +2981,13 @@ function pintarMapeamento(){
   var sel=el('mp-motorista'); if(!sel) return;
   var h='<option value="todos">Todos os motoristas</option>',i;
   for(i=0;i<MOTORISTAS.length;i++) h+='<option value="'+MOTORISTAS[i].id+'">'+esc(MOTORISTAS[i].n)+'</option>';
-  sel.innerHTML=h;
-  atualizarMapaEntregas();
+  var ant=sel.value; sel.innerHTML=h; if(ant) sel.value=ant; if(sel.value!==ant) sel.value='todos';
+  if(REAL) mpRender(); else atualizarMapaEntregas();
 }
-function mudarMotoristaMapa(){ desenharPinsMapeamento(); }
+function mudarMotoristaMapa(){ if(REAL){ MP_LIM=50; MP_ENQ=true; mpRender(); } else desenharPinsMapeamento(); }
 /* simula o "cron": a cada chamada, marca a hora da última checagem e redesenha os pontos */
 function atualizarMapaEntregas(){
+  if(REAL){ return; }
   if(REAL) ENTREGAS_HOJE=[];
   MP_ULTIMA_ATT=new Date();
   desenharPinsMapeamento();
@@ -3007,6 +3023,91 @@ function desenharPinsMapeamento(){
   el('mp-entregues-corpo').innerHTML = hTab || '<tr><td colspan="5"><div class="empty">'+(REAL?'A planilha de entrada não traz o horário nem o local da entrega — isso vem da baixa da transportadora.':'Nenhuma entrega finalizada ainda')+'</div></td></tr>';
   var lbl2=el('mp-entregues-n'); if(lbl2) lbl2.textContent=n;
 }
+
+/* ══ Mapeamento ao vivo: cada "Entregue" marcado no APP do motorista chega ao servidor (com a posição da parada) e aparece aqui.
+   Atualiza sozinho a cada 1 minuto. Não usa a planilha e não gasta Google. ══ */
+var MP_DIA='', MP_LIM=50, MP_MAP=null, MP_MAPA_OK=false, MP_POP=null, MP_EVT=[], MP_EVT_DIA='', MP_QUANDO=0, MP_BUSCANDO=false, MP_ERRO='';
+function mpHoje(){ MP_DIA=hojeISO(); MP_LIM=50; mpBuscar(); }
+function mpEscolherDia(){ var v=el('mp-dia').value; if(v){ MP_DIA=v; MP_LIM=50; mpBuscar(); } }
+function mpMudarDia(n){ MP_DIA=addDiasISO(MP_DIA||hojeISO(),n); MP_LIM=50; mpBuscar(); }
+function mpBuscar(){
+  if(!REAL) return;
+  if(!MP_DIA) MP_DIA=hojeISO();
+  var dia=MP_DIA; if(dia!==MP_EVT_DIA){ MP_EVT=[]; MP_EVT_DIA=dia; }
+  mpRender();
+  if(MP_BUSCANDO) return; MP_BUSCANDO=true;
+  fetch(DELTADIS_API+'/entregas?dia='+encodeURIComponent(dia)+'&key='+encodeURIComponent(DELTADIS_API_KEY))
+  .then(function(r){return r.json();}).then(function(d){
+    MP_BUSCANDO=false;
+    if(d && d.ok){ if(dia===MP_DIA){ MP_EVT=d.itens||[]; MP_EVT_DIA=dia; MP_QUANDO=Date.now(); MP_ERRO=''; } }
+    else MP_ERRO=(d&&d.erro)||'falhou';
+    mpRender(); if(dia!==MP_DIA) mpBuscar();
+  }).catch(function(){ MP_BUSCANDO=false; MP_ERRO='sem conexão'; mpRender(); });
+}
+function mpEntregas(){
+  var f=(el('mp-motorista')&&el('mp-motorista').value)||'todos', out=[], i;
+  for(i=0;i<MP_EVT.length;i++){ if(f!=='todos' && String(MP_EVT[i].mt)!==f) continue; out.push(MP_EVT[i]); }
+  return out;
+}
+function mpHora(t){ var d=new Date(t); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function mpRender(){
+  if(!REAL) return;
+  var box=el('mp-real'), mock=el('mp-mock'); if(!box) return;
+  box.style.display='block'; mock.style.display='none';
+  if(!MP_DIA) MP_DIA=hojeISO();
+  el('mp-dia').value=MP_DIA;
+  var lista=mpEntregas(), n=lista.length, i, e, p, m, h='', noMapa=0, idx={};
+  for(i=0;i<PEDIDOS.length;i++) idx[PEDIDOS[i].cod]=PEDIDOS[i];
+  for(i=0;i<n;i++){ e=lista[i]; if(e.lat!=null) noMapa++;
+    if(i>=MP_LIM) continue;
+    p=idx[e.cod]||{}; m=motorista(e.mt)||motorista(Number(e.mt));
+    var cn=p.canal||'—', cs=CANAL_STYLE_MAPA[cn]||{bg:'var(--s3)',cor:'var(--muted2)'}, tn=TRANSPORTADORAS.filter(function(t){return t.id===p.tr;})[0];
+    h+='<tr><td>'+esc(p.cliente||e.cli||e.cod)+'</td><td><span class="canal-tag" style="background:'+cs.bg+';color:'+cs.cor+'">'+esc(cn)+'</span></td><td>'+esc(tn?tn.n:(p.tr||'—'))+'</td><td>'+dataBR(MP_DIA)+' '+mpHora(e.t)+'</td><td>'+esc(m?m.n:(e.mtn||'—'))+'</td></tr>';
+  }
+  el('mp-entregues-corpo').innerHTML=h||'<tr><td colspan="5"><div class="empty">Nenhuma entrega registrada pelo app em '+dataBR(MP_DIA)+'.</div></td></tr>';
+  el('mp-entregues-n').textContent=n;
+  el('mp-mais').style.display=(n>MP_LIM)?'flex':'none'; el('mp-mais').textContent='Ver mais ('+(n-MP_LIM)+' restantes)';
+  el('mp-loc').style.display='none';
+  el('mp-status').innerHTML='<span style="color:#16A34A;font-weight:800">● ao vivo</span> · '+n+' entrega(s) pelo app'+(n?' · '+noMapa+' no mapa':'')+(MP_QUANDO?' · atualizado '+mpHora(MP_QUANDO):'')+(MP_ERRO?' · <span style="color:#DC2626">'+esc(MP_ERRO)+'</span>':'');
+  mpDesenhar(lista);
+}
+function mpCarregarMapa(cb){
+  if(window.maplibregl){ cb(); return; }
+  if(!el('mp-mlcss')){ var l=document.createElement('link'); l.id='mp-mlcss'; l.rel='stylesheet'; l.href='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css'; document.head.appendChild(l); }
+  var sc=document.createElement('script'); sc.src='https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js'; sc.onload=cb; document.head.appendChild(sc);
+}
+function mpDesenhar(lista){
+  if(!el('pg-mapeamento').classList.contains('on')) return;   /* só monta o mapa quando a tela está aberta */
+  mpCarregarMapa(function(){
+    if(!MP_MAP){
+      MP_MAP=new maplibregl.Map({container:'mp-map',style:'https://tiles.openfreemap.org/styles/liberty',center:[-48.66,-26.91],zoom:11,attributionControl:false});
+      try{ MP_MAP.addControl(new maplibregl.AttributionControl({compact:true}),'bottom-right'); MP_MAP.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right'); }catch(e){}
+      MP_MAP.on('load',function(){
+        MP_MAP.addSource('ent',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+        MP_MAP.addLayer({id:'ent-c',type:'circle',source:'ent',paint:{'circle-radius':6,'circle-color':'#16A34A','circle-stroke-width':2,'circle-stroke-color':'#fff'}});
+        MP_MAP.on('click','ent-c',function(ev){
+          var f=ev.features[0].properties;
+          if(MP_POP) MP_POP.remove();
+          MP_POP=new maplibregl.Popup({closeButton:true,maxWidth:'240px'}).setLngLat(ev.lngLat).setHTML('<b>'+esc(f.cliente)+'</b><br>'+esc(f.hora)+' · '+esc(f.mot)).addTo(MP_MAP);
+        });
+        MP_MAP.on('mouseenter','ent-c',function(){ MP_MAP.getCanvas().style.cursor='pointer'; });
+        MP_MAP.on('mouseleave','ent-c',function(){ MP_MAP.getCanvas().style.cursor=''; });
+        MP_MAPA_OK=true; mpPintarPontos(mpEntregas(),true);
+      });
+    } else { MP_MAP.resize(); if(MP_MAPA_OK) mpPintarPontos(lista,MP_ENQ); }
+  });
+}
+var MP_ENQ=true;
+function mpPintarPontos(lista,enquadrar){
+  var fs=[], i, e, m, b=new maplibregl.LngLatBounds();
+  for(i=0;i<lista.length;i++){ e=lista[i]; if(e.lat==null||e.lng==null) continue; m=motorista(e.mt)||motorista(Number(e.mt));
+    fs.push({type:'Feature',geometry:{type:'Point',coordinates:[e.lng,e.lat]},properties:{cliente:e.cli||e.cod,hora:mpHora(e.t),mot:m?m.n:(e.mtn||'—')}}); b.extend([e.lng,e.lat]); }
+  var src=MP_MAP.getSource('ent'); if(src) src.setData({type:'FeatureCollection',features:fs});
+  if(enquadrar && fs.length){ try{ MP_MAP.fitBounds(b,{padding:50,maxZoom:15,duration:400}); }catch(e2){} }
+  MP_ENQ=false;
+}
+/* a cada 1 minuto puxa as entregas novas do dia de hoje (só com a tela aberta e a aba visível) */
+setInterval(function(){ if(REAL && !document.hidden && el('pg-mapeamento') && el('pg-mapeamento').classList.contains('on') && MP_DIA===hojeISO()) mpBuscar(); },60000);
 function mostrarMpTip(ev,idx){
   var e=ENTREGAS_HOJE[idx]; if(!e) return;
   var m=motorista(e.motoristaId), cs=CANAL_STYLE_MAPA[e.canal]||{bg:'var(--s3)',cor:'var(--muted2)'};

@@ -327,7 +327,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-21-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-22-3009</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -675,7 +675,7 @@ function concluirParada(status, extra){
   LOTE_ATUAL[PONTEIRO].status=status;
   LOTE_ATUAL[PONTEIRO].hora=horaAgora();
   if(extra) LOTE_ATUAL[PONTEIRO].janela=extra;
-  if(status==='entregue') somEntregaOk();
+  if(status==='entregue'){ somEntregaOk(); rpAvisarEntrega(LOTE_ATUAL[PONTEIRO]); }
   PONTEIRO++;
   if(PONTEIRO>=LOTE_ATUAL.length){ finalizarRota(); return; }
   renderInicio();
@@ -739,6 +739,27 @@ function rlMover(de,para){
   for(var q=0;q<LOTE_ATUAL.length;q++) LOTE_ATUAL[q].seq=q+1;
   renderInicio();
 }
+
+
+/* ══ entrega ao vivo: cada "Entregue" vai pro servidor (com a posição da parada) pra aparecer no Mapeamento do painel.
+   Fica numa fila local e reenvia sozinho se a internet cair. Não usa Google. ══ */
+var ENT_ENVIANDO=false;
+function rpFilaEnt(){ try{ return JSON.parse(localStorage.getItem('dd_fila_ent')||'[]')||[]; }catch(e){ return []; } }
+function rpSalvaFilaEnt(f){ try{ localStorage.setItem('dd_fila_ent',JSON.stringify(f.slice(-500))); }catch(e){} }
+function rpAvisarEntrega(p){
+  if(!p || p.origem!=='painel' || !p.cod || !RP.mt) return;
+  var f=rpFilaEnt(); f.push({cod:p.cod,mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now()});
+  rpSalvaFilaEnt(f); rpDescarregarEnt();
+}
+function rpDescarregarEnt(){
+  if(ENT_ENVIANDO) return; var f=rpFilaEnt(); if(!f.length) return;
+  var lote=f.slice(0,50); ENT_ENVIANDO=true;
+  rpApi('/entregas/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:lote})}).then(function(d){
+    ENT_ENVIANDO=false;
+    if(d && d.ok){ var atual=rpFilaEnt(); atual.splice(0,lote.length); rpSalvaFilaEnt(atual); if(atual.length) rpDescarregarEnt(); }
+  }).catch(function(){ ENT_ENVIANDO=false; });
+}
+setInterval(rpDescarregarEnt,60000); window.addEventListener('online',rpDescarregarEnt); setTimeout(rpDescarregarEnt,3000);
 
 /* ══ mesmo endereço: dois pedidos no mesmo ponto do mapa ficam num pino só e ganham o aviso ══ */
 function rpChave(p){ return (p&&p.lat!=null&&p.lng!=null)?(p.lat.toFixed(5)+','+p.lng.toFixed(5)):null; }
