@@ -468,7 +468,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-101-3009</p>
+      <p class="bld">DELTADIS-BASE-102-3009</p>
     </div>
   </div>
 </div>
@@ -989,7 +989,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-101-3009</div>
+<div class="bld-fix">DELTADIS-BASE-102-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3149,7 +3149,7 @@ function mpPintarBase(centrar){
 function mpAplicarCheio(on){
   var w=el('mp-wrap'); w.classList.toggle('cheio',on); el('mp-full-btn').textContent=on?'✕':'⛶'; el('mp-full-btn').title=on?'Sair da tela cheia':'Tela cheia';
   document.body.style.overflow=on?'hidden':'';
-  if(MP_MAP){ setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },80); setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },400); }
+  if(MP_MAP){ setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },80); setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },400); setTimeout(function(){ mpEnquadrar(500); },650); }
 }
 /* usa a tela cheia do navegador (some a barra de endereço e abas); se o navegador não deixar, cobre a página inteira */
 function mpTelaCheia(){
@@ -3196,6 +3196,12 @@ function mpMarcador(e,animar,atraso,novo){
   if(novo) setTimeout(function(){ d.classList.remove('novo'); },4500);
   return mk;
 }
+var MP_BOUNDS=null;
+/* enquadra todas as entregas (com o tamanho REAL atual da tela do mapa) deixando só uma borda fina */
+function mpEnquadrar(dur){
+  if(!MP_MAP||!MP_BOUNDS) return;
+  try{ MP_MAP.resize(); MP_MAP.fitBounds(MP_BOUNDS,{padding:28,maxZoom:16,duration:dur}); }catch(e){}
+}
 function mpPintarPontos(lista,enquadrar){
   var i, e, k, b=new maplibregl.LngLatBounds(), quer={}, n=0, atraso=0; if(PONTO&&PONTO.lat!=null) b.extend([PONTO.lng,PONTO.lat]);
   if(MP_MK_DIA!==MP_DIA){ mpLimparFila(); for(k in MP_MK) MP_MK[k].remove(); MP_MK={}; MP_MK_DIA=MP_DIA; MP_PRIM=true; }
@@ -3218,7 +3224,8 @@ function mpPintarPontos(lista,enquadrar){
   if(!enquadrar && novos.length && n){ /* entrega nova fora da área visível: afasta o zoom e centraliza tudo */
     try{ var vb=MP_MAP.getBounds(); for(i=0;i<novos.length;i++){ if(novos[i].lat!=null && novos[i].lng!=null && !vb.contains([novos[i].lng,novos[i].lat])){ enquadrar=true; break; } } }catch(e3){}
   }
-  if(enquadrar && n){ try{ MP_MAP.fitBounds(b,{padding:50,maxZoom:15,duration:800}); }catch(e2){} }
+  if(n) MP_BOUNDS=b;
+  if(enquadrar && n) mpEnquadrar(800);
   MP_ENQ=false;
 }
 /* a cada 15 segundos puxa as entregas novas do dia de hoje (só com a tela aberta e a aba visível) */
