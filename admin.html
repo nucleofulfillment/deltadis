@@ -139,6 +139,8 @@ tr:hover td{background:var(--s2)}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1F0A3D;color:#fff;padding:11px 18px;border-radius:99px;font-weight:700;font-size:13px;display:none;z-index:40;box-shadow:var(--sh3)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<style>html.dd-ret #login{visibility:hidden}</style>
+<script>try{if(localStorage.getItem('dd_admin_jwt'))document.documentElement.classList.add('dd-ret');}catch(e){}</script>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="dd-wm" viewBox="0 0 1200 182" fill="currentColor"><g transform="translate(-7.000000,186.927433) scale(0.100000,-0.100000)"
@@ -218,7 +220,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <input id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-3-3009</div>
+      <div class="bld">DELTADIS-ADMIN-4-3009</div>
     </div>
   </div>
 </div>
@@ -252,7 +254,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="tabela-wrap" id="tab-cobranca"><div class="vazio">Carregando...</div></div>
       <div class="aviso">Motorista conta no mês em que existiu ativo (criado antes do fim do mês e não desativado antes do começo). Valores: mensalidade do cliente + taxa por motorista do app.</div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-3-3009</div>
+    <div class="bld">DELTADIS-ADMIN-4-3009</div>
   </main>
 </div>
 
@@ -283,7 +285,8 @@ function chamar(metodo,caminho,corpo){
     });
   });
 }
-function mostrarLogin(msg){el('app').style.display='none';el('login').style.display='grid';el('lg-erro').textContent=msg||'';el('lg-btn').disabled=false;el('lg-btn').textContent='Entrar';}
+function ddMostrarLogin(){document.documentElement.classList.remove('dd-ret');}
+function mostrarLogin(msg){ddMostrarLogin();el('app').style.display='none';el('login').style.display='grid';el('lg-erro').textContent=msg||'';el('lg-btn').disabled=false;el('lg-btn').textContent='Entrar';}
 function sair(vencida){TOKEN='';USUARIO=null;lsDel(TK_KEY);lsDel(US_KEY);mostrarLogin(vencida===true?'Sessão expirada. Entre de novo.':'');}
 function entrar(){
   var e=el('lg-email').value.trim(), s=el('lg-senha').value;
@@ -438,7 +441,7 @@ function recarregarLista(){chamar('GET','/admin/clientes').then(function(d){if(d
   var t=lsGet(TK_KEY); if(!t){mostrarLogin('');return;}
   TOKEN=t;
   chamar('GET','/auth/me').then(function(d){
-    if(d.ok&&d.usuario&&d.usuario.perfil==='master'){USUARIO=d.usuario;iniciar();} else {sair(false);}
+    if(d.ok&&d.usuario&&d.usuario.perfil==='master'){USUARIO=d.usuario;iniciar();ddMostrarLogin();} else {sair(false);}
   }).catch(function(){ if(!TOKEN) return; mostrarLogin('Sem conexão com o servidor.'); });
 })();
 
