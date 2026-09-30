@@ -468,7 +468,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-94-3009</p>
+      <p class="bld">DELTADIS-BASE-95-3009</p>
     </div>
   </div>
 </div>
@@ -987,7 +987,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-94-3009</div>
+<div class="bld-fix">DELTADIS-BASE-95-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3143,26 +3143,40 @@ function mpPintarBase(centrar){
   MP_BASE_MK=new maplibregl.Marker({element:d}).setLngLat([PONTO.lng,PONTO.lat]).setPopup(new maplibregl.Popup({offset:24,closeButton:false}).setHTML('<b>Ponto de coleta</b><br>'+esc(PONTO.endereco))).addTo(MP_MAP);
   if(centrar && !Object.keys(MP_MK).length){ try{ MP_MAP.easeTo({center:[PONTO.lng,PONTO.lat],zoom:13}); }catch(e){} }
 }
+function mpAplicarCheio(on){
+  var w=el('mp-wrap'); w.classList.toggle('cheio',on); el('mp-full-btn').textContent=on?'✕':'⛶'; el('mp-full-btn').title=on?'Sair da tela cheia':'Tela cheia';
+  document.body.style.overflow=on?'hidden':'';
+  if(MP_MAP){ setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },80); setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },400); }
+}
+/* usa a tela cheia do navegador (some a barra de endereço e abas); se o navegador não deixar, cobre a página inteira */
 function mpTelaCheia(){
   var w=el('mp-wrap'), on=!w.classList.contains('cheio');
-  w.classList.toggle('cheio',on); el('mp-full-btn').textContent=on?'✕':'⛶'; el('mp-full-btn').title=on?'Sair da tela cheia':'Tela cheia';
-  document.body.style.overflow=on?'hidden':'';
-  if(MP_MAP){ setTimeout(function(){ try{ MP_MAP.resize(); }catch(e){} },60); }
+  if(on){
+    mpAplicarCheio(true);
+    try{ var rq=w.requestFullscreen||w.webkitRequestFullscreen; if(rq){ var pr=rq.call(w); if(pr&&pr.catch) pr.catch(function(){}); } }catch(e){}
+  } else {
+    try{ if(document.fullscreenElement||document.webkitFullscreenElement){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); } }catch(e){}
+    mpAplicarCheio(false);
+  }
 }
-document.addEventListener('keydown',function(ev){ if(ev.key==='Escape' && el('mp-wrap') && el('mp-wrap').classList.contains('cheio')) mpTelaCheia(); });
+function mpSaiuFullscreen(){ if(!document.fullscreenElement && !document.webkitFullscreenElement && el('mp-wrap') && el('mp-wrap').classList.contains('cheio') && MP_FS_ENTROU) { MP_FS_ENTROU=false; mpAplicarCheio(false); } else if(document.fullscreenElement||document.webkitFullscreenElement) MP_FS_ENTROU=true; }
+var MP_FS_ENTROU=false;
+document.addEventListener('fullscreenchange',mpSaiuFullscreen); document.addEventListener('webkitfullscreenchange',mpSaiuFullscreen);
+document.addEventListener('keydown',function(ev){ if(ev.key==='Escape' && el('mp-wrap') && el('mp-wrap').classList.contains('cheio') && !document.fullscreenElement) mpTelaCheia(); });
 var MP_MK={}, MP_MK_DIA='', MP_PRIM=true;
 /* cada entrega vira um marcador com o favicon da transportadora; entrega nova "sobe" com uma onda verde (efeito ao vivo) */
 function mpMarcador(e,animar,atraso,novo){
   var pd=null, i; for(i=0;i<PEDIDOS.length;i++) if(PEDIDOS[i].cod===e.cod){ pd=PEDIDOS[i]; break; }
   var t=pd?TRANSPORTADORAS.filter(function(x){return x.id===pd.tr;})[0]:null;
-  var d=document.createElement('div'); d.className='mp-mk'+(animar?' pop':'')+(novo?' novo':'');
+  var fora=document.createElement('div'), d=document.createElement('div'); fora.appendChild(d); d.className='mp-mk'+(animar?' pop':'')+(novo?' novo':'');   /* o de fora é posicionado pelo mapa; o de dentro é o que anima */
   if(atraso) d.style.animationDelay=atraso+'ms';
   var fv=t?favicon(t.dominio||dominioPorNome(t.n)):null;
   if(fv){ var im=document.createElement('img'); im.src=fv; im.alt=''; im.onerror=function(){ d.removeChild(im); d.textContent=t.ini; d.style.background=t.cor; }; d.appendChild(im); }
   else if(t){ d.textContent=t.ini; d.style.background=t.cor; }
+  else { d.textContent='✓'; d.style.color='#16A34A'; d.style.fontSize='16px'; }
   var m=motorista(e.mt)||motorista(Number(e.mt));
   var pop=new maplibregl.Popup({offset:22,closeButton:false,maxWidth:'240px'}).setHTML('<b>'+esc((pd&&pd.cliente)||e.cli||e.cod)+'</b><br>'+esc(t?t.n:'—')+' · '+mpHora(e.t)+'<br>'+esc(m?m.n:(e.mtn||'—')));
-  var mk=new maplibregl.Marker({element:d}).setLngLat([e.lng,e.lat]).setPopup(pop).addTo(MP_MAP);
+  var mk=new maplibregl.Marker({element:fora}).setLngLat([e.lng,e.lat]).setPopup(pop).addTo(MP_MAP);
   if(novo) setTimeout(function(){ d.classList.remove('novo'); },4500);
   return mk;
 }
