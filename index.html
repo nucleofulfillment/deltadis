@@ -456,7 +456,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" type="password" placeholder="••••••••"></div>
       <button class="btn pri wide" onclick="entrar()">Entrar</button>
       <p class="demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-      <p class="bld">DELTADIS-BASE-87-2809</p>
+      <p class="bld">DELTADIS-BASE-88-2909</p>
     </div>
   </div>
 </div>
@@ -815,7 +815,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Frequência</label><select class="inp" id="ci-tipo" onchange="ajustarCamposCiclo()"><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal (1–15 e 16–fim do mês)</option><option value="mensal">Mensal</option></select></div>
       <div class="field" id="ci-dia-sem"><label>Dia da semana em que fecha</label><select class="inp" id="ci-dia-s"><option value="1">Segunda</option><option value="2">Terça</option><option value="3">Quarta</option><option value="4">Quinta</option><option value="5">Sexta</option><option value="6">Sábado</option><option value="0">Domingo</option></select></div>
       <div class="field" id="ci-dia-mes"><label>Dia do mês em que fecha (1 a 28)</label><input class="inp" id="ci-dia-m" inputmode="numeric" placeholder="ex: 5"></div>
-      <div class="field"><label>Pagar quantos dias depois de fechar</label><input class="inp" id="ci-prazo" inputmode="numeric" placeholder="ex: 2"></div>
+      <div class="field"><label>Pagar quantos dias depois de fechar</label><input class="inp" id="ci-prazo" inputmode="numeric" placeholder="ex: 2 (0 = no mesmo dia)"></div>
     </div>
     <button class="btn pri wide" id="ci-salvar" style="margin-top:8px" onclick="salvarCiclo()">Adicionar regra</button>
     <button class="btn sec wide" id="ci-cancelar" style="display:none;margin-top:8px" onclick="CI_EDIT=null;limparFormCiclo()">Cancelar edição</button>
@@ -950,7 +950,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-87-2809</div>
+<div class="bld-fix">DELTADIS-BASE-88-2909</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2677,23 +2677,29 @@ function editarRegraCiclo(id){
   el('ci-dia-s').value=String(r.tipo==='semanal'?r.dia:5); el('ci-dia-m').value=(r.tipo==='mensal'?r.dia:''); el('ci-prazo').value=(r.prazo==null?'':r.prazo);
   el('ci-salvar').textContent='Atualizar regra'; el('ci-cancelar').style.display='block'; pintarModoCiclo();
 }
-function removerRegraCiclo(id){ var i; for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===id){ CICLOS.splice(i,1); break; } if(REAL) salvarLocal(); if(CI_EDIT===id){ CI_EDIT=null; limparFormCiclo(); } pintarRegrasCiclo(); }
+function removerRegraCiclo(id){ var i; for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===id){ CICLOS.splice(i,1); break; } salvarLocal(); if(CI_EDIT===id){ CI_EDIT=null; limparFormCiclo(); } pintarRegrasCiclo(); }
 function salvarCiclo(){
-  var t=el('ci-tipo').value, dia=(t==='semanal')?Number(el('ci-dia-s').value):(t==='mensal'?parseInt(el('ci-dia-m').value,10):0), prazo=parseInt(el('ci-prazo').value,10)||0, g=el('ci-grupo').value, i, alvo=null;
-  if(CI_MODO==='auto' && t==='mensal' && !(dia>=1 && dia<=28)){ aviso('Digite um dia do mês entre 1 e 28'); return; }
-  var dados={grupo:g, modo:CI_MODO, tipo:t, dia:dia, prazo:prazo};
-  if(CI_EDIT){ for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===CI_EDIT) alvo=CICLOS[i]; }
-  if(!alvo){ for(i=0;i<CICLOS.length;i++) if(CICLOS[i].grupo===g) alvo=CICLOS[i]; }   /* uma regra por grupo */
+  var t=el('ci-tipo').value, g=el('ci-grupo').value, i, alvo=null, outra=null, auto=(CI_MODO==='auto');
+  var dia=0, prazo=0, pz=String(el('ci-prazo').value).trim();
+  if(t==='semanal') dia=Number(el('ci-dia-s').value)||0; else if(t==='mensal') dia=parseInt(el('ci-dia-m').value,10)||0;
+  prazo=(pz===''?0:parseInt(pz,10)); if(isNaN(prazo)) prazo=0;
+  if(auto){   /* no Manual esses campos não valem, então só valida no Automático */
+    if(t==='mensal' && !(dia>=1 && dia<=28)){ aviso('Mensal: digite o dia do mês (de 1 a 28) em que o ciclo fecha'); try{ el('ci-dia-m').focus(); }catch(e){} return; }
+    if(!(prazo>=0 && prazo<=60)){ aviso('Prazo de pagamento: digite de 0 a 60 dias'); try{ el('ci-prazo').focus(); }catch(e){} return; }
+  }
+  for(i=0;i<CICLOS.length;i++){ if(CICLOS[i].grupo===g && CICLOS[i].id!==CI_EDIT) outra=CICLOS[i]; }
+  if(CI_EDIT){ for(i=0;i<CICLOS.length;i++) if(CICLOS[i].id===CI_EDIT) alvo=CICLOS[i]; if(alvo && outra){ aviso('Esse grupo já tem uma regra ('+esc(textoRegraCi(outra))+'). Edite ela ou escolha outro grupo.'); return; } }
+  if(!alvo) alvo=outra;   /* uma regra por grupo: salvar de novo no mesmo grupo atualiza a existente */
   if(alvo){ alvo.grupo=g; alvo.modo=CI_MODO; alvo.tipo=t; alvo.dia=dia; alvo.prazo=prazo; }
-  else { dados.id='c'+Date.now(); CICLOS.push(dados); }
-  if(REAL) salvarLocal();
-  CI_EDIT=null; limparFormCiclo(); pintarRegrasCiclo(); aviso('Regra de ciclo salva');
+  else CICLOS.push({id:'c'+Date.now(), grupo:g, modo:CI_MODO, tipo:t, dia:dia, prazo:prazo});
+  CI_EDIT=null; limparFormCiclo(); pintarRegrasCiclo();
+  salvarLocal(function(ok){ aviso(ok?'Regra de ciclo salva':'Regra aplicada, mas o navegador não conseguiu guardar. Tente de novo.'); });
 }
 /* qual regra vale pra esse motorista: a do grupo dele (se tiver) ou a de "todos" */
 function cicloDoMotorista(id){
   var i, r, todos=null, g, k;
   for(i=0;i<CICLOS.length;i++){ r=CICLOS[i]; if(r.grupo==='todos'){ todos=r; continue; }
-    for(k=0;k<GRUPOS.length;k++){ g=GRUPOS[k]; if(g.id===r.grupo && g.ids.indexOf(id)>=0) return r; } }
+    for(k=0;k<GRUPOS.length;k++){ g=GRUPOS[k]; if(g.id===r.grupo && (g.ids||[]).indexOf(id)>=0) return r; } }
   return todos;
 }
 function isoDe(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
@@ -2701,7 +2707,7 @@ function addDiasISO(iso,n){ var p=iso.split('-'), d=new Date(Number(p[0]),Number
 /* último ciclo COMPLETO até hoje, conforme a configuração */
 function cicloAtual(CICLO){
   var h=new Date(); h.setHours(12,0,0,0); var hoje=isoDe(h), ini, fim, y=h.getFullYear(), m=h.getMonth();
-  if(CICLO.tipo==='semanal'){ var k=(h.getDay()-Number(CICLO.dia)+7)%7; fim=addDiasISO(hoje,-k); ini=addDiasISO(fim,-6); }
+  if(CICLO.tipo==='semanal'){ var k=(h.getDay()-(Number(CICLO.dia)||0)+7)%7; fim=addDiasISO(hoje,-k); ini=addDiasISO(fim,-6); }
   else if(CICLO.tipo==='quinzenal'){
     if(h.getDate()>=15){ ini=isoDe(new Date(y,m,1,12)); fim=isoDe(new Date(y,m,15,12)); }
     else { ini=isoDe(new Date(y,m-1,16,12)); fim=isoDe(new Date(y,m,0,12)); }
@@ -2757,6 +2763,7 @@ function editarGrupo(id){
 function removerGrupo(id){
   var i; for(i=0;i<GRUPOS.length;i++) if(GRUPOS[i].id===id){ GRUPOS.splice(i,1); break; }
   var p=MT_FIL.grp.indexOf(id); if(p>=0) MT_FIL.grp.splice(p,1);
+  CICLOS=CICLOS.filter(function(r){ return r.grupo!==id; });
   if(REAL) salvarLocal(); pintarGruposExistentes(); pintarMotoristas();
 }
 function mostrarVeic(ev,id){
