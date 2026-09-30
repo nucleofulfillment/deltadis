@@ -390,6 +390,7 @@ a{color:inherit}
 }
 .bld-fix{position:fixed;right:10px;bottom:6px;font-size:9.5px;color:var(--s4);z-index:5}
 </style>
+<style>html.dd-ret #login{visibility:hidden}</style><script>try{if(localStorage.getItem('dd_jwt'))document.documentElement.classList.add('dd-ret');}catch(e){}</script>
 </head>
 <body>
 
@@ -470,7 +471,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-107-3009</p>
+      <p class="bld">DELTADIS-BASE-108-3009</p>
     </div>
   </div>
 </div>
@@ -991,7 +992,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-107-3009</div>
+<div class="bld-fix">DELTADIS-BASE-108-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1462,6 +1463,7 @@ var DELTADIS_API_KEY='deltadis2026';
 /* ── LOGIN (etapa B1c): token do usuário vai no cabeçalho; a chave antiga só segue nas rotas /asaas/ (por enquanto) ── */
 var DD_TOKEN=''; try{ DD_TOKEN=localStorage.getItem('dd_jwt')||''; }catch(e){}
 var DD_USER=null; try{ DD_USER=JSON.parse(localStorage.getItem('dd_user')||'null'); }catch(e){}
+function ddMostrarLogin(){ document.documentElement.classList.remove('dd-ret'); }
 (function(){
   var f0=window.fetch.bind(window);
   window.fetch=function(u,o){
@@ -1992,16 +1994,17 @@ function entrar(){
 }
 function sair(){
   fecharTudo();
-  ddGuardar('',null);
+  ddGuardar('',null); ddMostrarLogin();
   el('app').style.display='none';
   el('login').style.display='block';
 }
 /* já tem sessão guardada? confere no servidor e entra direto */
 function retomarSessao(){
-  if(!DD_TOKEN) return;
+  if(!DD_TOKEN){ ddMostrarLogin(); return; }
   fetch(DELTADIS_API+'/auth/me').then(function(r){return r.json().catch(function(){return null;});}).then(function(d){
     if(d&&d.ok&&d.usuario&&(d.usuario.perfil==='dono'||d.usuario.perfil==='gerente')){ DD_USER=d.usuario; try{localStorage.setItem('dd_user',JSON.stringify(d.usuario));}catch(e){} abrirApp(); }
-  }).catch(function(){});
+    ddMostrarLogin();
+  }).catch(function(){ ddMostrarLogin(); });
 }
 function relogio(){
   var d=new Date();
