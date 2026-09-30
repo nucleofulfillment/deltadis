@@ -470,7 +470,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-105-3009</p>
+      <p class="bld">DELTADIS-BASE-107-3009</p>
     </div>
   </div>
 </div>
@@ -991,7 +991,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-105-3009</div>
+<div class="bld-fix">DELTADIS-BASE-107-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2625,7 +2625,7 @@ function pintarMotoristas(){
     if(busca && (m.n+' '+m.regiao).toLowerCase().indexOf(busca)<0) continue;
     if(!passaFiltrosMt(m)) continue;
     visiveis.push(m.id);
-    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b>'+(function(){ var na=notifAtiva(m,saiuMap); return '<span onclick="event.stopPropagation();abrirHistNotif('+m.id+')" title="'+(na?('Avisado hoje às '+na.hora+' — aguardando coleta (clique para ver o histórico)'):'Sem aviso ativo (clique para ver o histórico)')+'" style="margin-left:6px;font-weight:800;color:#16A34A;cursor:pointer;opacity:'+(na?'1':'.22')+'">✔</span>'; })()+'</td>'+
+    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b><small style="color:var(--muted);font-weight:600" title="Número do motorista (usado no admin para ligar o login do app)">nº '+m.id+'</small>'+(function(){ var na=notifAtiva(m,saiuMap); return '<span onclick="event.stopPropagation();abrirHistNotif('+m.id+')" title="'+(na?('Avisado hoje às '+na.hora+' — aguardando coleta (clique para ver o histórico)'):'Sem aviso ativo (clique para ver o histórico)')+'" style="margin-left:6px;font-weight:800;color:#16A34A;cursor:pointer;opacity:'+(na?'1':'.22')+'">✔</span>'; })()+'</td>'+
        '<td>'+esc(m.regiao)+'</td><td>'+m.pac+'</td>'+
        '<td><span class="veic-hover" onmouseenter="mostrarVeic(event,'+m.id+')" onmouseleave="esconderVeic()">'+veicCompacto(m)+'</span></td>'+
        '<td>'+badgeStatus(m.st)+'</td><td>'+slaMotorista(m)+'%</td></tr>';}
@@ -3330,6 +3330,7 @@ function abrirMotorista(id){
     h+='<div class="sh-row"><span class="k">A repassar (entregues × valor)</span><span class="v">'+moeda(rsm.val)+'</span></div>';
   }
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
+  h+='<div id="mt-app-box" style="margin:10px 0"></div>';
   if(REAL){
     var oc=[], oi, op;
     for(oi=0;oi<PEDIDOS.length;oi++){ op=PEDIDOS[oi]; if(op.mt!==m.id || op.st==='entregue') continue;
@@ -3358,6 +3359,61 @@ function abrirMotorista(id){
   h+='<div style="display:flex;justify-content:center;gap:12px;margin-top:16px"><button class="btn pri" onclick="fecharTudo();abrirRepasseMotorista('+m.id+')">Ver repasse</button><button class="btn sec" onclick="fecharTudo();abrirNovoMotorista('+m.id+')">Editar ficha</button></div>';
   el('mt-corpo-sheet').innerHTML=h;
   abrir('sh-motorista');
+  acessoAppCarregar(m.id);
+}
+/* ── Acesso ao APP do motorista (telefone + PIN): criado aqui, já ligado ao cadastro do motorista ── */
+var ACESSO_APP={};
+function acessoAppFone(v){ return String(v||'').replace(/\D/g,''); }
+function acessoAppCarregar(id){
+  var box=el('mt-app-box'); if(!box) return;
+  if(!DD_TOKEN){ box.innerHTML=''; return; }
+  box.innerHTML='<div style="font-size:12px;color:var(--muted)">Carregando acesso ao app...</div>';
+  fetch(DELTADIS_API+'/usuarios').then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.ok){ box.innerHTML=''; return; }
+    ACESSO_APP.lista=(d.usuarios||[]).filter(function(u){return u.perfil==='motorista';});
+    acessoAppPintar(id);
+  }).catch(function(){ box.innerHTML=''; });
+}
+function acessoAppPintar(id){
+  var box=el('mt-app-box'), m=motorista(id); if(!box||!m) return;
+  var lista=ACESSO_APP.lista||[], u=null, i, fm=acessoAppFone(m.tel), solto=null;
+  for(i=0;i<lista.length;i++){ if(String(lista[i].mt_ref||'')===String(m.id)) u=lista[i]; }
+  if(!u&&fm.length>=10){ for(i=0;i<lista.length;i++){ var fu=acessoAppFone(lista[i].telefone); if(!lista[i].mt_ref&&fu&&(fu===fm||fu==='55'+fm||fm==='55'+fu)) solto=lista[i]; } }
+  var h='<div style="border:1px solid var(--border2);border-radius:12px;padding:12px;background:var(--s2)"><div style="font-weight:800;font-size:13px;margin-bottom:8px">Acesso ao app</div>';
+  if(u){
+    h+='<div style="font-size:12.5px;margin-bottom:8px">📱 '+esc(u.telefone)+' · '+(u.ativo?'<b style="color:#16A34A">Ativo</b>':'<b style="color:#c0392b">Desativado</b>')+'</div>'+
+       '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" onclick="acessoAppPin(\''+esc(u.id)+'\','+m.id+')">Novo PIN</button>'+
+       '<button class="btn sec" onclick="acessoAppAtivo(\''+esc(u.id)+'\','+(u.ativo?0:1)+','+m.id+')">'+(u.ativo?'Desativar acesso':'Reativar acesso')+'</button></div>';
+  } else if(solto){
+    h+='<div style="font-size:12.5px;margin-bottom:8px">Já existe um acesso com o telefone '+esc(solto.telefone)+' (nome: '+esc(solto.nome)+'), ainda sem ligação com este motorista.</div>'+
+       '<button class="btn pri" onclick="acessoAppLigar(\''+esc(solto.id)+'\','+m.id+')">Ligar a este motorista</button>';
+  } else {
+    h+='<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Crie o telefone e o PIN com que '+esc((m.n||'').split(' ')[0])+' vai entrar no app.</div>'+
+       '<div style="display:flex;gap:8px;flex-wrap:wrap"><input class="inp" id="aa-tel" style="flex:2;min-width:140px" inputmode="tel" placeholder="Telefone com DDD" value="'+esc(m.tel&&m.tel!=='—'?m.tel:'')+'">'+
+       '<input class="inp" id="aa-pin" style="flex:1;min-width:90px" inputmode="numeric" maxlength="6" placeholder="PIN 4-6 nº"></div>'+
+       '<button class="btn pri" style="margin-top:8px" id="aa-btn" onclick="acessoAppCriar('+m.id+')">Criar acesso</button>';
+  }
+  box.innerHTML=h+'<div id="aa-msg" style="font-size:12px;color:#c0392b;font-weight:700;margin-top:6px"></div></div>';
+}
+function acessoAppMsg(t,ok){ var e=el('aa-msg'); if(e){ e.style.color=ok?'#16A34A':'#c0392b'; e.textContent=t; } }
+function acessoAppCriar(id){
+  var m=motorista(id); if(!m) return; var b=el('aa-btn'); b.disabled=true;
+  fetch(DELTADIS_API+'/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({perfil:'motorista',nome:m.n,telefone:el('aa-tel').value,pin:el('aa-pin').value,mt_ref:String(m.id)})})
+    .then(function(r){return r.json();}).then(function(d){ b.disabled=false; if(!d.ok){ acessoAppMsg(d.mensagem||'Não foi possível criar.'); return; } aviso('Acesso ao app criado'); acessoAppCarregar(id); })
+    .catch(function(){ b.disabled=false; acessoAppMsg('Sem conexão com o servidor.'); });
+}
+function acessoAppLigar(uid,id){
+  fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(uid),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({mt_ref:String(id)})})
+    .then(function(r){return r.json();}).then(function(d){ if(!d.ok){ acessoAppMsg(d.mensagem||'Não foi possível ligar.'); return; } aviso('Acesso ligado ao motorista'); acessoAppCarregar(id); }).catch(function(){ acessoAppMsg('Sem conexão com o servidor.'); });
+}
+function acessoAppPin(uid,id){
+  var pin=prompt('Novo PIN (4 a 6 números):'); if(pin==null||pin==='') return;
+  fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(uid),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin})})
+    .then(function(r){return r.json();}).then(function(d){ if(!d.ok){ acessoAppMsg(d.mensagem||'PIN inválido.'); return; } acessoAppMsg('PIN alterado.',true); }).catch(function(){ acessoAppMsg('Sem conexão com o servidor.'); });
+}
+function acessoAppAtivo(uid,ativo,id){
+  fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(uid),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ativo:ativo})})
+    .then(function(r){return r.json();}).then(function(d){ if(!d.ok){ acessoAppMsg(d.mensagem||'Erro.'); return; } aviso(ativo?'Acesso reativado':'Acesso desativado'); acessoAppCarregar(id); }).catch(function(){ acessoAppMsg('Sem conexão com o servidor.'); });
 }
 function salvarValorPadraoMotorista(id){
   var m=motorista(id); if(!m) return;

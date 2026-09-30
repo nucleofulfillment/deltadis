@@ -76,7 +76,7 @@ td{padding:10px 12px;border-top:1px solid var(--borda)}td.n,th.n{text-align:righ
     <input id="lg-senha" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
     <button class="btn pri" id="lg-btn" style="width:100%;margin-top:16px;padding:12px;font-size:15px" onclick="entrar()">Entrar</button>
     <div class="erro" id="lg-erro"></div>
-    <div class="bld">DELTADIS-ADMIN-1-3009</div>
+    <div class="bld">DELTADIS-ADMIN-2-3009</div>
   </div>
 </div>
 
@@ -107,7 +107,7 @@ td{padding:10px 12px;border-top:1px solid var(--borda)}td.n,th.n{text-align:righ
       <div class="tabela-wrap" id="tab-cobranca"><div class="vazio">Carregando...</div></div>
       <div class="aviso">Motorista conta no mês em que existiu ativo (criado antes do fim do mês e não desativado antes do começo). Valores: mensalidade do cliente + taxa por motorista do app.</div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-1-3009</div>
+    <div class="bld">DELTADIS-ADMIN-2-3009</div>
   </main>
 </div>
 
@@ -243,7 +243,7 @@ function carregarUsuarios(cid){
     el('ec-usuarios').innerHTML=d.usuarios.map(function(u){
       var cont=u.perfil==='motorista'?('📱 '+esc(u.telefone)+(u.mt_ref?' · motorista nº '+esc(u.mt_ref):'')):('✉️ '+esc(u.email));
       return '<div class="usr"><div class="u1"><b>'+esc(u.nome)+'</b><small>'+cont+'</small></div><span class="tag per">'+esc(u.perfil)+'</span><span class="tag '+(u.ativo?'on':'off')+'">'+(u.ativo?'Ativo':'Desativado')+'</span>'+
-        '<button class="btn peq" onclick="redefinir(\''+esc(cid)+'\',\''+esc(u.id)+'\')">'+(u.perfil==='motorista'?'Novo PIN':'Nova senha')+'</button>'+
+        (u.perfil==='motorista'?'<button class="btn peq" onclick="ligarRota(\''+esc(cid)+'\',\''+esc(u.id)+'\')">Nº da rota</button>':'')+'<button class="btn peq" onclick="redefinir(\''+esc(cid)+'\',\''+esc(u.id)+'\')">'+(u.perfil==='motorista'?'Novo PIN':'Nova senha')+'</button>'+
         '<button class="btn peq '+(u.ativo?'perigo':'')+'" onclick="alternarUsuario(\''+esc(cid)+'\',\''+esc(u.id)+'\','+(u.ativo?0:1)+')">'+(u.ativo?'Desativar':'Reativar')+'</button></div>';
     }).join('');
   }).catch(function(){});
@@ -273,6 +273,12 @@ function redefinir(cid,uid){
   var mot=u.perfil==='motorista', novo=prompt(mot?'Novo PIN para '+u.nome+' (4 a 6 números):':'Nova senha para '+u.nome+' (mínimo 8 caracteres):');
   if(novo==null||novo==='') return;
   chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),mot?{pin:novo}:{senha:novo}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast(mot?'PIN alterado.':'Senha alterada.'); }).catch(function(){});
+}
+function ligarRota(cid,uid){
+  var u=(USUARIOS_CLI[cid]||[]).filter(function(x){return x.id===uid;})[0]; if(!u) return;
+  var n=prompt('Número do motorista no painel (tela Motoristas, ao lado do nome) para '+u.nome+':',u.mt_ref||'');
+  if(n==null) return;
+  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{mt_ref:String(n).trim()}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast('Número da rota salvo.'); carregarUsuarios(cid); }).catch(function(){});
 }
 function alternarUsuario(cid,uid,ativo){
   chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{ativo:ativo}).then(function(d){
