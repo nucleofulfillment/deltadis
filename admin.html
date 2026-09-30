@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeltaDis · Admin</title>
+<style>
+:root{--roxo:#6D28D9;--roxo2:#5B21B6;--roxo-claro:#F3EEFD;--bg:#F4F1FA;--card:#fff;--txt:#1F1037;--muted:#6B6580;--borda:#E3DDF0;--ok:#16A34A;--erro:#DC2626;--aviso:#B45309}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+.btn{border:1px solid var(--borda);background:#fff;color:var(--txt);padding:8px 14px;border-radius:9px;font-weight:700;font-size:13px}
+.btn:hover{background:var(--roxo-claro)}
+.btn.pri{background:var(--roxo);border-color:var(--roxo);color:#fff}.btn.pri:hover{background:var(--roxo2)}
+.btn.peq{padding:5px 10px;font-size:12px}
+.btn.perigo{color:var(--erro)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.lg-card{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 6px 24px rgba(31,16,55,.12)}
+.lg-card h1{margin:0 0 2px;color:#3B1D8A;font-size:24px}.lg-card .sub{color:var(--muted);margin:0 0 18px;font-size:13px}
+label{display:block;font-size:12px;font-weight:700;margin:12px 0 4px}
+input,select{width:100%;padding:10px;border:1px solid var(--borda);border-radius:9px;font-size:15px;background:#fff;font-family:inherit}
+input:focus,select:focus{outline:2px solid var(--roxo-claro);border-color:var(--roxo)}
+.erro{color:var(--erro);font-weight:700;font-size:13px;margin-top:10px;min-height:16px}
+/* app */
+#app{display:none}
+header{background:#fff;border-bottom:1px solid var(--borda);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header .marca{font-weight:900;font-size:18px;color:#3B1D8A}header .marca span{color:var(--roxo)}
+header .papel{background:var(--roxo-claro);color:var(--roxo);font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
+header .esp{flex:1}
+header .ola{color:var(--muted);font-size:13px}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--borda)}
+.stat .l{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}.stat .v{font-size:24px;font-weight:900;margin-top:4px}
+.abas{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--borda)}
+.aba{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font-weight:800;font-size:14px;color:var(--muted)}
+.aba.on{color:var(--roxo);border-bottom-color:var(--roxo)}
+.topo-lista{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.topo-lista h2{margin:0;font-size:16px}
+.cli{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cli .nome{font-weight:800;font-size:15px}.cli .id{color:var(--muted);font-size:12px}
+.cli .dados{display:flex;gap:18px;flex-wrap:wrap;flex:1;color:var(--muted);font-size:12px}.cli .dados b{color:var(--txt);font-size:14px;display:block}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
+.tag.on{background:#DCFCE7;color:#166534}.tag.off{background:#FEE2E2;color:#991B1B}.tag.per{background:var(--roxo-claro);color:var(--roxo)}
+table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--borda);border-radius:12px;overflow:hidden}
+th{text-align:left;font-size:11px;text-transform:uppercase;color:var(--muted);padding:10px 12px;background:#FAF8FE;letter-spacing:.4px}
+td{padding:10px 12px;border-top:1px solid var(--borda)}td.n,th.n{text-align:right}
+.tabela-wrap{overflow-x:auto}
+/* modal */
+.fundo{position:fixed;inset:0;background:rgba(31,16,55,.45);display:none;align-items:flex-start;justify-content:center;padding:20px 12px;overflow:auto;z-index:20}
+.fundo.on{display:flex}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:560px;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.modal h3{margin:0 0 4px;font-size:18px}.modal .sub{color:var(--muted);font-size:12.5px;margin:0 0 6px}
+.linha2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.linha2{grid-template-columns:1fr}}
+.acoes{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.usr{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--borda);flex-wrap:wrap}
+.usr .u1{flex:1;min-width:160px}.usr .u1 b{display:block}.usr .u1 small{color:var(--muted)}
+.vazio{color:var(--muted);text-align:center;padding:26px}
+.aviso{background:#FEF3C7;color:#92400E;padding:10px 12px;border-radius:9px;font-size:12.5px;margin:10px 0}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1F1037;color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;display:none;z-index:40}
+.bld{text-align:center;color:#A9A2BD;font-size:10px;padding:14px}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="lg-card">
+    <h1>Delta<span style="color:var(--roxo)">Dis</span></h1>
+    <p class="sub">Painel administrativo</p>
+    <label for="lg-email">E-mail</label>
+    <input id="lg-email" type="email" autocomplete="username" onkeydown="if(event.key==='Enter')entrar()">
+    <label for="lg-senha">Senha</label>
+    <input id="lg-senha" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+    <button class="btn pri" id="lg-btn" style="width:100%;margin-top:16px;padding:12px;font-size:15px" onclick="entrar()">Entrar</button>
+    <div class="erro" id="lg-erro"></div>
+    <div class="bld">DELTADIS-ADMIN-1-3009</div>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="marca">Delta<span>Dis</span></div><span class="papel">ADMIN</span>
+    <div class="esp"></div>
+    <span class="ola">Olá, <b id="ola-nome">—</b></span>
+    <button class="btn peq" onclick="recarregar()" title="Atualizar">↻</button>
+    <button class="btn peq" onclick="sair()">Sair</button>
+  </header>
+  <main>
+    <div class="stats">
+      <div class="stat"><div class="l">Clientes ativos</div><div class="v" id="st-cli">—</div></div>
+      <div class="stat"><div class="l">Motoristas ativos</div><div class="v" id="st-mot">—</div></div>
+      <div class="stat"><div class="l">A cobrar no mês</div><div class="v" id="st-rec">—</div></div>
+    </div>
+    <div class="abas">
+      <button class="aba on" id="aba-clientes" onclick="aba('clientes')">Clientes</button>
+      <button class="aba" id="aba-cobranca" onclick="aba('cobranca')">Cobrança</button>
+    </div>
+    <div id="v-clientes">
+      <div class="topo-lista"><h2>Clientes</h2><button class="btn pri" onclick="abrirNovoCliente()">+ Novo cliente</button></div>
+      <div id="lista-clientes"><div class="vazio">Carregando...</div></div>
+    </div>
+    <div id="v-cobranca" style="display:none">
+      <div class="topo-lista"><h2>Cobrança do mês</h2><div><input type="month" id="mes" style="width:auto" onchange="carregarCobranca()"></div></div>
+      <div class="tabela-wrap" id="tab-cobranca"><div class="vazio">Carregando...</div></div>
+      <div class="aviso">Motorista conta no mês em que existiu ativo (criado antes do fim do mês e não desativado antes do começo). Valores: mensalidade do cliente + taxa por motorista do app.</div>
+    </div>
+    <div class="bld">DELTADIS-ADMIN-1-3009</div>
+  </main>
+</div>
+
+<div class="fundo" id="fundo" onclick="if(event.target===this)fechar()"><div class="modal" id="modal"></div></div>
+<div id="toast"></div>
+
+<script>
+var API='https://deltadis-api.iliveyou.com.br';
+var TK_KEY='dd_admin_jwt', US_KEY='dd_admin_user';
+var TOKEN='', USUARIO=null, CLIENTES=[], COBRANCA=null;
+function el(i){return document.getElementById(i);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+function reais(c){return (Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function paraCentavos(v){var n=parseFloat(String(v||'').replace(/\./g,'').replace(',','.'));return isFinite(n)&&n>0?Math.round(n*100):0;}
+function deCentavos(c){return c?(c/100).toFixed(2).replace('.',','):'';}
+var _tt=null;function toast(t,erro){var x=el('toast');x.textContent=t;x.style.background=erro?'#991B1B':'#1F1037';x.style.display='block';clearTimeout(_tt);_tt=setTimeout(function(){x.style.display='none';},3200);}
+
+/* chamadas ao servidor, sempre com o token; sessão vencida volta pro login */
+function chamar(metodo,caminho,corpo){
+  var h={'Content-Type':'application/json'}; if(TOKEN) h['Authorization']='Bearer '+TOKEN;
+  return fetch(API+caminho,{method:metodo,headers:h,body:corpo?JSON.stringify(corpo):undefined}).then(function(r){
+    return r.json().catch(function(){return {};}).then(function(d){
+      if(r.status===401&&caminho.indexOf('/auth/login')!==0){ sair(true); throw new Error('sessao'); }
+      d._status=r.status; return d;
+    });
+  });
+}
+function mostrarLogin(msg){el('app').style.display='none';el('login').style.display='flex';el('lg-erro').textContent=msg||'';el('lg-btn').disabled=false;el('lg-btn').textContent='Entrar';}
+function sair(vencida){TOKEN='';USUARIO=null;lsDel(TK_KEY);lsDel(US_KEY);mostrarLogin(vencida===true?'Sessão expirada. Entre de novo.':'');}
+function entrar(){
+  var e=el('lg-email').value.trim(), s=el('lg-senha').value;
+  if(!e||!s){el('lg-erro').textContent='Preencha e-mail e senha.';return;}
+  el('lg-btn').disabled=true;el('lg-btn').textContent='Entrando...';el('lg-erro').textContent='';
+  chamar('POST','/auth/login',{email:e,senha:s}).then(function(d){
+    if(!d.ok){mostrarLogin(d.mensagem||'Não foi possível entrar.');return;}
+    if(!d.usuario||d.usuario.perfil!=='master'){mostrarLogin('Esta área é só do administrador do DeltaDis.');return;}
+    TOKEN=d.token;USUARIO=d.usuario;lsSet(TK_KEY,TOKEN);lsSet(US_KEY,JSON.stringify(USUARIO));el('lg-senha').value='';iniciar();
+  }).catch(function(){mostrarLogin('Sem conexão com o servidor.');});
+}
+function iniciar(){
+  el('login').style.display='none';el('app').style.display='block';el('ola-nome').textContent=USUARIO?USUARIO.nome:'';
+  if(!el('mes').value){var h=new Date(Date.now()-3*3600000).toISOString();el('mes').value=h.slice(0,7);}
+  recarregar();
+}
+function recarregar(){carregarClientes();carregarCobranca();}
+function aba(n){['clientes','cobranca'].forEach(function(x){el('v-'+x).style.display=(x===n)?'block':'none';el('aba-'+x).classList.toggle('on',x===n);});}
+
+function carregarClientes(){
+  chamar('GET','/admin/clientes').then(function(d){
+    if(!d.ok){el('lista-clientes').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</div>';return;}
+    CLIENTES=d.clientes||[]; desenharClientes();
+  }).catch(function(){});
+}
+function desenharClientes(){
+  var at=0,mot=0;
+  CLIENTES.forEach(function(c){if(c.ativo)at++;mot+=c.motoristas_ativos||0;});
+  el('st-cli').textContent=at; el('st-mot').textContent=mot;
+  if(!CLIENTES.length){el('lista-clientes').innerHTML='<div class="vazio">Nenhum cliente ainda.</div>';return;}
+  el('lista-clientes').innerHTML=CLIENTES.map(function(c){
+    return '<div class="cli"><div style="min-width:160px"><div class="nome">'+esc(c.nome)+'</div><div class="id">'+esc(c.id)+' · <span class="tag '+(c.ativo?'on':'off')+'">'+(c.ativo?'Ativo':'Desativado')+'</span></div></div>'+
+      '<div class="dados"><div><b>'+(c.motoristas_ativos||0)+'</b>motoristas</div><div><b>'+(c.equipe||0)+'</b>equipe painel</div><div><b>'+reais(c.mensalidade_centavos)+'</b>mensalidade</div><div><b>'+reais(c.taxa_app_centavos)+'</b>por motorista</div></div>'+
+      '<button class="btn pri peq" onclick="abrirCliente(\''+esc(c.id)+'\')">Abrir</button></div>';
+  }).join('');
+}
+function carregarCobranca(){
+  var mes=el('mes').value; if(!mes) return;
+  chamar('GET','/admin/cobranca?mes='+encodeURIComponent(mes)).then(function(d){
+    if(!d.ok){el('tab-cobranca').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</div>';return;}
+    COBRANCA=d; el('st-rec').textContent=reais(d.total_centavos);
+    var h='<table><tr><th>Cliente</th><th class="n">Mensalidade</th><th class="n">Motoristas</th><th class="n">Taxa/motorista</th><th class="n">Taxa total</th><th class="n">Total</th></tr>';
+    d.clientes.forEach(function(c){h+='<tr><td>'+esc(c.nome)+(c.ativo?'':' <span class="tag off">Desativado</span>')+'</td><td class="n">'+reais(c.mensalidade_centavos)+'</td><td class="n">'+c.motoristas_no_mes+'</td><td class="n">'+reais(c.taxa_app_centavos)+'</td><td class="n">'+reais(c.taxa_total_centavos)+'</td><td class="n"><b>'+reais(c.total_centavos)+'</b></td></tr>';});
+    h+='<tr><td colspan="5"><b>Total do mês</b></td><td class="n"><b>'+reais(d.total_centavos)+'</b></td></tr></table>';
+    el('tab-cobranca').innerHTML=h;
+  }).catch(function(){});
+}
+
+/* ── janelas ── */
+function abrirModal(html){el('modal').innerHTML=html;el('fundo').classList.add('on');}
+function fechar(){el('fundo').classList.remove('on');el('modal').innerHTML='';}
+function abrirNovoCliente(){
+  abrirModal('<h3>Novo cliente</h3><p class="sub">Cria a empresa e o acesso do dono dela ao painel.</p>'+
+  '<label>Nome da empresa</label><input id="nc-nome">'+
+  '<div class="linha2"><div><label>Mensalidade (R$)</label><input id="nc-men" inputmode="decimal" placeholder="0,00"></div><div><label>Taxa por motorista no app (R$)</label><input id="nc-taxa" inputmode="decimal" placeholder="0,00"></div></div>'+
+  '<div style="margin-top:16px;font-weight:800">Dono (acesso ao painel)</div>'+
+  '<label>Nome do dono</label><input id="nc-dn"><label>E-mail do dono</label><input id="nc-de" type="email"><label>Senha inicial (mínimo 8 caracteres)</label><input id="nc-ds" type="text" autocomplete="off">'+
+  '<div class="erro" id="nc-erro"></div><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" id="nc-btn" onclick="salvarNovoCliente()">Criar cliente</button></div>');
+}
+function salvarNovoCliente(){
+  var nome=el('nc-nome').value.trim(); if(!nome){el('nc-erro').textContent='Informe o nome da empresa.';return;}
+  var corpo={nome:nome,mensalidade_centavos:paraCentavos(el('nc-men').value),taxa_app_centavos:paraCentavos(el('nc-taxa').value),dono:{nome:el('nc-dn').value.trim(),email:el('nc-de').value.trim(),senha:el('nc-ds').value}};
+  el('nc-btn').disabled=true;el('nc-erro').textContent='';
+  chamar('POST','/admin/clientes',corpo).then(function(d){
+    if(!d.ok){el('nc-erro').textContent=d.mensagem||'Erro ao criar.';el('nc-btn').disabled=false;return;}
+    fechar();toast('Cliente criado!');recarregar();
+  }).catch(function(){el('nc-btn').disabled=false;});
+}
+function abrirCliente(id){
+  var c=CLIENTES.filter(function(x){return x.id===id;})[0]; if(!c) return;
+  abrirModal('<h3>'+esc(c.nome)+'</h3><p class="sub">'+esc(c.id)+'</p>'+
+  '<label>Nome da empresa</label><input id="ec-nome" value="'+esc(c.nome)+'">'+
+  '<div class="linha2"><div><label>Mensalidade (R$)</label><input id="ec-men" inputmode="decimal" value="'+esc(deCentavos(c.mensalidade_centavos))+'"></div><div><label>Taxa por motorista (R$)</label><input id="ec-taxa" inputmode="decimal" value="'+esc(deCentavos(c.taxa_app_centavos))+'"></div></div>'+
+  '<div class="erro" id="ec-erro"></div>'+
+  '<div class="acoes" style="margin-top:10px;justify-content:space-between"><button class="btn peq '+(c.ativo?'perigo':'')+'" onclick="alternarCliente(\''+esc(c.id)+'\','+(c.ativo?0:1)+')">'+(c.ativo?'Desativar cliente':'Reativar cliente')+'</button><button class="btn pri" onclick="salvarCliente(\''+esc(c.id)+'\')">Salvar dados</button></div>'+
+  '<div style="margin-top:20px;display:flex;align-items:center;justify-content:space-between"><b>Usuários</b><button class="btn peq pri" onclick="abrirNovoUsuario(\''+esc(c.id)+'\')">+ Novo usuário</button></div><div id="ec-usuarios"><div class="vazio">Carregando...</div></div>'+
+  '<div class="acoes"><button class="btn" onclick="fechar()">Fechar</button></div>');
+  carregarUsuarios(c.id);
+}
+function salvarCliente(id){
+  chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{nome:el('ec-nome').value.trim(),mensalidade_centavos:paraCentavos(el('ec-men').value),taxa_app_centavos:paraCentavos(el('ec-taxa').value)}).then(function(d){
+    if(!d.ok){el('ec-erro').textContent=d.mensagem||d.erro||'Erro ao salvar.';return;}
+    toast('Dados salvos.');recarregarMantendo(id);
+  }).catch(function(){});
+}
+function alternarCliente(id,ativo){
+  if(!ativo&&!confirm('Desativar este cliente? Todos os acessos dele (painel e app) deixam de funcionar na hora.')) return;
+  chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{ativo:ativo}).then(function(d){
+    if(!d.ok){el('ec-erro').textContent=d.mensagem||d.erro||'Erro.';return;}
+    toast(ativo?'Cliente reativado.':'Cliente desativado.');recarregarMantendo(id);
+  }).catch(function(){});
+}
+function recarregarMantendo(id){
+  chamar('GET','/admin/clientes').then(function(d){ if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarCobranca();abrirCliente(id);} }).catch(function(){});
+}
+var USUARIOS_CLI={};
+function carregarUsuarios(cid){
+  chamar('GET','/admin/clientes/'+encodeURIComponent(cid)+'/usuarios').then(function(d){
+    if(!d.ok){el('ec-usuarios').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro.')+'</div>';return;}
+    USUARIOS_CLI[cid]=d.usuarios||[];
+    if(!d.usuarios.length){el('ec-usuarios').innerHTML='<div class="vazio">Nenhum usuário.</div>';return;}
+    el('ec-usuarios').innerHTML=d.usuarios.map(function(u){
+      var cont=u.perfil==='motorista'?('📱 '+esc(u.telefone)+(u.mt_ref?' · motorista nº '+esc(u.mt_ref):'')):('✉️ '+esc(u.email));
+      return '<div class="usr"><div class="u1"><b>'+esc(u.nome)+'</b><small>'+cont+'</small></div><span class="tag per">'+esc(u.perfil)+'</span><span class="tag '+(u.ativo?'on':'off')+'">'+(u.ativo?'Ativo':'Desativado')+'</span>'+
+        '<button class="btn peq" onclick="redefinir(\''+esc(cid)+'\',\''+esc(u.id)+'\')">'+(u.perfil==='motorista'?'Novo PIN':'Nova senha')+'</button>'+
+        '<button class="btn peq '+(u.ativo?'perigo':'')+'" onclick="alternarUsuario(\''+esc(cid)+'\',\''+esc(u.id)+'\','+(u.ativo?0:1)+')">'+(u.ativo?'Desativar':'Reativar')+'</button></div>';
+    }).join('');
+  }).catch(function(){});
+}
+function abrirNovoUsuario(cid){
+  var c=CLIENTES.filter(function(x){return x.id===cid;})[0];
+  abrirModal('<h3>Novo usuário</h3><p class="sub">'+esc(c?c.nome:'')+'</p>'+
+  '<label>Perfil</label><select id="nu-perfil" onchange="trocaPerfilNU()"><option value="gerente">Gerente (painel)</option><option value="dono">Dono (painel)</option><option value="motorista">Motorista (app)</option></select>'+
+  '<label>Nome</label><input id="nu-nome">'+
+  '<div id="nu-painel"><label>E-mail</label><input id="nu-email" type="email"><label>Senha (mínimo 8 caracteres)</label><input id="nu-senha" type="text" autocomplete="off"></div>'+
+  '<div id="nu-app" style="display:none"><label>Telefone (com DDD)</label><input id="nu-fone" inputmode="tel" placeholder="(47) 99999-9999"><div class="linha2"><div><label>PIN (4 a 6 números)</label><input id="nu-pin" inputmode="numeric" maxlength="6"></div><div><label>Nº do motorista no painel</label><input id="nu-mt" placeholder="opcional"></div></div></div>'+
+  '<div class="erro" id="nu-erro"></div><div class="acoes"><button class="btn" onclick="abrirCliente(\''+esc(cid)+'\')">Voltar</button><button class="btn pri" id="nu-btn" onclick="salvarNovoUsuario(\''+esc(cid)+'\')">Criar usuário</button></div>');
+}
+function trocaPerfilNU(){var m=el('nu-perfil').value==='motorista';el('nu-painel').style.display=m?'none':'block';el('nu-app').style.display=m?'block':'none';}
+function salvarNovoUsuario(cid){
+  var p=el('nu-perfil').value, corpo={perfil:p,nome:el('nu-nome').value.trim()};
+  if(p==='motorista'){corpo.telefone=el('nu-fone').value;corpo.pin=el('nu-pin').value;corpo.mt_ref=el('nu-mt').value.trim();}
+  else{corpo.email=el('nu-email').value.trim();corpo.senha=el('nu-senha').value;}
+  el('nu-btn').disabled=true;el('nu-erro').textContent='';
+  chamar('POST','/admin/clientes/'+encodeURIComponent(cid)+'/usuarios',corpo).then(function(d){
+    if(!d.ok){el('nu-erro').textContent=d.mensagem||d.erro||'Erro ao criar.';el('nu-btn').disabled=false;return;}
+    toast('Usuário criado!');recarregarMantendo(cid);
+  }).catch(function(){el('nu-btn').disabled=false;});
+}
+function redefinir(cid,uid){
+  var u=(USUARIOS_CLI[cid]||[]).filter(function(x){return x.id===uid;})[0]; if(!u) return;
+  var mot=u.perfil==='motorista', novo=prompt(mot?'Novo PIN para '+u.nome+' (4 a 6 números):':'Nova senha para '+u.nome+' (mínimo 8 caracteres):');
+  if(novo==null||novo==='') return;
+  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),mot?{pin:novo}:{senha:novo}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast(mot?'PIN alterado.':'Senha alterada.'); }).catch(function(){});
+}
+function alternarUsuario(cid,uid,ativo){
+  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{ativo:ativo}).then(function(d){
+    if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;}
+    toast(ativo?'Usuário reativado.':'Usuário desativado.');carregarUsuarios(cid);recarregarLista();
+  }).catch(function(){});
+}
+function recarregarLista(){chamar('GET','/admin/clientes').then(function(d){if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarCobranca();}}).catch(function(){});}
+
+/* ao abrir: se já tem sessão guardada, confere no servidor */
+(function(){
+  var t=lsGet(TK_KEY); if(!t){mostrarLogin('');return;}
+  TOKEN=t;
+  chamar('GET','/auth/me').then(function(d){
+    if(d.ok&&d.usuario&&d.usuario.perfil==='master'){USUARIO=d.usuario;iniciar();} else {sair(false);}
+  }).catch(function(){ if(!TOKEN) return; mostrarLogin('Sem conexão com o servidor.'); });
+})();
+</script>
+</body>
+</html>
