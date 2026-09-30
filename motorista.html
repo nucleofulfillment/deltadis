@@ -327,7 +327,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
     <button class="btn pri wide" onclick="entrar()">Entrar</button>
     <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-19-2909</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-21-2909</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -582,9 +582,15 @@ function sair(){
   el('app').style.display='none';
   el('login').style.display='flex';
 }
+/* nome, iniciais e dados do topo/Conta: o motorista ESCOLHIDO em "Quem é você?" (vem do painel). Sem escolha, fica o de demonstração */
+function rpPintarIdentidade(){
+  var real=!!(RP.mt&&RP.mtn), n=real?RP.mtn:MOTORISTA_LOGADO.n, ini=real?n.split(/\s+/).filter(Boolean).map(function(w){ return w.charAt(0); }).slice(0,2).join('').toUpperCase():MOTORISTA_LOGADO.ini;
+  function pt(id,v){ var e=el(id); if(e) e.textContent=v; }
+  pt('topo-nome',n.split(' ')[0]); pt('topo-av',ini); pt('cta-nome',n); pt('cta-av',ini);
+  if(real){ pt('cta-tel','—'); pt('cta-regiao','—'); pt('cta-veiculo','—'); pt('cta-cap','—'); pt('cta-valor','—'); }
+}
 function montarApp(){
-  el('topo-nome').textContent=MOTORISTA_LOGADO.n.split(' ')[0];
-  el('topo-av').textContent=MOTORISTA_LOGADO.ini;
+  rpPintarIdentidade();
   renderInicio();
   ir('inicio');
   rpAtualizar(); if(!window._rpT) window._rpT=setInterval(rpAtualizar,60000);
@@ -754,7 +760,7 @@ function rpSaida(tipo,i,status){
   SAIDAS.push({cod:cod,cliente:p.cliente||'',status:status,hora:horaAgora()});
   if(painel){ rpMarcarFeitos([cod]); RP.total=Math.max(0,(RP.total||0)-1); if(status==='remarcada') rpRegistrarRemarcado(cod); }
   aviso(status==='remarcada'?'Remarcada: entra no próximo lote':'Devolvida à base: registre também no app da transportadora');
-  if(tipo==='extra'){ RP.fora[cod]=true; rpCalcular(); return; }
+  if(tipo==='extra'){ RP.fora[cod]=true; RP.extra.splice(i,1); RP.semLoc=Math.max(0,RP.semLoc-1); RP.semNomes=RP.extra.map(function(e){ return e.cliente||e.cod; }); renderInicio(); return; }
   LOTE_ATUAL.splice(i,1); for(var q=0;q<LOTE_ATUAL.length;q++) LOTE_ATUAL[q].seq=q+1; RP.reord=true;
   if(PONTEIRO>=LOTE_ATUAL.length){ finalizarRota(); return; }
   renderInicio();
@@ -888,11 +894,12 @@ function rpAtualizar(){
     if(!d||!d.ok) return;
     RP.on=true; RP.lista=d.motoristas||[]; RP.total=0;
     if(RP.mt){ var i; for(i=0;i<RP.lista.length;i++) if(String(RP.lista[i].mt)===String(RP.mt)){ RP.mtn=RP.lista[i].mtn||''; RP.total=Math.max(0,RP.lista[i].total-rpFeitos().cods.length); } }
+    rpPintarIdentidade();
     if(EST==='sem_lote' && PAG==='inicio') renderInicio();
   }).catch(function(){});
 }
 function rpDefinirMt(){ var v=el('rp-mt-sel')&&el('rp-mt-sel').value; if(!v) return; RP.mt=v; try{ localStorage.setItem('dd_mt',v); }catch(e){} rpAtualizar(); renderInicio(); }
-function rpTrocarMt(){ RP.mt=null; RP.total=0; try{ localStorage.removeItem('dd_mt'); }catch(e){} renderInicio(); }
+function rpTrocarMt(){ RP.mt=null; RP.mtn=''; RP.total=0; rpPintarIdentidade(); try{ localStorage.removeItem('dd_mt'); }catch(e){} renderInicio(); }
 function rpCardPronta(){
   if(!RP.on) return '';
   if(!RP.mt){
@@ -958,7 +965,7 @@ function rpCalcular(){
     var base=(b&&b.ok)?{lat:b.lat,lng:b.lng}:null;
     return rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,pontos:pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:cfg.pm,modelo:cfg.modelo})}).then(function(c){
       if(!c.ok) throw new Error('falhou');
-      RP.res=c; RP.pts=pts; RP.extra=extra; RP.opc=c[cfg.modelo]?cfg.modelo:(c.linear?'linear':'circular'); EST='rp_escolher'; renderInicio(); if(RP.semLoc>0 && !RP._bipou){ RP._bipou=true; rpApito(); }
+      RP.res=c; RP.pendReal=false; RP.pts=pts; RP.extra=extra; RP.opc=c[cfg.modelo]?cfg.modelo:(c.linear?'linear':'circular'); EST='rp_escolher'; renderInicio(); if(RP.semLoc>0 && !RP._bipou){ RP._bipou=true; rpApito(); }
     });
   }).catch(function(){ rpErro('Não consegui calcular a rota agora. Tente de novo.'); });
 }
@@ -984,14 +991,8 @@ function rpReordenar(de,para){
   var r=RP.res[RP.opc], n=r.ordem.length; para=parseInt(para,10); if(!isFinite(para)) { renderInicio(); return; }
   para=Math.max(1,Math.min(n,para)); if(para-1===de){ renderInicio(); return; }
   var o=r.ordem.slice(), x=o.splice(de,1)[0]; o.splice(para-1,0,x);
-  EST='rp_calc'; RP.msg='Recalculando com a nova ordem...'; renderInicio();
-  rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:RP.res.base,pontos:RP.pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:rpCfg().pm,ordem:o})}).then(function(c){
-    if(!c.ok||!c.manual) throw new Error('falhou');
-    RP.res.manual=c.manual; RP.opc='manual'; EST='rp_escolher'; renderInicio();
-  }).catch(function(){
-    /* servidor não respondeu: recalcula aqui mesmo, em linha reta, pra nunca travar o reposicionamento */
-    RP.res.manual=rpMedirLocal(o); RP.opc='manual'; EST='rp_escolher'; renderInicio(); aviso('Ordem alterada (km e tempo estimados)');
-  });
+  /* sem Google aqui: estima em linha reta (grátis). O trajeto real é calculado uma única vez ao começar as entregas */
+  RP.res.manual=rpMedirLocal(o); RP.opc='manual'; RP.pendReal=true; renderInicio();
 }
 var _arr=null;
 function rpArrastoIni(ev,de,cb){
@@ -1015,9 +1016,21 @@ function rpArrastoFim(ev){
   var pos=a.dest; if(a.de<a.dest) pos=a.dest-1; if(!a.acima) pos=pos+1;
   a.cb(a.de,pos+1);
 }
-function rpTirar(cod){ RP.fora[cod]=true; rpCalcular(); }
+function rpTirar(cod){
+  RP.fora[cod]=true; var r=RP.res[RP.opc], k=-1, i; for(i=0;i<RP.pts.length;i++) if(RP.pts[i].cod===cod) k=i;
+  if(k<0||!r){ rpCalcular(); return; }
+  var o=r.ordem.filter(function(x){ return x!==k; }); if(!o.length){ rpCalcular(); return; }
+  RP.res.manual=rpMedirLocal(o); RP.opc='manual'; RP.res.linear=null; RP.res.circular=null; RP.pendReal=true; renderInicio();
+}
+/* encaixa uma parada nova na melhor posição da ordem atual (linha reta, sem custo) */
+function rpInserirNaOrdem(idx){
+  var r=RP.res[RP.opc], o=r.ordem.slice(), b=RP.res.base, pt=RP.pts[idx], best=o.length, bc=1e18, i, prev, next, add;
+  for(i=0;i<=o.length;i++){ prev=i===0?b:RP.pts[o[i-1]]; next=i===o.length?null:RP.pts[o[i]];
+    add=rpKmEntre(prev,pt)+(next?rpKmEntre(pt,next)-rpKmEntre(prev,next):0); if(add<bc){ bc=add; best=i; } }
+  o.splice(best,0,idx); return o;
+}
 function rpTelaEscolher(){
-  var c=RP.res, r=c[RP.opc], cf=rpCfg(), h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">'+RP.pts.length+' paradas · modelo '+(RP.opc==='circular'?'Circular':'Linear')+' (troque em Minha conta)</p>';
+  var c=RP.res, r=c[RP.opc], cf=rpCfg(), h='<div class="card"><h3 style="margin:0 0 2px">Como você quer rodar?</h3><p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">'+r.ordem.length+' paradas · modelo '+(RP.opc==='circular'?'Circular':'Linear')+' (troque em Minha conta)</p>';
   h+='<p class="rp-base">Saindo de: <b>'+esc(cf.base)+'</b></p>';
   if(RP.semLoc){ h+='<div class="rp-sem"><b>'+RP.semLoc+' pedido'+(RP.semLoc>1?'s':'')+' sem localização '+(RP.semLoc>1?'vão':'vai')+' para o final da lista, com selo pedindo ação:</b><br>'+esc((RP.semNomes||[]).slice(0,8).join(', '))+((RP.semNomes||[]).length>8?' e mais '+((RP.semNomes||[]).length-8):'')+'</div>'; }
   var mod=cf.modelo;  /* um modelo só, escolhido em Minha conta (nunca os dois) */
@@ -1085,10 +1098,24 @@ function salvarEndereco(){
     var g=d&&d.ok&&d.itens&&d.itens[0], ok=g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0&&(g.flags||[]).indexOf('longe_da_base')<0;
     if(!ok){ fecharTudo(); aviso('Endereço salvo, mas não achei no mapa. Tente outro CEP/rua, remarque ou devolva.'); RP.ajustou=false; renderInicio(); return; }
     if(lote){ p.lat=g.lat; p.lng=g.lng; p.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); p.semLocal=false; p.motivo=''; RP.reord=true; fecharTudo(); aviso('Endereço localizado no mapa'); RP.ajustou=false; renderInicio(); }
-    else { p.lat=g.lat; p.lng=g.lng; p.precisao=g.precisao; p.flags=g.flags||[]; p.inc=false; p._longe=false; fecharTudo(); aviso('Endereço localizado. Refazendo a rota...'); rpCalcular(); }
+    else { p.lat=g.lat; p.lng=g.lng; p.precisao=g.precisao; p.flags=g.flags||[]; p.inc=false; p._longe=false; fecharTudo();
+      var ei=RP.extra.indexOf(p); if(ei>=0) RP.extra.splice(ei,1);
+      RP.pts.push(p); var o=rpInserirNaOrdem(RP.pts.length-1);
+      RP.res.manual=rpMedirLocal(o); RP.opc='manual'; RP.res.linear=null; RP.res.circular=null; RP.pendReal=true;
+      RP.semLoc=Math.max(0,RP.semLoc-1); RP.semNomes=RP.extra.map(function(e){ return e.cliente||e.cod; });
+      aviso('Endereço localizado e encaixado na rota'); renderInicio(); }
   }).catch(function(){ b.disabled=false; b.textContent='Procurar e salvar'; aviso('Sem conexão. Tente de novo.'); });
 }
 function rpComecar(){
+  if(!RP.pendReal){ rpComecar2(); return; }
+  /* houve ajuste (ordem, endereço, remoção): calcula o trajeto real UMA vez, agora */
+  var r=RP.res[RP.opc]; EST='rp_calc'; RP.msg='Calculando o trajeto final pelas ruas...'; renderInicio();
+  rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:RP.res.base,pontos:RP.pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:rpCfg().pm,ordem:r.ordem})}).then(function(c){
+    if(!c.ok||!c.manual) throw new Error('falhou');
+    RP.res.manual=c.manual; RP.opc='manual'; RP.pendReal=false; rpComecar2();
+  }).catch(function(){ RP.pendReal=false; aviso('Sem conexão: trajeto estimado em linha reta'); rpComecar2(); });
+}
+function rpComecar2(){
   var r=RP.res[RP.opc], i;
   LOTE_ATUAL=[]; for(i=0;i<r.ordem.length;i++) LOTE_ATUAL.push(rpParada(RP.pts[r.ordem[i]],i+1));
   for(i=0;i<RP.extra.length;i++) LOTE_ATUAL.push(rpParada(RP.extra[i],LOTE_ATUAL.length+1));
@@ -1329,6 +1356,7 @@ function pintarConta(){
   el('cta-cap').textContent=MOTORISTA_LOGADO.cap+' pacotes';
   el('cta-valor').textContent=moeda(MOTORISTA_LOGADO.valorPct)+' por pacote';
   var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo;
+  rpPintarIdentidade();
 }
 function salvarSenha(){
   var atual=(el('sn-atual').value||'').trim(), nova=(el('sn-nova').value||'').trim(), conf=(el('sn-conf').value||'').trim();
