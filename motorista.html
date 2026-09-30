@@ -325,11 +325,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="lg-tag">App do Motorista</div>
     <h2>Entrar</h2>
     <p class="sub">Use o telefone cadastrado no ponto de distribuição.</p>
-    <div class="field"><label>Telefone</label><input class="inp" id="lg-tel" placeholder="(47) 9 0000-0000"></div>
-    <div class="field"><label>Senha</label><input class="inp" type="password" id="lg-senha" placeholder="••••••••"></div>
-    <button class="btn pri wide" onclick="entrar()">Entrar</button>
-    <p class="demo">Esta é a <b>demonstração</b> — qualquer telefone e senha entram.</p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-25-3009</p>
+    <div class="field"><label>Telefone</label><input class="inp" id="lg-tel" type="tel" inputmode="tel" autocomplete="username" placeholder="(47) 9 0000-0000"></div>
+    <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
+    <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
+    <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-26-3009</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -574,15 +574,39 @@ function ir(p){
 }
 
 /* ══ entrar / sair ══ */
-function entrar(){
+function abrirApp(){
   el('login').style.display='none';
   el('app').style.display='flex';
+  /* a rota do motorista vem do cadastro dele (mt_ref) — não há mais "Quem é você?" */
+  if(DD_M_USER){ RP.mt=DD_M_USER.mt_ref||null; RP.mtn=DD_M_USER.nome||''; try{ if(RP.mt) localStorage.setItem('dd_mt',RP.mt); else localStorage.removeItem('dd_mt'); }catch(e){} }
+  try{ rpCarregarPonto(); }catch(e){}
   montarApp();
+}
+function entrar(){
+  var tel=el('lg-tel').value.trim(), pin=el('lg-senha').value.trim(), m=el('lg-msg'), b=el('lg-btn');
+  m.textContent='';
+  if(!tel||!pin){ m.textContent='Digite o telefone e o PIN.'; return; }
+  b.disabled=true; b.textContent='Entrando...';
+  fetch(RP_API+'/auth/login-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefone:tel,pin:pin})})
+    .then(function(r){return r.json().catch(function(){return {ok:false};});})
+    .then(function(d){
+      b.disabled=false; b.textContent='Entrar';
+      if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível entrar. Tente de novo.'; return; }
+      ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; abrirApp();
+    }).catch(function(){ b.disabled=false; b.textContent='Entrar'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
 function sair(){
   fecharTudo();
+  ddGuardarM('',null);
   el('app').style.display='none';
   el('login').style.display='flex';
+}
+/* já tem sessão guardada (vale 30 dias)? confere no servidor e entra direto */
+function retomarSessao(){
+  if(!DD_M_TOKEN) return;
+  rpApi('/auth/me').then(function(d){
+    if(d&&d.ok&&d.usuario&&d.usuario.perfil==='motorista'){ DD_M_USER=d.usuario; try{localStorage.setItem('dd_m_user',JSON.stringify(d.usuario));}catch(e){} abrirApp(); }
+  }).catch(function(){});
 }
 /* nome, iniciais e dados do topo/Conta: o motorista ESCOLHIDO em "Quem é você?" (vem do painel). Sem escolha, fica o de demonstração */
 function rpPintarIdentidade(){
@@ -885,7 +909,20 @@ var RP_API='https://deltadis-api.iliveyou.com.br', RP_KEY='deltadis2026', RP_BAS
 var RP_COR={linear:'#6D28D9',circular:'#EC4899',manual:'#0EA5E9'};
 var RP={on:false,mt:null,mtn:'',lista:[],total:0,itens:[],sel:{},fora:{},msg:'',res:null,pts:[],extra:[],opc:'linear',baseGeo:{},rota:null,mapa:null,mapaEl:null,mapaOk:false,marc:[],ajustou:false};
 try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
-function rpApi(caminho,opts){ return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();}); }
+/* LOGIN (etapa B1d): com sessão, vai o token do motorista no cabeçalho (sem a chave antiga) */
+var DD_M_TOKEN='', DD_M_USER=null;
+try{ DD_M_TOKEN=localStorage.getItem('dd_m_jwt')||''; DD_M_USER=JSON.parse(localStorage.getItem('dd_m_user')||'null'); }catch(e){}
+function ddGuardarM(tk,us){ DD_M_TOKEN=tk||''; DD_M_USER=us||null; try{ if(tk){ localStorage.setItem('dd_m_jwt',tk); localStorage.setItem('dd_m_user',JSON.stringify(us||null)); } else { localStorage.removeItem('dd_m_jwt'); localStorage.removeItem('dd_m_user'); localStorage.removeItem('dd_mt'); RP.mt=null; RP.mtn=''; RP.total=0; } }catch(e){} }
+function rpApi(caminho,opts){
+  if(DD_M_TOKEN){
+    opts=opts||{}; var h={}, h0=opts.headers||{}, k; for(k in h0) h[k]=h0[k]; h['Authorization']='Bearer '+DD_M_TOKEN; opts.headers=h;
+    return fetch(RP_API+caminho,opts).then(function(r){
+      if(r.status===401){ ddGuardarM('',null); if(el('app')&&el('app').style.display!=='none'){ sair(); var m=el('lg-msg'); if(m) m.textContent='Sua sessão acabou. Entre de novo.'; } }
+      return r.json();
+    });
+  }
+  return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();});
+}
 var RP_TESTE=/[?&]teste=1/.test(location.search);   /* modo teste: só com ?teste=1 no endereço aparece o limite de paradas */
 /* ponto de coleta: o endereço vem do painel (Configurações → Ponto de coleta). O motorista pode trocar o dele; se não trocar, vale o do painel. */
 function rpPonto(){ try{ return JSON.parse(localStorage.getItem('dd_ponto')||'null'); }catch(e){ return null; } }
@@ -931,9 +968,10 @@ function rpAtualizar(){
   }).catch(function(){});
 }
 function rpDefinirMt(){ var v=el('rp-mt-sel')&&el('rp-mt-sel').value; if(!v) return; RP.mt=v; try{ localStorage.setItem('dd_mt',v); }catch(e){} rpAtualizar(); renderInicio(); }
-function rpTrocarMt(){ RP.mt=null; RP.mtn=''; RP.total=0; rpPintarIdentidade(); try{ localStorage.removeItem('dd_mt'); }catch(e){} renderInicio(); }
+function rpTrocarMt(){ if(DD_M_TOKEN) return; RP.mt=null; RP.mtn=''; RP.total=0; rpPintarIdentidade(); try{ localStorage.removeItem('dd_mt'); }catch(e){} renderInicio(); }
 function rpCardPronta(){
   if(!RP.on) return '';
+  if(!RP.mt && DD_M_TOKEN) return '<div class="card" style="margin-bottom:14px;text-align:center"><p style="margin:0;color:var(--muted);font-size:13px">Seu cadastro ainda não está ligado a uma rota. Fale com o seu ponto de distribuição.</p></div>';
   if(!RP.mt){
     var o='',i; for(i=0;i<RP.lista.length;i++) o+='<option value="'+esc(RP.lista[i].mt)+'">'+esc(RP.lista[i].mtn||('Motorista '+RP.lista[i].mt))+'</option>';
     return '<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 4px">Quem é você?</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">Escolha o seu nome para receber a rota do painel (fase de teste).</p>'+
@@ -945,9 +983,9 @@ function rpCardPronta(){
       '<h3 style="margin:4px 0 2px;font-size:20px;color:#fff">Rota pronta para iniciar</h3>'+
       '<p style="margin:0 0 14px;font-size:13px;opacity:.9">'+(rpCfg().max>0&&RP.total>rpCfg().max?rpCfg().max+' de '+RP.total+' pacotes':RP.total+' pacote'+(RP.total===1?'':'s'))+' para você, '+esc((RP.mtn||'').split(' ')[0])+'</p>'+
       '<button class="btn wide" style="background:#fff;color:var(--roxo)" onclick="rpIniciar()">Iniciar rota</button>'+
-      '<div style="text-align:center;margin-top:10px"><span style="font-size:11.5px;opacity:.85;text-decoration:underline;cursor:pointer" onclick="rpTrocarMt()">Não sou '+esc((RP.mtn||'').split(' ')[0]||'eu')+'</span></div></div>';
+      '</div>';
   }
-  return '<div class="card" style="margin-bottom:14px;text-align:center"><p style="margin:0;color:var(--muted);font-size:13px">Nenhuma rota do painel para você agora.</p><span style="font-size:11.5px;color:var(--muted);text-decoration:underline;cursor:pointer" onclick="rpTrocarMt()">Não sou '+esc((RP.mtn||'').split(' ')[0]||'eu')+'</span></div>';
+  return '<div class="card" style="margin-bottom:14px;text-align:center"><p style="margin:0;color:var(--muted);font-size:13px">Nenhuma rota do painel para você agora.</p></div>';
 }
 function rpIniciar(){ RP._bipou=false; RP.itens=[]; RP.sel={}; RP.fora={}; RP.res=null; EST='rp_calc'; RP.msg='Buscando os endereços da sua rota...'; renderInicio(); rpBuscar(); }
 function rpErro(t){ EST='sem_lote'; renderInicio(); aviso(t||'Sem conexão com o servidor. Tente de novo.'); }
@@ -1162,7 +1200,7 @@ function rpCarregarMapa(cb){
 }
 /* rota já em andamento (montada antes de o canal existir): busca o canal dos pedidos no servidor, no máximo 1 vez por minuto */
 function rpCompletarCanais(){
-  if(!RP.mt || (RP._canTent && Date.now()-RP._canTent<60000)) return; RP._canTent=Date.now();
+  if(!RP.mt || DD_M_TOKEN || (RP._canTent && Date.now()-RP._canTent<60000)) return; RP._canTent=Date.now();
   rpApi('/pedidos?mt='+encodeURIComponent(RP.mt)).then(function(d){
     if(!d||!d.ok) return; var mp={}, i, mud=false; (d.pedidos||[]).forEach(function(p){ if(p.canal) mp[p.cod]=p.canal; });
     for(i=0;i<LOTE_ATUAL.length;i++){ if(!LOTE_ATUAL[i].canal && mp[LOTE_ATUAL[i].cod]){ LOTE_ATUAL[i].canal=mp[LOTE_ATUAL[i].cod]; mud=true; } }
@@ -1455,6 +1493,9 @@ function initCurves(){
 
 document.addEventListener('DOMContentLoaded',function(){
   initCurves(); fundoSegueCursor();
+  var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
+  var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
+  retomarSessao();
 });
 </script>
 </body>
