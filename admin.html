@@ -137,6 +137,54 @@ tr:hover td{background:var(--s2)}
 .vazio{color:var(--muted);text-align:center;padding:28px}
 .aviso{background:#FEF3C7;color:#92400E;padding:11px 13px;border-radius:10px;font-size:12.5px;margin:12px 0;border:1px solid #FDE68A}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1F0A3D;color:#fff;padding:11px 18px;border-radius:99px;font-weight:700;font-size:13px;display:none;z-index:40;box-shadow:var(--sh3)}
+
+/* ── financeiro (mesma cara do painel) ── */
+main{max-width:1240px}
+.finrow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.finrow.tres{grid-template-columns:repeat(3,1fr)}
+.kpi{position:relative;overflow:hidden;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh1);animation:subir .5s both;transition:transform .18s,box-shadow .18s,border-color .18s}
+.kpi:hover{transform:translateY(-3px);box-shadow:0 16px 30px -16px rgba(109,40,217,.4);border-color:var(--border2)}
+.kpi .lb{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.kpi .lb.cb{color:#3B4BD8}.kpi .lb.cg{color:var(--green)}.kpi .lb.cr{color:var(--red)}
+.kpi .vl{font-size:30px;font-weight:800;margin:6px 0 4px;letter-spacing:-.5px}
+.kpi .vl.vb{color:#3B4BD8}.kpi .vl.vg{color:var(--green)}.kpi .vl.vr{color:var(--red)}
+.kpi .dl{font-size:12.5px;color:var(--muted2);line-height:1.6}.kpi .dl b{color:var(--text)}
+.duo{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:16px}
+.saldo{border-radius:var(--r);padding:22px 24px;color:#fff;background:var(--grad-arte);background-size:160% 160%;animation:arteMove 14s ease-in-out infinite;box-shadow:0 18px 40px -18px rgba(124,58,237,.7);position:relative;overflow:hidden}
+.saldo::after{content:'';position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.18),rgba(255,255,255,0) 70%)}
+.saldo .lb{font-size:13.5px;font-weight:700;opacity:.92}.saldo .vl{font-size:38px;font-weight:800;margin:8px 0 6px;letter-spacing:-.6px}
+.saldo .lk{margin-top:12px;display:flex;gap:16px;font-size:12.5px;font-weight:800;flex-wrap:wrap;position:relative;z-index:1}.saldo .lk span{cursor:pointer;text-decoration:underline}
+.card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px;margin-bottom:16px;box-shadow:var(--sh1)}
+.card h3{margin:0 0 14px;font-size:17px;font-weight:800;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.card h3 .dir{margin-left:auto;display:flex;align-items:center;gap:16px}
+.lnk{color:var(--roxo);font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap}.lnk:hover{text-decoration:underline}
+.mais{width:34px;height:34px;border-radius:50%;background:var(--s3);color:var(--roxo);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;cursor:pointer;flex:none;user-select:none}
+.busca{width:270px;max-width:46vw}
+.filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filtros select,.filtros input{width:auto;padding:9px 12px;font-size:13px}
+.filtros .add{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--border2);background:var(--s3);color:var(--roxo);font-size:18px;font-weight:800;padding:0}
+.chip{border:1.5px solid var(--border2);background:#fff;color:var(--muted2);border-radius:99px;padding:7px 13px;font-size:12px;font-weight:800}
+.chip:hover{color:var(--roxo);border-color:var(--roxo)}
+.tg{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
+.tg.pend{background:#FEF3C7;color:#92400E}.tg.ok{background:#DCFCE7;color:#166534}.tg.atr{background:#FEE2E2;color:#991B1B}
+.cat{display:inline-block;font-size:10.5px;font-weight:800;color:var(--roxo);background:var(--s3);border-radius:6px;padding:2px 7px;margin-left:6px;vertical-align:middle}
+.cat.au{color:#0F766E;background:#CCFBF1}
+td.vin{color:var(--green);font-weight:800;white-space:nowrap}td.vout{color:var(--red);font-weight:800;white-space:nowrap}
+.acs{display:flex;gap:6px;flex-wrap:nowrap}.acs .btn{padding:5px 9px;font-size:12px}
+.tgl{display:flex;gap:10px}.tgl .btn{flex:1}.tgl .btn.on{background:var(--grad);color:#fff;border-color:transparent}
+.tgl .btn.on.sai{background:linear-gradient(120deg,#DC2626,#EC4899)}
+.sub2{color:var(--muted);font-size:12.5px;font-weight:600}
+/* menu do nome */
+.menu-av{position:relative}
+.menu-av .tb-av{border:0;cursor:pointer}
+.menu-lista{position:absolute;right:0;top:42px;min-width:250px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--sh3);padding:8px;display:none;z-index:30}
+.menu-lista.on{display:block}
+.menu-lista .quem{padding:10px 12px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}.menu-lista .quem b{display:block;font-size:14px}.menu-lista .quem small{color:var(--muted)}
+.menu-lista button{display:flex;width:100%;text-align:left;gap:10px;align-items:center;background:none;border:0;padding:10px 12px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--text)}
+.menu-lista button:hover{background:var(--s3)}
+.menu-lista button.sair{color:var(--erro)}
+@media(max-width:900px){.finrow{grid-template-columns:1fr 1fr}.duo{grid-template-columns:1fr}}
+@media(max-width:560px){.card{padding:16px 14px}.card h3 .dir{margin-left:0;width:100%;flex-wrap:wrap;gap:10px}.busca{width:100%;max-width:none;flex:1 1 100%}.card table{min-width:660px}.finrow,.finrow.tres{grid-template-columns:1fr}.kpi .vl{font-size:26px}.acs{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 <style>html.dd-ret #login{visibility:hidden}</style>
@@ -220,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <input id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-4-3009</div>
+      <div class="bld">DELTADIS-ADMIN-5-3009</div>
     </div>
   </div>
 </div>
@@ -229,32 +277,41 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <header>
     <div class="tb-logo"><span class="mk"></span><svg class="wm" viewBox="0 0 1200 182" aria-label="DELTADIS"><use href="#dd-wm"/></svg></div><span class="papel">ADMIN</span>
     <div class="esp"></div>
-    <span class="ola">Olá, <b id="ola-nome">—</b></span>
     <button class="btn peq" onclick="recarregar()" title="Atualizar">↻</button>
-    <button class="btn peq" onclick="sair()">Sair</button>
-    <div class="tb-av" id="av-ini">A</div>
+    <div class="menu-av">
+      <button class="tb-av" id="av-ini" onclick="menuAv(event)" title="Minha conta">A</button>
+      <div class="menu-lista" id="menu-lista">
+        <div class="quem"><b id="ola-nome">—</b><small id="ola-mail"></small></div>
+        <button onclick="menuFecha();abrirCriarUsuario()">👤 Criar usuário</button>
+        <button onclick="menuFecha();abrirAsaasCfg()">💳 Conta Asaas</button>
+        <button onclick="menuFecha();abrirTrocarSenha()">🔑 Trocar minha senha</button>
+        <button class="sair" onclick="menuFecha();sair()">⎋ Sair</button>
+      </div>
+    </div>
   </header>
   <main>
-    <div class="cab"><h1>Visão geral</h1><div class="sub">Clientes, motoristas e o que cobrar neste mês.</div></div>
-    <div class="stats">
-      <div class="stat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></div><div><div class="l">Clientes ativos</div><div class="v" id="st-cli">—</div></div></div>
-      <div class="stat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 16V6h11v10M14 9h4l3 3v4h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg></div><div><div class="l">Motoristas ativos</div><div class="v" id="st-mot">—</div></div></div>
-      <div class="stat"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2"/></svg></div><div><div class="l">A cobrar no mês</div><div class="v" id="st-rec">—</div></div></div>
+    <div class="cab"><h1>Financeiro</h1><div class="sub">clientes e caixa da DeltaDis</div></div>
+    <div class="finrow" id="fin-resumo"></div>
+    <div class="duo">
+      <div class="kpi"><div class="lb">TOTAL MOVIMENTADO</div><div class="vl" id="fin-mov">R$ 0,00</div><div class="dl" id="fin-mov-d"></div></div>
+      <div class="saldo"><div class="lb">Saldo em conta</div><div class="vl" id="fin-saldo">—</div><div class="lb" id="fin-saldo-info" style="font-weight:500;opacity:.85">Conta Asaas da DeltaDis</div>
+        <div class="lk"><span onclick="carregarSaldo()">atualizar</span><span onclick="abrirExtrato()">ver extrato</span><span onclick="abrirAsaasCfg()">configurar</span></div></div>
     </div>
-    <div class="abas">
-      <button class="aba on" id="aba-clientes" onclick="aba('clientes')">Clientes</button>
-      <button class="aba" id="aba-cobranca" onclick="aba('cobranca')">Cobrança</button>
+    <div class="card">
+      <h3><span>Clientes</span><span class="sub2" id="cli-resumo"></span><span class="dir"><input class="busca" id="cli-busca" placeholder="buscar cliente" oninput="desenharClientes()"><span class="lnk" onclick="abrirNovoCliente()">+ Novo cliente</span><span class="mais" id="cli-mais" onclick="alternaClientes()" title="Mostrar / ocultar">−</span></span></h3>
+      <div id="cli-corpo"><div id="lista-clientes"><div class="vazio">Carregando...</div></div></div>
     </div>
-    <div id="v-clientes">
-      <div class="topo-lista"><h2>Clientes</h2><button class="btn pri" onclick="abrirNovoCliente()">+ Novo cliente</button></div>
-      <div id="lista-clientes"><div class="vazio">Carregando...</div></div>
+    <div class="card">
+      <h3><span>Fluxo de caixa</span><span class="dir"><span class="lnk" onclick="carregarFluxo();carregarSaldo()">↻ Atualizar</span><span class="lnk" onclick="abrirLanc()">+ Novo lançamento</span></span></h3>
+      <div class="filtros" id="fc-filtros"></div>
+      <div class="finrow tres" id="fc-periodo"></div>
+      <div class="tabela-wrap"><table>
+        <colgroup><col style="width:11%"><col style="width:38%"><col style="width:15%"><col style="width:13%"><col style="width:23%"></colgroup>
+        <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
+      </table></div>
     </div>
-    <div id="v-cobranca" style="display:none">
-      <div class="topo-lista"><h2>Cobrança do mês</h2><div><input type="month" id="mes" style="width:auto" onchange="carregarCobranca()"></div></div>
-      <div class="tabela-wrap" id="tab-cobranca"><div class="vazio">Carregando...</div></div>
-      <div class="aviso">Motorista conta no mês em que existiu ativo (criado antes do fim do mês e não desativado antes do começo). Valores: mensalidade do cliente + taxa por motorista do app.</div>
-    </div>
-    <div class="bld">DELTADIS-ADMIN-4-3009</div>
+    <div class="bld">DELTADIS-ADMIN-5-3009</div>
   </main>
 </div>
 
@@ -264,7 +321,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <script>
 var API='https://deltadis-api.iliveyou.com.br';
 var TK_KEY='dd_admin_jwt', US_KEY='dd_admin_user';
-var TOKEN='', USUARIO=null, CLIENTES=[], COBRANCA=null;
+var TOKEN='', USUARIO=null, CLIENTES=[], ITENS=[], CATS=[], FC={ini:'',fim:'',cat:'todas',st:'todos'}, LC_TP='out', LC_ID=null;
 function el(i){return document.getElementById(i);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
@@ -299,12 +356,11 @@ function entrar(){
   }).catch(function(){mostrarLogin('Sem conexão com o servidor.');});
 }
 function iniciar(){
-  el('login').style.display='none';el('app').style.display='block';el('ola-nome').textContent=USUARIO?USUARIO.nome:'';el('av-ini').textContent=USUARIO&&USUARIO.nome?USUARIO.nome.charAt(0).toUpperCase():'A';
-  if(!el('mes').value){var h=new Date(Date.now()-3*3600000).toISOString();el('mes').value=h.slice(0,7);}
+  el('login').style.display='none';el('app').style.display='block';el('ola-nome').textContent=USUARIO?USUARIO.nome:'';el('ola-mail').textContent=USUARIO?USUARIO.email:'';el('av-ini').textContent=USUARIO&&USUARIO.nome?USUARIO.nome.charAt(0).toUpperCase():'A';
+  if(!FC.ini){var h=hojeIso();FC.ini=h.slice(0,7)+'-01';FC.fim=ultDia(h.slice(0,7));}
   recarregar();
 }
-function recarregar(){carregarClientes();carregarCobranca();}
-function aba(n){['clientes','cobranca'].forEach(function(x){el('v-'+x).style.display=(x===n)?'block':'none';el('aba-'+x).classList.toggle('on',x===n);});}
+function recarregar(){carregarClientes();carregarFluxo();carregarSaldo();}
 
 function carregarClientes(){
   chamar('GET','/admin/clientes').then(function(d){
@@ -315,26 +371,17 @@ function carregarClientes(){
 function desenharClientes(){
   var at=0,mot=0;
   CLIENTES.forEach(function(c){if(c.ativo)at++;mot+=c.motoristas_ativos||0;});
-  contar('st-cli',at); contar('st-mot',mot);
-  if(!CLIENTES.length){el('lista-clientes').innerHTML='<div class="vazio">Nenhum cliente ainda.</div>';return;}
-  el('lista-clientes').innerHTML=CLIENTES.map(function(c){
+  el('cli-resumo').textContent=at+' ativo'+(at===1?'':'s')+' · '+mot+' motorista'+(mot===1?'':'s');
+  var q=((el('cli-busca')||{}).value||'').trim().toLowerCase();
+  var L=CLIENTES.filter(function(c){return !q||String(c.nome||'').toLowerCase().indexOf(q)>=0||String(c.id||'').toLowerCase().indexOf(q)>=0;});
+  if(!L.length){el('lista-clientes').innerHTML='<div class="vazio">'+(CLIENTES.length?'Nenhum cliente encontrado.':'Nenhum cliente ainda.')+'</div>';return;}
+  el('lista-clientes').innerHTML=L.map(function(c){
     return '<div class="cli"><div class="av">'+esc((c.nome||'?').charAt(0).toUpperCase())+'</div><div style="min-width:160px"><div class="nome">'+esc(c.nome)+'</div><div class="id">'+esc(c.id)+' · <span class="tag '+(c.ativo?'on':'off')+'">'+(c.ativo?'Ativo':'Desativado')+'</span></div></div>'+
       '<div class="dados"><div><b>'+(c.motoristas_ativos||0)+'</b>motoristas</div><div><b>'+(c.equipe||0)+'</b>equipe painel</div><div><b>'+reais(c.mensalidade_centavos)+'</b>mensalidade</div><div><b>'+reais(c.taxa_app_centavos)+'</b>por motorista</div></div>'+
       '<button class="btn pri peq" onclick="abrirCliente(\''+esc(c.id)+'\')">Abrir</button></div>';
   }).join('');
 }
-function carregarCobranca(){
-  var mes=el('mes').value; if(!mes) return;
-  chamar('GET','/admin/cobranca?mes='+encodeURIComponent(mes)).then(function(d){
-    if(!d.ok){el('tab-cobranca').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</div>';return;}
-    COBRANCA=d; contarReais('st-rec',d.total_centavos);
-    var h='<table><tr><th>Cliente</th><th class="n">Mensalidade</th><th class="n">Motoristas</th><th class="n">Taxa/motorista</th><th class="n">Taxa total</th><th class="n">Total</th></tr>';
-    d.clientes.forEach(function(c){h+='<tr><td>'+esc(c.nome)+(c.ativo?'':' <span class="tag off">Desativado</span>')+'</td><td class="n">'+reais(c.mensalidade_centavos)+'</td><td class="n">'+c.motoristas_no_mes+'</td><td class="n">'+reais(c.taxa_app_centavos)+'</td><td class="n">'+reais(c.taxa_total_centavos)+'</td><td class="n"><b>'+reais(c.total_centavos)+'</b></td></tr>';});
-    h+='<tr><td colspan="5"><b>Total do mês</b></td><td class="n"><b>'+reais(d.total_centavos)+'</b></td></tr></table>';
-    el('tab-cobranca').innerHTML=h;
-  }).catch(function(){});
-}
-
+function alternaClientes(){var b=el('cli-corpo'),o=b.style.display==='none';b.style.display=o?'block':'none';el('cli-mais').textContent=o?'−':'+';}
 /* ── janelas ── */
 function abrirModal(html){el('modal').innerHTML=html;el('fundo').classList.add('on');}
 function fechar(){el('fundo').classList.remove('on');el('modal').innerHTML='';}
@@ -380,7 +427,7 @@ function alternarCliente(id,ativo){
   }).catch(function(){});
 }
 function recarregarMantendo(id){
-  chamar('GET','/admin/clientes').then(function(d){ if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarCobranca();abrirCliente(id);} }).catch(function(){});
+  chamar('GET','/admin/clientes').then(function(d){ if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarFluxo();abrirCliente(id);} }).catch(function(){});
 }
 var USUARIOS_CLI={};
 function carregarUsuarios(cid){
@@ -434,7 +481,159 @@ function alternarUsuario(cid,uid,ativo){
     toast(ativo?'Usuário reativado.':'Usuário desativado.');carregarUsuarios(cid);recarregarLista();
   }).catch(function(){});
 }
-function recarregarLista(){chamar('GET','/admin/clientes').then(function(d){if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarCobranca();}}).catch(function(){});}
+function recarregarLista(){chamar('GET','/admin/clientes').then(function(d){if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarFluxo();}}).catch(function(){});}
+
+
+/* ══ financeiro da DeltaDis ══ */
+function hojeIso(){return new Date(Date.now()-3*3600000).toISOString().slice(0,10);}
+function ultDia(mes){var a=parseInt(mes.slice(0,4),10),m=parseInt(mes.slice(5,7),10);return mes+'-'+('0'+new Date(Date.UTC(a,m,0)).getUTCDate()).slice(-2);}
+function fmtData(d){return d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'';}
+function somaMesJs(mes,n){var a=parseInt(mes.slice(0,4),10),m=parseInt(mes.slice(5,7),10)-1+n;a+=Math.floor(m/12);m=((m%12)+12)%12;return a+'-'+('0'+(m+1)).slice(-2);}
+function carregarFluxo(){
+  if(!FC.ini||!FC.fim) return;
+  chamar('GET','/admin/fluxo?ini='+FC.ini+'&fim='+FC.fim).then(function(d){
+    if(!d.ok){el('fc-corpo').innerHTML='<tr><td colspan="5" class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</td></tr>';return;}
+    ITENS=d.itens||[];CATS=d.categorias||[];pintarFluxo();
+  }).catch(function(){});
+}
+function pintarFluxo(){pintarCards();pintarFiltros();pintarTabela();}
+function somar(l,f){var t=0;l.forEach(function(x){if(f(x))t+=x.vl_centavos;});return t;}
+function pintarCards(){
+  var prev=somar(ITENS,function(x){return x.tp==='in';}), rec=somar(ITENS,function(x){return x.tp==='in'&&x.status==='recebido';}), aRec=prev-rec;
+  var saidas=somar(ITENS,function(x){return x.tp==='out';}), pago=somar(ITENS,function(x){return x.tp==='out'&&x.status==='pago';}), aPag=saidas-pago;
+  var nIn=ITENS.filter(function(x){return x.tp==='in';}).length, nInP=ITENS.filter(function(x){return x.tp==='in'&&x.status!=='recebido';}).length, nOut=ITENS.filter(function(x){return x.tp==='out'&&x.status!=='pago';}).length;
+  var per='período '+fmtData(FC.ini)+' a '+fmtData(FC.fim);
+  el('fin-resumo').innerHTML=
+    '<div class="kpi"><div class="lb cb">Previsto</div><div class="vl vb">'+reais(prev)+'</div><div class="dl"><b>'+nIn+'</b> entradas no período<br>mensalidades, taxas e outras</div></div>'+
+    '<div class="kpi"><div class="lb cg">A receber</div><div class="vl vg">'+reais(aRec)+'</div><div class="dl"><b>'+nInP+'</b> pendentes<br>já recebido: '+reais(rec)+'</div></div>'+
+    '<div class="kpi"><div class="lb cr">A pagar</div><div class="vl vr">'+reais(aPag)+'</div><div class="dl"><b>'+nOut+'</b> saídas pendentes<br>já pago: '+reais(pago)+'</div></div>'+
+    '<div class="kpi"><div class="lb">Margem</div><div class="vl" style="color:'+(prev-saidas<0?'var(--red)':'var(--text)')+'">'+reais(prev-saidas)+'</div><div class="dl">previsto menos saídas<br>'+per+'</div></div>';
+  el('fin-mov').textContent=reais(prev+saidas);el('fin-mov-d').textContent=per;
+}
+function pintarFiltros(){
+  var co='<option value="todas">Todas categorias</option>'+CATS.map(function(c){return '<option value="'+esc(c)+'"'+(FC.cat===c?' selected':'')+'>'+esc(c)+'</option>';}).join('');
+  var so=[['todos','Todos os status'],['pendente','Pendente'],['atrasado','Atrasado'],['feito','Recebido / pago']].map(function(o){return '<option value="'+o[0]+'"'+(FC.st===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  var mesUn=(FC.ini.slice(0,7)===FC.fim.slice(0,7)&&FC.ini.slice(8)==='01'&&FC.fim===ultDia(FC.ini.slice(0,7)))?FC.ini.slice(0,7):'';
+  el('fc-filtros').innerHTML='<select onchange="FC.cat=this.value;pintarTabela()">'+co+'</select><button type="button" class="add" style="width:38px;height:38px;border-radius:10px;border:1.5px solid var(--border2);background:var(--s3);color:var(--roxo);font-size:18px;font-weight:800" onclick="abrirNovaCategoria()" title="Nova categoria">+</button>'+
+    '<select onchange="FC.st=this.value;pintarTabela()">'+so+'</select>'+
+    '<input type="month" value="'+mesUn+'" onchange="fcMes(this.value)" title="Mês"><input type="date" value="'+FC.ini+'" onchange="fcData(\'ini\',this.value)" title="De"><input type="date" value="'+FC.fim+'" onchange="fcData(\'fim\',this.value)" title="Até">'+
+    '<button class="chip" onclick="fcRapido(0)">Este mês</button><button class="chip" onclick="fcRapido(3)">Próximos 3 meses</button><button class="chip" onclick="fcRapido(12)">Próximos 12 meses</button>';
+}
+function fcMes(v){if(!v)return;FC.ini=v+'-01';FC.fim=ultDia(v);carregarFluxo();}
+function fcData(k,v){if(!v)return;FC[k]=v;if(FC.ini>FC.fim){if(k==='ini')FC.fim=v;else FC.ini=v;}carregarFluxo();}
+function fcRapido(n){var m=hojeIso().slice(0,7);FC.ini=m+'-01';FC.fim=ultDia(n?somaMesJs(m,n-1):m);carregarFluxo();}
+function statusDe(x){if(x.status==='recebido'||x.status==='pago')return 'ok';return x.data<hojeIso()?'atr':'pend';}
+function pintarTabela(){
+  var L=ITENS.filter(function(x){
+    if(FC.cat!=='todas'&&x.categoria!==FC.cat)return false;
+    var s=statusDe(x);
+    if(FC.st==='pendente'&&s!=='pend')return false;
+    if(FC.st==='atrasado'&&s!=='atr')return false;
+    if(FC.st==='feito'&&s!=='ok')return false;
+    return true;
+  });
+  if(!L.length){el('fc-corpo').innerHTML='<tr><td colspan="5" class="vazio">Nenhum lançamento neste período.</td></tr>';return;}
+  el('fc-corpo').innerHTML=L.map(function(x){
+    var s=statusDe(x), auto=String(x.origem).indexOf('cob_')===0, rot=s==='ok'?(x.tp==='in'?'Recebido':'Pago'):(s==='atr'?'Atrasado':'Pendente');
+    var bt=s==='ok'?'<button class="btn" title="Voltar pra pendente" onclick="fcStatus(\''+esc(x.id)+'\',\'pendente\')">↺</button>':'<button class="btn" title="'+(x.tp==='in'?'Marcar como recebido':'Marcar como pago')+'" onclick="fcStatus(\''+esc(x.id)+'\',\''+(x.tp==='in'?'recebido':'pago')+'\')">✓ '+(x.tp==='in'?'Recebi':'Paguei')+'</button>';
+    return '<tr><td>'+fmtData(x.data)+'</td><td>'+esc(x.tt)+'<span class="cat'+(auto?' au':'')+'">'+esc(auto?'automático':x.categoria)+'</span></td><td class="'+(x.tp==='in'?'vin':'vout')+'">'+(x.tp==='in'?'+ ':'− ')+reais(x.vl_centavos)+'</td><td><span class="tg '+s+'">'+rot+'</span></td>'+
+      '<td><div class="acs">'+bt+'<button class="btn" title="Editar" onclick="abrirLanc(\''+esc(x.id)+'\')">✎</button>'+(auto?'':'<button class="btn" title="Duplicar" onclick="duplicarLanc(\''+esc(x.id)+'\')">⧉</button>')+'<button class="btn perigo" title="Excluir" onclick="excluirLanc(\''+esc(x.id)+'\')">🗑</button></div></td></tr>';
+  }).join('');
+}
+function fcStatus(id,st){chamar('PATCH','/admin/fluxo/'+encodeURIComponent(id),{status:st}).then(function(d){if(!d.ok){toast(d.mensagem||'Erro.',true);return;}carregarFluxo();}).catch(function(){});}
+function achaLanc(id){return ITENS.filter(function(x){return x.id===id;})[0];}
+function abrirLanc(id,pre){
+  var x=id?achaLanc(id):null, auto=x&&String(x.origem).indexOf('cob_')===0; LC_ID=x?x.id:null;
+  var v=x||pre||{tp:'out',tt:'',categoria:'',data:hojeIso(),vl_centavos:0,status:'pendente',obs:''};
+  LC_TP=v.tp||'out';
+  abrirModal('<h3>'+(x?'Editar lançamento':'Novo lançamento')+'</h3>'+(auto?'<p class="sub">Lançamento automático da cobrança do cliente. Dá para ajustar valor, data e status.</p>':'')+
+   (auto?'':'<label>Tipo</label><div class="tgl"><button type="button" class="btn" id="lc-in" onclick="lcTipo(\'in\')">↑ Entrada</button><button type="button" class="btn" id="lc-out" onclick="lcTipo(\'out\')">↓ Saída</button></div>')+
+   '<div class="linha2"><div><label>Categoria</label><select id="lc-cat">'+CATS.map(function(c){return '<option'+(c===(v.categoria||'Outros')?' selected':'')+'>'+esc(c)+'</option>';}).join('')+'</select></div><div><label>Valor (R$)</label><input id="lc-vl" inputmode="decimal" placeholder="0,00" value="'+esc(deCentavos(v.vl_centavos))+'"></div></div>'+
+   '<label>Descrição</label><input id="lc-tt" placeholder="Ex: Servidor, domínio..." value="'+esc(v.tt)+'"'+(auto?' disabled':'')+'>'+
+   '<div class="linha2"><div><label>Data de vencimento</label><input type="date" id="lc-data" value="'+esc(v.data)+'"></div><div><label>Status</label><select id="lc-st"></select></div></div>'+
+   (x?'':'<label style="display:flex;align-items:center;gap:8px;font-weight:700"><input type="checkbox" id="lc-rec" style="width:auto"> Repetir todo mês (12 meses) — fluxo futuro</label>')+
+   '<label>Observações (opcional)</label><input id="lc-obs" value="'+esc(v.obs||'')+'">'+
+   '<div class="erro" id="lc-erro"></div><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" id="lc-btn" onclick="salvarLanc()">Salvar</button></div>');
+  lcTipo(LC_TP); el('lc-st').value=(v.status==='recebido'||v.status==='pago')?'feito':'pendente';
+}
+function lcTipo(t){
+  LC_TP=t; var a=el('lc-in'),b=el('lc-out');
+  if(a){a.classList.toggle('on',t==='in');b.classList.toggle('on',t==='out');b.classList.toggle('sai',t==='out');}
+  var o=el('lc-st'); if(o){var cur=o.value;o.innerHTML='<option value="pendente">Pendente</option><option value="feito">'+(t==='in'?'Recebido':'Pago')+'</option>';if(cur)o.value=cur;}
+}
+function salvarLanc(){
+  var vl=paraCentavos(el('lc-vl').value), data=el('lc-data').value, tt=el('lc-tt').value.trim(), feito=el('lc-st').value==='feito';
+  if(!vl){el('lc-erro').textContent='Informe o valor.';return;} if(!data){el('lc-erro').textContent='Informe a data.';return;}
+  var st=feito?(LC_TP==='in'?'recebido':'pago'):'pendente', p;
+  el('lc-btn').disabled=true;
+  if(LC_ID){var b={categoria:el('lc-cat').value,vl_centavos:vl,data:data,status:st,obs:el('lc-obs').value}; if(!el('lc-tt').disabled)b.tt=tt; p=chamar('PATCH','/admin/fluxo/'+encodeURIComponent(LC_ID),b);}
+  else{if(!tt){el('lc-erro').textContent='Informe a descrição.';el('lc-btn').disabled=false;return;} p=chamar('POST','/admin/fluxo',{tp:LC_TP,tt:tt,categoria:el('lc-cat').value,vl_centavos:vl,data:data,status:st,obs:el('lc-obs').value,recorrente:!!(el('lc-rec')&&el('lc-rec').checked)});}
+  p.then(function(d){if(!d.ok){el('lc-erro').textContent=d.mensagem||'Erro ao salvar.';el('lc-btn').disabled=false;return;}fechar();toast(d.criados>1?d.criados+' lançamentos criados.':'Lançamento salvo.');carregarFluxo();}).catch(function(){el('lc-btn').disabled=false;});
+}
+function duplicarLanc(id){var x=achaLanc(id);if(!x)return;var d=x.data;abrirLanc(null,{tp:x.tp,tt:x.tt,categoria:x.categoria,data:somaMesJs(d.slice(0,7),1)+'-'+d.slice(8),vl_centavos:x.vl_centavos,status:'pendente',obs:x.obs});}
+function excluirLanc(id){
+  var x=achaLanc(id); if(!x)return; var auto=String(x.origem).indexOf('cob_')===0;
+  abrirModal('<h3>Excluir lançamento</h3><p class="sub">'+esc(x.tt)+' — '+reais(x.vl_centavos)+' — '+fmtData(x.data)+'</p>'+(auto?'<div class="aviso">É uma cobrança automática: ela só deixa de aparecer neste mês (o cliente continua sendo cobrado nos próximos).</div>':'')+
+   '<div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button>'+(x.grupo?'<button class="btn perigo" onclick="apagarLanc(\''+esc(id)+'\',1)">Este e os seguintes</button>':'')+'<button class="btn pri" onclick="apagarLanc(\''+esc(id)+'\',0)">'+(x.grupo?'Só este':'Excluir')+'</button></div>');
+}
+function apagarLanc(id,seg){chamar('DELETE','/admin/fluxo/'+encodeURIComponent(id)+(seg?'?seguintes=1':'')).then(function(d){if(!d.ok){toast(d.mensagem||'Erro.',true);return;}fechar();toast('Excluído.');carregarFluxo();}).catch(function(){});}
+function abrirNovaCategoria(){abrirModal('<h3>Nova categoria</h3><label>Nome</label><input id="nct-nome" placeholder="Ex: Marketing"><div class="erro" id="nct-erro"></div><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" onclick="salvarCategoria()">Salvar</button></div>');}
+function salvarCategoria(){var n=el('nct-nome').value.trim();if(!n){el('nct-erro').textContent='Informe o nome.';return;}chamar('POST','/admin/categorias',{nome:n}).then(function(d){if(!d.ok){el('nct-erro').textContent=d.mensagem||'Erro.';return;}CATS=d.categorias;FC.cat=n;fechar();toast('Categoria criada.');pintarFluxo();}).catch(function(){});}
+
+/* ── saldo e extrato (conta Asaas da DeltaDis) ── */
+function carregarSaldo(){
+  el('fin-saldo-info').textContent='Consultando o Asaas...';
+  chamar('GET','/admin/asaas/saldo').then(function(d){
+    if(d.ok){el('fin-saldo').textContent=reais(Math.round(d.saldo*100));el('fin-saldo-info').textContent='Asaas · atualizado '+new Date().toTimeString().slice(0,5)+(d.ambiente==='sandbox'?' · teste':'');}
+    else{el('fin-saldo').textContent='—';el('fin-saldo-info').textContent=d.erro==='nao_configurado'?'Conta Asaas ainda não configurada':(d.mensagem||'Não consegui consultar o Asaas');}
+  }).catch(function(){});
+}
+function abrirExtrato(){
+  var h=hojeIso(),ini=h.slice(0,7)+'-01';
+  abrirModal('<h3>Extrato Asaas</h3><div class="filtros" style="margin-top:10px"><input type="date" id="ex-ini" value="'+ini+'"><input type="date" id="ex-fim" value="'+h+'"><button class="btn pri peq" onclick="buscarExtrato()">Buscar</button></div><div id="ex-corpo"><div class="vazio">Carregando...</div></div><div class="acoes"><button class="btn" onclick="fechar()">Fechar</button></div>');
+  buscarExtrato();
+}
+function buscarExtrato(){
+  var a=el('ex-ini').value,b=el('ex-fim').value; el('ex-corpo').innerHTML='<div class="vazio">Carregando...</div>';
+  chamar('GET','/admin/asaas/extrato?ini='+a+'&fim='+b).then(function(d){
+    if(!d.ok){el('ex-corpo').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro.')+'</div>';return;}
+    if(!d.itens.length){el('ex-corpo').innerHTML='<div class="vazio">Nenhuma movimentação no período.</div>';return;}
+    el('ex-corpo').innerHTML='<div class="tabela-wrap"><table><tr><th>Data</th><th>Descrição</th><th class="n">Valor</th></tr>'+d.itens.map(function(i){return '<tr><td>'+fmtData(i.data)+'</td><td>'+esc(i.descricao||i.tipo)+'</td><td class="n" style="font-weight:800;color:'+(i.valor<0?'var(--red)':'var(--green)')+'">'+reais(Math.round(i.valor*100))+'</td></tr>';}).join('')+'</table></div>'+(d.cortado?'<div class="aviso">Mostrando só as primeiras movimentações. Reduza o período.</div>':'');
+  }).catch(function(){});
+}
+function abrirAsaasCfg(){
+  abrirModal('<h3>Conta Asaas da DeltaDis</h3><p class="sub">A conta que recebe as mensalidades e as taxas dos clientes.</p><div id="as-estado" class="sub2" style="margin:10px 0">Consultando...</div>'+
+   '<label>Chave de API do Asaas</label><input id="as-chave" type="password" autocomplete="off" placeholder="$aact_..."><label>Ambiente</label><select id="as-amb"><option value="producao">Produção (dinheiro real)</option><option value="sandbox">Teste (sandbox)</option></select>'+
+   '<div class="erro" id="as-erro"></div><div class="acoes" style="justify-content:space-between"><button class="btn perigo peq" id="as-rem" style="display:none" onclick="removerAsaas()">Remover chave</button><span style="display:flex;gap:8px"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" id="as-btn" onclick="salvarAsaas()">Salvar e testar</button></span></div>');
+  chamar('GET','/admin/asaas-config').then(function(d){if(!d.ok)return;el('as-estado').textContent=d.configurado?('✅ Configurada (chave terminada em …'+d.final+' · '+(d.ambiente==='sandbox'?'teste':'produção')+'). Cole outra chave para trocar.'):'Ainda não configurada.';if(d.configurado){el('as-rem').style.display='';el('as-amb').value=d.ambiente;}}).catch(function(){});
+}
+function salvarAsaas(){
+  var c=el('as-chave').value.trim(); if(!c){el('as-erro').textContent='Cole a chave de API.';return;}
+  el('as-btn').disabled=true;el('as-erro').textContent='';
+  chamar('POST','/admin/asaas-config',{chave:c,ambiente:el('as-amb').value}).then(function(d){
+    if(!d.ok){el('as-erro').textContent=d.mensagem||'Erro.';el('as-btn').disabled=false;return;}
+    fechar();toast('Conta Asaas conectada!');carregarSaldo();
+  }).catch(function(){el('as-btn').disabled=false;});
+}
+function removerAsaas(){if(!confirm('Remover a chave do Asaas da DeltaDis?'))return;chamar('POST','/admin/asaas-config',{remover:true}).then(function(d){if(d.ok){fechar();toast('Chave removida.');carregarSaldo();}}).catch(function(){});}
+
+/* ── menu do nome ── */
+function menuAv(e){e.stopPropagation();el('menu-lista').classList.toggle('on');}
+function menuFecha(){el('menu-lista').classList.remove('on');}
+document.addEventListener('click',function(){var m=el('menu-lista');if(m)m.classList.remove('on');});
+function abrirCriarUsuario(){
+  var at=CLIENTES.filter(function(c){return c.ativo;});
+  if(!at.length){toast('Crie um cliente primeiro.',true);return;}
+  abrirModal('<h3>Criar usuário</h3><p class="sub">Escolha de qual cliente é o novo acesso.</p><label>Cliente</label><select id="cu-cli">'+at.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>';}).join('')+'</select><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" onclick="abrirNovoUsuario(el(\'cu-cli\').value)">Continuar</button></div>');
+}
+function abrirTrocarSenha(){
+  abrirModal('<h3>Trocar minha senha</h3><label>Senha atual</label><input id="ts-a" type="password" autocomplete="current-password"><label>Nova senha (mínimo 8 caracteres)</label><input id="ts-n" type="password" autocomplete="new-password"><div class="erro" id="ts-erro"></div><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" id="ts-btn" onclick="salvarSenha()">Trocar senha</button></div>');
+}
+function salvarSenha(){
+  var a=el('ts-a').value,n=el('ts-n').value; if(!a||!n){el('ts-erro').textContent='Preencha os dois campos.';return;}
+  el('ts-btn').disabled=true;
+  chamar('POST','/auth/trocar-senha',{atual:a,nova:n}).then(function(d){if(!d.ok){el('ts-erro').textContent=d.mensagem||'Erro.';el('ts-btn').disabled=false;return;}fechar();toast('Senha trocada.');}).catch(function(){el('ts-btn').disabled=false;});
+}
 
 /* ao abrir: se já tem sessão guardada, confere no servidor */
 (function(){
