@@ -402,6 +402,18 @@ a{color:inherit}
   .transp-grid{grid-template-columns:repeat(2,1fr)}
 }
 .bld-fix{position:fixed;right:10px;bottom:6px;font-size:9.5px;color:var(--s4);z-index:5}
+/* ══ LOGIN NO CELULAR: logo no topo + fundo degradê roxo→pink (só na tela de login) ══ */
+@media (max-width:859px){
+  #login{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:24px 16px;background:radial-gradient(circle at 100% 0%,rgba(255,255,255,.16) 0,rgba(255,255,255,0) 45%),radial-gradient(circle at 0% 100%,rgba(255,255,255,.12) 0,rgba(255,255,255,0) 45%),var(--grad-arte)}
+  .lg-arte{display:block;background:none;padding:0;overflow:visible;width:100%;max-width:400px;margin:0 0 22px}
+  .lg-arte::before,.lg-arte::after{display:none}
+  .lg-arte h1,.lg-arte p.lead,.lg-arte .chk,.lg-foot{display:none}
+  .lg-logo{margin:0;justify-content:center}
+  .lg-logo .mk{height:44px}
+  .lg-logo .wm{height:22px}
+  .lg-wrap{min-height:0;padding:0;width:100%}
+  .lg-form{box-shadow:0 18px 50px rgba(60,10,120,.35)}
+}
 </style>
 <style>html.dd-ret #login{visibility:hidden}</style><script>try{if(localStorage.getItem('dd_jwt'))document.documentElement.classList.add('dd-ret');}catch(e){}</script>
 </head>
@@ -484,7 +496,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-113-3009</p>
+      <p class="bld">DELTADIS-BASE-113-3010</p>
     </div>
   </div>
 </div>
@@ -1034,7 +1046,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-113-3009</div>
+<div class="bld-fix">DELTADIS-BASE-113-3010</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
