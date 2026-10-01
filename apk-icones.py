@@ -40,3 +40,9 @@ for d, k in dens.items():
 cor = os.path.join(RES, "values", "ic_launcher_background.xml")
 open(cor, "w").write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#FFFFFF</color>\n</resources>\n')
 print("fundo branco ok")
+
+# remove os icones "adaptativos" padrao (vetor), para valer o icone com a logo em todos os Androids
+import glob
+for f in glob.glob(os.path.join(RES, "mipmap-anydpi*", "ic_launcher*.xml")) + glob.glob(os.path.join(RES, "drawable*", "ic_launcher_foreground.xml")):
+    os.remove(f)
+    print("removido", f)
