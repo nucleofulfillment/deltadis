@@ -98,6 +98,13 @@ a{color:inherit}
 .tb-data{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted2);background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:6px 10px;text-transform:capitalize}
 .tb-tempo{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted2);background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
 .tb-tempo .ti{font-size:14px;line-height:1}
+.menu-av{position:relative}
+.menu-lista{position:absolute;right:0;top:42px;min-width:240px;background:var(--s1);border:1px solid var(--border);border-radius:14px;box-shadow:var(--sh3);padding:8px;display:none;z-index:60}
+.menu-lista.on{display:block}
+.menu-lista .quem{padding:10px 12px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}.menu-lista .quem b{display:block;font-size:14px;color:var(--text)}.menu-lista .quem small{color:var(--muted);word-break:break-all}
+.menu-lista button{display:flex;width:100%;text-align:left;gap:10px;align-items:center;background:none;border:0;padding:10px 12px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--text);cursor:pointer;font-family:inherit}
+.menu-lista button:hover{background:var(--s3)}
+.menu-lista button.sair{color:#c0392b}
 .tb-av{width:32px;height:32px;border-radius:50%;background:var(--grad);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;cursor:pointer;border:none}
 
 /* barra branca com a volumetria por transportadora */
@@ -477,7 +484,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-111-3009</p>
+      <p class="bld">DELTADIS-BASE-113-3009</p>
     </div>
   </div>
 </div>
@@ -542,7 +549,15 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="tb-data" id="tb-data-topo"></div>
       <div class="tb-tempo"><span class="ti" id="tb-tempo-ic">🌤️</span><span id="tb-tempo-vl">24°C</span></div>
       <div class="tb-clock"><i class="live"></i><span id="tb-hora">--:--</span></div>
-      <button class="tb-av" onclick="sair()" title="Sair">O</button>
+      <div class="menu-av">
+        <button class="tb-av" onclick="menuAv(event)" title="Minha conta">O</button>
+        <div class="menu-lista" id="menu-av-l" onclick="event.stopPropagation()">
+          <div class="quem"><b id="mav-nome">—</b><small id="mav-mail"></small></div>
+          <button onclick="menuAvFecha();abrirMeusDados()">👤 Meus dados</button>
+          <button onclick="menuAvFecha();abrirTrocarSenhaPainel()">🔑 Trocar senha</button>
+          <button class="sair" onclick="menuAvFecha();sair()">⎋ Sair</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -808,6 +823,26 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </div>
 
 <!-- ══ MODAL: nova categoria (fluxo de caixa) ══ -->
+<div class="sheet" id="sh-meus-dados">
+  <div class="sh-hd"><h3>Meus dados</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div class="field"><label>Nome</label><input class="inp" id="md-nome" autocomplete="name"></div>
+    <div class="field"><label>E-mail (usado para entrar)</label><input class="inp" id="md-email" type="email" autocomplete="username"></div>
+    <div class="field"><label>Senha atual <span style="font-weight:500;color:var(--muted)">(só se for trocar o e-mail)</span></label><input class="inp" id="md-atual" type="password" autocomplete="current-password"></div>
+    <p id="md-msg" style="color:#c0392b;font-weight:700;font-size:13px;min-height:18px;margin:4px 0 10px"></p>
+    <button class="btn pri wide" id="md-btn" onclick="salvarMeusDados()">Salvar</button>
+  </div>
+</div>
+<div class="sheet" id="sh-trocar-senha">
+  <div class="sh-hd"><h3>Trocar senha</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div class="field"><label>Senha atual</label><input class="inp" id="ts-atual" type="password" autocomplete="current-password"></div>
+    <div class="field"><label>Nova senha (mínimo 8 caracteres)</label><input class="inp" id="ts-nova" type="password" autocomplete="new-password"></div>
+    <div class="field"><label>Repita a nova senha</label><input class="inp" id="ts-nova2" type="password" autocomplete="new-password"></div>
+    <p id="ts-msg" style="color:#c0392b;font-weight:700;font-size:13px;min-height:18px;margin:4px 0 10px"></p>
+    <button class="btn pri wide" id="ts-btn" onclick="salvarSenhaPainel()">Trocar senha</button>
+  </div>
+</div>
 <div class="sheet" id="sh-nova-categoria">
   <div class="sh-hd"><h3>Nova categoria</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
@@ -999,7 +1034,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-111-3009</div>
+<div class="bld-fix">DELTADIS-BASE-113-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2126,13 +2161,49 @@ function entrar(){
       ddGuardar(d.token,d.usuario); el('lg-senha').value=''; abrirApp();
     }).catch(function(){ b.disabled=false; b.textContent='Entrar'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
+/* ══ menu do avatar: meus dados, trocar senha, sair ══ */
+function menuAv(e){ e.stopPropagation(); var m=el('menu-av-l'); if(!m) return;
+  el('mav-nome').textContent=(DD_USER&&DD_USER.nome)||'—'; el('mav-mail').textContent=(DD_USER&&DD_USER.email)||'';
+  m.classList.toggle('on'); }
+function menuAvFecha(){ var m=el('menu-av-l'); if(m) m.classList.remove('on'); }
+document.addEventListener('click',menuAvFecha);
+function abrirMeusDados(){ el('md-nome').value=(DD_USER&&DD_USER.nome)||''; el('md-email').value=(DD_USER&&DD_USER.email)||''; el('md-atual').value=''; el('md-msg').textContent=''; abrir('sh-meus-dados'); }
+function salvarMeusDados(){
+  var m=el('md-msg'), b=el('md-btn'); m.textContent='';
+  var nome=el('md-nome').value.trim(), email=el('md-email').value.trim(), atual=el('md-atual').value;
+  if(!nome){ m.textContent='Informe o nome.'; return; } if(!email){ m.textContent='Informe o e-mail.'; return; }
+  b.disabled=true; b.textContent='Salvando...';
+  fetch(DELTADIS_API+'/auth/meus-dados',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,email:email,atual:atual})})
+  .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+    b.disabled=false; b.textContent='Salvar';
+    if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar. Tente de novo.'; return; }
+    DD_USER=d.usuario; try{ localStorage.setItem('dd_user',JSON.stringify(d.usuario)); }catch(e){}
+    var av=document.querySelector('.tb-av'); if(av&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
+    fecharTudo(); aviso('Dados atualizados!');
+  }).catch(function(){ b.disabled=false; b.textContent='Salvar'; m.textContent='Sem conexão com o servidor.'; });
+}
+function abrirTrocarSenhaPainel(){ el('ts-atual').value=''; el('ts-nova').value=''; el('ts-nova2').value=''; el('ts-msg').textContent=''; abrir('sh-trocar-senha'); }
+function salvarSenhaPainel(){
+  var m=el('ts-msg'), b=el('ts-btn'); m.textContent='';
+  var a=el('ts-atual').value, n=el('ts-nova').value, n2=el('ts-nova2').value;
+  if(!a){ m.textContent='Digite a senha atual.'; return; }
+  if(n.length<8){ m.textContent='A nova senha precisa ter pelo menos 8 caracteres.'; return; }
+  if(n!==n2){ m.textContent='As duas senhas novas não são iguais.'; return; }
+  b.disabled=true; b.textContent='Salvando...';
+  fetch(DELTADIS_API+'/auth/trocar-senha',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({atual:a,nova:n})})
+  .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+    b.disabled=false; b.textContent='Trocar senha';
+    if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível trocar. Tente de novo.'; return; }
+    fecharTudo(); aviso('Senha trocada!');
+  }).catch(function(){ b.disabled=false; b.textContent='Trocar senha'; m.textContent='Sem conexão com o servidor.'; });
+}
 function sair(){
   fecharTudo();
   try{ if(SRV.pronto && srvPendente()) srvEnviar(); }catch(e){}
   SRV.pronto=false; SRV.hashes={}; srvBarraFechar(); srvLimparMemoria();
   ddGuardar('',null); ddMostrarLogin();
   el('app').style.display='none';
-  el('login').style.display='block';
+  el('login').style.display='';
 }
 /* já tem sessão guardada? confere no servidor e entra direto */
 function retomarSessao(){
