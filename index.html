@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="versao" content="SITE-1-3016">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="versao" content="SITE-1-3018">
 <title>DELTADIS — Do recebimento à entrega, tudo em um só lugar</title>
 <meta name="description" content="Bipagem por transportadora, separação por motorista, financeiro e fechamento — o painel do seu ponto de distribuição.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,7 +33,23 @@ h1{font-size:clamp(34px,min(5.4vw,7.5vh),58px);font-weight:800;line-height:1.14;
 .demo{flex:none;display:inline-block;margin:-14px 0;position:relative;top:-10px;padding:14px 28px;border-radius:99px;background:#fff;color:#6D28D9;font-weight:800;font-size:14px;text-decoration:none;box-shadow:0 8px 24px rgba(60,10,120,.35);transition:background .15s,color .15s}
 .demo:hover{background:#F472B6;color:#fff}
 @media(min-width:641px){html,body{height:100%;overflow:hidden}.wrap{height:100vh;height:100dvh;min-height:0}.lead{white-space:nowrap}}
-@media(max-width:640px){.wrap{padding:24px 20px 24px}.entrar{padding:9px 20px}.meio{padding:0}.hero{padding:28px 0}.lastrow{flex-wrap:wrap}.demo{margin-left:auto}}
+@media(max-width:640px){
+html,body{height:100%;overflow:hidden}
+body{min-height:0;height:100vh;height:100dvh;background:linear-gradient(180deg,#4a1cc0 0%,#5b22c9 50%,#7a2bd0 100%)}
+.wrap{height:100vh;height:100dvh;min-height:0;justify-content:flex-start;padding:16px 20px 18px}
+.entrar{padding:9px 20px}
+.hero{padding:0;margin-top:clamp(14px,3.5vh,34px)}
+h1{font-size:clamp(28px,min(9vw,4.8vh),40px);margin:0 0 10px}
+.lead{font-size:clamp(14px,3.8vw,16px);line-height:1.5}
+.meio{padding:0;margin-top:auto}
+.mod{margin:0 0 8px}
+.chk{gap:10px;margin-bottom:clamp(6px,1.2vh,10px)}
+.chk span{font-size:clamp(13px,3.6vw,15px);line-height:1.3}
+.lastrow{display:block}
+.lastrow .chk{margin-bottom:clamp(8px,1.6vh,14px)}
+.demo{display:block;width:100%;text-align:center;margin:0;top:0;padding:13px 20px}
+.vid{inset:auto;left:0;right:0;top:50%;width:100%;height:auto;aspect-ratio:1920/1088;transform:translateY(-50%);-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 20%,#000 80%,transparent 100%);mask-image:linear-gradient(to bottom,transparent 0,#000 20%,#000 80%,transparent 100%)}
+}
 </style></head>
 <body>
 <video class="vid" autoplay muted loop playsinline preload="auto" aria-hidden="true">
@@ -112,4 +128,17 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <a class="demo" href="https://wa.me/5548988554034?text=Ol%C3%A1!%20Quero%20agendar%20uma%20demonstra%C3%A7%C3%A3o%20do%20DeltaDIS." target="_blank" rel="noopener">Agende uma demonstração</a>
     </div>
   </div>
-</div></body></html>
+</div>
+<script>
+(function(){
+var v=document.querySelector('.vid'),h=document.querySelector('.hero'),m=document.querySelector('.meio'),mq=matchMedia('(max-width:640px)');
+function place(){
+if(!mq.matches){v.style.top='';return}
+var a=h.getBoundingClientRect().bottom,b=m.getBoundingClientRect().top;
+v.style.top=Math.round((a+b)/2)+'px';
+}
+place();addEventListener('resize',place);addEventListener('orientationchange',place);addEventListener('load',place);
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(place);
+})();
+</script>
+</body></html>
