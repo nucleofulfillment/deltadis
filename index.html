@@ -471,7 +471,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-109-3009</p>
+      <p class="bld">DELTADIS-BASE-110-3009</p>
     </div>
   </div>
 </div>
@@ -992,7 +992,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="graf-tip" id="graf-tip"></div>
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
-<div class="bld-fix">DELTADIS-BASE-109-3009</div>
+<div class="bld-fix">DELTADIS-BASE-110-3009</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1458,7 +1458,7 @@ function importarPlanilha(linhas,c){
 /* ══════════════════════════════════════════════════════════
    RASTREIO AUTOMÁTICO (Worker deltadis-api) — elimina a dupla bipagem da Anjun
    ══════════════════════════════════════════════════════════ */
-var DELTADIS_API='https://deltadis-api.iliveyou.com.br';
+var DELTADIS_API='https://api.deltadis.com.br';
 var DELTADIS_API_KEY='deltadis2026';
 /* ── LOGIN (etapa B1c): token do usuário vai no cabeçalho; a chave antiga só segue nas rotas /asaas/ (por enquanto) ── */
 var DD_TOKEN=''; try{ DD_TOKEN=localStorage.getItem('dd_jwt')||''; }catch(e){}
