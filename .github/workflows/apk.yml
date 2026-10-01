@@ -23,7 +23,7 @@ jobs:
           mkdir -p app/www
           cp apk-package.json app/package.json
           cp apk-capacitor.config.json app/capacitor.config.json
-          echo '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=https://nucleofulfillment.github.io/deltadis/motorista.html"></head><body>Abrindo o DELTADIS Motorista...</body></html>' > app/www/index.html
+          echo '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=https://deltadis.com.br/app.html"></head><body>Abrindo o DELTADIS Motorista...</body></html>' > app/www/index.html
 
       - name: Instalar Capacitor
         working-directory: app
@@ -39,6 +39,11 @@ jobs:
           F=android/app/src/main/AndroidManifest.xml
           sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.VIBRATE" />|' $F
           grep -n "uses-permission" $F
+
+      - name: Colocar a logo no icone do app
+        run: |
+          pip install pillow
+          python3 apk-icones.py app/android/app/src/main/res apk-logo.png
 
       - name: Sincronizar
         working-directory: app
