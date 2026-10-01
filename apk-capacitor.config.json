@@ -3,7 +3,8 @@
   "appName": "DELTADIS Motorista",
   "webDir": "www",
   "server": {
-    "url": "https://nucleofulfillment.github.io/deltadis/motorista.html",
-    "cleartext": false
+    "url": "https://deltadis.com.br/app.html",
+    "cleartext": false,
+    "allowNavigation": ["deltadis.com.br", "*.deltadis.com.br", "api.deltadis.com.br"]
   }
 }
