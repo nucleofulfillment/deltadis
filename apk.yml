@@ -3,6 +3,9 @@ name: Gerar APK do app do motorista
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -57,3 +60,10 @@ jobs:
         with:
           name: DELTADIS-Motorista-APK
           path: app/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publicar o APK para baixar direto
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/android/app/build/outputs/apk/debug/app-debug.apk DELTADIS-Motorista.apk
+          gh release create "apk-${{ github.run_number }}" DELTADIS-Motorista.apk --title "APK Motorista #${{ github.run_number }}" --notes "APK gerado automaticamente."
