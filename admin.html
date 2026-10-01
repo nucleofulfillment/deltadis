@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <input id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-7-3009</div>
+      <div class="bld">DELTADIS-ADMIN-9-3009</div>
     </div>
   </div>
 </div>
@@ -303,6 +303,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="card">
       <h3><span>Fluxo de caixa</span><span class="dir"><span class="lnk" onclick="carregarFluxo();carregarSaldo()">↻ Atualizar</span><span class="lnk" onclick="abrirLanc()">+ Novo lançamento</span></span></h3>
       <div class="filtros" id="fc-filtros"></div>
+      <div id="fc-aviso"></div>
       <div class="finrow tres" id="fc-periodo"></div>
       <div class="tabela-wrap"><table>
         <colgroup><col style="width:11%"><col style="width:38%"><col style="width:15%"><col style="width:13%"><col style="width:23%"></colgroup>
@@ -310,11 +311,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-7-3009</div>
+    <div class="bld">DELTADIS-ADMIN-9-3009</div>
   </main>
 </div>
 
-<div class="fundo" id="fundo" onclick="if(event.target===this)fechar()"><div class="modal" id="modal"></div></div>
+<div class="fundo" id="fundo" onmousedown="window._fdIni=(event.target===this)" onclick="if(event.target===this&&window._fdIni)fechar();window._fdIni=false"><div class="modal" id="modal"></div></div>
 <div id="toast"></div>
 
 <script>
@@ -334,7 +335,7 @@ var _tt=null;function toast(t,erro){var x=el('toast');x.textContent=t;x.style.ba
 /* chamadas ao servidor, sempre com o token; sessão vencida volta pro login */
 function chamar(metodo,caminho,corpo){
   var h={'Content-Type':'application/json'}; if(TOKEN) h['Authorization']='Bearer '+TOKEN;
-  return fetch(API+caminho,{method:metodo,headers:h,body:corpo?JSON.stringify(corpo):undefined}).then(function(r){
+  return fetch(API+caminho,{method:metodo,headers:h,cache:'no-store',body:corpo?JSON.stringify(corpo):undefined}).then(function(r){
     return r.json().catch(function(){return {};}).then(function(d){
       if(r.status===401&&caminho.indexOf('/auth/login')!==0){ sair(true); throw new Error('sessao'); }
       d._status=r.status; return d;
@@ -410,6 +411,7 @@ function abrirCliente(id){
   '<div class="linha2"><div><label>Dia do vencimento (1 a 31)</label><input id="ec-dia" inputmode="numeric" maxlength="2" value="'+esc(c.dia_venc||10)+'"></div><div></div></div>'+
   '<div class="erro" id="ec-erro"></div>'+
   '<div class="acoes" style="margin-top:10px;justify-content:space-between"><button class="btn peq '+(c.ativo?'perigo':'')+'" onclick="alternarCliente(\''+esc(c.id)+'\','+(c.ativo?0:1)+')">'+(c.ativo?'Desativar cliente':'Reativar cliente')+'</button><button class="btn pri" onclick="salvarCliente(\''+esc(c.id)+'\')">Salvar dados</button></div>'+
+  '<div style="margin-top:20px"><b>Cobrança no fluxo</b></div><p class="sub" style="margin:2px 0 8px">A mensalidade e a taxa entram sozinhas no fluxo. Se você excluiu uma por engano, lance de novo aqui.</p><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input type="month" id="ec-mes" style="width:auto" value="'+hojeIso().slice(0,7)+'"><button class="btn peq" onclick="relancarCobranca(\''+esc(c.id)+'\')">Lançar no fluxo</button></div>'+
   '<div style="margin-top:20px"><b>Acesso do dono ao painel</b></div><div id="ec-dono"><div class="vazio">Carregando...</div></div>'+
   '<p class="sub" style="margin-top:6px">Os motoristas e os acessos do app são cadastrados pelo próprio cliente, dentro do painel dele.</p>'+
   '<div class="acoes"><button class="btn" onclick="fechar()">Fechar</button></div>');
@@ -426,6 +428,16 @@ function alternarCliente(id,ativo){
   chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{ativo:ativo}).then(function(d){
     if(!d.ok){el('ec-erro').textContent=d.mensagem||d.erro||'Erro.';return;}
     toast(ativo?'Cliente reativado.':'Cliente desativado.');recarregarMantendo(id);
+  }).catch(function(){});
+}
+function relancarCobranca(id){
+  var mes=el('ec-mes').value; if(!mes){toast('Escolha o mês.',true);return;}
+  chamar('POST','/admin/clientes/'+encodeURIComponent(id)+'/cobranca',{mes:mes}).then(function(d){
+    if(!d.ok){el('ec-erro').textContent=d.mensagem||d.erro||'Erro.';return;}
+    el('ec-erro').textContent='';
+    if(!d.lancamentos){toast('Nada a lançar: verifique se o cliente tem mensalidade ou motoristas.',true);return;}
+    var p=mes+'-01'; if(p<FC.ini||mes+'-28'>FC.fim){FC.ini=p;FC.fim=ultDia(mes);}
+    toast('Cobrança de '+mes.slice(5)+'/'+mes.slice(0,4)+' lançada no fluxo.');carregarFluxo();
   }).catch(function(){});
 }
 function recarregarMantendo(id){
@@ -459,7 +471,7 @@ function carregarFluxo(){
   if(!FC.ini||!FC.fim) return;
   chamar('GET','/admin/fluxo?ini='+FC.ini+'&fim='+FC.fim).then(function(d){
     if(!d.ok){el('fc-corpo').innerHTML='<tr><td colspan="5" class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</td></tr>';return;}
-    ITENS=d.itens||[];CATS=d.categorias||[];pintarFluxo();
+    ITENS=d.itens||[];CATS=d.categorias||[];el('fc-aviso').innerHTML=d.aviso?'<div class="aviso">'+esc(d.aviso)+'</div>':'';pintarFluxo();
   }).catch(function(){});
 }
 function pintarFluxo(){pintarCards();pintarFiltros();pintarTabela();}
