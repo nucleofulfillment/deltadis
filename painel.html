@@ -496,7 +496,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-113-3010</p>
+      <p class="bld">DELTADIS-BASE-114-0210</p>
     </div>
   </div>
 </div>
@@ -1046,7 +1046,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-113-3010</div>
+<div class="bld-fix">DELTADIS-BASE-114-0210</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2102,11 +2102,12 @@ function badgeStatus(st){
 }
 
 /* ══ navegação ══ (ícones no padrão do dashboard)
-   No menu do computador (lateral), a Mesa dá lugar ao Mapeamento — a Mesa continua existindo,
-   mas só aparece no menu de quando se acessa pelo celular (tabbar de baixo). */
+   Menu do computador (lateral) e do celular (tabbar de baixo): a Mesa aparece nos dois.
+   (Já ficou oculta no lateral, dando lugar ao Mapeamento — voltou em 02/10.) */
 var NAV_DESKTOP=[
   {id:'dashboard',  lb:'Dashboard',  ic:'<path d="M4 20V10M11 20V4M18 20V13"/>'},
   {id:'pedidos',    lb:'Pedidos',    ic:'<rect x="3" y="8" width="18" height="12" rx="1.5"/><path d="M3 8L12 3L21 8"/>'},
+  {id:'mesa',       lb:'Mesa',       ic:'<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M7 4V2M17 4V2M7 10H17M7 14H14"/>'},
   {id:'mapeamento', lb:'Mapeamento', ic:'<path d="M12 21s7-6.2 7-11.2A7 7 0 105 9.8C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.6"/>'},
   {id:'motoristas', lb:'Motoristas', ic:'<rect x="1" y="7" width="15" height="10" rx="1.5"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>'},
   {id:'financeiro', lb:'Financeiro', ic:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V16.5M9.3 14.3C9.3 15.5 10.4 16.2 12 16.2C13.6 16.2 14.7 15.5 14.7 14.2C14.7 11.6 9.3 12.6 9.3 10C9.3 8.7 10.4 8 12 8C13.6 8 14.7 8.7 14.7 9.9"/>'},
