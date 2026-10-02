@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-29-0110</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-30-0210</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -373,6 +373,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <h2 class="titulo-pg">Minha conta</h2>
       <div class="card" style="text-align:center;margin-bottom:14px">
         <div class="av-grande" id="cta-av">CM</div>
+        <input type="file" accept="image/*" id="ft-perfil" style="display:none" onchange="escolherFotoPerfil(this)">
+        <button class="btn sec" style="margin:8px auto 0;padding:6px 14px;font-size:12.5px" onclick="el('ft-perfil').click()">📷 Alterar foto</button>
         <h3 id="cta-nome" style="margin:10px 0 2px">—</h3>
         <p style="margin:0;color:var(--muted);font-size:13px" id="cta-tel">—</p>
       </div>
@@ -620,10 +622,40 @@ function retomarSessao(){
   }).catch(function(){ ddMostrarLogin(); });
 }
 /* nome, iniciais e dados do topo/Conta: o motorista ESCOLHIDO em "Quem é você?" (vem do painel). Sem escolha, fica o de demonstração */
+
+/* foto de perfil: aparece no topo e na Conta; fica guardada no servidor (/motorista/foto) */
+function pintarFotoPerfil(){
+  ['topo-av','cta-av'].forEach(function(id){ var e=el(id); if(!e) return;
+    if(PERFIL&&PERFIL.foto){ e.style.background='url('+PERFIL.foto+') center/cover no-repeat'; e.style.color='transparent'; }
+    else { e.style.background=''; e.style.color=''; } });
+}
+function escolherFotoPerfil(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var im=new Image();
+    im.onload=function(){
+      var T=256, c=document.createElement('canvas'); c.width=T; c.height=T;
+      var lado=Math.min(im.width,im.height), sx=(im.width-lado)/2, sy=(im.height-lado)/2;
+      c.getContext('2d').drawImage(im,sx,sy,lado,lado,0,0,T,T);
+      var url=c.toDataURL('image/jpeg',0.82);
+      aviso('Enviando a foto…');
+      rpApi('/motorista/foto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({foto:url})}).then(function(d){
+        if(d&&d.ok){ PERFIL.foto=url; pintarFotoPerfil(); aviso('Foto atualizada!'); }
+        else aviso((d&&d.mensagem)||'Não consegui salvar a foto');
+      }).catch(function(){ aviso('Sem conexão. Tente de novo.'); });
+      inp.value='';
+    };
+    im.onerror=function(){ aviso('Essa imagem não abriu. Tente outra.'); inp.value=''; };
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(f);
+}
 function rpPintarIdentidade(){
   var n=(RP.mtn||(DD_M_USER&&DD_M_USER.nome)||PERFIL.nome||'Motorista'), ini=n.split(/\s+/).filter(Boolean).map(function(w){ return w.charAt(0); }).slice(0,2).join('').toUpperCase()||'M';
   function pt(id,v){ var e=el(id); if(e) e.textContent=v; }
   pt('topo-nome',n.split(' ')[0]); pt('topo-av',ini); pt('cta-nome',n); pt('cta-av',ini);
+  pintarFotoPerfil();
 }
 function montarApp(){
   rpPintarIdentidade();
