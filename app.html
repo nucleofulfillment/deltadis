@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-30-0210</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-31-0210</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -429,6 +429,16 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </div>
 
 <!-- ══ MODAL: extrato de entregas ══ -->
+<div class="sheet" id="sh-foto">
+  <div class="sh-hd"><h3>Ajustar foto</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd" style="text-align:center">
+    <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">Arraste a foto pra posicionar e use o controle pra aproximar.</p>
+    <div id="fe-palco" style="width:260px;height:260px;margin:0 auto;border-radius:50%;overflow:hidden;touch-action:none;cursor:grab;background:#ddd;border:3px solid var(--border2)"><canvas id="fe-cv" width="260" height="260" style="display:block;width:260px;height:260px"></canvas></div>
+    <div style="display:flex;align-items:center;gap:10px;margin:14px 6px 0"><span style="font-size:15px">➖</span><input type="range" id="fe-zoom" min="1" max="4" step="0.01" value="1" style="flex:1" oninput="feZoom(this.value)"><span style="font-size:15px">➕</span></div>
+    <div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="fecharTudo()">Cancelar</button><button class="btn pri" style="flex:1" id="fe-salvar" onclick="feSalvar()">Salvar foto</button></div>
+  </div>
+</div>
+
 <div class="sheet" id="sh-extrato">
   <div class="sh-hd"><h3>Extrato de entregas</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd" id="sh-extrato-corpo"></div>
@@ -629,27 +639,49 @@ function pintarFotoPerfil(){
     if(PERFIL&&PERFIL.foto){ e.style.background='url('+PERFIL.foto+') center/cover no-repeat'; e.style.color='transparent'; }
     else { e.style.background=''; e.style.color=''; } });
 }
+var FE={img:null,S:260,z:1,dx:0,dy:0,base:1,arrasta:false,px:0,py:0};
+function feLimita(){ var S=FE.S, w=FE.img.width*FE.base*FE.z, h=FE.img.height*FE.base*FE.z;
+  if(FE.dx>0) FE.dx=0; if(FE.dy>0) FE.dy=0; if(FE.dx<S-w) FE.dx=S-w; if(FE.dy<S-h) FE.dy=S-h; }
+function feDesenha(cv,fator){
+  var S=FE.S, c=cv.getContext('2d'), k=fator||1; c.fillStyle='#fff'; c.fillRect(0,0,S*k,S*k);
+  c.drawImage(FE.img,FE.dx*k,FE.dy*k,FE.img.width*FE.base*FE.z*k,FE.img.height*FE.base*FE.z*k);
+}
+function feZoom(v){
+  var S=FE.S, z0=FE.z, z1=Number(v)||1, cx=(S/2-FE.dx)/(FE.base*z0), cy=(S/2-FE.dy)/(FE.base*z0);   /* mantém o centro onde está */
+  FE.z=z1; FE.dx=S/2-cx*FE.base*z1; FE.dy=S/2-cy*FE.base*z1; feLimita(); feDesenha(el('fe-cv'));
+}
+function feIniciar(){
+  var pal=el('fe-palco'); if(pal._ok) return; pal._ok=true;
+  pal.addEventListener('pointerdown',function(e){ FE.arrasta=true; FE.px=e.clientX; FE.py=e.clientY; try{pal.setPointerCapture(e.pointerId);}catch(x){} pal.style.cursor='grabbing'; });
+  pal.addEventListener('pointermove',function(e){ if(!FE.arrasta||!FE.img) return; FE.dx+=e.clientX-FE.px; FE.dy+=e.clientY-FE.py; FE.px=e.clientX; FE.py=e.clientY; feLimita(); feDesenha(el('fe-cv')); });
+  var fim=function(){ FE.arrasta=false; pal.style.cursor='grab'; };
+  pal.addEventListener('pointerup',fim); pal.addEventListener('pointercancel',fim);
+  pal.addEventListener('wheel',function(e){ e.preventDefault(); var z=Math.min(4,Math.max(1,FE.z+(e.deltaY<0?0.1:-0.1))); el('fe-zoom').value=z; feZoom(z); },{passive:false});
+}
 function escolherFotoPerfil(inp){
   var f=inp.files&&inp.files[0]; if(!f) return;
   var rd=new FileReader();
   rd.onload=function(){
     var im=new Image();
     im.onload=function(){
-      var T=256, c=document.createElement('canvas'); c.width=T; c.height=T;
-      var lado=Math.min(im.width,im.height), sx=(im.width-lado)/2, sy=(im.height-lado)/2;
-      c.getContext('2d').drawImage(im,sx,sy,lado,lado,0,0,T,T);
-      var url=c.toDataURL('image/jpeg',0.82);
-      aviso('Enviando a foto…');
-      rpApi('/motorista/foto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({foto:url})}).then(function(d){
-        if(d&&d.ok){ PERFIL.foto=url; pintarFotoPerfil(); aviso('Foto atualizada!'); }
-        else aviso((d&&d.mensagem)||'Não consegui salvar a foto');
-      }).catch(function(){ aviso('Sem conexão. Tente de novo.'); });
-      inp.value='';
+      FE.img=im; FE.base=FE.S/Math.min(im.width,im.height); FE.z=1;
+      FE.dx=(FE.S-im.width*FE.base)/2; FE.dy=(FE.S-im.height*FE.base)/2;
+      el('fe-zoom').value=1; feIniciar(); feDesenha(el('fe-cv')); abrir('sh-foto'); inp.value='';
     };
     im.onerror=function(){ aviso('Essa imagem não abriu. Tente outra.'); inp.value=''; };
     im.src=rd.result;
   };
   rd.readAsDataURL(f);
+}
+function feSalvar(){
+  if(!FE.img) return;
+  var T=256, c=document.createElement('canvas'); c.width=T; c.height=T; feDesenha(c,T/FE.S);
+  var url=c.toDataURL('image/jpeg',0.85), b=el('fe-salvar'); b.disabled=true; b.textContent='Salvando…';
+  rpApi('/motorista/foto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({foto:url})}).then(function(d){
+    b.disabled=false; b.textContent='Salvar foto';
+    if(d&&d.ok){ PERFIL.foto=url; pintarFotoPerfil(); fecharTudo(); aviso('Foto atualizada!'); }
+    else aviso((d&&d.mensagem)||'Não consegui salvar a foto');
+  }).catch(function(){ b.disabled=false; b.textContent='Salvar foto'; aviso('Sem conexão. Tente de novo.'); });
 }
 function rpPintarIdentidade(){
   var n=(RP.mtn||(DD_M_USER&&DD_M_USER.nome)||PERFIL.nome||'Motorista'), ini=n.split(/\s+/).filter(Boolean).map(function(w){ return w.charAt(0); }).slice(0,2).join('').toUpperCase()||'M';
