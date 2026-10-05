@@ -496,7 +496,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-117-0510</p>
+      <p class="bld">DELTADIS-BASE-118-0510</p>
     </div>
   </div>
 </div>
@@ -1046,7 +1046,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-117-0510</div>
+<div class="bld-fix">DELTADIS-BASE-118-0510</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1398,6 +1398,7 @@ function bipAbsorver(){
       b=d.itens[i]; feitos.push({cod:b.cod,dia:b.dia});
       mid=null; for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(b.mt)){ mid=MOTORISTAS[mk].id; break; } }
       p=idx[b.cod];
+      if(p && b.end_rua && !p.rua){ p.rua=b.end_rua; p.num=b.end_num||''; p.comp=b.end_comp||''; p.bai=b.end_bai||''; p.cid=b.end_cid||''; p.cep=b.end_cep||''; p.bairro=b.end_bai||p.bairro||''; mud++; }
       if(p){
         if(mid!=null && p.mt!==mid){ p.mt=mid; mud++; }
         if(p.st==='coletado'){ p.st='em rota'; mud++; }
@@ -1405,6 +1406,7 @@ function bipAbsorver(){
         dt=new Date(b.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
         p={cod:b.cod, tr:b.tr||'anj', mt:mid, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'em rota', t1:'', t2:'', tel:'', canal:'', vend:'',
            scan:b.cod, dia:(b.dia||hojeISO()), hora:hh, obs:'bipado pelo motorista — a conferir'+(b.tr?'':' (transportadora a conferir)')+(b.mtn?(' ('+b.mtn+')'):''), ent:'', fechId:null};
+        if(b.end_rua){ p.rua=b.end_rua; p.num=b.end_num||''; p.comp=b.end_comp||''; p.bai=b.end_bai||''; p.cid=b.end_cid||''; p.cep=b.end_cep||''; p.bairro=b.end_bai||''; p.obs='endereço falado pelo motorista — a conferir'+(b.mtn?(' ('+b.mtn+')'):''); }
         PEDIDOS.push(p); idx[b.cod]=p; novos++;
       }
     }

@@ -166,7 +166,7 @@ a{color:inherit}
 .bp-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
 .bp-item:last-child{border-bottom:none}
 .bp-seq{width:24px;height:24px;border-radius:50%;background:var(--s3);color:var(--roxo-esc);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
-.bp-info{display:flex;flex-direction:column;font-size:12.5px;line-height:1.4}
+.bp-info{display:flex;flex-direction:column;min-width:0;font-size:12.5px;line-height:1.4}
 .bp-info span{color:var(--muted);font-size:11px}
 
 /* parada atual + ações */
@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-32-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-33-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1093,7 +1093,7 @@ function bpCarregar(){
 }
 function bpItemHtml(m){
   var info=m.novo?'<span style="color:#B45309">sem dados ainda</span>':(m.e?esc((m.cl||'')+(m.r?' · '+m.r:'')):'<span style="color:#B45309">endereço incompleto</span>');
-  return '<div class="bp-item"><span class="bp-seq">'+m.n+'</span><div class="bp-info"><b>'+esc(m.cod)+'</b><span>'+info+'</span></div><button class="btn sec" style="padding:4px 10px;min-width:0" onclick="bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+  return '<div class="bp-item"><span class="bp-seq">'+m.n+'</span><div class="bp-info"><b>'+esc(m.cod)+'</b><span>'+info+'</span></div><button class="btn sec" style="padding:4px 10px;min-width:0;margin-left:auto" onclick="vzAbrir(\''+esc(m.cod)+'\')" title="Falar endereço">🎤</button><button class="btn sec" style="padding:4px 10px;min-width:0" onclick="bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
 function bpAtualizar(){
   var c=el('bp-cnt'), u=el('bp-ult'), l=el('bp-lista'); if(!c) return;
@@ -1168,8 +1168,101 @@ function bpTela(){
     '<div id="bp-ult"></div>'+
     '<div class="search"><span>🔎</span><input id="bp-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')bpDigitado()"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn pri" style="flex:1" onclick="bpCamera()">📷 Usar a câmera</button><button class="btn sec" style="flex:1" onclick="bpDigitado()">Registrar</button></div>'+
+    '<button class="btn sec wide" style="margin:-4px 0 14px" onclick="vzAbrir(\'\')">🎤 Parada sem pacote (falar CEP e número)</button>'+
     '<div id="bp-lista"></div>'+
     '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">Montar minha rota</button></div></div>';
+}
+/* ══ (33) VOZ POR CEP: o motorista toca no microfone, diz o CEP e o número; o sistema acha a rua pelo CEP ══ */
+var VZ={cod:'',novo:false,rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false};
+function vzNum(t){
+  var m={zero:0,um:1,uma:1,dois:2,duas:2,tres:3,'três':3,quatro:4,cinco:5,seis:6,meia:6,sete:7,oito:8,nove:9}, p=String(t||'').toLowerCase().replace(/[.,;:\-]/g,' ').split(/\s+/), o=[], i;
+  for(i=0;i<p.length;i++){ if(m.hasOwnProperty(p[i])) o.push(String(m[p[i]])); else o.push(p[i]); }
+  return o.join(' ');
+}
+function vzParse(t){
+  var s=vzNum(t), k=s.search(/\b(n[uú]mero|numero|n[ºo°]|casa)\b/), esq=s, dir='', cep='', num='';
+  if(k>=0){ esq=s.substring(0,k); dir=s.substring(k).replace(/^\S+\s*/,''); }
+  var dg=esq.replace(/\D/g,'');
+  if(/sem\s+n[uú]mero|\bs\s?\/?\s?n\b/.test(s)){ var kk=s.search(/sem\s+n[uú]mero|\bs\s?\/?\s?n\b/); cep=s.substring(0,kk).replace(/\D/g,'').substring(0,8); num='S/N'; }
+  else if(k>=0){ cep=dg.substring(0,8); var tk=dir.split(/\s+/), q=0, nn=''; while(q<tk.length && /^\d+[a-z]?$/.test(tk[q])){ nn+=tk[q]; q++; } num=nn; }
+  else{ var all=s.replace(/[^0-9 ]/g,''), d2=all.replace(/\s/g,''); cep=d2.substring(0,8); num=d2.substring(8); }
+  return {cep:cep,num:num};
+}
+function vzAbrir(cod){
+  var e=null, i; VZ.cod=cod||''; VZ.novo=!cod; VZ.rua=''; VZ.bai=''; VZ.cid=''; VZ.cep=''; VZ.achou=null;
+  if(cod){ for(i=0;i<BP.meus.length;i++) if(BP.meus[i].cod===cod) e=BP.meus[i]; }
+  var ov=document.createElement('div'); ov.id='vz-ov'; ov.style.cssText='position:fixed;inset:0;background:rgba(15,5,30,.6);z-index:9998;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML='<div style="background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:18px 16px 22px;max-height:92vh;overflow:auto">'+
+    '<h3 style="margin:0 0 2px">'+(cod?'Endereço do pacote':'Parada sem pacote')+'</h3>'+
+    (cod?'<p style="margin:0 0 10px;font-size:12px;color:var(--muted);word-break:break-all">'+esc(cod)+'</p>':'<p style="margin:0 0 10px;font-size:12px;color:var(--muted)">Cadastre o endereço de uma parada que não tem etiqueta para bipar.</p>')+
+    '<button class="btn pri wide" id="vz-mic" onclick="vzOuvir()">🎤 Falar CEP e número</button>'+
+    '<p style="margin:6px 0 12px;font-size:11.5px;color:var(--muted);text-align:center">Diga assim: “CEP 01310 100, número 1578”</p>'+
+    '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:8px;min-height:16px"></div>'+
+    '<div style="display:flex;gap:8px"><div style="flex:1.4"><label style="font-size:11px;font-weight:700">CEP</label><div class="search" style="margin:0"><input id="vz-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="vzCepDig()"></div></div>'+
+    '<div style="flex:1"><label style="font-size:11px;font-weight:700">Número</label><div class="search" style="margin:0"><input id="vz-num" placeholder="123 ou S/N"></div></div></div>'+
+    '<div style="margin-top:8px"><label style="font-size:11px;font-weight:700">Complemento (opcional)</label><div class="search" style="margin:0"><input id="vz-comp" placeholder="apto, bloco..."></div></div>'+
+    '<div id="vz-res" style="margin:12px 0"></div>'+
+    '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="vzFechar()">Cancelar</button><button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar()">Salvar</button></div></div>';
+  document.body.appendChild(ov);
+}
+function vzFechar(){ try{ if(VZ.rec) VZ.rec.stop(); }catch(e){} VZ.rec=null; VZ.ouvindo=false; var o=el('vz-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
+function vzOuvir(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ aviso('Este aparelho não tem voz aqui. Digite o CEP e o número.'); return; }
+  if(VZ.ouvindo){ try{ VZ.rec.stop(); }catch(e){} return; }
+  var r=new SR(); r.lang='pt-BR'; r.interimResults=false; r.maxAlternatives=1; VZ.rec=r; VZ.ouvindo=true;
+  var b=el('vz-mic'), o=el('vz-ouv'); if(b) b.textContent='🔴 Ouvindo… toque para parar'; if(o) o.textContent='';
+  r.onresult=function(ev){
+    var t=ev.results[0][0].transcript, p=vzParse(t); if(el('vz-ouv')) el('vz-ouv').textContent='Ouvi: “'+t+'”';
+    if(p.cep&&el('vz-cep')){ el('vz-cep').value=p.cep.length>5?p.cep.substring(0,5)+'-'+p.cep.substring(5):p.cep; vzCepDig(); }
+    if(p.num&&el('vz-num')) el('vz-num').value=p.num.toUpperCase();
+    if(!p.num&&el('vz-ouv')) el('vz-ouv').textContent+=' — não entendi o número, digite.';
+  };
+  r.onerror=function(){ if(el('vz-ouv')) el('vz-ouv').textContent='Não consegui ouvir. Tente de novo ou digite.'; };
+  r.onend=function(){ VZ.ouvindo=false; var b2=el('vz-mic'); if(b2) b2.textContent='🎤 Falar CEP e número'; };
+  try{ r.start(); }catch(e){ VZ.ouvindo=false; }
+}
+function vzCepDig(){
+  var i=el('vz-cep'); if(!i) return; var d=i.value.replace(/\D/g,'').substring(0,8);
+  i.value=d.length>5?d.substring(0,5)+'-'+d.substring(5):d;
+  var r=el('vz-res'); VZ.achou=null; VZ.cep=d;
+  if(d.length<8){ if(r) r.innerHTML=''; return; }
+  if(r) r.innerHTML='<div class="aviso-acao" style="margin:0"><b>Buscando o CEP…</b></div>';
+  rpApi('/motorista/cep?cep='+d).then(function(x){
+    if(VZ.cep!==d) return; var r2=el('vz-res'); if(!r2) return;
+    if(!x||!x.ok){ r2.innerHTML='<div style="color:#B91C1C;font-size:13px">'+esc((x&&x.mensagem)||'Não consegui buscar o CEP.')+'</div>'; return; }
+    if(x.achou){ VZ.achou=true; VZ.rua=x.rua; VZ.bai=x.bai||''; VZ.cid=x.cid||'';
+      r2.innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px"><b>'+esc(x.rua)+'</b><br>'+esc((x.bai?x.bai+' · ':'')+x.cid+(x.uf?'/'+x.uf:''))+'</div>'; }
+    else{ VZ.achou=false; VZ.rua=''; VZ.bai=''; VZ.cid='';
+      r2.innerHTML='<div style="font-size:12px;color:#8A5A00;margin-bottom:6px">CEP geral, sem rua. Preencha o endereço:</div>'+
+        '<div class="search" style="margin:0 0 6px"><input id="vz-rua" placeholder="Rua"></div><div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:1"><input id="vz-bai" placeholder="Bairro"></div><div class="search" style="margin:0;flex:1"><input id="vz-cid" placeholder="Cidade"></div></div>'; }
+  }).catch(function(){ var r3=el('vz-res'); if(r3) r3.innerHTML='<div style="color:#B91C1C;font-size:13px">Sem conexão.</div>'; });
+}
+function vzSalvar(){
+  if(VZ.busy) return;
+  var cep=(el('vz-cep').value||'').replace(/\D/g,''), num=(el('vz-num').value||'').trim(), comp=(el('vz-comp').value||'').trim();
+  if(cep.length!==8){ aviso('Informe o CEP com 8 números'); return; }
+  if(!num){ aviso('Informe o número (ou S/N)'); return; }
+  var rua=VZ.rua, bai=VZ.bai, cid=VZ.cid;
+  if(VZ.achou===false){ rua=(el('vz-rua')||{}).value||''; bai=(el('vz-bai')||{}).value||''; cid=(el('vz-cid')||{}).value||''; if(!rua||!cid){ aviso('Preencha rua e cidade'); return; } }
+  else if(VZ.achou!==true){ aviso('Aguarde a busca do CEP'); return; }
+  VZ.busy=true; var bt=el('vz-ok'); if(bt) bt.textContent='Salvando…';
+  var cod=VZ.cod, pre=Promise.resolve();
+  function fim(){ VZ.busy=false; var b=el('vz-ok'); if(b) b.textContent='Salvar'; }
+  if(VZ.novo){
+    cod='VOZ'+Date.now().toString(36).toUpperCase();
+    pre=rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,tr:''})}).then(function(d){ if(!d||!d.ok||d.resultado!=='novo') throw new Error('bipar'); });
+  }
+  pre.then(function(){
+    return rpApi('/motorista/endereco',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,cep:cep,num:num,comp:comp,rua:rua,bai:bai,cid:cid})});
+  }).then(function(d){
+    fim();
+    if(!d||!d.ok){ somErroBip(); aviso((d&&d.mensagem)||'Não consegui salvar. Tente de novo.'); return; }
+    var i, f=false, ref=d.rua+', '+d.num;
+    for(i=0;i<BP.meus.length;i++) if(BP.meus[i].cod===cod){ BP.meus[i].e=1; BP.meus[i].r=ref; BP.meus[i].novo=false; f=true; }
+    if(!f) BP.meus.push({cod:cod,t:Date.now(),cl:'',r:ref,e:1,novo:false,voz:true});
+    somBipeOk(); BP.ult={t:'ok',m:'✔ Endereço salvo: '+esc(ref),cod:cod}; vzFechar(); bpAtualizar();
+  }).catch(function(){ fim(); somErroBip(); aviso('Sem conexão. Não salvei — tente de novo.'); });
 }
 function rpIniciar(){ RP._bipou=false; RP.itens=[]; RP.sel={}; RP.fora={}; RP.res=null; EST='rp_calc'; RP.msg='Buscando os endereços da sua rota...'; renderInicio(); rpBuscar(); }
 function rpErro(t){ EST='sem_lote'; renderInicio(); aviso(t||'Sem conexão com o servidor. Tente de novo.'); }
