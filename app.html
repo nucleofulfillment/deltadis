@@ -47,11 +47,11 @@ a{color:inherit}
 html.dd-in #curves,html.dd-in .glow{display:none}
 html.dd-in #fundo i{animation:none}
 /* tela de carregamento (sessão já guardada): logo enquanto o app confere o login */
-#splash{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:26px;background:var(--grad-arte)}
+#splash{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:26px;background:transparent}
 html.dd-ret #splash{display:flex}
 #splash .lg-logo{margin:0}
-#splash .lg-logo .mk{height:60px}
-#splash .lg-logo .wm{height:26px}
+#splash .lg-logo .mk{height:150px}
+#splash .lg-logo .wm{display:none}
 #splash .sp-pts{display:flex;gap:8px}
 #splash .sp-pts i{width:9px;height:9px;border-radius:50%;background:#6D28D9;opacity:.25;animation:sppulse 1s ease-in-out infinite}
 #splash .sp-pts i:nth-child(2){animation-delay:.15s}#splash .sp-pts i:nth-child(3){animation-delay:.3s}
@@ -343,7 +343,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-41-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-43-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -963,6 +963,7 @@ function numAtualizar(){
   else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:22px 12px;text-align:center"><div style="font-size:22px;font-weight:800">Fora da rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+esc(r.cod)+'<br>Este pacote não está na rota criada.</div></div>';
   else h='<div style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-radius:18px;padding:18px 12px;text-align:center"><div style="font-size:13px;opacity:.85">Número do pacote</div><div style="font-size:84px;font-weight:800;line-height:1">'+r.pos+'</div><div style="font-size:13px;margin-top:8px;font-weight:700">'+esc(r.cl||r.cod)+'</div><div style="font-size:12px;opacity:.9">'+esc(r.end)+'</div></div>';
   if(u) u.innerHTML=h;
+  var nl=el('num-lista'); if(nl){ var lh='', k, q; for(k=0;k<LOTE_ATUAL.length;k++){ q=LOTE_ATUAL[k]; var ok=!!NUM.feitos[k+1]; lh+='<div class="bp-item"><span class="bp-seq"'+(ok?' style="background:#DCFCE7;color:#166534"':'')+'>'+(ok?'✔':(k+1))+'</span><div class="bp-info" style="flex:1"><b>Nº '+(k+1)+' · '+esc(q.cliente||q.cod)+'</b><span>'+esc(q.endereco||'')+'</span></div></div>'; } nl.innerHTML=lh; }
   var inf=el('bp-caminfo'); if(inf&&BP.camFn===numBipar) inf.innerHTML=(r&&r.t==='ok')?'<span style="font-size:64px;font-weight:800;color:#fff;display:block;line-height:1">Nº '+r.pos+'</span>'+esc(r.cl||r.cod):(r?'Fora da rota':'Aponte para o código de barras');
 }
 function numTela(){
@@ -972,6 +973,7 @@ function numTela(){
     '<div class="search"><span>🔎</span><input id="num-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')numDigitado()"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:10px"><button class="btn pri" style="flex:1" onclick="numCamera()">📷 Usar a câmera</button><button class="btn sec" style="flex:1" onclick="numDigitado()">Ver número</button></div>'+
     '<button class="btn sec wide" id="num-voz" style="margin-bottom:14px" onclick="numVoz()"></button>'+
+    '<div id="num-lista" style="margin-bottom:14px"></div>'+
     '<button class="btn sec wide" onclick="numSair()">Voltar para a rota</button></div>';
 }
 numLer();
@@ -979,7 +981,7 @@ function rlTela(){
   var h='<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px">📊 Resumo da rota</h3>'+rpResumoHtml()+'</div><div class="card"><h3 style="margin:0 0 2px">Suas paradas</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">'+PONTEIRO+' de '+LOTE_ATUAL.length+' entregues. Para reorganizar as que faltam, arraste pelo ⣿ ou digite a nova posição.</p><div id="rp-lista">', i, p;
   var nomes={entregue:'Entregue',remarcada:'Remarcada',ausente:'Ausente',nao_localizado:'Não localizado'};
   for(i=0;i<LOTE_ATUAL.length;i++){ p=LOTE_ATUAL[i];
-    var txt='<div class="rp-txt"><b>'+esc(p.cliente||p.cod)+(p.semLocal?' <span class="selo-acao" style="margin-left:4px">⚠ ação necessária</span>':'')+(p.remarcadaHoje?' <span class="selo-rem" style="margin-left:4px">🔁 remarcada</span>':'')+rpMesmoSelo(LOTE_ATUAL,i)+'</b><small>'+esc(p.endereco||'')+(p.bairro?' — '+esc(p.bairro):'')+'</small></div>';
+    var txt='<div class="rp-txt"><b>'+esc(p.cliente||p.cod)+(numValida()&&NUM.feitos[i+1]?' <span style="margin-left:4px;background:#DCFCE7;color:#166534;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700">✔ numerado</span>':'')+(p.semLocal?' <span class="selo-acao" style="margin-left:4px">⚠ ação necessária</span>':'')+(p.remarcadaHoje?' <span class="selo-rem" style="margin-left:4px">🔁 remarcada</span>':'')+rpMesmoSelo(LOTE_ATUAL,i)+'</b><small>'+esc(p.endereco||'')+(p.bairro?' — '+esc(p.bairro):'')+'</small></div>';
     if(i<PONTEIRO) h+='<div class="rp-cartao feito" data-i="'+i+'"><span class="rp-ok">✓</span><span class="rp-num">'+(i+1)+'</span>'+txt+'<span class="badge b-wt">'+(nomes[p.status]||'Feita')+'</span></div>';
     else h+='<div class="rp-cartao'+(i===PONTEIRO?' atual':'')+'" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+',rlMover)">⣿</span><input class="rp-pos" type="number" inputmode="numeric" min="'+(PONTEIRO+1)+'" max="'+LOTE_ATUAL.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rlMover('+i+',this.value)">'+txt+(p.semLocal?rpAcoesSem('lote',i,p.cod):'')+'</div>';
   }
@@ -1097,8 +1099,11 @@ function rpMarcarLonge(lista){
   var com=lista.filter(function(p){ return p.lat!=null; }), i, p;
   lista.forEach(function(p){ p._longe=false; if((p.flags||[]).indexOf('cidade_diferente')>=0||(p.flags||[]).indexOf('longe_da_base')>=0) p._longe=true; });
   if(com.length>=3){
-    var la=com.map(function(p){return p.lat;}).sort(function(a,b){return a-b;}), lo=com.map(function(p){return p.lng;}).sort(function(a,b){return a-b;}), m={lat:la[la.length>>1],lng:lo[lo.length>>1]};
-    com.forEach(function(p){ if(rpKmEntre(m,p)>40) p._longe=true; });
+    /* referência = o grupo MAIS NUMEROSO de paradas (não muda quando entra mais uma); empate → o grupo mais perto da base */
+    var bg=null; try{ bg=RP.baseGeo[rpCfg().base]||null; }catch(e){}
+    var bi=0, bn=-1, bd=1e9, j, n, dd;
+    for(i=0;i<com.length;i++){ n=0; for(j=0;j<com.length;j++) if(rpKmEntre(com[i],com[j])<=40) n++; dd=bg?rpKmEntre(bg,com[i]):0; if(n>bn||(n===bn&&dd<bd)){ bn=n; bd=dd; bi=i; } }
+    com.forEach(function(p){ var k=rpKmEntre(com[bi],p); p._km=k; if(k>40) p._longe=true; });
   }
 }
 function rpSinal(p){ return !!p.inc || p.lat==null || rpAprox(p); }
@@ -1146,6 +1151,13 @@ var BP={camFn:null,atual:'',idx:{},meus:[],outros:{},ult:null,ok:false,carregand
 function bpNorm(v){ return String(v==null?'':v).replace(/[^A-Za-z0-9_.-]/g,''); }
 function bpTr(cod){ var c=String(cod).toUpperCase(); if(/^AJ/.test(c)) return 'anj'; if(/^GP.*BR$/.test(c)) return 'pic'; return ''; }
 function somErroBip(){ _tom(220,0,0.18,0.5); _tom(180,0.2,0.22,0.5); try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){} }
+/* parada sem pacote bipado: pergunta se tem código de rastreio */
+function srPerguntar(){
+  var o=document.createElement('div'); o.id='sr-ov'; o.style.cssText='position:fixed;inset:0;background:rgba(15,5,30,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px';
+  o.innerHTML='<div class="card" style="width:100%;max-width:380px;margin:0"><h3 style="margin:0 0 6px">Esse pacote tem código de rastreio?</h3><p style="margin:0 0 14px;color:var(--muted);font-size:12.5px">Com código, bipe o pacote para ele entrar certinho na sua lista. Sem código, cadastre só o endereço.</p><button class="btn pri wide" style="margin-bottom:8px" onclick="srFechar();var i=el(\'bp-cod\');if(i)i.focus()">Tem — vou bipar</button><button class="btn sec wide" style="margin-bottom:8px" onclick="srFechar();vzAbrir(\'\',\'voz\')">Não tem — só o endereço</button><button class="btn sec wide" onclick="srFechar()">Cancelar</button></div>';
+  document.body.appendChild(o);
+}
+function srFechar(){ var o=el('sr-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
 function bpAbrir(){ EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(); }
 function bpCarregar(){
   BP.carregando=true; bpAtualizar();
@@ -1164,7 +1176,7 @@ function bpItemHtml(m){
   var info;
   if(m.e) info='<span style="color:#166534;font-weight:700;font-size:12px">✔ '+esc(m.r||((m.cl||'')+'' ))+'</span>';
   else info='<span style="color:#B45309">'+(m.novo?'sem dados':'endereço incompleto')+' · toque e fale o endereço</span>';
-  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FFFBF2;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+esc(m.cod)+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FFFBF2;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+esc(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':m.cod)+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
 function bpAtualizar(){
   var c=el('bp-cnt'), u=el('bp-ult'), l=el('bp-lista'); if(!c) return;
@@ -1240,7 +1252,7 @@ function bpTela(){
     '<div id="bp-ult"></div>'+
     '<div class="search"><span>🔎</span><input id="bp-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')bpDigitado()"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn pri" style="flex:1" onclick="bpCamera()">📷 Usar a câmera</button><button class="btn sec" style="flex:1" onclick="bpDigitado()">Registrar</button></div>'+
-    '<button class="btn sec wide" style="margin:-4px 0 14px" onclick="vzAbrir(\'\',\'voz\')">🎤 Parada sem pacote (falar o endereço)</button>'+
+    '<button class="btn sec wide" style="margin:-4px 0 14px" onclick="srPerguntar()">🎤 Parada sem pacote (falar o endereço)</button>'+
     '<div id="bp-lista"></div>'+
     '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">Montar minha rota</button></div></div>';
 }
@@ -1502,7 +1514,7 @@ function rpBuscar(){
   /* modo foguete: 1ª chamada descobre o total; o resto vem em paralelo (4 por vez).
      O limite conta só as paradas que TÊM localização: se vierem sem endereço, busca mais até completar. */
   var mx=rpCfg().max, feitos=rpFeitos().cods, N=12, blocos={}, total=0, prox=N;
-  function pega(ini){ return rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n='+N+'&todos=1'+(RP.bipMode?'&bip=1':'')).then(function(d){ if(!d||!d.ok) throw new Error('falhou'); blocos[ini]=d.itens; total=d.total; return d; }); }
+  function pega(ini){ return rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n='+N+'&todos=1'+(RP.bipMode?'&bip=1':'')).then(function(d){ if(!d||!d.ok) throw new Error('falhou'); d.itens.forEach(function(q){ if(!q.cliente && /^VOZ[0-9A-Z]{6,}$/.test(q.cod)) q.cliente='Sem rastreio'; }); blocos[ini]=d.itens; total=d.total; return d; }); }
   function ordenados(){ var k=Object.keys(blocos).map(Number).sort(function(a,b){return a-b;}), t=[], i; for(i=0;i<k.length;i++) t=t.concat(blocos[k[i]]); return t.filter(function(p){ return feitos.indexOf(p.cod)<0; }); }
   function boas(){ return ordenados().filter(function(p){ return p.lat!=null && !p.inc; }).length; }
   function progresso(){ RP.msg='Localizando os endereços... '+Math.min(Object.keys(blocos).length*N,total)+' de '+total; renderInicio(); }
@@ -1628,9 +1640,10 @@ function rpTelaEscolher(){
       '<button class="rp-mais" title="Mais opções" onclick="RP.menu=(RP.menu===\''+cd+'\'?null:\''+cd+'\');renderInicio()">⋮</button>'+
       (RP.menu===p.cod?'<div class="rp-rem"><button onclick="RP.menu=null;renderInicio()">Cancelar</button><button class="lx" onclick="RP.menu=null;rpTirar(\''+cd+'\')">🗑 Remover esta parada</button></div>':'')+'</div>'; }
   for(i=0;i<RP.extra.length;i++){ var ex=RP.extra[i];
-    h+='<div class="rp-cartao sem"><span class="rp-num">'+(r.ordem.length+i+1)+'</span><div class="rp-txt"><b>'+esc(ex.cliente||ex.cod)+' <span class="selo-acao" style="margin-left:4px">⚠ ação necessária</span></b><small>'+esc((ex.rua||'sem rua')+(ex.num?', '+ex.num:'')+(ex.bai?' — '+ex.bai:''))+' · '+esc(ex.inc?'endereço incompleto':(ex.lat==null?'não localizado':'fora da cidade'))+'</small></div>'+rpAcoesSem('extra',i,ex.cod)+'</div>'; }
+    h+='<div class="rp-cartao sem"><span class="rp-num">'+(r.ordem.length+i+1)+'</span><div class="rp-txt"><b>'+esc(ex.cliente||ex.cod)+' <span class="selo-acao" style="margin-left:4px">⚠ ação necessária</span></b><small>'+esc((ex.rua||'sem rua')+(ex.num?', '+ex.num:'')+(ex.bai?' — '+ex.bai:''))+' · '+esc(ex.inc?'endereço incompleto':(ex.lat==null?'não localizado':'fora da cidade'+(ex._km?' ('+Math.round(ex._km)+' km do grosso das paradas'+(ex.cid?', '+ex.cid:'')+')':(ex.cid?' ('+ex.cid+')':''))))+'</small></div>'+rpAcoesSem('extra',i,ex.cod)+'</div>'; }
   h+='</div>';
-  h+='<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button><button class="btn pri" style="flex:1" onclick="rpComecar()">Começar entregas</button></div></div>';
+  h+='<button class="btn sec wide" style="margin-top:14px" onclick="RP.numFlag=true;rpComecar()">🔢 Criar numeração</button>';
+  h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button><button class="btn pri" style="flex:1" onclick="rpComecar()">Começar entregas</button></div></div>';
   return h;
 }
 function rpRemarcados(){ var m={}; try{ m=JSON.parse(localStorage.getItem('dd_remarc')||'{}'); }catch(e){} var h=hojeISO(), k; for(k in m) if(m[k]<h) delete m[k]; return m; }
@@ -1699,7 +1712,9 @@ function rpComecar2(){
   LOTE_ATUAL=[]; for(i=0;i<r.ordem.length;i++) LOTE_ATUAL.push(rpParada(RP.pts[r.ordem[i]],i+1));
   for(i=0;i<RP.extra.length;i++) LOTE_ATUAL.push(rpParada(RP.extra[i],LOTE_ATUAL.length+1));
   var vlt=rpCfg().volta==='sim'; ROTA_KM=Math.round((vlt?r.totalKm:r.idaKm)*10)/10; ROTA_MIN=Math.round(vlt?r.totalMin:r.idaMin); RP.rota=r; RP.baseLL=RP.res.base||null; RP.ajustou=false;
-  PONTEIRO=0; SAIU_TELA_CHEIA=false; EST='em_rota'; renderInicio();
+  PONTEIRO=0; SAIU_TELA_CHEIA=false;
+  if(RP.numFlag){ RP.numFlag=false; numCriar(); return; }
+  EST='em_rota'; renderInicio();
 }
 /* mapa real (OpenFreeMap) da rota em andamento — o elemento fica guardado pra não recarregar a cada parada */
 function rpCarregarMapa(cb){
@@ -2015,7 +2030,7 @@ function initCurves(){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-  fundoSegueCursor(); if(!document.documentElement.classList.contains('dd-ret')) curvesLigar();
+  fundoSegueCursor(); curvesLigar();
   var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
   var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
   retomarSessao();
