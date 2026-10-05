@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-33-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-34-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1186,7 +1186,17 @@ function vzParse(t){
   if(/sem\s+n[uú]mero|\bs\s?\/?\s?n\b/.test(s)){ var kk=s.search(/sem\s+n[uú]mero|\bs\s?\/?\s?n\b/); cep=s.substring(0,kk).replace(/\D/g,'').substring(0,8); num='S/N'; }
   else if(k>=0){ cep=dg.substring(0,8); var tk=dir.split(/\s+/), q=0, nn=''; while(q<tk.length && /^\d+[a-z]?$/.test(tk[q])){ nn+=tk[q]; q++; } num=nn; }
   else{ var all=s.replace(/[^0-9 ]/g,''), d2=all.replace(/\s/g,''); cep=d2.substring(0,8); num=d2.substring(8); }
-  return {cep:cep,num:num};
+  var rua='';
+  if(cep.length<8){
+    cep=''; var corpo=s, kk2=s.search(/\b(n[uú]mero|numero|n[ºo°])\b/);
+    if(kk2>=0){ corpo=s.substring(0,kk2); var tk2=s.substring(kk2).replace(/^\S+\s*/,'').split(/\s+/), q2=0, n2=''; while(q2<tk2.length && /^\d+[a-z]?$/.test(tk2[q2])){ n2+=tk2[q2]; q2++; } num=n2; }
+    else{ var mm=s.match(/^(.*?)\s+(\d+[a-z]?)(\s.*)?$/); if(mm){ corpo=mm[1]; num=mm[2]; } }
+    var og=String(t||'').toLowerCase(), ko=og.search(/\b(n[uú]mero|numero|n[ºo°])\b/);
+    if(ko>=0) corpo=og.substring(0,ko); else { var mo=og.match(/^(.*?)\s+\d+[a-z]?(\s.*)?$/); corpo=mo?mo[1]:og; }
+    rua=corpo.replace(/^\s*cep\s*/,'').replace(/\s+/g,' ').trim();
+    if(/\d{3,}/.test(rua)) rua='';
+  }
+  return {cep:cep,num:num,rua:rua};
 }
 function vzAbrir(cod){
   var e=null, i; VZ.cod=cod||''; VZ.novo=!cod; VZ.rua=''; VZ.bai=''; VZ.cid=''; VZ.cep=''; VZ.achou=null;
@@ -1196,11 +1206,15 @@ function vzAbrir(cod){
     '<h3 style="margin:0 0 2px">'+(cod?'Endereço do pacote':'Parada sem pacote')+'</h3>'+
     (cod?'<p style="margin:0 0 10px;font-size:12px;color:var(--muted);word-break:break-all">'+esc(cod)+'</p>':'<p style="margin:0 0 10px;font-size:12px;color:var(--muted)">Cadastre o endereço de uma parada que não tem etiqueta para bipar.</p>')+
     '<button class="btn pri wide" id="vz-mic" onclick="vzOuvir()">🎤 Falar CEP e número</button>'+
-    '<p style="margin:6px 0 12px;font-size:11.5px;color:var(--muted);text-align:center">Diga assim: “CEP 01310 100, número 1578”</p>'+
+    '<p style="margin:6px 0 12px;font-size:11.5px;color:var(--muted);text-align:center">Diga: “CEP 01310 100, número 1578” — ou: “Rua das Flores, número 123”</p>'+
     '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:8px;min-height:16px"></div>'+
     '<div style="display:flex;gap:8px"><div style="flex:1.4"><label style="font-size:11px;font-weight:700">CEP</label><div class="search" style="margin:0"><input id="vz-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="vzCepDig()"></div></div>'+
     '<div style="flex:1"><label style="font-size:11px;font-weight:700">Número</label><div class="search" style="margin:0"><input id="vz-num" placeholder="123 ou S/N"></div></div></div>'+
     '<div style="margin-top:8px"><label style="font-size:11px;font-weight:700">Complemento (opcional)</label><div class="search" style="margin:0"><input id="vz-comp" placeholder="apto, bloco..."></div></div>'+
+    '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border)"><div style="font-size:11.5px;font-weight:700;margin-bottom:6px">Sem CEP? Procure pela rua</div>'+
+    '<div class="search" style="margin:0 0 6px"><input id="vz-rua0" placeholder="Nome da rua (ex.: Rua das Flores)"></div>'+
+    '<div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:2"><input id="vz-cid0" placeholder="Cidade" value="'+esc(vzLer('c'))+'"></div><div class="search" style="margin:0;flex:.6"><input id="vz-uf0" maxlength="2" placeholder="UF" value="'+esc(vzLer('u'))+'" style="text-transform:uppercase"></div><button class="btn sec" style="padding:4px 12px" onclick="vzBuscarRua()">Buscar</button></div>'+
+    '<div id="vz-cand" style="margin-top:8px"></div></div>'+
     '<div id="vz-res" style="margin:12px 0"></div>'+
     '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="vzFechar()">Cancelar</button><button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar()">Salvar</button></div></div>';
   document.body.appendChild(ov);
@@ -1214,6 +1228,7 @@ function vzOuvir(){
   var b=el('vz-mic'), o=el('vz-ouv'); if(b) b.textContent='🔴 Ouvindo… toque para parar'; if(o) o.textContent='';
   r.onresult=function(ev){
     var t=ev.results[0][0].transcript, p=vzParse(t); if(el('vz-ouv')) el('vz-ouv').textContent='Ouvi: “'+t+'”';
+    if(!p.cep&&p.rua&&el('vz-rua0')){ el('vz-rua0').value=p.rua; if(p.num&&el('vz-num')) el('vz-num').value=p.num.toUpperCase(); vzBuscarRua(); return; }
     if(p.cep&&el('vz-cep')){ el('vz-cep').value=p.cep.length>5?p.cep.substring(0,5)+'-'+p.cep.substring(5):p.cep; vzCepDig(); }
     if(p.num&&el('vz-num')) el('vz-num').value=p.num.toUpperCase();
     if(!p.num&&el('vz-ouv')) el('vz-ouv').textContent+=' — não entendi o número, digite.';
@@ -1222,6 +1237,23 @@ function vzOuvir(){
   r.onend=function(){ VZ.ouvindo=false; var b2=el('vz-mic'); if(b2) b2.textContent='🎤 Falar CEP e número'; };
   try{ r.start(); }catch(e){ VZ.ouvindo=false; }
 }
+function vzLer(k){ try{ return localStorage.getItem('dd_vz_'+k)||(k==='u'?'SC':''); }catch(e){ return k==='u'?'SC':''; } }
+function vzGravar(k,v){ try{ localStorage.setItem('dd_vz_'+k,v); }catch(e){} }
+function vzBuscarRua(){
+  var rua=(el('vz-rua0').value||'').trim(), cid=(el('vz-cid0').value||'').trim(), uf=(el('vz-uf0').value||'').trim().toUpperCase(), c=el('vz-cand');
+  if(rua.length<3||cid.length<2||uf.length!==2){ aviso('Informe rua, cidade e UF'); return; }
+  vzGravar('c',cid); vzGravar('u',uf);
+  c.innerHTML='<div class="aviso-acao" style="margin:0"><b>Procurando a rua…</b></div>';
+  rpApi('/motorista/rua?uf='+encodeURIComponent(uf)+'&cid='+encodeURIComponent(cid)+'&rua='+encodeURIComponent(rua)).then(function(d){
+    var c2=el('vz-cand'); if(!c2) return;
+    if(!d||!d.ok){ c2.innerHTML='<div style="color:#B91C1C;font-size:13px">'+esc((d&&d.mensagem)||'Não consegui buscar.')+'</div>'; return; }
+    if(!d.itens.length){ c2.innerHTML='<div style="color:#8A5A00;font-size:13px">Não achei essa rua. Confira o nome ou use o CEP.</div>'; return; }
+    VZ.cand=d.itens; var h='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Toque na rua certa:</div>', i, x;
+    for(i=0;i<d.itens.length;i++){ x=d.itens[i]; h+='<button class="btn sec wide" style="text-align:left;margin-bottom:6px;font-size:13px" onclick="vzEscolher('+i+')"><b>'+esc(x.rua)+'</b><br><span style="font-size:11.5px;color:var(--muted)">'+esc((x.bai?x.bai+' · ':'')+x.cid+'/'+x.uf)+'</span></button>'; }
+    c2.innerHTML=h;
+  }).catch(function(){ var c3=el('vz-cand'); if(c3) c3.innerHTML='<div style="color:#B91C1C;font-size:13px">Sem conexão.</div>'; });
+}
+function vzEscolher(i){ var x=(VZ.cand||[])[i]; if(!x) return; el('vz-cep').value=x.cep; vzCepDig(); var c=el('vz-cand'); if(c) c.innerHTML=''; }
 function vzCepDig(){
   var i=el('vz-cep'); if(!i) return; var d=i.value.replace(/\D/g,'').substring(0,8);
   i.value=d.length>5?d.substring(0,5)+'-'+d.substring(5):d;
