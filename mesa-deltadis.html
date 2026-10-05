@@ -147,6 +147,20 @@
     .rm-overlay{position:static;background:none;backdrop-filter:none;padding:0}
     .rm-modal{max-width:100%;max-height:none;box-shadow:none;border-radius:0}
   }
+
+  .scan .ult{min-height:54px;border:1px solid var(--border2);border-radius:12px;background:var(--s2);padding:10px 12px;margin-bottom:12px;font-size:12.5px}
+  .scan .ult b{display:block;font-size:15px;letter-spacing:.3px;word-break:break-all}
+  .scan .ult.ok{background:#ECFDF3;border-color:#B7EBC9;color:#166534}
+  .scan .ult.rep{background:#FFF7E6;border-color:#F5D9A0;color:#8A5A00}
+  .scan .ult.err{background:#FCEBEB;border-color:#F3C9C9;color:#B91C1C}
+  .scan label.auto{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--muted2);margin:0 0 14px;line-height:1.35}
+  .rm-item .tn{font-size:11px;color:var(--muted)}
+  .cam-overlay{position:fixed;inset:0;background:rgba(15,5,30,.92);z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
+  .cam-overlay.on{display:flex}
+  .cam-box{position:relative;width:min(92vw,560px);aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#000}
+  .cam-box video{width:100%;height:100%;object-fit:cover}
+  .cam-linha{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#EC4899;box-shadow:0 0 12px #EC4899}
+  .cam-info{color:#fff;font-size:13px;text-align:center;max-width:90vw}
 </style>
 </head>
 <div id="login">
@@ -210,8 +224,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>E-mail</label><input class="inp" id="lg-email" type="email" placeholder="voce@ponto.com.br"></div>
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
-    <p class="lg-demo">Esta é a <b>demonstração</b> — qualquer e-mail e senha entram.</p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-01-0210</p>
+    <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-02-0510</p>
   </div>
 </div>
 
@@ -277,7 +291,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </g></svg>
       <span class="suf"> · Mesa</span>
     </div>
-    <div class="sub">Escolha a transportadora que chegou pra começar a contagem</div>
+    <div class="sub">Entrada de pacotes — escolha a transportadora e bipe. Pode trocar de transportadora a qualquer momento.</div>
   </div>
 
   <div class="mesa-layout">
@@ -297,23 +311,22 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
         <div id="scan-conteudo" style="display:none">
           <h3 id="scan-nome">—</h3>
-          <p class="desc">Aproxime o leitor ou bata a foto do pacote — o sistema busca cliente, endereço e WhatsApp automaticamente pela nota fiscal.</p>
+          <p class="desc">Bipe a etiqueta (leitor ou câmera) ou digite o código. Só o código de rastreio entra agora; os dados do cliente vêm depois pela planilha.</p>
           <div class="cnt" id="scan-cnt">0</div>
+          <div class="ult" id="scan-ult"><span class="ult-t">Aguardando a primeira bipagem…</span></div>
 
           <div class="manual">
-            <label>Não leu a etiqueta? Digite o código manualmente</label>
+            <label>Código de rastreio (o leitor digita aqui sozinho)</label>
             <div class="manual-row">
-              <input type="text" id="scan-manual" placeholder="Código ou chave da NF-e" onkeydown="if(event.key==='Enter') registrarManual()">
+              <input type="text" id="scan-manual" placeholder="Bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter') registrarManual()">
               <button onclick="registrarManual()">Registrar</button>
             </div>
           </div>
+          <label class="auto"><input type="checkbox" id="scan-auto"> Reconhecer a transportadora pelo código (AJ… = Anjun, GP…BR = Pichau)</label>
 
           <div class="row">
-            <button class="btn pri" onclick="bipar()">📷 Bater foto do pacote</button>
-            <button class="btn sec" onclick="bipar()">Simular bipagem</button>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <button class="btn avaria" onclick="registrarOcorrencia()">⚠️ Ocorrência / avaria</button>
+            <button class="btn pri" onclick="abrirCamera()">📷 Bipar com a câmera</button>
+            <button class="btn sec" onclick="desfazerUltimo()" id="btn-desfazer" disabled>↩ Desfazer o último</button>
           </div>
           <div class="divisor"></div>
           <div class="row">
@@ -323,6 +336,15 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       </div>
     </div>
   </div>
+</div>
+
+<div class="cam-overlay" id="cam-overlay">
+  <div class="cam-box">
+    <video id="cam-video" playsinline muted></video>
+    <div class="cam-linha"></div>
+  </div>
+  <div class="cam-info" id="cam-info">Aponte para o código de barras da etiqueta</div>
+  <button class="btn sec" onclick="fecharCamera()">Fechar câmera</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -407,22 +429,31 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </div>
 
 <script>
-/* mesma lista de transportadoras do painel principal — domínio confirmado = favicon real */
+/* mesma lista de transportadoras do painel principal (mesmos códigos) */
+var DELTADIS_API='https://api.deltadis.com.br';
 var TRANSPORTADORAS=[
-  {id:'jt',  n:'J&T Express',  ini:'JT', cor:'#EC4899', hoje:214, dominio:'jtexpress.com.br'},
-  {id:'anj', n:'Anjun',        ini:'AJ', cor:'#16A34A', hoje:98,  dominio:'anjunexpress.com'},
-  {id:'azu', n:'Azul Cargo',   ini:'AZ', cor:'#1D4ED8', hoje:157, dominio:'azulcargas.com.br'},
-  {id:'eng', n:'Engloba',      ini:'EN', cor:'#B08A00', hoje:63,  dominio:null},
-  {id:'ctl', n:'Central Log',  ini:'CT', cor:'#6D28D9', hoje:121, dominio:null},
-  {id:'rsc', n:'Rápido SC',    ini:'RS', cor:'#DC2626', hoje:74,  dominio:null},
-  {id:'vex', n:'Vex',          ini:'VX', cor:'#9333EA', hoje:142, dominio:null},
-  {id:'tbr', n:'TransBR',      ini:'TB', cor:'#0F766E', hoje:56,  dominio:null}
+  {id:'jt',  n:'J&T Express',        ini:'JT', cor:'#EC4899', hoje:0, dominio:'jtexpress.com.br'},
+  {id:'anj', n:'Anjun',              ini:'AJ', cor:'#16A34A', hoje:0, dominio:'anjunexpress.com'},
+  {id:'dhl', n:'DHL',                ini:'DH', cor:'#FFCC00', hoje:0, dominio:'dhl.com'},
+  {id:'pic', n:'Pichau',             ini:'PI', cor:'#1D4ED8', hoje:0, dominio:'pichau.com.br'},
+  {id:'enq', n:'Expresso Nordeste',  ini:'EQ', cor:'#DC2626', hoje:0, dominio:'expnordeste.com.br'},
+  {id:'kmc', n:'Km Cargo',           ini:'KM', cor:'#0F766E', hoje:0, dominio:'kmcargo.com.br'},
+  {id:'lsl', n:'Ls Log',             ini:'LL', cor:'#9333EA', hoje:0, dominio:'lslog.com.br'},
+  {id:'din', n:'Dinâmica',           ini:'DI', cor:'#B08A00', hoje:0, dominio:'dinamicagroup.com.br'},
+  {id:'dia', n:'Diálogo Logística',  ini:'DL', cor:'#6D28D9', hoje:0, dominio:'dialogologistica.com.br'},
+  {id:'lgb', n:'Log GB',             ini:'LG', cor:'#16A34A', hoje:0, dominio:null}
 ];
-
-/* pool de dados simulados (cliente/endereço/telefone) — hoje é um placeholder;
-   quando a leitura real da NF-e/XML estiver definida, isso passa a vir de lá */
-var POOL_CLIENTES=['Marcos Andrade','Juliana Fontoura','Rafael Silveira','Camila Duarte','Bruno Kowalski','Larissa Menezes','Eduardo Prass','Fernanda Roos','Thiago Bittencourt','Patrícia Golin','Gustavo Zimmermann','Renata Cardoso'];
-var POOL_BAIRROS=['Centro','Fazenda','São Vicente','Cordeiros','Praia Brava','Espinheiros','Vila Operária'];
+/* login: usa a mesma entrada do painel (se o painel já estava aberto neste navegador, entra direto) */
+var DD_TOKEN='', DD_USER=null;
+try{ DD_TOKEN=localStorage.getItem('dd_jwt')||''; DD_USER=JSON.parse(localStorage.getItem('dd_user')||'null'); }catch(e){}
+function api(caminho,opc){
+  opc=opc||{}; var h={'Content-Type':'application/json'}; if(DD_TOKEN) h['Authorization']='Bearer '+DD_TOKEN;
+  opc.headers=h;
+  return fetch(DELTADIS_API+caminho,opc).then(function(r){
+    if(r.status===401 && DD_TOKEN){ sairLogin('Sua sessão acabou. Entre de novo.'); throw new Error('sessao'); }
+    return r.json();
+  });
+}
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function el(id){return document.getElementById(id);}
@@ -435,9 +466,6 @@ function iconeHTML(t){
 function aviso(t){var e=el('toast'); e.textContent=t; e.classList.add('on');
   clearTimeout(window._tt); window._tt=setTimeout(function(){e.classList.remove('on');},2600);}
 
-function hashSeed(s){ s=String(s); var h=0,i; for(i=0;i<s.length;i++){ h=((h<<5)-h+s.charCodeAt(i))|0; } return Math.abs(h); }
-function telefoneCliente(nome){ var hs=hashSeed(nome); return '55479'+String(10000000+(hs%89999999)); }
-function gerarChaveNF(){ var s='',i; for(i=0;i<44;i++) s+=Math.floor(Math.random()*10); return s; }
 
 function pintarCards(){
   var h='',i;
@@ -447,67 +475,128 @@ function pintarCards(){
   el('mesa-cards').innerHTML=h;
 }
 
-/* ══ estado da bipagem ══ */
-var ATIVA=null, CNT=0, PACOTES=[];
+/* ══ estado da bipagem ══
+   A sessão (contagem) é única: dá pra trocar de transportadora no meio e cada pacote guarda a sua. */
+var ATIVA=null, CNT=0, PACOTES=[], VISTOS={}, ULT=null, OCUPADO=false;
+
+function achaTr(id){ var i; for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].id===id) return TRANSPORTADORAS[i]; return null; }
 
 function abrirMesa(id){
-  var t=null,i; for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].id===id) t=TRANSPORTADORAS[i];
-  if(!t) return;
-  ATIVA=t; CNT=0; PACOTES=[];
+  var t=achaTr(id); if(!t) return;
+  ATIVA=t;
   el('scan-nome').textContent=t.n;
-  el('scan-cnt').textContent='0';
+  el('scan-cnt').textContent=CNT;
   el('scan-vazio').style.display='none';
   el('scan-conteudo').style.display='block';
   el('btn-romaneio').disabled=false;
   pintarCards();
+  setTimeout(function(){ var i=el('scan-manual'); if(i) i.focus(); },50);
 }
 
-function registrarPacote(chave){
-  CNT++;
-  var agora=new Date();
-  var hh=String(agora.getHours()).padStart(2,'0'), mm=String(agora.getMinutes()).padStart(2,'0'), ss=String(agora.getSeconds()).padStart(2,'0');
-  /* simulação: em produção esses dados vêm da leitura da NF-e (XML) vinculada ao código bipado */
-  var seed=hashSeed(chave);
-  var cliente=POOL_CLIENTES[seed%POOL_CLIENTES.length];
-  var bairro=POOL_BAIRROS[Math.floor(seed/7)%POOL_BAIRROS.length];
-  var endereco='Rua '+(100+(seed%900))+', '+bairro;
-  var telefone=telefoneCliente(cliente);
-  PACOTES.push({seq:CNT, chave:chave, cliente:cliente, endereco:endereco, bairro:bairro, telefone:telefone, hora:hh+':'+mm+':'+ss});
-  el('scan-cnt').textContent=CNT;
-  ATIVA.hoje++; pintarCards();
-  somBipeOk();
-  return PACOTES[PACOTES.length-1];
+/* reconhece a transportadora pelo começo do código (só quando a caixinha está marcada) */
+function detectarTr(cod){
+  var c=String(cod).toUpperCase();
+  if(/^AJ/.test(c)) return 'anj';
+  if(/^GP.*BR$/.test(c)) return 'pic';
+  return '';
 }
 
-function bipar(){
-  if(!ATIVA) return;
-  registrarPacote(gerarChaveNF());
+function mostrarUlt(cls,titulo,cod){
+  var u=el('scan-ult'); u.className='ult '+cls;
+  u.innerHTML='<span class="ult-t">'+esc(titulo)+'</span><b>'+esc(cod||'')+'</b>';
+}
+
+function registrarPacote(cod){
+  if(!ATIVA || OCUPADO) return;
+  cod=String(cod||'').replace(/[^A-Za-z0-9_.-]/g,'');
+  if(cod.length<5){ somErro(); mostrarUlt('err','Código curto demais — confira a etiqueta',cod); return; }
+  var tr=ATIVA;
+  if(el('scan-auto').checked){
+    var d=detectarTr(cod), dt=d?achaTr(d):null;
+    if(dt && dt.id!==tr.id){ tr=dt; ATIVA=dt; el('scan-nome').textContent=dt.n; pintarCards(); aviso('Transportadora trocada para '+dt.n); }
+  }
+  if(VISTOS[cod]){ somErro(); mostrarUlt('rep','Já bipado nesta contagem ('+VISTOS[cod].tn+', '+VISTOS[cod].hora+')',cod); return; }
+  OCUPADO=true;
+  api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id})}).then(function(d){
+    OCUPADO=false;
+    if(!d||!d.ok){ somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
+    var ag=new Date(d.t||Date.now()), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2)+':'+('0'+ag.getSeconds()).slice(-2);
+    if(d.resultado==='repetido'){
+      var ant=achaTr(d.tr), tn=ant?ant.n:d.tr; VISTOS[cod]={tn:tn,hora:hora};
+      somErro(); mostrarUlt('rep','Esse código já tinha entrado antes ('+tn+')',cod); return;
+    }
+    CNT++; tr.hoje++;
+    var p={seq:CNT, cod:cod, tr:tr.id, tn:tr.n, hora:hora}; PACOTES.push(p); VISTOS[cod]={tn:tr.n,hora:hora}; ULT=p;
+    el('scan-cnt').textContent=CNT; el('btn-desfazer').disabled=false;
+    mostrarUlt('ok','✔ Entrou — '+tr.n,cod);
+    pintarCards(); somBipeOk();
+  }).catch(function(){ OCUPADO=false; somErro(); mostrarUlt('err','Sem conexão com o servidor. Esse pacote NÃO foi registrado — bipe de novo.',cod); });
 }
 
 function registrarManual(){
   if(!ATIVA) return;
   var inp=el('scan-manual'), val=(inp.value||'').trim();
-  if(!val){ aviso('Digite o código ou a chave da NF-e'); return; }
-  var p=registrarPacote(val);
-  inp.value='';
-  aviso('Registrado: '+p.cliente);
+  if(!val){ aviso('Digite ou bipe o código'); return; }
+  registrarPacote(val); inp.value=''; inp.focus();
 }
 
-function registrarOcorrencia(){
-  if(!ATIVA) return;
-  aviso('⚠️ Registro de ocorrência/avaria — em breve');
+function desfazerUltimo(){
+  if(!ULT) return;
+  var p=ULT;
+  api('/mesa/desfazer',{method:'POST',body:JSON.stringify({cod:p.cod})}).then(function(d){
+    if(!d||!d.ok||!d.apagou){ aviso((d&&d.mensagem)||'Não consegui desfazer.'); return; }
+    var i; for(i=PACOTES.length-1;i>=0;i--) if(PACOTES[i].cod===p.cod){ PACOTES.splice(i,1); break; }
+    delete VISTOS[p.cod]; CNT--; var t=achaTr(p.tr); if(t&&t.hoje>0) t.hoje--;
+    ULT=PACOTES.length?PACOTES[PACOTES.length-1]:null; el('btn-desfazer').disabled=!ULT;
+    el('scan-cnt').textContent=CNT; mostrarUlt('rep','Desfeito',p.cod); pintarCards();
+  }).catch(function(){ aviso('Sem conexão. Não desfiz.'); });
 }
 
 function encerrar(){
-  if(ATIVA) aviso(CNT+' pacotes bipados de '+ATIVA.n);
-  ATIVA=null; CNT=0; PACOTES=[];
+  if(CNT) aviso(CNT+' pacote'+(CNT===1?'':'s')+' registrado'+(CNT===1?'':'s')+' nesta contagem');
+  fecharCamera();
+  ATIVA=null; CNT=0; PACOTES=[]; VISTOS={}; ULT=null;
   el('scan-vazio').style.display='flex';
   el('scan-conteudo').style.display='none';
   el('btn-romaneio').disabled=true;
+  el('scan-ult').className='ult'; el('scan-ult').innerHTML='<span class="ult-t">Aguardando a primeira bipagem…</span>';
+  el('btn-desfazer').disabled=true;
   pintarCards();
 }
 
-/* ══ Romaneio de Carga ══ */
+/* ══ Câmera (leitor de código de barras do próprio navegador — funciona no Chrome do Android) ══ */
+var CAM={stream:null,det:null,timer:null,ultimo:'',quando:0};
+function abrirCamera(){
+  if(!ATIVA) return;
+  if(!('BarcodeDetector' in window) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    aviso('Este aparelho não lê código pela câmera aqui. Use o leitor ou digite o código.'); return;
+  }
+  try{ CAM.det=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','itf','codabar','qr_code']}); }catch(e){ aviso('Câmera de leitura indisponível neste aparelho.'); return; }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(st){
+    CAM.stream=st; var v=el('cam-video'); v.srcObject=st; v.play().catch(function(){});
+    el('cam-overlay').classList.add('on'); el('cam-info').textContent='Aponte para o código de barras da etiqueta';
+    CAM.timer=setInterval(lerQuadro,350);
+  }).catch(function(){ aviso('Não consegui abrir a câmera. Libere a permissão do navegador.'); });
+}
+function lerQuadro(){
+  var v=el('cam-video'); if(!CAM.det || !v || v.readyState<2 || OCUPADO) return;
+  CAM.det.detect(v).then(function(r){
+    if(!r||!r.length) return;
+    var c=String(r[0].rawValue||'').trim(), agora=Date.now();
+    if(!c) return;
+    if(c===CAM.ultimo && agora-CAM.quando<3000) return;   /* mesma etiqueta na frente da câmera: não conta de novo */
+    CAM.ultimo=c; CAM.quando=agora;
+    registrarPacote(c);
+    el('cam-info').textContent='Último: '+c+' — aponte para o próximo';
+  }).catch(function(){});
+}
+function fecharCamera(){
+  if(CAM.timer){ clearInterval(CAM.timer); CAM.timer=null; }
+  if(CAM.stream){ CAM.stream.getTracks().forEach(function(t){ t.stop(); }); CAM.stream=null; }
+  var o=el('cam-overlay'); if(o) o.classList.remove('on');
+}
+
+/* ══ Romaneio de Carga (lista do que foi bipado nesta contagem) ══ */
 function abrirRomaneio(){
   if(!ATIVA) return;
   var t=ATIVA;
@@ -515,18 +604,11 @@ function abrirRomaneio(){
   el('rm-transp-ic').style.background=t.dominio?'#fff':t.cor;
   el('rm-transp-ic').style.color=t.dominio?'#6D28D9':'#fff';
   el('rm-transp-nome').textContent=t.n;
-  el('rm-resumo').textContent=PACOTES.length+' pacote'+(PACOTES.length===1?'':'s')+' bipado'+(PACOTES.length===1?'':'s')+' · '+t.n;
-
+  el('rm-resumo').textContent=PACOTES.length+' pacote'+(PACOTES.length===1?'':'s')+' bipado'+(PACOTES.length===1?'':'s')+' nesta contagem';
   var h='',i;
-  if(PACOTES.length===0){
-    h='<div class="rm-vazio">Nenhum pacote bipado ainda nesta contagem.</div>';
-  } else {
-    for(i=0;i<PACOTES.length;i++){var p=PACOTES[i];
-      h+='<div class="rm-item">'+
-           '<div class="rm-item-esq"><div class="rm-seq">'+p.seq+'</div><div><div class="rm-cliente">'+esc(p.cliente)+'</div><div class="rm-end">'+esc(p.endereco)+'</div></div></div>'+
-           '<div class="rm-item-dir">'+(p.telefone?('<a class="rm-whats" href="https://wa.me/'+p.telefone+'" target="_blank" rel="noopener" title="Chamar no WhatsApp"><svg viewBox="0 0 24 24"><path d="M20 12.3c0 4.1-3.6 7.4-8 7.4-1.2 0-2.3-.2-3.3-.6L4 20l1-4.4c-.7-1.1-1-2.4-1-3.7C4 7.8 7.6 4.5 12 4.5s8 3.3 8 7.8z"/><path d="M9 10.2c0 2.4 2.2 4.4 4.6 4.4"/></svg></a>'):'')+'<div class="rm-hora">'+p.hora+'</div></div>'+
-         '</div>';}
-  }
+  if(PACOTES.length===0){ h='<div class="rm-vazio">Nenhum pacote bipado ainda nesta contagem.</div>'; }
+  else { for(i=PACOTES.length-1;i>=0;i--){ var p=PACOTES[i];
+    h+='<div class="rm-item"><div class="rm-item-esq"><div class="rm-seq">'+p.seq+'</div><div><div class="rm-cliente">'+esc(p.cod)+'</div><div class="rm-end">'+esc(p.tn)+' · '+esc(p.hora)+'</div></div></div></div>'; } }
   el('rm-lista').innerHTML=h;
   el('rm-overlay').classList.add('on');
 }
@@ -565,6 +647,10 @@ function _tom(freq, inicioSeg, durSeg, volume){
 function somBipeOk(){
   _tom(880, 0, 0.09, 0.35);
   _tom(1318.5, 0.08, 0.14, 0.32);
+}
+function somErro(){
+  _tom(220, 0, 0.18, 0.4);
+  _tom(180, 0.2, 0.22, 0.4);
 }
 
 /* fundo com linhas seguindo o cursor — mesmo efeito do painel principal */
@@ -617,15 +703,49 @@ function ajustarAlturaScan(){
 var _rzTO=null;
 window.addEventListener('resize',function(){ clearTimeout(_rzTO); _rzTO=setTimeout(ajustarAlturaScan,120); });
 
-function entrar(){
+function mostrarApp(){
   el('login').style.display='none';
   el('app').style.display='block';
   initCurves(); fundoSegueCursor(); pintarCards();
   ajustarAlturaScan();
+  carregarContagemDia();
+}
+function sairLogin(msg){
+  DD_TOKEN=''; DD_USER=null; try{ localStorage.removeItem('dd_jwt'); localStorage.removeItem('dd_user'); }catch(e){}
+  fecharCamera(); el('app').style.display='none'; el('login').style.display='flex';
+  var m=el('lg-msg'); if(m) m.textContent=msg||'';
+}
+/* "bipados hoje" de cada transportadora, vindo do servidor */
+function carregarContagemDia(){
+  api('/mesa/entradas').then(function(d){
+    if(!d||!d.ok) return;
+    var i,j,c={}; for(i=0;i<d.itens.length;i++) c[d.itens[i].tr]=(c[d.itens[i].tr]||0)+1;
+    for(j=0;j<TRANSPORTADORAS.length;j++) TRANSPORTADORAS[j].hoje=c[TRANSPORTADORAS[j].id]||0;
+    pintarCards();
+  }).catch(function(){});
+}
+function entrar(){
+  var em=(el('lg-email').value||'').trim(), se=el('lg-senha').value||'', m=el('lg-msg');
+  if(!em||!se){ m.textContent='Digite o e-mail e a senha.'; return; }
+  m.textContent='Entrando...';
+  fetch(DELTADIS_API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em,senha:se})})
+  .then(function(r){ return r.json(); }).then(function(d){
+    if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'E-mail ou senha incorretos.'; return; }
+    DD_TOKEN=d.token; DD_USER=d.usuario; try{ localStorage.setItem('dd_jwt',d.token); localStorage.setItem('dd_user',JSON.stringify(d.usuario||null)); }catch(e){}
+    m.textContent=''; mostrarApp();
+  }).catch(function(){ m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+}
+/* se o painel já estava logado neste navegador, entra direto */
+function tentarSessao(){
+  if(!DD_TOKEN) return;
+  fetch(DELTADIS_API+'/auth/me',{headers:{'Authorization':'Bearer '+DD_TOKEN}}).then(function(r){ return r.json(); }).then(function(d){
+    if(d&&d.ok) mostrarApp();
+  }).catch(function(){});
 }
 document.addEventListener('DOMContentLoaded',function(){
   var s=el('lg-senha');
   if(s) s.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
+  tentarSessao();
 });
 </script>
 </body>

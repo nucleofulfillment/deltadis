@@ -496,7 +496,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-114-0210</p>
+      <p class="bld">DELTADIS-BASE-115-0510</p>
     </div>
   </div>
 </div>
@@ -1046,7 +1046,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-114-0210</div>
+<div class="bld-fix">DELTADIS-BASE-115-0510</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1362,6 +1362,28 @@ function srvCarregar(){
     setTimeout(srvCarregar,30000);
   });
 }
+/* ── (115) MESA — ENTRADA por bipagem: puxa do servidor os códigos bipados na Mesa e cria o pacote "a conferir" (só com o código). A planilha, ao subir, completa os dados (mesmo código = atualiza, não duplica). ── */
+var MESA_ABS={rodando:false};
+function mesaAbsorver(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || MESA_ABS.rodando || document.hidden) return;
+  MESA_ABS.rodando=true;
+  fetch(DELTADIS_API+'/mesa/entradas?pend=1',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if(!d || !d.ok || !d.itens || !d.itens.length){ MESA_ABS.rodando=false; return; }
+    var idx={}, i, it, p, novos=0, cods=[], dt, hh;
+    for(i=0;i<PEDIDOS.length;i++) idx[PEDIDOS[i].cod]=1;
+    for(i=0;i<d.itens.length;i++){
+      it=d.itens[i]; cods.push(it.cod);
+      if(idx[it.cod]) continue;
+      dt=new Date(it.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+      p={cod:it.cod, tr:it.tr||'anj', mt:null, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'',
+         scan:it.cod, dia:(it.dia||hojeISO()), hora:hh, obs:'entrada por bipagem — a conferir', ent:'', fechId:null};
+      PEDIDOS.push(p); idx[it.cod]=1; novos++;
+    }
+    if(novos){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); aviso(novos+' pacote'+(novos===1?'':'s')+' entrou'+(novos===1?'':'ram')+' pela Mesa (a conferir).'); }
+    return fetch(DELTADIS_API+'/mesa/absorver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cods:cods})}).then(function(r){ return r.json(); }).then(function(){ MESA_ABS.rodando=false; });
+  }).catch(function(){ MESA_ABS.rodando=false; });
+}
+setInterval(mesaAbsorver,20000);
 function srvMigrar(){
   srvBarraFechar(); SRV.pronto=true; aviso('Enviando seus dados para o servidor...');
   srvEnviar(function(ok){ if(ok) aviso('Pronto! Seus dados agora estão guardados no servidor.'); else srvBarra('Não consegui enviar','Sem conexão ou erro no servidor. Tento de novo sozinho; você também pode tentar agora.',[{t:'Tentar de novo',pri:1,js:'srvBarraFechar();srvEnviar(function(o){aviso(o?\'Dados enviados!\':\'Ainda não consegui.\');})'},{t:'Baixar backup',js:'baixarBackup()'}]); });
