@@ -496,7 +496,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-116-0510</p>
+      <p class="bld">DELTADIS-BASE-117-0510</p>
     </div>
   </div>
 </div>
@@ -1046,7 +1046,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-116-0510</div>
+<div class="bld-fix">DELTADIS-BASE-117-0510</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1184,7 +1184,7 @@ function pedidoAtivo(p){ return p.st==='coletado'||p.st==='em rota'||ehTentativa
 function listaParaServidor(){
   var out=[], nomes={}, i, p; for(i=0;i<MOTORISTAS.length;i++) nomes[MOTORISTAS[i].id]=MOTORISTAS[i].n||'';
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(!pedidoAtivo(p)) continue;
-    out.push({cod:p.cod,tr:p.tr,mt:(p.mt==null?null:p.mt),mtn:(p.mt==null?'':(nomes[p.mt]||'')),st:p.st,cliente:p.cliente||'',tel:p.tel||'',rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||'',area:p.area||'',dia:p.dia||'',hora:p.hora||'',canal:p.canal||'',inc:incompletoDe(p)}); }
+    out.push({cod:p.cod,tr:p.tr,mt:(p.mt==null?null:p.mt),mtn:(p.mt==null?'':(nomes[p.mt]||'')),st:p.st,cliente:p.cliente||'',tel:p.tel||'',rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||'',area:p.area||'',scan:((p.scan&&p.scan!==p.cod)?p.scan:''),dia:p.dia||'',hora:p.hora||'',canal:p.canal||'',inc:incompletoDe(p)}); }
   return out;
 }
 function agendarEnvioPedidos(){ if(!REAL || !PEDIDOS.length) return; if(PED_SYNC.timer) clearTimeout(PED_SYNC.timer); PED_SYNC.timer=setTimeout(function(){ PED_SYNC.timer=null; enviarPedidosServidor(); },4000); }
@@ -1385,6 +1385,35 @@ function mesaAbsorver(){
   }).catch(function(){ MESA_ABS.rodando=false; });
 }
 setInterval(mesaAbsorver,20000);
+/* ── (117) BIPAGEM DO MOTORISTA no app: o pacote bipado passa a ser do motorista ("em rota"). Código que não existe no painel entra "a conferir". ── */
+var BIP_ABS={rodando:false};
+function bipAbsorver(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || BIP_ABS.rodando || document.hidden) return;
+  BIP_ABS.rodando=true;
+  fetch(DELTADIS_API+'/mesa/bipagens',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if(!d || !d.ok || !d.itens || !d.itens.length){ BIP_ABS.rodando=false; return; }
+    var idx={}, i, b, p, mud=0, novos=0, mk, mid, dt, hh, feitos=[];
+    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
+    for(i=0;i<d.itens.length;i++){
+      b=d.itens[i]; feitos.push({cod:b.cod,dia:b.dia});
+      mid=null; for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(b.mt)){ mid=MOTORISTAS[mk].id; break; } }
+      p=idx[b.cod];
+      if(p){
+        if(mid!=null && p.mt!==mid){ p.mt=mid; mud++; }
+        if(p.st==='coletado'){ p.st='em rota'; mud++; }
+      } else {
+        dt=new Date(b.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+        p={cod:b.cod, tr:b.tr||'anj', mt:mid, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'em rota', t1:'', t2:'', tel:'', canal:'', vend:'',
+           scan:b.cod, dia:(b.dia||hojeISO()), hora:hh, obs:'bipado pelo motorista — a conferir'+(b.tr?'':' (transportadora a conferir)')+(b.mtn?(' ('+b.mtn+')'):''), ent:'', fechId:null};
+        PEDIDOS.push(p); idx[b.cod]=p; novos++;
+      }
+    }
+    if(mud||novos){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); if(novos) aviso(novos+' pacote'+(novos===1?'':'s')+' bipado'+(novos===1?'':'s')+' pelo motorista sem cadastro (a conferir).'); }
+    return fetch(DELTADIS_API+'/mesa/bipagens-absorver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:feitos})}).then(function(r){ return r.json(); }).then(function(){ BIP_ABS.rodando=false; });
+  }).catch(function(){ BIP_ABS.rodando=false; });
+}
+setInterval(bipAbsorver,20000);
+
 function srvMigrar(){
   srvBarraFechar(); SRV.pronto=true; aviso('Enviando seus dados para o servidor...');
   srvEnviar(function(ok){ if(ok) aviso('Pronto! Seus dados agora estão guardados no servidor.'); else srvBarra('Não consegui enviar','Sem conexão ou erro no servidor. Tento de novo sozinho; você também pode tentar agora.',[{t:'Tentar de novo',pri:1,js:'srvBarraFechar();srvEnviar(function(o){aviso(o?\'Dados enviados!\':\'Ainda não consegui.\');})'},{t:'Baixar backup',js:'baixarBackup()'}]); });

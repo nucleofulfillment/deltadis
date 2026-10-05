@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-31-0210</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-32-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -796,6 +796,7 @@ function finalizarRota(){
     km:ROTA_KM, tempoMin:ROTA_MIN, fechamento:'aberto', pagamento:'a pagar', _detalhe:detalhe});
   /* guarda o km desse lote no servidor (o Financeiro e o Histórico leem de lá); repetir o mesmo "lote" não soma de novo */
   var doPainel=false; for(i=0;i<LOTE_ATUAL.length;i++) if(LOTE_ATUAL[i].origem==='painel') doPainel=true;   /* só rota de pacotes reais (não a simulação) */
+  if(RP.bipMode){ try{ rpApi('/motorista/bipagens-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lote:'l'+LOTES_HOJE[0].id})}).catch(function(){}); }catch(e){} BP.meus=[]; RP.bipMode=false; }
   try{ if(doPainel&&ROTA_KM>0) rpApi('/motorista/lote-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({km:ROTA_KM,min:ROTA_MIN,lote:'l'+LOTES_HOJE[0].id})}).then(function(){ carregarResumo(); }).catch(function(){}); }catch(e){}
   var cp=[]; for(i=0;i<LOTE_ATUAL.length;i++) if(LOTE_ATUAL[i].origem==='painel') cp.push(LOTE_ATUAL[i].cod);
   if(cp.length){ rpMarcarFeitos(cp); RP.total=Math.max(0,(RP.total||0)-cp.length); rpAtualizar(); }
@@ -1055,6 +1056,13 @@ function rpCardPronta(){
     return '<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 4px">Quem é você?</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">Escolha o seu nome para receber a rota do painel (fase de teste).</p>'+
       '<select class="inp" id="rp-mt-sel" style="margin-bottom:10px">'+(o||'<option value="">Nenhum motorista com rota no painel</option>')+'</select><button class="btn pri wide" onclick="rpDefinirMt()">Confirmar</button></div>';
   }
+  if(BIP_ROTA){
+    return '<div class="card" style="margin-bottom:14px;background:var(--grad-arte);color:#fff;border:none">'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85">Minha rota</div>'+
+      '<h3 style="margin:4px 0 2px;font-size:20px;color:#fff">Bipe seus pacotes</h3>'+
+      '<p style="margin:0 0 14px;font-size:13px;opacity:.9">Bipe cada pacote que você pegou, '+esc((RP.mtn||'').split(' ')[0])+'. Depois o sistema monta a rota.</p>'+
+      '<button class="btn wide" style="background:#fff;color:var(--roxo)" onclick="bpAbrir()">Bipar meus pacotes</button></div>';
+  }
   if(RP.total>0){
     return '<div class="card" style="margin-bottom:14px;background:var(--grad-arte);color:#fff;border:none">'+
       '<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85">Rota do painel</div>'+
@@ -1065,13 +1073,111 @@ function rpCardPronta(){
   }
   return '<div class="card" style="margin-bottom:14px;text-align:center"><p style="margin:0;color:var(--muted);font-size:13px">Nenhuma rota do painel para você agora.</p></div>';
 }
+/* ══ (32) BIPAR OS PRÓPRIOS PACOTES: o motorista bipa cada pacote, monta a lista dele e só então o sistema calcula a rota ══ */
+var BIP_ROTA=true;   /* true = a rota nasce da bipagem do motorista; false = volta ao modo antigo (rota pronta do painel) */
+var BP={idx:{},meus:[],outros:{},ult:null,ok:false,carregando:false,ocupado:false,cam:null};
+function bpNorm(v){ return String(v==null?'':v).replace(/[^A-Za-z0-9_.-]/g,''); }
+function bpTr(cod){ var c=String(cod).toUpperCase(); if(/^AJ/.test(c)) return 'anj'; if(/^GP.*BR$/.test(c)) return 'pic'; return ''; }
+function somErroBip(){ _tom(220,0,0.18,0.5); _tom(180,0.2,0.22,0.5); try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){} }
+function bpAbrir(){ EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(); }
+function bpCarregar(){
+  BP.carregando=true; bpAtualizar();
+  rpApi('/motorista/pacotes').then(function(d){
+    BP.carregando=false;
+    if(!d||!d.ok){ BP.ult={t:'err',m:'Não consegui carregar seus pacotes. Confira a internet.'}; bpAtualizar(); return; }
+    var i, x; BP.idx={}; for(i=0;i<d.lista.length;i++){ x=d.lista[i]; BP.idx[x.c.toLowerCase()]=x; if(x.s) BP.idx[x.s.toLowerCase()]=x; }
+    BP.outros={}; for(x in (d.outros||{})) BP.outros[x.toLowerCase()]=d.outros[x];
+    BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()]; return {cod:m.cod,t:m.t,cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e}; });
+    BP.ok=true; bpAtualizar();
+  }).catch(function(){ BP.carregando=false; BP.ult={t:'err',m:'Sem conexão. Tente de novo.'}; bpAtualizar(); });
+}
+function bpItemHtml(m){
+  var info=m.novo?'<span style="color:#B45309">sem dados ainda</span>':(m.e?esc((m.cl||'')+(m.r?' · '+m.r:'')):'<span style="color:#B45309">endereço incompleto</span>');
+  return '<div class="bp-item"><span class="bp-seq">'+m.n+'</span><div class="bp-info"><b>'+esc(m.cod)+'</b><span>'+info+'</span></div><button class="btn sec" style="padding:4px 10px;min-width:0" onclick="bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+}
+function bpAtualizar(){
+  var c=el('bp-cnt'), u=el('bp-ult'), l=el('bp-lista'); if(!c) return;
+  c.textContent=BP.meus.length;
+  var uh='';
+  if(BP.carregando) uh='<div class="aviso-acao" style="margin:0 0 12px"><b>Carregando seus pacotes…</b></div>';
+  else if(BP.ult){ var cor={ok:['#ECFDF3','#B7EBC9','#166534'],novo:['#EFF6FF','#BFDBFE','#1E40AF'],rep:['#FFF7E6','#F5D9A0','#8A5A00'],err:['#FCEBEB','#F3C9C9','#B91C1C']}[BP.ult.t]||['#F4EEFB','#E3D9F2','#5B5170'];
+    uh='<div style="border:1px solid '+cor[1]+';background:'+cor[0]+';color:'+cor[2]+';border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px">'+BP.ult.m+(BP.ult.cod?'<b style="display:block;font-size:15px;margin-top:3px;word-break:break-all">'+esc(BP.ult.cod)+'</b>':'')+'</div>'; }
+  u.innerHTML=uh;
+  var h='', i, n=BP.meus.length;
+  if(!n) h='<div class="empty">Nenhum pacote bipado ainda</div>';
+  for(i=n-1;i>=0;i--){ BP.meus[i].n=i+1; h+=bpItemHtml(BP.meus[i]); }
+  l.innerHTML=h;
+}
+function bpBipar(v){
+  var cod=bpNorm(v); if(!cod) return;
+  if(BP.ocupado) return;
+  if(!BP.ok){ BP.ult={t:'err',m:'Os pacotes ainda não carregaram. Aguarde um instante.'}; bpAtualizar(); return; }
+  if(cod.length<5){ somErroBip(); BP.ult={t:'err',m:'Código curto demais — confira a etiqueta.',cod:cod}; bpAtualizar(); return; }
+  var k=cod.toLowerCase(), e=BP.idx[k], canon=e?e.c:cod, i;
+  for(i=0;i<BP.meus.length;i++) if(BP.meus[i].cod.toLowerCase()===canon.toLowerCase()){ somErroBip(); BP.ult={t:'rep',m:'Você já bipou este pacote.',cod:canon}; bpAtualizar(); return; }
+  if(BP.outros[canon.toLowerCase()]){ somErroBip(); BP.ult={t:'err',m:'Este pacote já foi bipado por '+esc(BP.outros[canon.toLowerCase()])+'.',cod:canon}; bpAtualizar(); return; }
+  if(e && e.m && String(e.m)!==String(RP.mt)){ somErroBip(); BP.ult={t:'err',m:'Este pacote está registrado para '+esc(e.d||'outro motorista')+'. Fale com a Mesa.',cod:canon}; bpAtualizar(); return; }
+  BP.ocupado=true;
+  rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:e?'':bpTr(canon)})}).then(function(d){
+    BP.ocupado=false;
+    if(!d||!d.ok){ somErroBip(); BP.ult={t:'err',m:(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod:canon}; bpAtualizar(); return; }
+    if(d.resultado==='outro'){ somErroBip(); BP.ult={t:'err',m:'Este pacote já foi bipado por '+esc(d.mtn)+'.',cod:canon}; bpAtualizar(); return; }
+    if(d.resultado==='repetido'){ somErroBip(); BP.ult={t:'rep',m:'Você já bipou este pacote.',cod:canon}; bpAtualizar(); return; }
+    BP.meus.push({cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e});
+    somBipeOk();
+    if(!e) BP.ult={t:'novo',m:'Pacote novo, sem dados ainda. Depois você cadastra o endereço.',cod:canon};
+    else if(!e.e) BP.ult={t:'novo',m:'Registrado, mas o endereço está incompleto.',cod:canon};
+    else BP.ult={t:'ok',m:'✔ Registrado'+(e.cl?' — '+esc(e.cl):''),cod:canon};
+    bpAtualizar();
+  }).catch(function(){ BP.ocupado=false; somErroBip(); BP.ult={t:'err',m:'Sem conexão. Esse pacote NÃO foi registrado — bipe de novo.',cod:canon}; bpAtualizar(); });
+}
+function bpDigitado(){ var i=el('bp-cod'); if(!i) return; var v=i.value; i.value=''; bpBipar(v); }
+function bpRemover(cod){
+  rpApi('/motorista/desbipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod})}).then(function(d){
+    if(!d||!d.ok){ aviso('Não consegui remover agora.'); return; }
+    var i; for(i=BP.meus.length-1;i>=0;i--) if(BP.meus[i].cod===cod) BP.meus.splice(i,1);
+    BP.ult={t:'rep',m:'Removido da sua lista.',cod:cod}; bpAtualizar();
+  }).catch(function(){ aviso('Sem conexão. Não removi.'); });
+}
+function bpFechar(){
+  if(!BP.meus.length){ aviso('Bipe ao menos um pacote antes de montar a rota'); return; }
+  bpFecharCamera(); RP.bipMode=true; rpIniciar();
+}
+function bpSair(){ bpFecharCamera(); EST='sem_lote'; renderInicio(); }
+/* câmera: lê o código de barras pelo próprio navegador (Chrome do Android); em aparelho sem suporte, use o campo de digitar/leitor */
+function bpCamera(){
+  if(!('BarcodeDetector' in window) || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ aviso('Este aparelho não lê código pela câmera aqui. Digite o código.'); return; }
+  var det; try{ det=new BarcodeDetector({formats:['code_128','code_39','ean_13','ean_8','itf','codabar','qr_code']}); }catch(e){ aviso('Câmera de leitura indisponível.'); return; }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(st){
+    var ov=document.createElement('div'); ov.id='bp-cam'; ov.style.cssText='position:fixed;inset:0;background:rgba(15,5,30,.94);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px';
+    ov.innerHTML='<div style="position:relative;width:min(92vw,520px);aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#000"><video id="bp-vid" playsinline muted style="width:100%;height:100%;object-fit:cover"></video><div style="position:absolute;left:8%;right:8%;top:50%;height:2px;background:#EC4899;box-shadow:0 0 12px #EC4899"></div></div><div id="bp-caminfo" style="color:#fff;font-size:13px;text-align:center">Aponte para o código de barras</div><button class="btn sec" onclick="bpFecharCamera()">Fechar câmera</button>';
+    document.body.appendChild(ov); var v=el('bp-vid'); v.srcObject=st; v.play().catch(function(){});
+    BP.cam={st:st,ult:'',q:0,timer:setInterval(function(){
+      if(!v||v.readyState<2||BP.ocupado) return;
+      det.detect(v).then(function(r){ if(!r||!r.length) return; var c=String(r[0].rawValue||'').trim(), ag=Date.now(); if(!c) return; if(c===BP.cam.ult && ag-BP.cam.q<3000) return; BP.cam.ult=c; BP.cam.q=ag; bpBipar(c); var inf=el('bp-caminfo'); if(inf) inf.textContent='Último: '+c+' — aponte para o próximo'; }).catch(function(){});
+    },350)};
+  }).catch(function(){ aviso('Não consegui abrir a câmera. Libere a permissão do navegador.'); });
+}
+function bpFecharCamera(){
+  if(BP.cam){ clearInterval(BP.cam.timer); try{ BP.cam.st.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} BP.cam=null; }
+  var o=el('bp-cam'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+}
+function bpTela(){
+  return '<div class="card"><h3 style="margin:0 0 2px">Bipar meus pacotes</h3>'+
+    '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px"><b id="bp-cnt">'+BP.meus.length+'</b> pacote(s) na sua lista. Bipe todos que você pegou e depois monte a rota.</p>'+
+    '<div id="bp-ult"></div>'+
+    '<div class="search"><span>🔎</span><input id="bp-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')bpDigitado()"></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn pri" style="flex:1" onclick="bpCamera()">📷 Usar a câmera</button><button class="btn sec" style="flex:1" onclick="bpDigitado()">Registrar</button></div>'+
+    '<div id="bp-lista"></div>'+
+    '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">Montar minha rota</button></div></div>';
+}
 function rpIniciar(){ RP._bipou=false; RP.itens=[]; RP.sel={}; RP.fora={}; RP.res=null; EST='rp_calc'; RP.msg='Buscando os endereços da sua rota...'; renderInicio(); rpBuscar(); }
 function rpErro(t){ EST='sem_lote'; renderInicio(); aviso(t||'Sem conexão com o servidor. Tente de novo.'); }
 function rpBuscar(){
   /* modo foguete: 1ª chamada descobre o total; o resto vem em paralelo (4 por vez).
      O limite conta só as paradas que TÊM localização: se vierem sem endereço, busca mais até completar. */
   var mx=rpCfg().max, feitos=rpFeitos().cods, N=12, blocos={}, total=0, prox=N;
-  function pega(ini){ return rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n='+N+'&todos=1').then(function(d){ if(!d||!d.ok) throw new Error('falhou'); blocos[ini]=d.itens; total=d.total; return d; }); }
+  function pega(ini){ return rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n='+N+'&todos=1'+(RP.bipMode?'&bip=1':'')).then(function(d){ if(!d||!d.ok) throw new Error('falhou'); blocos[ini]=d.itens; total=d.total; return d; }); }
   function ordenados(){ var k=Object.keys(blocos).map(Number).sort(function(a,b){return a-b;}), t=[], i; for(i=0;i<k.length;i++) t=t.concat(blocos[k[i]]); return t.filter(function(p){ return feitos.indexOf(p.cod)<0; }); }
   function boas(){ return ordenados().filter(function(p){ return p.lat!=null && !p.inc; }).length; }
   function progresso(){ RP.msg='Localizando os endereços... '+Math.min(Object.keys(blocos).length*N,total)+' de '+total; renderInicio(); }
@@ -1093,7 +1199,7 @@ function rpBuscar(){
     return Promise.all([worker(),worker(),worker(),worker()]);
   }).then(function(){ if(mx>0 && boas()<mx) return rodada(); }).then(fim).catch(function(){ rpErro(); });
 }
-function rpTag(p){ return p.inc?'Endereço incompleto':(p.lat==null?'Não localizado':'Localização aproximada'); }
+function rpTag(p){ return p.semDados?'Sem dados ainda':p.inc?'Endereço incompleto':(p.lat==null?'Não localizado':'Localização aproximada'); }
 function rpTelaConferir(){
   var h='<div class="card"><h3 style="margin:0 0 4px">Conferir endereços</h3><p style="margin:0 0 6px;color:var(--muted);font-size:12.5px">Estes pedidos estão com endereço incompleto ou localização aproximada. Deseja levar mesmo assim? Marque os que quer levar.</p>', i, p;
   for(i=0;i<RP.itens.length;i++){ p=RP.itens[i]; if(!rpSinal(p)) continue;
@@ -1343,6 +1449,8 @@ function renderInicio(){
        '<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn pri" style="flex:1" onclick="bipManual()">📷 Bater foto</button><button class="btn sec" style="flex:1" onclick="simularBipagem()">Simular bipagem</button></div>'+
        '<div>'+listaBipados()+'</div>'+
        '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="cancelarLote()">Cancelar</button><button class="btn pri" style="flex:1" onclick="fecharLote()">Fechar lote</button></div></div>';
+  } else if(EST==='rp_bip'){
+    h+=bpTela();
   } else if(EST==='rp_calc'){
     h+='<div class="card" style="text-align:center;padding:40px 18px"><div style="font-size:34px;margin-bottom:12px">🧭</div><h3 style="margin:0 0 6px">Montando a sua rota…</h3><p style="color:var(--muted);font-size:13px;margin:0">'+esc(RP.msg)+'</p></div>';
   } else if(EST==='rp_conferir'){
@@ -1361,6 +1469,7 @@ function renderInicio(){
     h+=renderFinalizado();
   }
   box.innerHTML=h;
+  if(EST==='rp_bip') bpAtualizar();
   if(EST==='em_rota'){ rpAjustaAltura(); rpMapaMontar(); }
   atualizarChromeApp();
 }
