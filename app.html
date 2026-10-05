@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-38-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-39-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1221,6 +1221,7 @@ function vzAbrir(cod,modo){
     '<div style="font-size:12px;color:var(--muted);word-break:break-all">'+(cod?esc(cod):'sem etiqueta')+'</div></div><div id="vz-falt" style="font-size:11.5px;font-weight:800;color:var(--roxo-esc);background:var(--s3);border-radius:10px;padding:4px 9px;white-space:nowrap"></div></div>'+
     '<div id="vz-stat" onclick="vzOuvir(true)" style="margin:10px 0 6px;padding:14px 12px;border-radius:16px;background:var(--grad-arte);color:#fff;text-align:center;font-weight:800;font-size:15px"></div>'+
     '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:6px;min-height:15px;text-align:center"></div>'+
+    '<div id="vz-dbg" style="font-size:10.5px;color:#9A8FB0;margin-bottom:6px;text-align:center"></div>'+
     '<div id="vz-campos" style="display:'+(ed?'block':'none')+'">'+
     '<div style="display:flex;gap:8px"><div style="flex:1.4"><label style="font-size:11px;font-weight:700">CEP</label><div class="search" style="margin:0"><input id="vz-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="vzCepDig()" value="'+esc(d.cep||'')+'"></div></div>'+
     '<div style="flex:1"><label style="font-size:11px;font-weight:700">Número</label><div class="search" style="margin:0"><input id="vz-num" placeholder="123 ou S/N" value="'+esc(d.num||'')+'"></div></div></div>'+
@@ -1278,6 +1279,7 @@ function vzVoltou(){
 document.addEventListener('visibilitychange',vzVoltou); window.addEventListener('focus',vzVoltou);
 function vzTxtDig(){ if(VZ.txtT) clearTimeout(VZ.txtT); VZ.txtT=setTimeout(vzTxtGo,1400); }
 function vzTxtGo(){ if(VZ.txtT){ clearTimeout(VZ.txtT); VZ.txtT=null; } var t=el('vz-txt'); if(!t) return; var v=t.value.trim(); if(v.length<6||VZ.busy||VZ.trans) return; t.value=''; vzProcessar(v); }
+function vzDbg(t){ var d=el('vz-dbg'); if(d) d.textContent=t; }
 function vzOuvir(manual){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ vzStat('Sem voz neste aparelho — toque em Digitar','#6D28D9'); vzCampos(true); return; }
@@ -1287,29 +1289,39 @@ function vzOuvir(manual){
   vzMic(function(ok){
     if(!VZ.vivo) return;
     if(!ok){ vzAjudaMic(VZ.micErr); return; }
-    var r=new SR(); r.lang='pt-BR'; r.interimResults=false; r.maxAlternatives=1; r.continuous=true; VZ.rec=r; VZ.ouvindo=true;
     VZ.semPerm=false; var cc=el('vz-cand'); if(cc&&el('vz-txt')) cc.innerHTML='';
-    vzStat('🎤 Pode falar…  (CEP e número, ou rua e número)','#7C3AED');
-    r.onresult=function(ev){
-      var i, t='';
-      for(i=ev.resultIndex;i<ev.results.length;i++){ if(ev.results[i].isFinal){ t=ev.results[i][0].transcript; break; } }
-      if(!t) return; VZ.vazio=0;
-      if(VZ.busy||VZ.trans) return;
-      vzProcessar(t);
-    };
-    r.onerror=function(ev){
-      var er=ev&&ev.error;
-      if(er==='not-allowed'||er==='service-not-allowed'){ VZ.ouvindo=false; VZ.micOk=false; VZ.rec=null; vzAjudaMic(er); }
-      else if(er==='network'){ vzStat('Sem internet para a voz. Toque aqui ou digite','#B45309'); vzCampos(true); }
-    };
-    r.onend=function(){
-      VZ.ouvindo=false; if(!VZ.vivo||VZ.rec!==r) return;
-      VZ.vazio=(VZ.vazio||0)+1;
-      if(VZ.vazio<=6){ setTimeout(function(){ if(VZ.vivo&&!VZ.ouvindo&&VZ.rec===r){ try{ r.start(); VZ.ouvindo=true; }catch(e){ vzStat('Toque aqui para falar','#B45309'); } } },250); }
-      else { vzStat('Parei de ouvir. Toque aqui para falar','#B45309'); }
-    };
-    try{ r.start(); }catch(e){ VZ.ouvindo=false; vzStat('Toque aqui para falar','#B45309'); }
+    vzCiclo(SR);
   });
+}
+/* uma "escuta" por vez: o Android encerra sozinho quando o motorista para de falar; aí abrimos a próxima */
+function vzCiclo(SR){
+  if(!VZ.vivo) return;
+  var r=new SR(), final=false; r.lang='pt-BR'; r.interimResults=true; r.maxAlternatives=1; r.continuous=false; VZ.rec=r; VZ.ouvindo=true;
+  vzStat('🎤 Pode falar…  (CEP e número, ou rua e número)','#7C3AED'); vzDbg('microfone aberto');
+  r.onaudiostart=function(){ vzDbg('microfone aberto ✔'); };
+  r.onspeechstart=function(){ VZ.vazio=0; vzDbg('captando sua voz…'); vzStat('🎙 Estou te ouvindo…','#6D28D9'); };
+  r.onresult=function(ev){
+    VZ.vazio=0; var i, t='', fin=false;
+    for(i=ev.resultIndex;i<ev.results.length;i++){ t+=ev.results[i][0].transcript; if(ev.results[i].isFinal) fin=true; }
+    var ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
+    if(!fin) return; final=true;
+    if(VZ.busy||VZ.trans) return;
+    vzProcessar(t);
+  };
+  r.onnomatch=function(){ vzDbg('não entendi a fala'); };
+  r.onerror=function(ev){
+    var er=ev&&ev.error; vzDbg('erro: '+er);
+    if(er==='not-allowed'||er==='service-not-allowed'){ VZ.ouvindo=false; VZ.micOk=false; VZ.rec=null; vzAjudaMic(er); }
+    else if(er==='network'){ vzStat('Sem internet para a voz. Toque aqui ou digite','#B45309'); vzCampos(true); }
+  };
+  r.onend=function(){
+    VZ.ouvindo=false; if(!VZ.vivo||VZ.rec!==r) return;
+    vzDbg(final?'fala recebida':'escuta encerrada, reabrindo…');
+    if(final) VZ.vazio=0; else VZ.vazio=(VZ.vazio||0)+1;
+    if(VZ.vazio<=8){ setTimeout(function(){ if(VZ.vivo&&!VZ.ouvindo) vzCiclo(SR); },final?500:200); }
+    else { vzStat('Parei de ouvir. Toque aqui para falar','#B45309'); }
+  };
+  try{ r.start(); }catch(e){ VZ.ouvindo=false; vzDbg('não abriu: '+(e&&e.name)); vzStat('Toque aqui para falar','#B45309'); }
 }
 function vzProcessar(t){
   var p=vzParse(t), ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
