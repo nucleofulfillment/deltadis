@@ -496,7 +496,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-115-0510</p>
+      <p class="bld">DELTADIS-BASE-116-0510</p>
     </div>
   </div>
 </div>
@@ -1046,7 +1046,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-115-0510</div>
+<div class="bld-fix">DELTADIS-BASE-116-0510</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1375,8 +1375,9 @@ function mesaAbsorver(){
       it=d.itens[i]; cods.push(it.cod);
       if(idx[it.cod]) continue;
       dt=new Date(it.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
-      p={cod:it.cod, tr:it.tr||'anj', mt:null, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'',
-         scan:it.cod, dia:(it.dia||hojeISO()), hora:hh, obs:'entrada por bipagem — a conferir', ent:'', fechId:null};
+      var mtId=null, mk; if(it.mt){ for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(it.mt)){ mtId=MOTORISTAS[mk].id; break; } } }
+      p={cod:it.cod, tr:it.tr||'anj', mt:mtId, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'',
+         scan:it.cod, dia:(it.dia||hojeISO()), hora:hh, obs:'entrada por bipagem — a conferir'+(it.mtn?(' ('+it.mtn+')'):''), ent:'', fechId:null};
       PEDIDOS.push(p); idx[it.cod]=1; novos++;
     }
     if(novos){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); aviso(novos+' pacote'+(novos===1?'':'s')+' entrou'+(novos===1?'':'ram')+' pela Mesa (a conferir).'); }
