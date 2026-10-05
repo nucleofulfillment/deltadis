@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-35-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-36-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1075,7 +1075,7 @@ function rpCardPronta(){
 }
 /* ══ (32) BIPAR OS PRÓPRIOS PACOTES: o motorista bipa cada pacote, monta a lista dele e só então o sistema calcula a rota ══ */
 var BIP_ROTA=true;   /* true = a rota nasce da bipagem do motorista; false = volta ao modo antigo (rota pronta do painel) */
-var BP={idx:{},meus:[],outros:{},ult:null,ok:false,carregando:false,ocupado:false,cam:null};
+var BP={atual:'',idx:{},meus:[],outros:{},ult:null,ok:false,carregando:false,ocupado:false,cam:null};
 function bpNorm(v){ return String(v==null?'':v).replace(/[^A-Za-z0-9_.-]/g,''); }
 function bpTr(cod){ var c=String(cod).toUpperCase(); if(/^AJ/.test(c)) return 'anj'; if(/^GP.*BR$/.test(c)) return 'pic'; return ''; }
 function somErroBip(){ _tom(220,0,0.18,0.5); _tom(180,0.2,0.22,0.5); try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){} }
@@ -1097,7 +1097,7 @@ function bpItemHtml(m){
   var info;
   if(m.e) info='<span style="color:#166534;font-weight:700;font-size:12px">✔ '+esc(m.r||((m.cl||'')+'' ))+'</span>';
   else info='<span style="color:#B45309">'+(m.novo?'sem dados':'endereço incompleto')+' · toque e fale o endereço</span>';
-  return '<div class="bp-item" style="cursor:pointer;'+(m.e?'':'background:#FFFBF2;')+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+esc(m.cod)+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FFFBF2;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+esc(m.cod)+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
 function bpAtualizar(){
   var c=el('bp-cnt'), u=el('bp-ult'), l=el('bp-lista'); if(!c) return;
@@ -1177,7 +1177,7 @@ function bpTela(){
     '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">Montar minha rota</button></div></div>';
 }
 /* ══ (35) VOZ POR CEP OU RUA — toque no pacote, fale, salva sozinho e passa para o próximo ══ */
-var VZ={cod:'',novo:false,modo:'voz',rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false,cand:null,tent:0,vivo:false,tmr:null};
+var VZ={cod:'',novo:false,modo:'voz',rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false,cand:null,vivo:false,tmr:null,micOk:false,vazio:0,trans:false};
 function vzNum(t){
   var m={zero:0,um:1,uma:1,dois:2,duas:2,tres:3,'três':3,quatro:4,cinco:5,seis:6,meia:6,sete:7,oito:8,nove:9}, p=String(t||'').toLowerCase().replace(/[.,;:\-]/g,' ').split(/\s+/), o=[], i;
   for(i=0;i<p.length;i++){ if(m.hasOwnProperty(p[i])) o.push(String(m[p[i]])); else o.push(p[i]); }
@@ -1209,59 +1209,91 @@ function vzFaltam(){ var i,n=0; for(i=0;i<BP.meus.length;i++) if(!BP.meus[i].e) 
 /* toque no pacote: sem endereço → já abre ouvindo; com endereço (✔) → abre para conferir/editar */
 function vzToque(cod){ var it=vzItem(cod); vzAbrir(cod, it&&it.e?'edit':'voz'); }
 function vzAbrir(cod,modo){
-  vzParar(); VZ.cod=cod||''; VZ.novo=!cod; VZ.modo=modo||'voz'; VZ.rua=''; VZ.bai=''; VZ.cid=''; VZ.cep=''; VZ.achou=null; VZ.cand=null; VZ.tent=0; VZ.vivo=true;
-  var it=cod?vzItem(cod):null, d=(it&&it.d)||{}, ed=(VZ.modo==='edit');
+  var mo=modo||'voz';
+  if(mo==='edit') vzParar();
+  VZ.cod=cod||''; VZ.novo=!cod; VZ.modo=mo; VZ.rua=''; VZ.bai=''; VZ.cid=''; VZ.cep=''; VZ.achou=null; VZ.cand=null; VZ.vivo=true; VZ.trans=false; BP.atual=cod||'';
+  var it=cod?vzItem(cod):null, d=(it&&it.d)||{}, ed=(mo==='edit');
   var o=el('vz-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o);
-  var ov=document.createElement('div'); ov.id='vz-ov'; ov.style.cssText='position:fixed;inset:0;background:rgba(15,5,30,.6);z-index:9998;display:flex;align-items:flex-end;justify-content:center';
-  ov.innerHTML='<div style="background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:16px 16px 20px;max-height:94vh;overflow:auto">'+
-    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div><h3 style="margin:0 0 2px">'+(ed?'✔ Endereço do pacote':(cod?'Falar o endereço':'Parada sem pacote'))+'</h3>'+
-    '<p id="vz-sub" style="margin:0;font-size:12px;color:var(--muted);word-break:break-all">'+(cod?esc(cod):'sem etiqueta')+'</p></div><div id="vz-falt" style="font-size:11.5px;font-weight:800;color:var(--roxo-esc);background:var(--s3);border-radius:10px;padding:4px 9px;white-space:nowrap"></div></div>'+
-    '<div id="vz-stat" onclick="vzOuvir()" style="margin:12px 0 8px;padding:16px 12px;border-radius:16px;background:var(--grad-arte);color:#fff;text-align:center;font-weight:800;font-size:16px"></div>'+
-    '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:8px;min-height:16px;text-align:center"></div>'+
+  var ov=document.createElement('div'); ov.id='vz-ov';
+  ov.style.cssText=ed?'position:fixed;inset:0;background:rgba(15,5,30,.6);z-index:9998;display:flex;align-items:flex-end;justify-content:center':'position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;justify-content:center;pointer-events:none';
+  ov.innerHTML='<div style="background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:14px 16px 16px;max-height:92vh;overflow:auto;pointer-events:auto;box-shadow:0 -6px 24px rgba(60,20,110,.28)">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:800;color:var(--roxo-esc)">'+(ed?'✔ Endereço do pacote':(cod?'Falando o endereço de:':'Parada sem pacote'))+'</div>'+
+    '<div style="font-size:12px;color:var(--muted);word-break:break-all">'+(cod?esc(cod):'sem etiqueta')+'</div></div><div id="vz-falt" style="font-size:11.5px;font-weight:800;color:var(--roxo-esc);background:var(--s3);border-radius:10px;padding:4px 9px;white-space:nowrap"></div></div>'+
+    '<div id="vz-stat" onclick="vzOuvir(true)" style="margin:10px 0 6px;padding:14px 12px;border-radius:16px;background:var(--grad-arte);color:#fff;text-align:center;font-weight:800;font-size:15px"></div>'+
+    '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:6px;min-height:15px;text-align:center"></div>'+
+    '<div id="vz-campos" style="display:'+(ed?'block':'none')+'">'+
     '<div style="display:flex;gap:8px"><div style="flex:1.4"><label style="font-size:11px;font-weight:700">CEP</label><div class="search" style="margin:0"><input id="vz-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="vzCepDig()" value="'+esc(d.cep||'')+'"></div></div>'+
     '<div style="flex:1"><label style="font-size:11px;font-weight:700">Número</label><div class="search" style="margin:0"><input id="vz-num" placeholder="123 ou S/N" value="'+esc(d.num||'')+'"></div></div></div>'+
     '<div style="margin-top:8px"><label style="font-size:11px;font-weight:700">Complemento (opcional)</label><div class="search" style="margin:0"><input id="vz-comp" placeholder="apto, bloco..." value="'+esc(d.comp||'')+'"></div></div>'+
     '<div id="vz-res" style="margin:10px 0"></div>'+
     '<details id="vz-det" style="margin-bottom:10px"><summary style="font-size:12px;font-weight:700;color:var(--roxo-esc)">Sem CEP? Procurar pela rua</summary>'+
     '<div class="search" style="margin:8px 0 6px"><input id="vz-rua0" placeholder="Nome da rua (ex.: Rua das Flores)"></div>'+
-    '<div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:2"><input id="vz-cid0" placeholder="Cidade" value="'+esc(vzLer('c'))+'"></div><div class="search" style="margin:0;flex:.6"><input id="vz-uf0" maxlength="2" placeholder="UF" value="'+esc(vzLer('u'))+'" style="text-transform:uppercase"></div><button class="btn sec" style="padding:4px 12px" onclick="vzBuscarRua()">Buscar</button></div></details>'+
+    '<div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:2"><input id="vz-cid0" placeholder="Cidade" value="'+esc(vzLer('c'))+'"></div><div class="search" style="margin:0;flex:.6"><input id="vz-uf0" maxlength="2" placeholder="UF" value="'+esc(vzLer('u'))+'" style="text-transform:uppercase"></div><button class="btn sec" style="padding:4px 12px" onclick="vzBuscarRua()">Buscar</button></div></details></div>'+
     '<div id="vz-cand" style="margin-bottom:8px"></div>'+
-    '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="vzFechar()">'+(ed?'Fechar':'Concluir')+'</button><button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar(false)">Salvar</button></div></div>';
+    '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="vzFechar()">'+(ed?'Fechar':'Concluir')+'</button>'+(ed?'<button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar(false)">Salvar</button>':'<button class="btn sec" style="flex:1" onclick="vzCampos(true)">⌨ Digitar</button>')+'</div></div>';
   document.body.appendChild(ov);
-  vzFalt();
+  vzFalt(); bpAtualizar();
   if(ed){ vzStat('Toque aqui para falar de novo','#6D28D9'); if(d.cep&&d.cep.length===8) vzCepDig(); else if(it&&it.r) el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px">'+esc(it.r)+'</div>'; }
-  else vzOuvir();
+  else { vzStat(VZ.ouvindo?'🎤 Pode falar…  (CEP e número, ou rua e número)':'Ativando o microfone…','#7C3AED'); if(!VZ.ouvindo) vzOuvir(); }
 }
+function vzCampos(v){ var c=el('vz-campos'); if(c) c.style.display=v?'block':'none'; }
 function vzFalt(){ var f=el('vz-falt'); if(f){ var n=vzFaltam(); f.textContent=n?('faltam '+n):'todos ✔'; } }
-function vzStat(t,cor){ var s=el('vz-stat'); if(s){ s.textContent=t; s.style.background=cor||''; if(!cor) s.style.background='var(--grad-arte)'; } }
-function vzParar(){ try{ if(VZ.rec){ VZ.rec.onend=null; VZ.rec.onerror=null; VZ.rec.onresult=null; VZ.rec.abort(); } }catch(e){} VZ.rec=null; VZ.ouvindo=false; if(VZ.tmr){ clearTimeout(VZ.tmr); VZ.tmr=null; } }
-function vzFechar(){ VZ.vivo=false; vzParar(); var o=el('vz-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); bpAtualizar(); }
-function vzOuvir(){
+function vzStat(t,cor){ var s=el('vz-stat'); if(s){ s.textContent=t; s.style.background=cor||'var(--grad-arte)'; } }
+function vzParar(){ try{ if(VZ.rec){ VZ.rec.onend=null; VZ.rec.onerror=null; VZ.rec.onresult=null; VZ.rec.abort(); } }catch(e){} VZ.rec=null; VZ.ouvindo=false; VZ.vazio=0; if(VZ.tmr){ clearTimeout(VZ.tmr); VZ.tmr=null; } }
+function vzFechar(){ VZ.vivo=false; vzParar(); BP.atual=''; var o=el('vz-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); bpAtualizar(); }
+/* pede a permissão do microfone de forma explícita (no toque do motorista) e só então liga o reconhecimento */
+function vzMic(cb){
+  if(VZ.micOk) return cb(true);
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ VZ.micOk=true; return cb(true); }
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){ try{ st.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} VZ.micOk=true; cb(true); }).catch(function(){ cb(false); });
+}
+function vzOuvir(manual){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ vzStat('Sem voz neste aparelho — digite o CEP e o número','#6D28D9'); return; }
+  if(!SR){ vzStat('Sem voz neste aparelho — toque em Digitar','#6D28D9'); vzCampos(true); return; }
+  if(VZ.ouvindo && !manual) return;
+  if(manual){ VZ.vazio=0; }
   vzParar();
-  var r=new SR(), ouviu=false; r.lang='pt-BR'; r.interimResults=false; r.maxAlternatives=1; r.continuous=false; VZ.rec=r; VZ.ouvindo=true;
-  vzStat('🎤 Pode falar…  (CEP e número, ou rua e número)'); var o=el('vz-ouv'); if(o) o.textContent='';
-  r.onresult=function(ev){ ouviu=true; var t=ev.results[0][0].transcript; vzProcessar(t); };
-  r.onerror=function(ev){ VZ.ouvindo=false; if(ev&&(ev.error==='not-allowed'||ev.error==='service-not-allowed')){ ouviu=true; vzStat('Libere o microfone no navegador','#B91C1C'); } };
-  r.onend=function(){ VZ.ouvindo=false; if(ouviu||!VZ.vivo) return;
-    if(VZ.tent<1){ VZ.tent++; setTimeout(function(){ if(VZ.vivo&&!VZ.ouvindo) vzOuvir(); },250); }
-    else { VZ.tent=0; vzStat('Não ouvi. Toque aqui para falar de novo','#B45309'); } };
-  try{ r.start(); }catch(e){ VZ.ouvindo=false; vzStat('Toque aqui para falar','#B45309'); }
+  vzMic(function(ok){
+    if(!VZ.vivo) return;
+    if(!ok){ vzStat('Microfone bloqueado. Toque no cadeado 🔒 ao lado do endereço do site → Permissões → Microfone → Permitir','#B91C1C'); vzCampos(true); return; }
+    var r=new SR(); r.lang='pt-BR'; r.interimResults=false; r.maxAlternatives=1; r.continuous=true; VZ.rec=r; VZ.ouvindo=true;
+    vzStat('🎤 Pode falar…  (CEP e número, ou rua e número)','#7C3AED');
+    r.onresult=function(ev){
+      var i, t='';
+      for(i=ev.resultIndex;i<ev.results.length;i++){ if(ev.results[i].isFinal){ t=ev.results[i][0].transcript; break; } }
+      if(!t) return; VZ.vazio=0;
+      if(VZ.busy||VZ.trans) return;
+      vzProcessar(t);
+    };
+    r.onerror=function(ev){
+      var er=ev&&ev.error;
+      if(er==='not-allowed'||er==='service-not-allowed'){ VZ.ouvindo=false; VZ.micOk=false; VZ.rec=null; vzStat('Microfone bloqueado. Toque aqui para liberar','#B91C1C'); vzCampos(true); }
+      else if(er==='network'){ vzStat('Sem internet para a voz. Toque aqui ou digite','#B45309'); vzCampos(true); }
+    };
+    r.onend=function(){
+      VZ.ouvindo=false; if(!VZ.vivo||VZ.rec!==r) return;
+      VZ.vazio=(VZ.vazio||0)+1;
+      if(VZ.vazio<=6){ setTimeout(function(){ if(VZ.vivo&&!VZ.ouvindo&&VZ.rec===r){ try{ r.start(); VZ.ouvindo=true; }catch(e){ vzStat('Toque aqui para falar','#B45309'); } } },250); }
+      else { vzStat('Parei de ouvir. Toque aqui para falar','#B45309'); }
+    };
+    try{ r.start(); }catch(e){ VZ.ouvindo=false; vzStat('Toque aqui para falar','#B45309'); }
+  });
 }
 function vzProcessar(t){
-  VZ.tent=0; var p=vzParse(t), ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
+  var p=vzParse(t), ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
   if(p.num&&el('vz-num')) el('vz-num').value=p.num.toUpperCase();
-  if(p.cep){ el('vz-cep').value=p.cep.substring(0,5)+'-'+p.cep.substring(5); vzStat('Buscando o CEP…','#6D28D9'); vzCepDig().then(function(){ vzTentaSalvar(); }); return; }
-  if(p.rua){ var dt=el('vz-det'); if(dt) dt.open=true; el('vz-rua0').value=p.rua; vzStat('Procurando a rua…','#6D28D9'); vzBuscarRua().then(function(n){ if(n===1) return vzEscolher(0).then(function(){ vzTentaSalvar(); }); if(n>1) vzStat('Toque na rua certa','#B45309'); else vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }); return; }
-  vzStat('Não entendi. Toque aqui e fale de novo','#B45309');
+  if(p.cep){ el('vz-cep').value=p.cep.substring(0,5)+'-'+p.cep.substring(5); vzStat('Buscando o CEP…','#6D28D9'); VZ.trans=true; vzCepDig().then(function(){ VZ.trans=false; vzTentaSalvar(); }); return; }
+  if(p.rua){ var dt=el('vz-det'); if(dt) dt.open=true; el('vz-rua0').value=p.rua; vzStat('Procurando a rua…','#6D28D9'); VZ.trans=true;
+    vzBuscarRua().then(function(n){ if(n===1) return vzEscolher(0).then(function(){ VZ.trans=false; vzTentaSalvar(); }); VZ.trans=false; vzCampos(true); if(n>1) vzStat('Toque na rua certa','#B45309'); else vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }); return; }
+  vzStat('Não entendi. Fale de novo','#B45309');
 }
 function vzTentaSalvar(){
   if(VZ.modo==='edit'){ vzStat('Confira e toque em Salvar','#6D28D9'); return; }
   var num=(el('vz-num')||{}).value||'';
   if(VZ.achou===true && num.trim()) vzSalvar(true);
-  else if(VZ.achou===false) vzStat('CEP sem rua: preencha e toque em Salvar','#B45309');
-  else if(!num.trim()) vzStat('Faltou o número. Digite e toque em Salvar','#B45309');
+  else if(VZ.achou===false){ vzCampos(true); vzStat('CEP sem rua: preencha e toque em Salvar','#B45309'); }
+  else if(!num.trim()){ vzCampos(true); vzStat('Faltou o número. Fale “número …” ou digite','#B45309'); }
+  else if(VZ.achou===null){ vzCampos(true); vzStat('CEP não encontrado. Fale de novo','#B91C1C'); }
 }
 function vzCepDig(){
   var i=el('vz-cep'); if(!i) return Promise.resolve(); var d=i.value.replace(/\D/g,'').substring(0,8);
@@ -1314,19 +1346,20 @@ function vzSalvar(auto){
     return rpApi('/motorista/endereco',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,cep:cep,num:num,comp:comp,rua:rua,bai:bai,cid:cid})});
   }).then(function(d){
     fim();
-    if(!d||!d.ok){ somErroBip(); vzStat((d&&d.mensagem)||'Não salvou. Toque em Salvar','#B91C1C'); return; }
+    if(!d||!d.ok){ somErroBip(); vzCampos(true); vzStat((d&&d.mensagem)||'Não salvou. Confira e toque em Salvar','#B91C1C'); return; }
     var ref=d.rua+', '+d.num, dd={cep:d.cep,num:d.num,comp:d.comp,rua:d.rua,bai:d.bai,cid:d.cid}, it=vzItem(cod);
     if(it){ it.e=1; it.r=ref; it.novo=false; it.d=dd; } else BP.meus.push({cod:cod,t:Date.now(),cl:'',r:ref,e:1,novo:false,d:dd});
     somBipeOk(); BP.ult=null; bpAtualizar(); vzFalt(); vzStat('✔ Salvo: '+ref,'#16A34A');
     if(modo==='edit'){ setTimeout(vzFechar,700); return; }
-    /* corrida: passa sozinho para o próximo sem endereço (ou para outra parada avulsa) */
+    /* corrida: passa sozinho para o próximo sem endereço (ou para outra parada avulsa); o microfone continua ligado */
+    VZ.trans=true;
     setTimeout(function(){
-      if(!VZ.vivo) return;
+      if(!VZ.vivo){ VZ.trans=false; return; }
       if(novo){ vzAbrir('', 'voz'); return; }
       var i, prox=''; for(i=BP.meus.length-1;i>=0;i--){ if(!BP.meus[i].e){ prox=BP.meus[i].cod; break; } }
       if(prox) vzAbrir(prox,'voz'); else { vzFechar(); aviso('Todos os endereços preenchidos ✔'); }
-    },900);
-  }).catch(function(){ fim(); somErroBip(); vzStat('Sem conexão. Toque em Salvar para tentar de novo','#B91C1C'); });
+    },600);
+  }).catch(function(){ fim(); somErroBip(); vzCampos(true); vzStat('Sem conexão. Tente de novo','#B91C1C'); });
 }
 function rpIniciar(){ RP._bipou=false; RP.itens=[]; RP.sel={}; RP.fora={}; RP.res=null; EST='rp_calc'; RP.msg='Buscando os endereços da sua rota...'; renderInicio(); rpBuscar(); }
 function rpErro(t){ EST='sem_lote'; renderInicio(); aviso(t||'Sem conexão com o servidor. Tente de novo.'); }
