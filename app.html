@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-39-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-40-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1180,27 +1180,49 @@ function bpTela(){
 var VZ={cod:'',novo:false,modo:'voz',rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false,cand:null,vivo:false,tmr:null,micOk:false,semPerm:false,micErr:'',txtT:null,vazio:0,trans:false};
 function vzNum(t){
   var m={zero:0,um:1,uma:1,dois:2,duas:2,tres:3,'três':3,quatro:4,cinco:5,seis:6,meia:6,sete:7,oito:8,nove:9}, p=String(t||'').toLowerCase().replace(/[.,;:\-]/g,' ').split(/\s+/), o=[], i;
-  for(i=0;i<p.length;i++){ if(m.hasOwnProperty(p[i])) o.push(String(m[p[i]])); else o.push(p[i]); }
+  for(i=0;i<p.length;i++){ if(!p[i]) continue; if(m.hasOwnProperty(p[i])) o.push(String(m[p[i]])); else o.push(p[i]); }
   return o.join(' ');
 }
-function vzParse(t){
-  var s=vzNum(t), k=s.search(/\b(n[uú]mero|numero|n[ºo°]|casa)\b/), esq=s, dir='', cep='', num='';
-  if(k>=0){ esq=s.substring(0,k); dir=s.substring(k).replace(/^\S+\s*/,''); }
-  var dg=esq.replace(/\D/g,'');
-  if(/sem\s+n[uú]mero|\bs\s?\/?\s?n\b/.test(s)){ var kk=s.search(/sem\s+n[uú]mero|\bs\s?\/?\s?n\b/); cep=s.substring(0,kk).replace(/\D/g,'').substring(0,8); num='S/N'; }
-  else if(k>=0){ cep=dg.substring(0,8); var tk=dir.split(/\s+/), q=0, nn=''; while(q<tk.length && /^\d+[a-z]?$/.test(tk[q])){ nn+=tk[q]; q++; } num=nn; }
-  else{ var all=s.replace(/[^0-9 ]/g,''), d2=all.replace(/\s/g,''); cep=d2.substring(0,8); num=d2.substring(8); }
-  var rua='';
-  if(cep.length<8){
-    cep=''; var corpo=s, kk2=s.search(/\b(n[uú]mero|numero|n[ºo°])\b/);
-    if(kk2>=0){ var tk2=s.substring(kk2).replace(/^\S+\s*/,'').split(/\s+/), q2=0, n2=''; while(q2<tk2.length && /^\d+[a-z]?$/.test(tk2[q2])){ n2+=tk2[q2]; q2++; } num=n2; }
-    else{ var mm=s.match(/^(.*\s)(\d+[a-z]?)\s*$/); if(mm){ num=mm[2]; } }
-    var og=String(t||'').toLowerCase(), ko=og.search(/\b(n[uú]mero|numero|n[ºo°])\b/);
-    if(ko>=0) corpo=og.substring(0,ko); else { var mo=og.match(/^(.*\s)\d+[a-z]?\s*$/); corpo=mo?mo[1]:og; }
-    rua=corpo.replace(/^\s*cep\s*/,'').replace(/\s+/g,' ').trim();
-    if(/\d{3,}/.test(rua)) rua='';
+/* "4 5" → "45": dígitos soltos seguidos viram um número só; "85 apartamento 102" continua separado */
+function vzJunta(tk){
+  var o=[], i, buf='';
+  for(i=0;i<tk.length;i++){
+    if(/^\d$/.test(tk[i])) buf+=tk[i];
+    else { if(buf){ o.push(buf); buf=''; } o.push(tk[i]); }
   }
-  return {cep:cep,num:num,rua:rua};
+  if(buf) o.push(buf);
+  return o;
+}
+function vzComp(tk){
+  var pal={apartamento:'Apto',apto:'Apto',ap:'Apto',bloco:'Bloco',casa:'Casa',sala:'Sala',loja:'Loja',fundos:'Fundos',andar:'Andar',cobertura:'Cobertura',conjunto:'Conj',torre:'Torre',lote:'Lote',quadra:'Quadra'}, o=[], i, w;
+  for(i=0;i<tk.length;i++){ w=tk[i]; if(w==='complemento'||w==='e'||w==='de'&&i===0) continue; o.push(pal[w]||(/^\d/.test(w)?w.toUpperCase():w.charAt(0).toUpperCase()+w.slice(1))); }
+  return o.join(' ').trim();
+}
+/* depois do CEP/rua: [número] [complemento...] */
+function vzResto(tk){
+  var n=0, num='', k=0;
+  while(k<tk.length && /^(n[uú]mero|numero|n[ºo°]|n|no)$/.test(tk[k])) k++;
+  if(tk[k]==='sem'&&/^(n[uú]mero|numero)$/.test(tk[k+1]||'')){ return {num:'S/N',comp:vzComp(vzJunta(tk.slice(k+2)))}; }
+  if(/^(sn|s\/n)$/.test(tk[k]||'')) return {num:'S/N',comp:vzComp(vzJunta(tk.slice(k+1)))};
+  var j=vzJunta(tk.slice(k));
+  if(j.length && /^\d+[a-z]?$/.test(j[0])){ num=j[0]; j=j.slice(1); }
+  return {num:num,comp:vzComp(j)};
+}
+function vzParse(t){
+  var s=vzNum(t), tk=s.split(/\s+/).filter(Boolean), i, dg='', fim=-1;
+  if(tk[0]==='cep') tk=tk.slice(1);
+  /* CEP: 8 dígitos juntando os primeiros pedaços numéricos */
+  for(i=0;i<tk.length;i++){ if(/^\d+$/.test(tk[i])){ dg+=tk[i]; if(dg.length>=8){ fim=i; break; } } else break; }
+  if(fim>=0 && dg.length===8){ var r=vzResto(tk.slice(fim+1)); return {cep:dg,num:r.num,comp:r.comp,rua:''}; }
+  /* sem CEP: rua + número + complemento (nome da rua em texto original, sem trocar "sete" por 7) */
+  var og=String(t||'').toLowerCase().replace(/[,;]/g,' ').split(/\s+/).filter(Boolean), ot=og.slice(), k=-1;
+  if(ot[0]==='cep') ot=ot.slice(1);
+  for(i=1;i<ot.length;i++){ if(/^(n[uú]mero|numero|n[ºo°])$/.test(ot[i])){ k=i; break; } }
+  if(k<0){ for(i=1;i<ot.length;i++){ if(/^\d+[a-z]?$/.test(ot[i])||/^(zero|um|dois|tres|três|quatro|cinco|seis|sete|oito|nove)$/.test(ot[i])&&i>=ot.length-1&&false){ k=i; break; } } }
+  if(k<0) return {cep:'',num:'',comp:'',rua:og.join(' ')};
+  var rua=ot.slice(0,k).join(' '), rs=vzResto(vzNum(ot.slice(k).join(' ')).split(/\s+/).filter(Boolean));
+  if(/\d{3,}/.test(rua)) rua='';
+  return {cep:'',num:rs.num,comp:rs.comp,rua:rua};
 }
 function vzLer(k){ try{ return localStorage.getItem('dd_vz_'+k)||(k==='u'?'SC':''); }catch(e){ return k==='u'?'SC':''; } }
 function vzGravar(k,v){ try{ localStorage.setItem('dd_vz_'+k,v); }catch(e){} }
@@ -1326,6 +1348,7 @@ function vzCiclo(SR){
 function vzProcessar(t){
   var p=vzParse(t), ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
   if(p.num&&el('vz-num')) el('vz-num').value=p.num.toUpperCase();
+  if(el('vz-comp')) el('vz-comp').value=p.comp||'';
   if(p.cep){ el('vz-cep').value=p.cep.substring(0,5)+'-'+p.cep.substring(5); vzStat('Buscando o CEP…','#6D28D9'); VZ.trans=true; vzCepDig().then(function(){ VZ.trans=false; vzTentaSalvar(); }); return; }
   if(p.rua){ var dt=el('vz-det'); if(dt) dt.open=true; el('vz-rua0').value=p.rua; vzStat('Procurando a rua…','#6D28D9'); VZ.trans=true;
     vzBuscarRua().then(function(n){ if(n===1) return vzEscolher(0).then(function(){ VZ.trans=false; vzTentaSalvar(); }); VZ.trans=false; vzCampos(true); if(n>1) vzStat('Toque na rua certa','#B45309'); else vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }); return; }
