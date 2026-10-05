@@ -43,6 +43,19 @@ a{color:inherit}
 @keyframes flut2{0%,100%{margin:0 0}50%{margin:-22px 18px}}
 @keyframes flut3{0%,100%{margin:0 0}50%{margin:20px 20px}}
 #curves{position:fixed;inset:0;width:100%;height:100%;z-index:-2;opacity:.85;pointer-events:none}
+/* (v40) dentro do app o fundo fica parado: as bolhas animadas e as linhas gastavam bateria e deixavam o app lento */
+html.dd-in #curves,html.dd-in .glow{display:none}
+html.dd-in #fundo i{animation:none}
+/* tela de carregamento (sessão já guardada): logo enquanto o app confere o login */
+#splash{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:26px;background:var(--grad-arte)}
+html.dd-ret #splash{display:flex}
+#splash .lg-logo{margin:0}
+#splash .lg-logo .mk{height:60px}
+#splash .lg-logo .wm{height:26px}
+#splash .sp-pts{display:flex;gap:8px}
+#splash .sp-pts i{width:9px;height:9px;border-radius:50%;background:#6D28D9;opacity:.25;animation:sppulse 1s ease-in-out infinite}
+#splash .sp-pts i:nth-child(2){animation-delay:.15s}#splash .sp-pts i:nth-child(3){animation-delay:.3s}
+@keyframes sppulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
 .glow{position:fixed;left:50%;bottom:-10%;transform:translateX(-50%);width:1100px;height:600px;z-index:-2;pointer-events:none;
   background:radial-gradient(closest-side,rgba(236,72,153,.09),rgba(236,72,153,0) 72%)}
 
@@ -330,10 +343,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-40-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-41-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
+<div id="splash"><div id="sp-logo"></div><div class="sp-pts"><i></i><i></i><i></i></div></div>
+<script>try{document.getElementById('sp-logo').innerHTML=document.querySelector('.lg-logo').outerHTML;}catch(e){}</script>
 
 <!-- ══════════ APP ══════════ -->
 <div id="app">
@@ -597,6 +612,7 @@ function ir(p){
 
 /* ══ entrar / sair ══ */
 function abrirApp(){
+  curvesDesligar(); document.documentElement.classList.add('dd-in'); document.documentElement.classList.remove('dd-ret');
   el('login').style.display='none';
   el('app').style.display='flex';
   /* a rota do motorista vem do cadastro dele (mt_ref) — não há mais "Quem é você?" */
@@ -622,6 +638,7 @@ function sair(){
   ddGuardarM('',null); ddMostrarLogin();
   el('app').style.display='none';
   el('login').style.display='flex';
+  document.documentElement.classList.remove('dd-in'); curvesLigar();
 }
 /* já tem sessão guardada (vale 30 dias)? confere no servidor e entra direto */
 function retomarSessao(){
@@ -908,6 +925,56 @@ function rpResumoHtml(){
   return h;
 }
 function abrirResumo(){ el('sh-resumo-corpo').innerHTML=rpResumoHtml(); abrir('sh-resumo'); }
+/* ══ (36) NUMERAÇÃO — número de cada pacote conforme a rota criada; bipou, aparece o número ══ */
+var NUM={map:{},sig:'',tot:0,n:0,feitos:{},ult:null,voz:true,dia:''};
+function numHoje(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function numSig(){ var a=[],i; for(i=0;i<LOTE_ATUAL.length;i++) a.push(LOTE_ATUAL[i].cod); return a.join('|'); }
+function numValida(){ return NUM.tot>0 && NUM.dia===numHoje() && NUM.sig===numSig(); }
+function numGravar(){ try{ localStorage.setItem('dd_num',JSON.stringify({map:NUM.map,sig:NUM.sig,tot:NUM.tot,feitos:NUM.feitos,dia:NUM.dia,voz:NUM.voz})); }catch(e){} }
+function numLer(){ try{ var o=JSON.parse(localStorage.getItem('dd_num')||'null'); if(o&&o.dia===numHoje()){ NUM.map=o.map||{}; NUM.sig=o.sig||''; NUM.tot=o.tot||0; NUM.feitos=o.feitos||{}; NUM.dia=o.dia; NUM.voz=o.voz!==false; NUM.n=Object.keys(NUM.feitos).length; } }catch(e){} }
+function numCriar(){
+  if(!LOTE_ATUAL.length){ aviso('Não há paradas na rota'); return; }
+  var i,p,itens=[]; NUM.map={}; NUM.feitos={};
+  for(i=0;i<LOTE_ATUAL.length;i++){ p=LOTE_ATUAL[i]; NUM.map[String(p.cod).toLowerCase()]=i+1; if(p.scan) NUM.map[String(p.scan).toLowerCase()]=i+1; itens.push({cod:p.scan||p.cod,pos:i+1}); if(p.scan) itens.push({cod:p.cod,pos:i+1}); }
+  NUM.sig=numSig(); NUM.tot=LOTE_ATUAL.length; NUM.n=0; NUM.ult=null; NUM.dia=numHoje(); numGravar();
+  rpApi('/motorista/numeracao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:itens})}).catch(function(){});
+  aviso('Numeração criada: '+NUM.tot+' paradas'); numAbrir();
+}
+function numAbrir(){ EST='rp_num'; NUM.ult=null; renderInicio(); }
+function numSair(){ bpFecharCamera(); EST='rp_lista'; renderInicio(); }
+function numVoz(){ NUM.voz=!NUM.voz; numGravar(); numAtualizar(); }
+function numBipar(v){
+  var cod=bpNorm(v); if(!cod) return;
+  var k=cod.toLowerCase(), pos=NUM.map[k];
+  if(!pos){ somErroBip(); NUM.ult={t:'err',cod:cod}; numAtualizar(); return; }
+  var p=LOTE_ATUAL[pos-1]; NUM.ult={t:'ok',cod:cod,pos:pos,cl:p?(p.cliente||''):'',end:p?(p.endereco||''):''};
+  if(!NUM.feitos[pos]){ NUM.feitos[pos]=1; NUM.n=Object.keys(NUM.feitos).length; numGravar(); }
+  somBipeOk();
+  try{ if(NUM.voz && window.speechSynthesis){ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(pos)); u.lang='pt-BR'; u.rate=1.1; speechSynthesis.speak(u); } }catch(e){}
+  numAtualizar();
+}
+function numDigitado(){ var i=el('num-cod'); if(!i) return; var v=i.value; i.value=''; numBipar(v); i.focus(); }
+function numCamera(){ BP.camFn=numBipar; bpCamera(); }
+function numAtualizar(){
+  var u=el('num-ult'), c=el('num-cnt'); if(c) c.textContent=NUM.n+' de '+NUM.tot+' numerados';
+  var vb=el('num-voz'); if(vb) vb.textContent=NUM.voz?'🔊 Voz ligada':'🔇 Voz desligada';
+  var h='', r=NUM.ult;
+  if(!r) h='<div style="border:2px dashed #E3D9F2;border-radius:18px;padding:30px 12px;text-align:center;color:var(--muted);font-size:13px">Bipe um pacote para ver o número dele</div>';
+  else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:22px 12px;text-align:center"><div style="font-size:22px;font-weight:800">Fora da rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+esc(r.cod)+'<br>Este pacote não está na rota criada.</div></div>';
+  else h='<div style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-radius:18px;padding:18px 12px;text-align:center"><div style="font-size:13px;opacity:.85">Número do pacote</div><div style="font-size:84px;font-weight:800;line-height:1">'+r.pos+'</div><div style="font-size:13px;margin-top:8px;font-weight:700">'+esc(r.cl||r.cod)+'</div><div style="font-size:12px;opacity:.9">'+esc(r.end)+'</div></div>';
+  if(u) u.innerHTML=h;
+  var inf=el('bp-caminfo'); if(inf&&BP.camFn===numBipar) inf.innerHTML=(r&&r.t==='ok')?'<span style="font-size:64px;font-weight:800;color:#fff;display:block;line-height:1">Nº '+r.pos+'</span>'+esc(r.cl||r.cod):(r?'Fora da rota':'Aponte para o código de barras');
+}
+function numTela(){
+  return '<div class="card"><h3 style="margin:0 0 2px">Numerar pacotes</h3>'+
+    '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px"><b id="num-cnt"></b> · bipe cada pacote e escreva o número nele.</p>'+
+    '<div id="num-ult" style="margin-bottom:14px"></div>'+
+    '<div class="search"><span>🔎</span><input id="num-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')numDigitado()"></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:10px"><button class="btn pri" style="flex:1" onclick="numCamera()">📷 Usar a câmera</button><button class="btn sec" style="flex:1" onclick="numDigitado()">Ver número</button></div>'+
+    '<button class="btn sec wide" id="num-voz" style="margin-bottom:14px" onclick="numVoz()"></button>'+
+    '<button class="btn sec wide" onclick="numSair()">Voltar para a rota</button></div>';
+}
+numLer();
 function rlTela(){
   var h='<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px">📊 Resumo da rota</h3>'+rpResumoHtml()+'</div><div class="card"><h3 style="margin:0 0 2px">Suas paradas</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">'+PONTEIRO+' de '+LOTE_ATUAL.length+' entregues. Para reorganizar as que faltam, arraste pelo ⣿ ou digite a nova posição.</p><div id="rp-lista">', i, p;
   var nomes={entregue:'Entregue',remarcada:'Remarcada',ausente:'Ausente',nao_localizado:'Não localizado'};
@@ -916,7 +983,7 @@ function rlTela(){
     if(i<PONTEIRO) h+='<div class="rp-cartao feito" data-i="'+i+'"><span class="rp-ok">✓</span><span class="rp-num">'+(i+1)+'</span>'+txt+'<span class="badge b-wt">'+(nomes[p.status]||'Feita')+'</span></div>';
     else h+='<div class="rp-cartao'+(i===PONTEIRO?' atual':'')+'" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+',rlMover)">⣿</span><input class="rp-pos" type="number" inputmode="numeric" min="'+(PONTEIRO+1)+'" max="'+LOTE_ATUAL.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rlMover('+i+',this.value)">'+txt+(p.semLocal?rpAcoesSem('lote',i,p.cod):'')+'</div>';
   }
-  h+='</div><button class="btn pri wide" style="margin-top:14px" onclick="rlContinuar()">Continuar rota</button></div>';
+  h+='</div><button class="btn sec wide" style="margin-top:14px" onclick="numCriar()">🔢 '+(numValida()?'Recriar numeração':'Criar numeração')+'</button>'+(numValida()?'<button class="btn sec wide" style="margin-top:8px" onclick="numAbrir()">📦 Numerar pacotes ('+NUM.n+' de '+NUM.tot+')</button>':(NUM.tot?'<p style="margin:8px 0 0;font-size:12px;color:#B45309">⚠ A ordem mudou desde a última numeração. Toque em Criar numeração de novo.</p>':''))+'<button class="btn pri wide" style="margin-top:8px" onclick="rlContinuar()">Continuar rota</button></div>';
   return h;
 }
 
@@ -990,7 +1057,7 @@ try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
 /* LOGIN (etapa B1d): com sessão, vai o token do motorista no cabeçalho (sem a chave antiga) */
 var DD_M_TOKEN='', DD_M_USER=null;
 try{ DD_M_TOKEN=localStorage.getItem('dd_m_jwt')||''; DD_M_USER=JSON.parse(localStorage.getItem('dd_m_user')||'null'); }catch(e){}
-function ddMostrarLogin(){ document.documentElement.classList.remove('dd-ret'); }
+function ddMostrarLogin(){ document.documentElement.classList.remove('dd-ret'); var l=el('login'); if(l&&l.style.display!=='none') curvesLigar(); }
 function ddGuardarM(tk,us){ DD_M_TOKEN=tk||''; DD_M_USER=us||null; try{ if(tk){ localStorage.setItem('dd_m_jwt',tk); localStorage.setItem('dd_m_user',JSON.stringify(us||null)); } else { localStorage.removeItem('dd_m_jwt'); localStorage.removeItem('dd_m_user'); localStorage.removeItem('dd_mt'); RP.mt=null; RP.mtn=''; RP.total=0; } }catch(e){} }
 function rpApi(caminho,opts){
   if(DD_M_TOKEN){
@@ -1075,7 +1142,7 @@ function rpCardPronta(){
 }
 /* ══ (32) BIPAR OS PRÓPRIOS PACOTES: o motorista bipa cada pacote, monta a lista dele e só então o sistema calcula a rota ══ */
 var BIP_ROTA=true;   /* true = a rota nasce da bipagem do motorista; false = volta ao modo antigo (rota pronta do painel) */
-var BP={atual:'',idx:{},meus:[],outros:{},ult:null,ok:false,carregando:false,ocupado:false,cam:null};
+var BP={camFn:null,atual:'',idx:{},meus:[],outros:{},ult:null,ok:false,carregando:false,ocupado:false,cam:null};
 function bpNorm(v){ return String(v==null?'':v).replace(/[^A-Za-z0-9_.-]/g,''); }
 function bpTr(cod){ var c=String(cod).toUpperCase(); if(/^AJ/.test(c)) return 'anj'; if(/^GP.*BR$/.test(c)) return 'pic'; return ''; }
 function somErroBip(){ _tom(220,0,0.18,0.5); _tom(180,0.2,0.22,0.5); try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){} }
@@ -1158,13 +1225,14 @@ function bpCamera(){
     document.body.appendChild(ov); var v=el('bp-vid'); v.srcObject=st; v.play().catch(function(){});
     BP.cam={st:st,ult:'',q:0,timer:setInterval(function(){
       if(!v||v.readyState<2||BP.ocupado) return;
-      det.detect(v).then(function(r){ if(!r||!r.length) return; var c=String(r[0].rawValue||'').trim(), ag=Date.now(); if(!c) return; if(c===BP.cam.ult && ag-BP.cam.q<3000) return; BP.cam.ult=c; BP.cam.q=ag; bpBipar(c); var inf=el('bp-caminfo'); if(inf) inf.textContent='Último: '+c+' — aponte para o próximo'; }).catch(function(){});
+      det.detect(v).then(function(r){ if(!r||!r.length) return; var c=String(r[0].rawValue||'').trim(), ag=Date.now(); if(!c) return; if(c===BP.cam.ult && ag-BP.cam.q<3000) return; BP.cam.ult=c; BP.cam.q=ag; if(BP.camFn) BP.camFn(c); else { bpBipar(c); var inf=el('bp-caminfo'); if(inf) inf.textContent='Último: '+c+' — aponte para o próximo'; } }).catch(function(){});
     },350)};
   }).catch(function(){ aviso('Não consegui abrir a câmera. Libere a permissão do navegador.'); });
 }
 function bpFecharCamera(){
   if(BP.cam){ clearInterval(BP.cam.timer); try{ BP.cam.st.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} BP.cam=null; }
   var o=el('bp-cam'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+  BP.camFn=null;
 }
 function bpTela(){
   return '<div class="card"><h3 style="margin:0 0 2px">Bipar meus pacotes</h3>'+
@@ -1570,7 +1638,7 @@ function rpRegistrarRemarcado(cod){ var m=rpRemarcados(), d=new Date(); d.setDat
 function rpParada(p,seq){
   var t=String(p.tel||'').replace(/\D/g,''); if(t && t.length<=11) t='55'+t;
   var sem=(p.lat==null||!!p.inc||!!p._longe);
-  return {seq:seq,cod:p.cod,cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||(p.inc?'[rua não informada]':''))+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':'')+((!p.rua&&p.cep)?' · CEP '+p.cep:''),telefone:t,canal:p.canal||'',status:'pendente',lat:sem?null:p.lat,lng:sem?null:p.lng,aprox:sem?false:rpAprox(p),origem:'painel',remarcado:!!rpRemarcados()[p.cod],
+  return {seq:seq,cod:p.cod,scan:(p.scan&&p.scan!==p.cod)?p.scan:'',cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||(p.inc?'[rua não informada]':''))+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':'')+((!p.rua&&p.cep)?' · CEP '+p.cep:''),telefone:t,canal:p.canal||'',status:'pendente',lat:sem?null:p.lat,lng:sem?null:p.lng,aprox:sem?false:rpAprox(p),origem:'painel',remarcado:!!rpRemarcados()[p.cod],
     semLocal:sem,motivo:sem?(p._longe?'Endereço fora da cidade da rota':rpTag(p)):'',raw:{rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||''}};
 }
 /* ══ pedido sem localização: NUNCA some — o motorista corrige o endereço ou remarca ══ */
@@ -1718,6 +1786,8 @@ function renderInicio(){
     h+='<div class="card" style="text-align:center;padding:40px 18px"><div style="font-size:34px;margin-bottom:12px">🧭</div>'+
        '<h3 style="margin:0 0 6px">Calculando a melhor rota…</h3>'+
        '<p style="color:var(--muted);font-size:13px;margin:0">Organizando '+LOTE_ATUAL.length+' entregas pela sequência mais rápida</p></div>';
+  } else if(EST==='rp_num'){
+    h+=numTela();
   } else if(EST==='rp_lista'){
     h+=rlTela();
   } else if(EST==='em_rota'){
@@ -1727,6 +1797,7 @@ function renderInicio(){
   }
   box.innerHTML=h;
   if(EST==='rp_bip') bpAtualizar();
+  if(EST==='rp_num') numAtualizar();
   if(EST==='em_rota'){ rpAjustaAltura(); rpMapaMontar(); }
   atualizarChromeApp();
 }
@@ -1898,30 +1969,37 @@ function enviarSolicitacao(){
 }
 
 /* ══ fundo vivo — mesmo efeito do painel principal ══ */
+var CV={on:false,ini:false,draw:null};
 function fundoSegueCursor(){
   var f=el('fundo'); if(!f) return;
   document.addEventListener('pointermove',function(e){
+    if(!CV.on) return;
     var x=(e.clientX/window.innerWidth-0.5)*2, y=(e.clientY/window.innerHeight-0.5)*2;
     f.style.setProperty('--mx',x.toFixed(3));
     f.style.setProperty('--my',y.toFixed(3));
   });
 }
+function curvesLigar(){ if(CV.on) return; CV.on=true; if(!CV.ini){ CV.ini=true; initCurves(); } else if(CV.draw) requestAnimationFrame(CV.draw); }
+function curvesDesligar(){ CV.on=false; }
 function initCurves(){
   var cv=el('curves'); if(!cv) return;
-  var ctx=cv.getContext('2d'), W=cv.width=1920, H=cv.height=1080;
+  var ctx=cv.getContext('2d'), W=cv.width=1280, H=cv.height=720;
   var mx=W*0.5,my=H*0.42,tx=mx,ty=my,t=0;
   document.addEventListener('pointermove',function(e){
+    if(!CV.on) return;
     var rc=cv.getBoundingClientRect();
     tx=(e.clientX-rc.left)/rc.width*W; ty=(e.clientY-rc.top)/rc.height*H;
   });
+  var S=W/1920;
   function draw(){
+    if(!CV.on) return;
     t+=0.008; mx+=(tx-mx)*0.06; my+=(ty-my)*0.06;
     ctx.clearRect(0,0,W,H);
     for(var i=0;i<9;i++){
-      var f=i/8, baseY=H*0.5+(f-0.5)*600; ctx.beginPath();
-      for(var x=0;x<=W;x+=22){
-        var d=x-mx, pull=Math.exp(-(d*d)/(2*280*280))*(my-baseY)*0.85;
-        var y=baseY+pull+Math.sin(x*0.0038+t*1.3+i*0.7)*24;
+      var f=i/8, baseY=H*0.5+(f-0.5)*600*S; ctx.beginPath();
+      for(var x=0;x<=W;x+=16){
+        var d=x-mx, pull=Math.exp(-(d*d)/(2*280*S*280*S))*(my-baseY)*0.85;
+        var y=baseY+pull+Math.sin(x/S*0.0038+t*1.3+i*0.7)*24*S;
         if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       }
       var R=Math.round(109+(236-109)*f), G=Math.round(40+(72-40)*f), B=Math.round(217+(153-217)*f);
@@ -1933,11 +2011,11 @@ function initCurves(){
     }
     requestAnimationFrame(draw);
   }
-  requestAnimationFrame(draw);
+  CV.draw=draw; requestAnimationFrame(draw);
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-  initCurves(); fundoSegueCursor();
+  fundoSegueCursor(); if(!document.documentElement.classList.contains('dd-ret')) curvesLigar();
   var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
   var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
   retomarSessao();
