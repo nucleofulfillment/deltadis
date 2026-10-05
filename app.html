@@ -330,7 +330,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-36-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-37-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1177,7 +1177,7 @@ function bpTela(){
     '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">Montar minha rota</button></div></div>';
 }
 /* ══ (35) VOZ POR CEP OU RUA — toque no pacote, fale, salva sozinho e passa para o próximo ══ */
-var VZ={cod:'',novo:false,modo:'voz',rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false,cand:null,vivo:false,tmr:null,micOk:false,vazio:0,trans:false};
+var VZ={cod:'',novo:false,modo:'voz',rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false,cand:null,vivo:false,tmr:null,micOk:false,micErr:'',txtT:null,vazio:0,trans:false};
 function vzNum(t){
   var m={zero:0,um:1,uma:1,dois:2,duas:2,tres:3,'três':3,quatro:4,cinco:5,seis:6,meia:6,sete:7,oito:8,nove:9}, p=String(t||'').toLowerCase().replace(/[.,;:\-]/g,' ').split(/\s+/), o=[], i;
   for(i=0;i<p.length;i++){ if(m.hasOwnProperty(p[i])) o.push(String(m[p[i]])); else o.push(p[i]); }
@@ -1245,8 +1245,20 @@ function vzFechar(){ VZ.vivo=false; vzParar(); BP.atual=''; var o=el('vz-ov'); i
 function vzMic(cb){
   if(VZ.micOk) return cb(true);
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ VZ.micOk=true; return cb(true); }
-  navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){ try{ st.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} VZ.micOk=true; cb(true); }).catch(function(){ cb(false); });
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){ try{ st.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} VZ.micOk=true; cb(true); }).catch(function(e){ VZ.micErr=(e&&e.name)||'erro'; cb(false); });
 }
+/* sem permissão de microfone: explica e oferece o ditado pelo microfone do TECLADO (funciona sem permissão do site) */
+function vzAjudaMic(cod){
+  var c=el('vz-cand'); if(!c) return;
+  vzStat('🎤 Microfone sem permissão — toque aqui para tentar de novo','#B91C1C');
+  c.innerHTML='<div style="border:1px solid #F3C9C9;background:#FFF5F5;border-radius:12px;padding:10px 12px;font-size:12.5px;color:#7F1D1D;margin-bottom:8px">'+
+    '<b>Para liberar:</b> Configurações do Android → Apps → <b>Chrome</b> → Permissões → Microfone → <b>Permitir</b>. Depois volte e toque no botão vermelho.<br><span style="opacity:.7;font-size:11px">código: '+esc(cod||VZ.micErr||'')+'</span></div>'+
+    '<div style="font-size:12px;font-weight:700;margin-bottom:4px">Ou fale pelo teclado: toque no campo e no 🎤 do teclado</div>'+
+    '<div class="search" style="margin:0"><input id="vz-txt" placeholder="ex.: CEP 89110113 número 45" autocomplete="off" oninput="vzTxtDig()" onkeydown="if(event.key===\'Enter\')vzTxtGo()"></div>';
+  var t=el('vz-txt'); if(t) setTimeout(function(){ try{ t.focus(); }catch(e){} },150);
+}
+function vzTxtDig(){ if(VZ.txtT) clearTimeout(VZ.txtT); VZ.txtT=setTimeout(vzTxtGo,1400); }
+function vzTxtGo(){ if(VZ.txtT){ clearTimeout(VZ.txtT); VZ.txtT=null; } var t=el('vz-txt'); if(!t) return; var v=t.value.trim(); if(v.length<6||VZ.busy||VZ.trans) return; t.value=''; vzProcessar(v); }
 function vzOuvir(manual){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){ vzStat('Sem voz neste aparelho — toque em Digitar','#6D28D9'); vzCampos(true); return; }
@@ -1255,7 +1267,7 @@ function vzOuvir(manual){
   vzParar();
   vzMic(function(ok){
     if(!VZ.vivo) return;
-    if(!ok){ vzStat('Microfone bloqueado. Toque no cadeado 🔒 ao lado do endereço do site → Permissões → Microfone → Permitir','#B91C1C'); vzCampos(true); return; }
+    if(!ok){ vzAjudaMic(VZ.micErr); return; }
     var r=new SR(); r.lang='pt-BR'; r.interimResults=false; r.maxAlternatives=1; r.continuous=true; VZ.rec=r; VZ.ouvindo=true;
     vzStat('🎤 Pode falar…  (CEP e número, ou rua e número)','#7C3AED');
     r.onresult=function(ev){
@@ -1267,7 +1279,7 @@ function vzOuvir(manual){
     };
     r.onerror=function(ev){
       var er=ev&&ev.error;
-      if(er==='not-allowed'||er==='service-not-allowed'){ VZ.ouvindo=false; VZ.micOk=false; VZ.rec=null; vzStat('Microfone bloqueado. Toque aqui para liberar','#B91C1C'); vzCampos(true); }
+      if(er==='not-allowed'||er==='service-not-allowed'){ VZ.ouvindo=false; VZ.micOk=false; VZ.rec=null; vzAjudaMic(er); }
       else if(er==='network'){ vzStat('Sem internet para a voz. Toque aqui ou digite','#B45309'); vzCampos(true); }
     };
     r.onend=function(){
