@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-50-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-51-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -428,6 +428,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="field"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
         <div class="field"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
+        <div class="field"><label>Valor por pacote entregue (R$)</label><input class="inp" id="cfg-vp" type="text" inputmode="decimal" placeholder="Ex.: 4,50"><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Usado no Financeiro quando o seu cadastro não tem valor por pacote.</p></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
       </div>
@@ -894,7 +895,7 @@ function rpFilaEnt(){ try{ return JSON.parse(localStorage.getItem('dd_fila_ent')
 function rpSalvaFilaEnt(f){ try{ localStorage.setItem('dd_fila_ent',JSON.stringify(f.slice(-500))); }catch(e){} }
 function rpAvisarEntrega(p){
   if(!p || p.origem!=='painel' || !p.cod || !RP.mt) return;
-  var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now()});
+  var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now(),valor:(function(){ try{ return Number(JSON.parse(localStorage.getItem('dd_cfg')||'{}').vp)||0; }catch(e){ return 0; } })()});
   rpSalvaFilaEnt(f); rpDescarregarEnt();
 }
 function rpDescarregarEnt(){
@@ -1110,10 +1111,10 @@ function rpCarregarPonto(){
 setTimeout(rpCarregarPonto,1500); setInterval(rpCarregarPonto,600000);
 function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(PT.sel&&PT.sel.endereco)?PT.sel.endereco:((c.base&&c.base!==RP_BASE_PADRAO)?c.base:rpBasePonto()), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
 function rpSalvarCfg(){
-  var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
+  var vp=parseFloat(String(el('cfg-vp').value).replace(',','.')); if(!isFinite(vp)||vp<0) vp=0; var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30; if(!RP_TESTE){ try{ mx=(JSON.parse(localStorage.getItem('dd_cfg')||'{}').max); }catch(e){} if(mx==null) mx=30; }
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear'})); }catch(e){}
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear',vp:vp})); }catch(e){}
   rpAtualizar();
   aviso('Configurações salvas');
 }
@@ -2141,7 +2142,7 @@ function pintarConta(){
   mostra('cta-cap',P.cap>0?(P.cap+' pacotes'):''); mostra('cta-valor',P.valorPadrao>0?(moeda(P.valorPadrao)+' por pacote'):'');
   var card=el('cta-regiao')&&el('cta-regiao').parentNode&&el('cta-regiao').parentNode.parentNode;
   if(card){ var alg=P.regiao||veic.trim()||P.cap>0||P.valorPadrao>0; card.style.display=alg?'block':'none'; }
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo;
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; try{ var vv=JSON.parse(localStorage.getItem('dd_cfg')||'{}').vp; el('cfg-vp').value=vv?String(vv).replace('.',','):''; }catch(e){} el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo;
   rpPintarIdentidade();
 }
 function salvarSenha(){
