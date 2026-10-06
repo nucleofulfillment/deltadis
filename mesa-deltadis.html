@@ -163,6 +163,7 @@
   .cam-info{color:#fff;font-size:13px;text-align:center;max-width:90vw}
   .mot-box{background:#fff;border:1px solid var(--border2);border-radius:14px;padding:12px 14px;margin-bottom:14px}
   .mot-box label{display:block;font-size:12px;font-weight:800;color:var(--muted2);margin-bottom:6px}
+  .mot-box input{width:100%;box-sizing:border-box;border:1px solid var(--border2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;background:var(--s2);color:var(--text)}
   .mot-box select{width:100%;border:1px solid var(--border2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;background:var(--s2);color:var(--text)}
   .cards.bloq{opacity:.4;pointer-events:none}
 </style>
@@ -229,7 +230,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-08-0510</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-09-0510</p>
   </div>
 </div>
 
@@ -300,7 +301,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
   <div class="mesa-layout">
     <div class="col-esq">
-      <div class="mot-box"><label>1 · Quem é o motorista desta carga?</label><select id="mot-sel" onchange="escolherMotorista()"><option value="">Carregando motoristas…</option></select></div>
+      <div class="mot-box"><label>1 · Quem é o motorista desta carga?</label><input id="mot-sel" list="mot-lista" autocomplete="off" placeholder="Carregando motoristas…" onchange="escolherMotorista()"><datalist id="mot-lista"></datalist></div>
       <div class="cards bloq" id="mesa-cards"></div>
     </div>
 
@@ -487,23 +488,30 @@ var ATIVA=null, CNT=0, PACOTES=[], VISTOS={}, ULT=null, OCUPADO=false, MOT=null,
 function achaTr(id){ var i; for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].id===id) return TRANSPORTADORAS[i]; return null; }
 
 function tituloScan(){ return (MOT?MOT.n+' · ':'')+(ATIVA?ATIVA.n:''); }
+/* (09) o campo do motorista aceita DIGITAR (e filtra) ou escolher na lista */
+function normNome(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
+function achaMot(t){
+  var q=normNome(t), i, ex=null, par=[]; if(!q) return null;
+  for(i=0;i<MOTS.length;i++){ var n=normNome(MOTS[i].n); if(n===q) ex=MOTS[i]; else if(n.indexOf(q)>=0) par.push(MOTS[i]); }
+  return ex||(par.length===1?par[0]:null);
+}
 function carregarMotoristas(){
   api('/mesa/motoristas').then(function(d){
-    var s=el('mot-sel'), h='<option value="">— escolha o motorista —</option>', i;
+    var s=el('mot-sel'), h='', i;
     MOTS=(d&&d.ok&&d.motoristas)||[];
-    for(i=0;i<MOTS.length;i++) h+='<option value="'+esc(MOTS[i].id)+'">'+esc(MOTS[i].n)+'</option>';
-    if(!MOTS.length) h='<option value="">Nenhum motorista cadastrado no painel</option>';
-    s.innerHTML=h;
-  }).catch(function(){ el('mot-sel').innerHTML='<option value="">Não consegui carregar os motoristas</option>'; });
+    for(i=0;i<MOTS.length;i++) h+='<option value="'+esc(MOTS[i].n)+'"></option>';
+    el('mot-lista').innerHTML=h;
+    s.placeholder=MOTS.length?'digite ou escolha o motorista':'Nenhum motorista cadastrado no painel';
+  }).catch(function(){ el('mot-sel').placeholder='Não consegui carregar os motoristas'; });
 }
 function escolherMotorista(){
-  var id=el('mot-sel').value, novo=null, i;
-  for(i=0;i<MOTS.length;i++) if(MOTS[i].id===id) novo=MOTS[i];
+  var campo=el('mot-sel'), txt=campo.value, novo=achaMot(txt);
+  if(txt.trim() && !novo){ aviso('Motorista não encontrado. Digite o nome completo ou escolha na lista.'); campo.value=MOT?MOT.n:''; return; }
   if((MOT&&novo&&MOT.id!==novo.id)||(MOT&&!novo)){
-    if(CNT>0 && !confirm('Trocar de motorista encerra a contagem atual ('+CNT+' pacotes de '+MOT.n+'). Os pacotes já bipados continuam salvos. Trocar?')){ el('mot-sel').value=MOT.id; return; }
+    if(CNT>0 && !confirm('Trocar de motorista encerra a contagem atual ('+CNT+' pacotes de '+MOT.n+'). Os pacotes já bipados continuam salvos. Trocar?')){ campo.value=MOT.n; return; }
   }
   if(MOT && (!novo || MOT.id!==novo.id)) encerrar();
-  MOT=novo;
+  MOT=novo; if(novo) campo.value=novo.n;
   el('mesa-cards').classList.toggle('bloq',!MOT);
   if(MOT) aviso('Motorista: '+MOT.n+' — agora escolha a transportadora');
 }
