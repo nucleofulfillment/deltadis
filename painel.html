@@ -791,7 +791,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <section class="page" id="pg-config">
         <div class="pghd"><div><h1>Configurações</h1><div class="sub">integrações e estrutura do ponto</div></div></div>
         <div class="cfgcards">
-          <div class="cfgcard" style="cursor:pointer" onclick="abrirPonto()"><div class="ic">📍</div><h4>Ponto de coleta</h4><p>Endereço da base (Delta Express). É de onde o app do motorista sai e o centro do Mapeamento.</p><span class="badge b-in" id="pt-badge">configurar</span></div>
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirPonto()"><div class="ic">📍</div><h4>Ponto de coleta</h4><p>Endereço da base. É de onde o app do motorista sai e o centro do Mapeamento.</p><span class="badge b-in" id="pt-badge">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
@@ -803,7 +803,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-6-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-7-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1531,6 +1531,9 @@ function bipStatusSync(){
   }).catch(function(){ BIP_ST.rodando=false; });
 }
 setInterval(bipStatusSync,30000); setTimeout(bipStatusSync,6000);
+/* ── (119) nome do ponto de coleta vem do cadastro do cliente (sai nos PDFs) ── */
+function pontoNomeCarregar(){ if(!REAL || !DD_TOKEN) return; fetch(DELTADIS_API+'/mesa/ponto',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){ if(d && d.ok && d.nome) PONTO_NOME=d.nome; }).catch(function(){}); }
+setTimeout(pontoNomeCarregar,3000); setInterval(pontoNomeCarregar,600000);
 
 function srvMigrar(){
   srvBarraFechar(); SRV.pronto=true; aviso('Enviando seus dados para o servidor...');
