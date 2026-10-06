@@ -231,7 +231,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-13-0610</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-14-0610</p>
   </div>
 </div>
 
@@ -771,8 +771,12 @@ function dvPintar(){
   el('dv-resumo').innerHTML=n+' pacote'+(n===1?'':'s')+' devolvido'+(n===1?'':'s')+' pelo motorista aguardando retorno · <b>'+DV.sel.length+' bipado'+(DV.sel.length===1?'':'s')+' agora</b>';
   for(i=DV.sel.length-1;i>=0;i--){ p=DV.sel[i]; var tn=(p.tent||0)+1;
     h+='<div class="rm-item"><div class="rm-item-esq"><div class="rm-seq">'+(i+1)+'</div><div><div class="rm-cliente">'+esc(p.cod)+'</div><div class="rm-end">'+esc(p.mtn||'')+' · '+tn+'ª tentativa · '+dvMotivo(p.mot)+'</div><div class="rm-end" style="font-weight:700;color:'+(tn>=3?'#047857':'#B45309')+'">'+(tn>=3?'💰 vai pro financeiro do motorista':'sem pagamento (menos de 3 tentativas)')+'</div></div></div><button class="btn sec" style="padding:6px 10px" onclick="dvRemover('+i+')">✕</button></div>'; }
-  el('dv-lista').innerHTML=h||'<div class="rm-vazio">Nenhum pacote bipado ainda.</div>';
+  var hp='', q, c, tn2, sel;
+  for(q=0;q<DV.pend.length;q++){ c=DV.pend[q]; sel=false; for(i=0;i<DV.sel.length;i++) if(DV.sel[i].cod===c.cod) sel=true; if(sel) continue; tn2=(c.tent||0)+1;
+    hp+='<div class="rm-item" style="cursor:pointer" onclick="dvPegar('+q+')"><div class="rm-item-esq"><div class="rm-seq" style="background:#B45309">↩</div><div><div class="rm-cliente">'+esc(c.cod)+'</div><div class="rm-end">'+esc(c.mtn||'')+' · '+tn2+'ª tentativa · '+dvMotivo(c.mot)+'</div></div></div><span class="rm-end" style="white-space:nowrap">tocar p/ marcar</span></div>'; }
+  el('dv-lista').innerHTML=(h?'<div style="font-weight:800;margin:4px 0 2px">Bipados agora ('+DV.sel.length+')</div>'+h:'')+(hp?'<div style="font-weight:800;margin:12px 0 2px">Aguardando retorno ('+(n-DV.sel.length)+')</div>'+hp:'')||'<div class="rm-vazio">Nenhum pacote devolvido aguardando retorno.</div>';
 }
+function dvPegar(q){ var c=DV.pend[q]; if(!c) return; var i; for(i=0;i<DV.sel.length;i++) if(DV.sel[i].cod===c.cod) return; DV.sel.push(c); dvPintar(); }
 function dvRemover(i){ DV.sel.splice(i,1); dvPintar(); }
 function dvBipar(ev){
   if(ev && ev.key!=='Enter') return;
