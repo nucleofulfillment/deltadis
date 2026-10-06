@@ -260,6 +260,12 @@ html.dd-ret #splash{display:flex}
 .rota-tela .mapa-mock{flex:1 1 auto;min-height:46vh}
 .rota-tela.com-aviso .mapa-mock{min-height:20vh}
 .rota-tela .info-full{flex:none}
+.sheet-handle{display:flex;justify-content:center;padding:6px 0 10px;margin:-6px 0 0;touch-action:none;cursor:grab}
+.sheet-handle i{width:44px;height:5px;border-radius:99px;background:rgba(109,40,217,.35)}
+.rota-tela.sheet-baixo .mapa-mock{min-height:62vh}
+.rota-tela.sheet-baixo .progresso,.rota-tela.sheet-baixo .info-full .parada-tag,.rota-tela.sheet-baixo .info-full p,.rota-tela.sheet-baixo .aviso-acao,.rota-tela.sheet-baixo .info-full>.acoes-fixas>.btn{display:none}
+.rota-tela.sheet-baixo .end-2l{font-size:14.5px;margin:0 0 2px;min-height:0;-webkit-line-clamp:1}
+.rota-tela.sheet-baixo .grade-acoes{margin-top:8px}
 .acoes-fixas{position:sticky;bottom:0;margin:auto -16px 0;padding:6px 16px 10px;background:#F3ECFB;border-top:1px solid rgba(109,40,217,.12);z-index:7}
 .rp-x{margin-left:auto;flex:none;border:none;background:var(--s3);color:var(--muted2);border-radius:8px;font-size:11px;font-weight:700;padding:6px 9px}
 .rm-pin{width:24px;height:24px;border-radius:50%;background:#EC4899;border:2px solid #fff;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.35)}
@@ -358,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-49-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-50-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1119,6 +1125,7 @@ function rpKmEntre(a,b){ var R=6371,q=Math.PI/180,dl=(b.lat-a.lat)*q,dg=(b.lng-a
 function rpMarcarLonge(lista){
   var com=lista.filter(function(p){ return p.lat!=null; }), i, p;
   lista.forEach(function(p){ p._longe=false; if((p.flags||[]).indexOf('cidade_diferente')>=0||(p.flags||[]).indexOf('longe_da_base')>=0) p._longe=true; });
+  try{ var bg0=RP.baseGeo[rpCfg().base]||null; if(bg0) com.forEach(function(p){ var kb=rpKmEntre(bg0,p); p._kmBase=kb; if(kb>60) p._longe=true; }); }catch(e){}
   if(com.length>=3){
     /* referência = o grupo MAIS NUMEROSO de paradas (não muda quando entra mais uma); empate → o grupo mais perto da base */
     var bg=null; try{ bg=RP.baseGeo[rpCfg().base]||null; }catch(e){}
@@ -1694,15 +1701,17 @@ function rpTelaConferir(){
   return h;
 }
 function rpCalcular(){
-  var vistos={}, sel=RP.itens.filter(function(p){ if(RP.fora[p.cod]||vistos[p.cod]) return false; vistos[p.cod]=1; return true; });
-  rpMarcarLonge(sel); var pts=sel.filter(function(p){ return p.lat!=null && !p.inc && !p._longe; }), extra=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); }); RP.semLoc=sel.length-pts.length; RP.semNomes=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); }).map(function(p){ return p.cliente||p.cod; });
-  if(!pts.length){ rpErro('Nenhum endereço da rota foi localizado no mapa.'); return; }
-  EST='rp_calc'; RP.msg='Calculando a melhor rota pelas ruas...'; renderInicio();
   var cfg=rpCfg(), bt=cfg.base;
+  EST='rp_calc'; RP.msg='Calculando a melhor rota pelas ruas...'; renderInicio();
   var pB=RP.baseGeo[bt]?Promise.resolve(RP.baseGeo[bt]):rpApi('/rota/base?q='+encodeURIComponent(bt));
   pB.then(function(b){
     if(b&&b.ok) RP.baseGeo[bt]=b;
     var base=(b&&b.ok)?{lat:b.lat,lng:b.lng}:null;
+    var vistos={}, sel=RP.itens.filter(function(p){ if(RP.fora[p.cod]||vistos[p.cod]) return false; vistos[p.cod]=1; return true; });
+    rpMarcarLonge(sel);
+    var pts=sel.filter(function(p){ return p.lat!=null && !p.inc && !p._longe; }), extra=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); });
+    RP.semLoc=sel.length-pts.length; RP.semNomes=extra.map(function(p){ return p.cliente||p.cod; });
+    if(!pts.length){ rpErro('Nenhum endereço da rota foi localizado perto do ponto de coleta. Confira cidade e rua dos pacotes.'); return; }
     return rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,pontos:pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:cfg.pm,modelo:cfg.modelo})}).then(function(c){
       if(!c.ok) throw new Error('falhou');
       RP.res=c; RP.pendReal=false; RP.pts=pts; RP.extra=extra; RP.opc=c[cfg.modelo]?cfg.modelo:(c.linear?'linear':'circular'); EST='rp_escolher'; renderInicio(); if(RP.semLoc>0 && !RP._bipou){ RP._bipou=true; rpApito(); }
@@ -1880,6 +1889,16 @@ function rpCompletarCanais(){
     if(mud && EST==='em_rota') renderInicio();
   }).catch(function(){});
 }
+function sheetAjusta(b){ RP.sheetBaixo=b; var t=document.querySelector('.rota-tela'); if(t) t.classList.toggle('sheet-baixo',b); setTimeout(function(){ try{ if(RP.mapa) RP.mapa.resize(); }catch(e){} },60); }
+function sheetAlterna(){ if(RP._arrastou){ RP._arrastou=false; return; } sheetAjusta(!RP.sheetBaixo); }
+(function(){
+  var y0=null, dy=0;
+  function ini(e){ var h=e.target.closest&&e.target.closest('#sheet-h'); if(!h) return; y0=(e.touches?e.touches[0]:e).clientY; dy=0; }
+  function mov(e){ if(y0==null) return; dy=(e.touches?e.touches[0]:e).clientY-y0; }
+  function fim(){ if(y0==null) return; if(Math.abs(dy)>28){ RP._arrastou=true; sheetAjusta(dy>0); setTimeout(function(){ RP._arrastou=false; },350); } y0=null; dy=0; }
+  document.addEventListener('touchstart',ini,{passive:true}); document.addEventListener('touchmove',mov,{passive:true}); document.addEventListener('touchend',fim);
+  document.addEventListener('mousedown',ini); document.addEventListener('mousemove',mov); document.addEventListener('mouseup',fim);
+})();
 function rpAjustaAltura(){ var sc=document.querySelector('.conteudo'), t=document.querySelector('.rota-tela'); if(sc&&t) t.style.minHeight=Math.max(300,sc.clientHeight-16)+'px'; }
 window.addEventListener('resize',function(){ if(EST==='em_rota') rpAjustaAltura(); });
 function rpMapaMontar(){
@@ -1982,7 +2001,7 @@ function renderEmRota(){
     else if(i===PONTEIRO) cls='atual';
     else cls='';
     pins+='<div class="rota-pin '+cls+'" style="left:'+pos.l+'%;top:'+pos.t+'%">'+(i+1)+'</div>';}
-  var h='<div class="rota-tela'+(atual&&atual.semLocal?' com-aviso':'')+'">';
+  var h='<div class="rota-tela'+(atual&&atual.semLocal?' com-aviso':'')+(RP.sheetBaixo?' sheet-baixo':'')+'">';
   var mapaReal=LOTE_ATUAL.length&&LOTE_ATUAL[0].lat!=null;
   h+='<div class="mapa-mock full-bleed" style="margin-bottom:14px">'+
      (mapaReal?'<div id="rmapa-slot" style="position:absolute;inset:0"></div>':'<iframe class="mapa-iframe" src="https://www.google.com/maps?q=Itaja%C3%AD,SC&z=12&output=embed" loading="lazy" title="Mapa"></iframe>')+
@@ -1998,6 +2017,7 @@ function renderEmRota(){
     var distProx=(1.1+(hashSeed(atual.cod)%30)/10).toFixed(1);
     var cs=CANAL_STYLE[atual.canal]||{bg:'var(--s3)',cor:'var(--muted2)'};
     h+='<div class="info-full">'+
+       '<div class="sheet-handle" id="sheet-h" onclick="sheetAlterna()"><i></i></div>'+
        '<input type="file" accept="image/*" capture="environment" id="ft-comprovante" style="display:none" onchange="fotoComprovanteSelecionada()">'+
        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'+
          '<span class="parada-tag">Parada '+(PONTEIRO+1)+' de '+LOTE_ATUAL.length+' · a '+distProx+' km</span>'+
