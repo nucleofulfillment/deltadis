@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-61-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-62-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -665,6 +665,8 @@ function sair(){
 function retomarSessao(){
   if(!DD_M_TOKEN){ ddMostrarLogin(); return; }
   var abriu=false;
+  /* o usuário guardado tem que ser o DONO do token (o token traz o id dele). Se não for, não mostra o nome guardado: espera o servidor dizer quem é */
+  try{ var pl=JSON.parse(atob(DD_M_TOKEN.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); if(DD_M_USER&&pl&&pl.uid!=null&&String(pl.uid)!==String(DD_M_USER.id)){ DD_M_USER=null; ddLimparLocal(); RP.mt=null; RP.mtn=''; } }catch(e){}
   /* já conhece o motorista: entra na hora e confere a sessão em segundo plano (se tiver vencido, volta pro login) */
   if(DD_M_USER&&DD_M_USER.perfil==='motorista'){ abriu=true; abrirApp(); }
   rpApi('/auth/me').then(function(d){
