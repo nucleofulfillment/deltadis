@@ -231,7 +231,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-14-0610</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-15-0610</p>
   </div>
 </div>
 
@@ -307,6 +307,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
     <div class="col-dir">
       <div class="scan" id="scan">
+        <button class="btn-add" id="btn-avisar" style="right:60px;font-size:16px" title="Avisar motoristas pelo WhatsApp" onclick="abrirAvisar()">📣</button>
         <button class="btn-add" id="btn-romaneio" title="Romaneios de entrada (salvos)" onclick="abrirRomaneio()">+</button>
 
         <div class="scan-vazio" id="scan-vazio">
@@ -448,6 +449,30 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="rm-rodape">
       <button class="btn sec" onclick="fecharDevolucoes()">Fechar</button>
       <button class="btn pri" onclick="dvConfirmar()">✔ Confirmar retorno e gerar romaneio</button>
+    </div>
+  </div>
+</div>
+
+<div class="rm-overlay" id="av-overlay">
+  <div class="rm-modal">
+    <div class="rm-head">
+      <button class="rm-fechar" onclick="fecharAvisar()">✕</button>
+      <div class="rm-head-esq"><div><div class="rm-head-tit">📣 Avisar motoristas</div><div class="rm-transp-nome">Mensagem pelo WhatsApp, enviada para cada motorista</div></div></div>
+    </div>
+    <div class="rm-corpo">
+      <div style="display:flex;gap:16px;margin-bottom:12px;font-size:13.5px">
+        <label><input type="radio" name="av-tipo" value="pacotes" checked onchange="avTipo()"> Pacotes chegaram</label>
+        <label><input type="radio" name="av-tipo" value="aviso" onchange="avTipo()"> Aviso livre</label>
+      </div>
+      <div id="av-ajuda" class="rm-resumo">Cada motorista recebe a quantidade de pacotes que foi bipada para ele hoje. Quem não tem pacote hoje não recebe.</div>
+      <textarea id="av-texto" maxlength="400" placeholder="Escreva o aviso (até 400 letras)" style="display:none;width:100%;box-sizing:border-box;min-height:70px;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px"></textarea>
+      <div class="rm-resumo" id="av-resumo">Carregando…</div>
+      <div class="rm-lista" id="av-lista"></div>
+    </div>
+    <div class="rm-rodape">
+      <button class="btn sec" onclick="fecharAvisar()">Fechar</button>
+      <button class="btn sec" onclick="avTodos()">Marcar todos</button>
+      <button class="btn pri" id="av-enviar" onclick="avEnviar()">📣 Enviar</button>
     </div>
   </div>
 </div>
@@ -764,6 +789,42 @@ function abrirDevolucoes(){
     DV.pend=d.itens.filter(function(x){ return !x.conferido; }); dvPintar();
     setTimeout(function(){ var f=el('dv-scan'); if(f) f.focus(); },60);
   }).catch(function(){ el('dv-resumo').textContent='Sem conexão.'; });
+}
+
+/* ===== Avisar motoristas (WhatsApp) ===== */
+var AV={mots:[],ok:false};
+function abrirAvisar(){
+  AV.mots=[]; el('av-lista').innerHTML=''; el('av-resumo').textContent='Carregando…'; el('av-overlay').classList.add('on'); avTipo();
+  api('/mesa/whats-status').then(function(d){
+    if(!d||!d.ok){ el('av-resumo').textContent='Não consegui carregar.'; return; }
+    AV.ok=!!d.configurado; AV.mots=d.motoristas||[];
+    el('av-resumo').textContent=AV.ok ? 'Marque quem vai receber:' : 'O WhatsApp da DELTADIS ainda não foi ligado. Você já pode ver a lista, mas o envio só funciona depois da configuração.';
+    var h='';
+    AV.mots.forEach(function(m){ h+='<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #E3D9F2;border-radius:10px;font-size:14px'+(m.tem_fone?'':';opacity:.5')+'"><input type="checkbox" class="av-chk" value="'+esc(m.id)+'"'+(m.tem_fone?'':' disabled')+'> <span style="flex:1">'+esc(m.n)+'</span>'+(m.tem_fone?'':'<span style="font-size:11.5px;color:#b45309">sem telefone</span>')+'</label>'; });
+    el('av-lista').innerHTML=h||'<div class="rm-vazio">Nenhum motorista cadastrado.</div>';
+  }).catch(function(){ el('av-resumo').textContent='Sem conexão.'; });
+}
+function fecharAvisar(){ el('av-overlay').classList.remove('on'); }
+function avTipo(){
+  var t=document.querySelector('input[name="av-tipo"]:checked').value;
+  el('av-texto').style.display=(t==='aviso')?'block':'none';
+  el('av-ajuda').style.display=(t==='pacotes')?'block':'none';
+}
+function avTodos(){ var c=document.querySelectorAll('.av-chk:not(:disabled)'), todos=true; c.forEach(function(x){ if(!x.checked) todos=false; }); c.forEach(function(x){ x.checked=!todos; }); }
+function avEnviar(){
+  var t=document.querySelector('input[name="av-tipo"]:checked').value, mts=[], texto=el('av-texto').value.trim();
+  document.querySelectorAll('.av-chk:checked').forEach(function(x){ mts.push(x.value); });
+  if(!mts.length){ el('av-resumo').textContent='Marque pelo menos um motorista.'; return; }
+  if(t==='aviso' && !texto){ el('av-resumo').textContent='Escreva o aviso.'; return; }
+  var b=el('av-enviar'); b.disabled=true; el('av-resumo').textContent='Enviando…';
+  api('/mesa/whats-avisar',{method:'POST',body:JSON.stringify({tipo:t,texto:texto,mts:mts})}).then(function(d){
+    b.disabled=false;
+    if(!d||!d.ok){ el('av-resumo').textContent=(d&&d.mensagem)||'Não consegui enviar.'; return; }
+    var motivo={sem_telefone:'sem telefone',sem_pacotes_hoje:'sem pacote hoje',telefone_invalido:'telefone inválido'};
+    el('av-resumo').textContent='Enviados: '+d.enviados+(d.falhas?(' · Não enviados: '+d.falhas):'');
+    var h=''; (d.itens||[]).forEach(function(x){ h+='<div style="padding:8px 12px;border-radius:10px;font-size:13.5px;background:'+(x.ok?'#ECFDF5':'#FEF3C7')+'">'+(x.ok?'✔ ':'• ')+esc(x.n)+(x.ok?'':' — '+esc(motivo[x.erro]||x.erro||'falhou'))+'</div>'; });
+    el('av-lista').innerHTML=h;
+  }).catch(function(){ b.disabled=false; el('av-resumo').textContent='Sem conexão.'; });
 }
 function fecharDevolucoes(){ el('dv-overlay').classList.remove('on'); contarDevolucoes(); }
 function dvPintar(){
