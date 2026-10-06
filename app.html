@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-73-0610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-75-0610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1046,7 +1046,7 @@ function escolherMotivo(m){ REMARCAR_MOTIVO=m; var a=el('mv-ausente'), n=el('mv-
 function abrirRemarcar(){
   REMARCAR_ESCOLHA=null; REMARCAR_IDX=-1; REMARCAR_MOTIVO=null;
   var h='<p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">Qual o motivo?</p><div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn sec wide" id="mv-ausente" onclick="escolherMotivo(\'ausente\')">Ausente</button><button class="btn sec wide" id="mv-nao_localizado" onclick="escolherMotivo(\'nao_localizado\')">Não localizado</button></div><p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">Escolha em qual janela essa entrega pode ser tentada novamente:</p>',i, X=PONTEIRO+1, N=LOTE_ATUAL.length;
-  var cur0=LOTE_ATUAL[PONTEIRO], ultima=!!(cur0 && cur0.origem==='painel' && rpTent(cur0.cod)+1>=3);
+  var cur0=LOTE_ATUAL[PONTEIRO], ultima=!!(cur0 && cur0.origem==='painel' && rpTentDe(cur0)+1>=3);
   if(ultima) h+='<p style="margin:0 0 12px;padding:10px 12px;background:var(--s3);border-radius:12px;font-size:12.5px"><b>Última tentativa (3ª).</b> Se não entregar hoje, devolva à base.</p>';
   for(i=0;i<REMARCAR_JANELAS.length;i++){
     if(i===1 && N<X+1) continue;
@@ -1291,7 +1291,7 @@ function bpCarregar(){
     var i, x; BP.idx={}; for(i=0;i<d.lista.length;i++){ x=d.lista[i]; BP.idx[x.c.toLowerCase()]=x; if(x.s) BP.idx[x.s.toLowerCase()]=x; }
     BP.outros={}; for(x in (d.outros||{})) BP.outros[x.toLowerCase()]=d.outros[x];
     BP.mesa=d.mesa||[];
-    BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,v:(m.valor>0?Number(m.valor):0)};
+    BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,rom:m.rom||'',v:(m.valor>0?Number(m.valor):0)};
       if(m.end_rua){ it.e=1; it.novo=false; it.r=m.end_rua+(m.end_num?', '+m.end_num:''); it.d={cep:m.end_cep||'',num:m.end_num||'',comp:m.end_comp||'',rua:m.end_rua,bai:m.end_bai||'',cid:m.end_cid||''}; }
       return it; });
     BP.ok=true; bpAtualizar(); if(EST==='sem_lote') renderInicio();
@@ -1384,6 +1384,8 @@ function bpRemover(cod){
     bpMarcaMesa(cod,true); BP.ult={t:'rep',m:'Removido da sua lista.',cod:cod}; bpAtualizar();
   }).catch(function(){ aviso('Sem conexão. Não removi.'); });
 }
+/* (75) pacote remarcado/ainda com o motorista JÁ pertence ao 1º romaneio (tem rom): não entra em romaneio novo nem pede nova assinatura */
+function bpNovos(){ return BP.meus.filter(function(m){ return !m.rom; }); }
 function bpFechar(){
   if(!BP.meus.length){ aviso('Bipe ao menos um pacote antes de montar a rota'); return; }
   var sem=BP.meus.filter(function(m){ return !m.e; }).length;
@@ -1391,6 +1393,7 @@ function bpFechar(){
   var fm=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length;
   if(fm>0&&!confirm('Faltam '+fm+' pacote'+(fm===1?'':'s')+' do romaneio da Mesa sem bipar. Montar a rota mesmo assim?')) return;
   bpFecharCamera();
+  if(!bpNovos().length){ RP.bipMode=true; rpIniciar(); return; }   /* só pacotes remarcados: segue o romaneio original, sem novo romaneio nem assinatura */
   if(rpCfg().assina==='sim'){ asgAbrir(); return; }
   /* (69) fechou = 1 romaneio (numerado no servidor), mesmo sem assinatura */
   var seguir=function(){ RP.bipMode=true; rpIniciar(); };
@@ -1406,7 +1409,7 @@ function asgAbrir(){
   document.body.appendChild(o); asgPergunta();
 }
 function asgPergunta(){
-  var n=BP.meus.length;
+  var n=bpNovos().length;
   el('asg-box').innerHTML='<h3 style="margin:0 0 6px">Romaneio fechado?</h3><p style="margin:0 0 16px;color:var(--muted);font-size:13px">'+n+' pacote'+(n===1?'':'s')+' no seu romaneio. Confirme que está tudo conferido para assinar.</p><div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="asgFechar()">Não</button><button class="btn pri" style="flex:1" onclick="asgTela()">Sim</button></div>';
 }
 function asgTela(){
@@ -1425,7 +1428,7 @@ function asgConfirmar(){
   if(!ASG.desenhou||ASG.pts<8){ m.textContent='Assine dentro do quadro antes de confirmar.'; return; }
   /* fundo branco (PNG sem transparência fica legível no PDF) */
   var t=document.createElement('canvas'); t.width=cv.width; t.height=cv.height; var tx=t.getContext('2d'); tx.fillStyle='#fff'; tx.fillRect(0,0,t.width,t.height); tx.drawImage(cv,0,0);
-  var img=t.toDataURL('image/png'), cods=BP.meus.map(function(x){ return x.cod; });
+  var img=t.toDataURL('image/png'), cods=bpNovos().map(function(x){ return x.cod; });
   ASG.busy=true; el('asg-ok').textContent='Salvando…'; m.textContent='';
   rpApi('/motorista/romaneio-assinar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assinatura:img,cods:cods})}).then(function(d){
     ASG.busy=false;
@@ -1999,12 +2002,13 @@ function rpTelaEscolher(){
 function rpRemarcados(){ var m={}; try{ m=JSON.parse(localStorage.getItem('dd_remarc')||'{}'); }catch(e){} var h=hojeISO(), k; for(k in m) if(m[k]<h) delete m[k]; return m; }
 /* (v72) tentativas de entrega: só conta quando o pacote vai pro DIA SEGUINTE (remarcar no mesmo dia não conta). Máximo 3; na 3ª que falhar, devolve à base */
 function rpTent(cod){ try{ return (JSON.parse(localStorage.getItem('dd_tent')||'{}')||{})[cod]||0; }catch(e){ return 0; } }
+function rpTentDe(p){ return Math.max(p?rpTent(p.cod):0, p?(Number(p.tent)||0):0); }   /* vale o maior: o do servidor (certo) ou o do celular */
 function rpTentSoma(cod){ try{ var m=JSON.parse(localStorage.getItem('dd_tent')||'{}')||{}; m[cod]=(m[cod]||0)+1; localStorage.setItem('dd_tent',JSON.stringify(m)); }catch(e){} }
 function rpRegistrarRemarcado(cod){ var m=rpRemarcados(), d=new Date(); d.setDate(d.getDate()+1); var iso=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); m[cod]=iso; try{ localStorage.setItem('dd_remarc',JSON.stringify(m)); }catch(e){} }
 function rpParada(p,seq){
   var t=String(p.tel||'').replace(/\D/g,''); if(t && t.length<=11) t='55'+t;
   var sem=(p.lat==null||!!p.inc||!!p._longe);
-  return {seq:seq,cod:p.cod,scan:(p.scan&&p.scan!==p.cod)?p.scan:'',cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||(p.inc?'[rua não informada]':''))+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':'')+((!p.rua&&p.cep)?' · CEP '+p.cep:''),telefone:t,canal:p.canal||'',status:'pendente',lat:sem?null:p.lat,lng:sem?null:p.lng,aprox:sem?false:rpAprox(p),origem:'painel',remarcado:!!rpRemarcados()[p.cod],
+  return {seq:seq,cod:p.cod,scan:(p.scan&&p.scan!==p.cod)?p.scan:'',cliente:p.cliente||'',bairro:p.bai||'',cid:p.cid||'',endereco:(p.rua||(p.inc?'[rua não informada]':''))+(p.num?', '+p.num:'')+(p.comp?' ('+p.comp+')':'')+((!p.rua&&p.cep)?' · CEP '+p.cep:''),telefone:t,canal:p.canal||'',status:'pendente',lat:sem?null:p.lat,lng:sem?null:p.lng,aprox:sem?false:rpAprox(p),origem:'painel',tent:Number(p.tent)||0,remarcado:!!rpRemarcados()[p.cod],
     semLocal:sem,motivo:sem?(p._longe?'Endereço fora da cidade da rota':rpTag(p)):'',raw:{rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||''}};
 }
 /* ══ pedido sem localização: NUNCA some — o motorista corrige o endereço ou remarca ══ */
@@ -2216,7 +2220,7 @@ function renderEmRota(){
        '<input type="file" accept="image/*" capture="environment" id="ft-comprovante" style="display:none" onchange="fotoComprovanteSelecionada()">'+
        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'+
          '<span class="parada-tag">Parada '+(PONTEIRO+1)+' de '+LOTE_ATUAL.length+' · a '+distProx+' km</span>'+
-         (atual.semLocal?'<span class="selo-acao">⚠ Ação necessária</span>':'')+(atual.remarcadaHoje?'<span class="selo-rem">🔁 Remarcada hoje</span>':(atual.remarcado?'<span class="selo-rem">🔁 Remarcada ontem</span>':''))+(rpTent(atual.cod)?'<span class="selo-rem">Tentativa '+(rpTent(atual.cod)+1)+' de 3</span>':'')+
+         (atual.semLocal?'<span class="selo-acao">⚠ Ação necessária</span>':'')+(atual.remarcadaHoje?'<span class="selo-rem">🔁 Remarcada hoje</span>':(atual.remarcado?'<span class="selo-rem">🔁 Remarcada ontem</span>':''))+(rpTentDe(atual)?'<span class="selo-rem">Tentativa '+(rpTentDe(atual)+1)+' de 3</span>':'')+
        '</div>'+
        '<h2 class="end-2l">'+esc(atual.endereco)+'</h2>'+
        '<p style="margin:0 0 3px;color:var(--muted2);font-size:13.5px;font-weight:700">'+esc(atual.cliente)+'</p>'+
