@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-12-0610</div>
+      <div class="bld">DELTADIS-ADMIN-13-0610</div>
     </div>
   </div>
 </div>
@@ -316,7 +316,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-12-0610</div>
+    <div class="bld">DELTADIS-ADMIN-13-0610</div>
   </main>
 </div>
 
@@ -475,12 +475,12 @@ function abrirNovoCliente(){
   '<div class="linha2"><div><label>Mensalidade (R$)</label><input id="nc-men" inputmode="decimal" placeholder="0,00"></div><div><label>Taxa por motorista no app (R$)</label><input id="nc-taxa" inputmode="decimal" placeholder="0,00"></div></div>'+
   '<div class="linha2"><div><label>Dia do vencimento (1 a 31)</label><input id="nc-dia" inputmode="numeric" maxlength="2" value="10"></div><div></div></div>'+
   '<div style="margin-top:16px;font-weight:800">Dono (acesso ao painel)</div>'+
-  '<label>Nome do dono</label><input id="nc-dn"><label>E-mail do dono</label><input id="nc-de" type="email"><label>Senha inicial (mínimo 8 caracteres)</label><input id="nc-ds" type="text" autocomplete="off">'+
+  '<label>Nome do dono</label><input id="nc-dn"><label>E-mail do dono</label><input id="nc-de" type="email"><label>Celular do dono com DDD (recebe o código de entrada)</label><input id="nc-dt" inputmode="tel" placeholder="47 99999-9999"><label>Senha inicial (mínimo 8 caracteres)</label><input id="nc-ds" type="text" autocomplete="off">'+
   '<div class="erro" id="nc-erro"></div><div class="acoes"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn pri" id="nc-btn" onclick="salvarNovoCliente()">Criar cliente</button></div>');
 }
 function salvarNovoCliente(){
   var nome=el('nc-nome').value.trim(); if(!nome){el('nc-erro').textContent='Informe o nome da empresa.';return;}
-  var corpo={nome:nome,mensalidade_centavos:paraCentavos(el('nc-men').value),taxa_app_centavos:paraCentavos(el('nc-taxa').value),dia_venc:parseInt(el('nc-dia').value,10)||10,dono:{nome:el('nc-dn').value.trim(),email:el('nc-de').value.trim(),senha:el('nc-ds').value}};
+  var corpo={nome:nome,mensalidade_centavos:paraCentavos(el('nc-men').value),taxa_app_centavos:paraCentavos(el('nc-taxa').value),dia_venc:parseInt(el('nc-dia').value,10)||10,dono:{nome:el('nc-dn').value.trim(),email:el('nc-de').value.trim(),telefone:el('nc-dt').value.trim(),senha:el('nc-ds').value}};
   el('nc-btn').disabled=true;el('nc-erro').textContent='';
   chamar('POST','/admin/clientes',corpo).then(function(d){
     if(!d.ok){el('nc-erro').textContent=d.mensagem||'Erro ao criar.';el('nc-btn').disabled=false;return;}
@@ -534,7 +534,7 @@ function carregarDono(cid){
     USUARIOS_CLI[cid]=d.usuarios||[];
     var dn=(d.usuarios||[]).filter(function(u){return u.perfil==='dono';});
     if(!dn.length){el('ec-dono').innerHTML='<div class="vazio">Sem dono cadastrado.</div>';return;}
-    el('ec-dono').innerHTML=dn.map(function(u){return '<div class="usr"><div class="u1"><b>'+esc(u.nome)+'</b><small>✉️ '+esc(u.email)+'</small></div><span class="tag '+(u.ativo?'on':'off')+'">'+(u.ativo?'Ativo':'Desativado')+'</span><button class="btn peq" onclick="redefinir(\''+esc(cid)+'\',\''+esc(u.id)+'\')">Nova senha</button></div>';}).join('');
+    el('ec-dono').innerHTML=dn.map(function(u){return '<div class="usr"><div class="u1"><b>'+esc(u.nome)+'</b><small>✉️ '+esc(u.email)+'</small><small>📱 '+(u.telefone?esc(u.telefone):'sem celular')+'</small></div><span class="tag '+(u.ativo?'on':'off')+'">'+(u.ativo?'Ativo':'Desativado')+'</span><button class="btn peq" onclick="redefinir(\''+esc(cid)+'\',\''+esc(u.id)+'\')">Nova senha</button><button class="btn peq" onclick="celularDono(\''+esc(cid)+'\',\''+esc(u.id)+'\')">Celular</button></div>';}).join('');
   }).catch(function(){});
 }
 function redefinir(cid,uid){
@@ -542,6 +542,12 @@ function redefinir(cid,uid){
   var novo=prompt('Nova senha para '+u.nome+' (mínimo 8 caracteres):');
   if(novo==null||novo==='') return;
   chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{senha:novo}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast('Senha alterada.'); }).catch(function(){});
+}
+function celularDono(cid,uid){
+  var u=(USUARIOS_CLI[cid]||[]).filter(function(x){return x.id===uid;})[0]; if(!u) return;
+  var novo=prompt('Celular de '+u.nome+' com DDD (vazio para remover). Recebe o código de entrada:',u.telefone||'');
+  if(novo==null) return;
+  chamar('PATCH','/admin/usuarios/'+encodeURIComponent(uid),{telefone:novo.trim()}).then(function(d){ if(!d.ok){toast(d.mensagem||d.erro||'Erro.',true);return;} toast('Celular salvo.'); carregarDono(cid); }).catch(function(){});
 }
 function recarregarLista(){chamar('GET','/admin/clientes').then(function(d){if(d.ok){CLIENTES=d.clientes||[];desenharClientes();carregarFluxo();}}).catch(function(){});}
 

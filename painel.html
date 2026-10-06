@@ -804,7 +804,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-8-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-9-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -934,7 +934,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-bd">
     <div class="field"><label>Nome</label><input class="inp" id="md-nome" autocomplete="name"></div>
     <div class="field"><label>E-mail (usado para entrar)</label><input class="inp" id="md-email" type="email" autocomplete="username"></div>
-    <div class="field"><label>Senha atual <span style="font-weight:500;color:var(--muted)">(só se for trocar o e-mail)</span></label><input class="inp" id="md-atual" type="password" autocomplete="current-password"></div>
+    <div class="field"><label>Celular com DDD <span style="font-weight:500;color:var(--muted)">(recebe o código de entrada)</span></label><input class="inp" id="md-fone" type="tel" inputmode="tel" autocomplete="tel" placeholder="47 99999-9999"></div>
+    <div class="field"><label>Senha atual <span style="font-weight:500;color:var(--muted)">(só se for trocar o e-mail ou o celular)</span></label><input class="inp" id="md-atual" type="password" autocomplete="current-password"></div>
     <p id="md-msg" style="color:#c0392b;font-weight:700;font-size:13px;min-height:18px;margin:4px 0 10px"></p>
     <button class="btn pri wide" id="md-btn" onclick="salvarMeusDados()">Salvar</button>
   </div>
@@ -2602,13 +2603,13 @@ function menuAv(e){ e.stopPropagation(); var m=el('menu-av-l'); if(!m) return;
   m.classList.toggle('on'); }
 function menuAvFecha(){ var m=el('menu-av-l'); if(m) m.classList.remove('on'); }
 document.addEventListener('click',menuAvFecha);
-function abrirMeusDados(){ el('md-nome').value=(DD_USER&&DD_USER.nome)||''; el('md-email').value=(DD_USER&&DD_USER.email)||''; el('md-atual').value=''; el('md-msg').textContent=''; abrir('sh-meus-dados'); }
+function abrirMeusDados(){ el('md-fone').value=(DD_USER&&DD_USER.telefone)||''; el('md-nome').value=(DD_USER&&DD_USER.nome)||''; el('md-email').value=(DD_USER&&DD_USER.email)||''; el('md-atual').value=''; el('md-msg').textContent=''; abrir('sh-meus-dados'); }
 function salvarMeusDados(){
   var m=el('md-msg'), b=el('md-btn'); m.textContent='';
   var nome=el('md-nome').value.trim(), email=el('md-email').value.trim(), atual=el('md-atual').value;
   if(!nome){ m.textContent='Informe o nome.'; return; } if(!email){ m.textContent='Informe o e-mail.'; return; }
   b.disabled=true; b.textContent='Salvando...';
-  fetch(DELTADIS_API+'/auth/meus-dados',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,email:email,atual:atual})})
+  fetch(DELTADIS_API+'/auth/meus-dados',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,email:email,telefone:el('md-fone').value.trim(),atual:atual})})
   .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
     b.disabled=false; b.textContent='Salvar';
     if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar. Tente de novo.'; return; }
