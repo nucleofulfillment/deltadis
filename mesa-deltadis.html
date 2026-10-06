@@ -229,7 +229,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-07-0510</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-08-0510</p>
   </div>
 </div>
 
@@ -624,8 +624,9 @@ function fecharCamera(){
 }
 
 /* ══ Romaneios de entrada — vêm do servidor (ficam salvos), agrupados por motorista e transportadora ══ */
+function hojeLocalDe(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function hojeLocal(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
-var RM={dia:'',itens:[]};
+var RM={dia:'',itens:[],ass:[]};
 function abrirRomaneio(){
   el('rm-transp-ic').innerHTML='📦'; el('rm-transp-ic').style.background='#F4EEFB';
   el('rm-transp-nome').textContent=MOT?MOT.n:'Todos os motoristas';
@@ -639,7 +640,9 @@ function carregarRomaneio(){
   api('/mesa/entradas?dia='+encodeURIComponent(dia)).then(function(d){
     if(!d||!d.ok){ el('rm-lista').innerHTML='<div class="rm-vazio">Não consegui carregar.</div>'; return; }
     var it=(d.itens||[]).filter(function(x){ return !MOT || String(x.mt||'')===String(MOT.id); });
-    RM={dia:dia,itens:it};
+    RM={dia:dia,itens:it,ass:[]};
+    /* (08) assinaturas dos motoristas (feitas no app ao montar a rota) — saem no PDF; se não carregar, o PDF sai com a linha em branco como antes */
+    api('/mesa/assinaturas?dia='+encodeURIComponent(dia)).then(function(a){ if(a&&a.ok&&RM.dia===dia) RM.ass=a.assinaturas||[]; }).catch(function(){});
     var g={}, ordem=[], i, k, h='';
     var nNl=it.filter(function(x){ return x.nl; }).length; el('rm-tot').innerHTML='· '+it.length+' pacote'+(it.length===1?'':'s')+(nNl?' · <b style="color:#B91C1C">⚠ '+nNl+' não localizado'+(nNl===1?'':'s')+'</b>':'');
     if(!it.length){ el('rm-lista').innerHTML='<div class="rm-vazio">Nenhum pacote bipado neste dia'+(MOT?' para '+esc(MOT.n):'')+'.</div>'; return; }
@@ -681,6 +684,14 @@ function htmlRomaneio(itens,dia,logo){
       det+='<tr'+(p.nl?' style="background:#fde8e8"':'')+'><td>'+(j+1)+'</td><td><b>'+esc(p.cod)+'</b></td><td>'+esc(tn)+'</td><td>'+hh+'</td><td>'+(p.nl?'<b style="color:#b91c1c">NÃO LOCALIZADO</b>':'')+'</td></tr>'; });
     det+='</tbody></table>';
     var nomesConf=Object.keys(conf).join(', ');
+    /* (08) assinaturas feitas no app que cobrem pacotes deste motorista neste dia */
+    var mtId=String(lst[0].mt||''), setCod={}; lst.forEach(function(p){ setCod[String(p.cod).toLowerCase()]=1; });
+    var sigs=(RM.ass||[]).filter(function(x){ return String(x.mt)===mtId && /^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(x.assinatura||'') && (x.cods||[]).some(function(c){ return setCod[String(c).toLowerCase()]; }); });
+    var linHtml;
+    if(sigs.length){
+      linHtml='<div class="asgs">'+sigs.map(function(x){ var q=(x.cods||[]).filter(function(c){ return setCod[String(c).toLowerCase()]; }).length, d=new Date(x.t);
+        return '<div class="asg"><img src="'+x.assinatura+'"><span></span>Assinatura do motorista — '+esc(mn)+'<br>Assinado no app em '+dataBR(hojeLocalDe(d))+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+' · '+q+' pacote'+(q===1?'':'s')+'</div>'; }).join('')+'</div>';
+    } else linHtml='<div class="lin"><div><span></span>Assinatura do motorista — '+esc(mn)+'</div><div><span></span>Data e hora</div></div>';
     corpo+='<section'+(ix>0?' class="nova"':'')+'>'+
       '<div class="cab">'+logo+'<div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
       '<h1>Romaneio de entrada — '+esc(mn)+'</h1>'+
@@ -688,12 +699,12 @@ function htmlRomaneio(itens,dia,logo){
       '<h2>Resumo por transportadora</h2>'+resumo+
       '<h2>Pacotes entregues ao motorista</h2>'+det+
       '<div class="ass"><p>Declaro ter recebido os <b>'+lst.length+'</b> pacote'+(lst.length===1?'':'s')+' relacionados acima, conferidos pelo código de rastreio, para entrega.</p>'+
-      '<div class="lin"><div><span></span>Assinatura do motorista — '+esc(mn)+'</div><div><span></span>Data e hora</div></div>'+
+      linHtml+
       (nomesConf?'<p class="peq">Conferido na Mesa por: '+esc(nomesConf)+'</p>':'')+'</div>'+
       '</section>';
   });
   return '<!doctype html><html><head><meta charset="utf-8"><title>Romaneio de entrada '+dataBR(dia)+'</title>'+
-    '<style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;padding:0;color:#111;font-size:9px}h1{font-size:15px;margin:6px 0 2px}h2{font-size:11px;margin:12px 0 2px;color:#4c1d95}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:8px;margin-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:4px}thead{display:table-header-group}tr{page-break-inside:avoid}td,th{border-bottom:1px solid #ddd;padding:2px 5px;font-size:9px;text-align:left;line-height:1.25;white-space:nowrap}th{background:#f3effb;border-bottom:1px solid #999}tbody tr:nth-child(even){background:#faf8fe}table.res{width:60%}tr.tot td{font-weight:bold;background:#f3effb}p{margin:3px 0;font-size:10px}.peq{font-size:9px;color:#666}section.nova{page-break-before:always}.ass{margin-top:22px;page-break-inside:avoid;border:1px solid #d9cff0;border-radius:6px;padding:10px 12px}.lin{display:flex;gap:30px;margin-top:38px}.lin div{flex:1;font-size:9px;color:#555}.lin div:first-child{flex:1.6}.lin span{display:block;border-top:1px solid #111;margin-bottom:3px}</style></head>'+
+    '<style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;padding:0;color:#111;font-size:9px}h1{font-size:15px;margin:6px 0 2px}h2{font-size:11px;margin:12px 0 2px;color:#4c1d95}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:8px;margin-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:4px}thead{display:table-header-group}tr{page-break-inside:avoid}td,th{border-bottom:1px solid #ddd;padding:2px 5px;font-size:9px;text-align:left;line-height:1.25;white-space:nowrap}th{background:#f3effb;border-bottom:1px solid #999}tbody tr:nth-child(even){background:#faf8fe}table.res{width:60%}tr.tot td{font-weight:bold;background:#f3effb}p{margin:3px 0;font-size:10px}.peq{font-size:9px;color:#666}section.nova{page-break-before:always}.ass{margin-top:22px;page-break-inside:avoid;border:1px solid #d9cff0;border-radius:6px;padding:10px 12px}.lin{display:flex;gap:30px;margin-top:38px}.lin div{flex:1;font-size:9px;color:#555}.lin div:first-child{flex:1.6}.lin span{display:block;border-top:1px solid #111;margin-bottom:3px}.asgs{display:flex;gap:30px;margin-top:12px;flex-wrap:wrap}.asg{flex:1;min-width:200px;font-size:9px;color:#555}.asg img{height:48px;display:block;margin-bottom:2px}.asg span{display:block;border-top:1px solid #111;margin-bottom:3px}</style></head>'+
     '<body>'+corpo+'<script>window.onload=function(){window.print();}</'+'script></body></html>';
 }
 function abrirRelatorioRomaneio(){
