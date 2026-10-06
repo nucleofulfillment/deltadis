@@ -231,7 +231,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-18-0610</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-19-0610</p>
   </div>
 </div>
 
@@ -725,7 +725,7 @@ function carregarRomaneio(){
       trs.forEach(function(t){
         h+='<div class="rm-end" style="margin:6px 0 4px;font-weight:700">'+esc(t)+' — '+g[mk][t].length+'</div>';
         g[mk][t].forEach(function(p,n){ var dt=new Date(p.t), hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
-          h+='<div class="rm-item"><div class="rm-item-esq"><div class="rm-seq">'+(n+1)+'</div><div><div class="rm-cliente">'+esc(p.cod)+'</div><div class="rm-end">'+hh+(p.por?' · bipado por '+esc(p.por):'')+'</div>'+(p.nl?'<div style="color:#B91C1C;font-weight:800;font-size:12px;margin-top:2px">⚠ NÃO LOCALIZADO pelo motorista — procurar o pacote</div>':'')+'</div></div></div>'; });
+          h+='<div class="rm-item"><div class="rm-item-esq"><div class="rm-seq">'+(n+1)+'</div><div><div class="rm-cliente">'+esc(p.cod)+'</div><div class="rm-end">'+hh+(p.por?' · bipado por '+esc(p.por):'')+'</div>'+(function(){ var x=stRom(p); return x[0]?'<div style="font-size:12px;font-weight:800;margin-top:2px;color:'+x[1]+'">'+x[0]+'</div>':''; })()+(p.nl?'<div style="color:#B91C1C;font-weight:800;font-size:12px;margin-top:2px">⚠ NÃO LOCALIZADO pelo motorista — procurar o pacote</div>':'')+'</div></div></div>'; });
       });
     });
     el('rm-lista').innerHTML=h;
@@ -741,6 +741,7 @@ function logoRelatorioHtml(){
     h='<div style="display:flex;align-items:center;gap:10px">'+(im?'<img src="'+im.src+'" style="height:36px">':'')+(wm?wm.outerHTML.replace('<svg class="wm"','<svg style="height:20px;width:auto;color:#6D28D9"'):'')+'</div>'; }catch(e){}
   return h;
 }
+function stRom(p){ var s=p.st; return s==='entregue'?['Entregue','#047857']:(s==='ausente'?['Ausente','#b45309']:(s==='nao_localizado'?['Não localizado','#b91c1c']:((s==='devolvido'||s==='devolvido_ok')?['Devolvido','#b91c1c']:(s==='em_rota'?['Em rota','#4c1d95']:(s==='na_base'?['Na base','#666']:['','#111']))))); }
 function htmlRomaneio(itens,dia,logo){
   var g={}, ordem=[], i, k, agora=new Date(), emitido=dataBR(hojeLocal())+' '+('0'+agora.getHours()).slice(-2)+':'+('0'+agora.getMinutes()).slice(-2), corpo='';
   for(i=0;i<itens.length;i++){ k=(itens[i].mtn||'Sem motorista')+'\u0001'+(itens[i].rom||''); if(!g[k]){ g[k]=[]; ordem.push(k); } g[k].push(itens[i]); }
@@ -752,9 +753,9 @@ function htmlRomaneio(itens,dia,logo){
     var resumo='<table class="res"><thead><tr><th>Transportadora</th><th style="text-align:right">Pacotes</th></tr></thead><tbody>';
     trOrd.forEach(function(t){ resumo+='<tr><td>'+esc(t)+'</td><td style="text-align:right">'+porTr[t]+'</td></tr>'; });
     resumo+='<tr class="tot"><td>Total</td><td style="text-align:right">'+lst.length+'</td></tr></tbody></table>';
-    var det='<table><thead><tr><th style="width:28px">#</th><th>Código de rastreio</th><th>Transportadora</th><th>Hora</th><th>Situação</th></tr></thead><tbody>';
+    var det='<table><thead><tr><th style="width:28px">#</th><th>Código de rastreio</th><th>Transportadora</th><th>Hora</th><th>Status</th></tr></thead><tbody>';
     lst.forEach(function(p,j){ var dt=new Date(p.t), hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2), tn=(achaTr(p.tr)||{n:p.tr}).n;
-      det+='<tr'+(p.nl?' style="background:#fde8e8"':'')+'><td>'+(j+1)+'</td><td><b>'+esc(p.cod)+'</b></td><td>'+esc(tn)+'</td><td>'+hh+'</td><td>'+(p.nl?'<b style="color:#b91c1c">NÃO LOCALIZADO</b>':'')+'</td></tr>'; });
+      det+='<tr'+(p.nl?' style="background:#fde8e8"':'')+'><td>'+(j+1)+'</td><td><b>'+esc(p.cod)+'</b></td><td>'+esc(tn)+'</td><td>'+hh+'</td><td>'+(p.nl?'<b style="color:#b91c1c">NÃO LOCALIZADO</b>':(function(){ var x=stRom(p); return x[0]?'<b style="color:'+x[1]+'">'+x[0]+'</b>':''; })())+'</td></tr>'; });
     det+='</tbody></table>';
     var nomesConf=Object.keys(conf).join(', ');
     /* (08) assinaturas feitas no app que cobrem pacotes deste motorista neste dia */
@@ -767,7 +768,7 @@ function htmlRomaneio(itens,dia,logo){
     } else linHtml='<div class="lin"><div><span></span>Assinatura do motorista — '+esc(mn)+'</div><div><span></span>Data e hora</div></div>';
     corpo+='<section'+(ix>0?' class="nova"':'')+'>'+
       '<div class="cab">'+logo+'<div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
-      '<h1>'+(rm&&rm!=='Em andamento'?'Romaneio '+esc(rm):'Romaneio de entrada')+' — '+esc(mn)+(rm?(rm==='Em andamento'?' (rota em andamento)':''):' (aguardando bipagem do motorista)')+'</h1>'+
+      '<h1>'+(rm&&rm!=='Em andamento'?'Romaneio '+esc(rm):'Romaneio de entrada')+' — '+esc(mn)+(rm?(rm==='Em andamento'?' (rota em andamento)':''):(lst.some(function(p){ return p.st&&p.st!=='na_base'; })?'':' (aguardando bipagem do motorista)'))+'</h1>'+
       '<p style="color:#555">Dia '+dataBR(dia)+' &nbsp;|&nbsp; '+lst.length+' pacote'+(lst.length===1?'':'s')+(lst.filter(function(p){ return p.nl; }).length?' &nbsp;|&nbsp; <b style="color:#b91c1c">'+lst.filter(function(p){ return p.nl; }).length+' não localizado(s) pelo motorista</b>':'')+' &nbsp;|&nbsp; Emitido em '+emitido+'</p>'+
       '<h2>Resumo por transportadora</h2>'+resumo+
       '<h2>Pacotes entregues ao motorista</h2>'+det+
