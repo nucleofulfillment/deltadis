@@ -140,6 +140,74 @@ a{color:inherit}
 .pghd h1{font-size:22px;font-weight:800;margin:0;color:var(--text)}
 .pghd .sub{font-size:13px;color:var(--muted);margin-top:2px}
 
+/* ══ MENSAGENS (WhatsApp) ══ */
+.nbadge{margin-left:auto;background:#25D366;color:#fff;font-size:10.5px;font-weight:800;border-radius:99px;min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-style:normal;line-height:1}
+.tabbar button{position:relative}
+.tabbar button .nbadge{position:absolute;top:2px;left:calc(50% + 4px);margin:0}
+.msg-wrap{display:flex;height:calc(100vh - var(--navh) - var(--indbarh) - 150px);min-height:480px;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--sh2)}
+.msg-lista{width:340px;flex:none;border-right:1px solid #E9EDEF;display:flex;flex-direction:column;background:#fff}
+.msg-busca{padding:10px 12px;background:#F0F2F5}
+.msg-busca input{width:100%;border:0;border-radius:10px;background:#fff;padding:9px 12px;font-size:13.5px;outline:none}
+.msg-itens{flex:1;overflow-y:auto}
+.msg-it{display:flex;gap:12px;align-items:center;padding:11px 14px;cursor:pointer;border-bottom:1px solid #F0F2F5}
+.msg-it:hover{background:#F5F6F6}
+.msg-it.on{background:#F0F2F5}
+.msg-av{width:44px;height:44px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px}
+.msg-it .mi{flex:1;min-width:0}
+.msg-it .l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.msg-it .nm{font-weight:700;font-size:14.5px;color:#111B21;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-it .hr{font-size:11.5px;color:#667781;flex:none}
+.msg-it .hr.nv{color:#25D366;font-weight:700}
+.msg-it .l2{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:2px}
+.msg-it .pv{font-size:13px;color:#667781;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-it .nl{background:#25D366;color:#fff;font-size:11px;font-weight:800;border-radius:99px;min-width:20px;height:20px;padding:0 6px;display:flex;align-items:center;justify-content:center;flex:none}
+.msg-it.semfone{opacity:.55}
+.msg-chat{flex:1;min-width:0;display:flex;flex-direction:column;background:#EFEAE2}
+.msg-vazio{margin:auto;text-align:center;color:#667781;padding:30px;font-size:14px;line-height:1.6}
+.msg-vazio b{display:block;font-size:20px;color:#41525D;margin-bottom:6px;font-weight:600}
+.msg-hd{display:none;align-items:center;gap:12px;padding:10px 16px;background:#F0F2F5;border-bottom:1px solid #E9EDEF}
+.msg-hd .voltar{display:none;border:0;background:none;font-size:20px;cursor:pointer;color:#54656F;padding:0 6px 0 0}
+.msg-hd b{font-size:15.5px;color:#111B21;display:block}
+.msg-hd small{color:#667781;font-size:12px}
+.msg-corpo{display:none;flex:1;overflow-y:auto;padding:14px 8% 10px;background-color:#EFEAE2;background-image:radial-gradient(rgba(0,0,0,.035) 1.2px,transparent 1.2px);background-size:22px 22px}
+.msg-dia{text-align:center;margin:10px 0}
+.msg-dia span{background:#fff;color:#54656F;font-size:12px;border-radius:8px;padding:5px 12px;box-shadow:0 1px .5px rgba(11,20,26,.13)}
+.msg-b{max-width:68%;margin:3px 0;padding:6px 8px 5px 9px;border-radius:8px;font-size:14.2px;line-height:1.38;color:#111B21;box-shadow:0 1px .5px rgba(11,20,26,.13);word-wrap:break-word;overflow-wrap:anywhere;clear:both;position:relative}
+.msg-b.in{background:#fff;float:left;border-top-left-radius:0}
+.msg-b.out{background:#D9FDD3;float:right;border-top-right-radius:0}
+.msg-b .por{font-size:12px;font-weight:800;margin-bottom:2px}
+.msg-b .por.auto{color:#8A7FA3}
+.msg-b .txt{white-space:pre-wrap}
+.msg-b .hh{float:right;margin:6px 0 -3px 10px;font-size:11px;color:#667781;display:flex;gap:3px;align-items:center}
+.msg-b .tk{font-size:12px;letter-spacing:-3px;margin-left:2px}
+.msg-b .tk.lido{color:#53BDEB}
+.msg-b .tk.erro{color:#DC2626;letter-spacing:0}
+.msg-b img.mm{display:block;max-width:300px;max-height:300px;width:100%;border-radius:6px;cursor:pointer;margin-bottom:3px;background:#E9EDEF;min-height:60px;object-fit:cover}
+.msg-b audio{display:block;width:260px;max-width:100%}
+.msg-b video{display:block;max-width:300px;width:100%;border-radius:6px}
+.msg-b .doc{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.05);border-radius:8px;padding:10px 12px;cursor:pointer;margin-bottom:3px;font-size:13.5px;font-weight:600}
+.msg-clr{clear:both}
+.msg-aviso{display:none;background:#FFF4CC;color:#7A5B00;font-size:12.8px;padding:8px 16px;border-top:1px solid #F1E2A3;line-height:1.45}
+.msg-anexo{display:none;align-items:center;gap:10px;background:#F0F2F5;padding:8px 16px;border-top:1px solid #E9EDEF;font-size:13px;color:#41525D}
+.msg-anexo img{height:46px;border-radius:6px}
+.msg-anexo span.x{margin-left:auto;cursor:pointer;font-size:16px;color:#667781}
+.msg-comp{display:none;align-items:flex-end;gap:8px;padding:10px 14px;background:#F0F2F5}
+.msg-comp textarea{flex:1;border:0;border-radius:22px;padding:11px 16px;font-size:14.5px;resize:none;max-height:120px;outline:none;line-height:1.35;background:#fff;font-family:inherit}
+.msg-comp .bt{width:42px;height:42px;border-radius:50%;border:0;background:none;color:#54656F;font-size:22px;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center}
+.msg-comp .bt:hover{background:rgba(0,0,0,.05)}
+.msg-comp .bt.env{background:#25D366;color:#fff;font-size:19px}
+.msg-comp .bt:disabled{opacity:.45;cursor:default}
+.msg-quem{display:none;font-size:11.5px;color:#667781;background:#F0F2F5;padding:0 18px 8px}
+@media (max-width:859px){
+  .msg-wrap{height:calc(100vh - 230px);border-radius:12px}
+  .msg-lista{width:100%;border-right:0}
+  .msg-chat{display:none;width:100%}
+  .msg-wrap.chat-aberto .msg-lista{display:none}
+  .msg-wrap.chat-aberto .msg-chat{display:flex}
+  .msg-hd .voltar{display:block}
+  .msg-corpo{padding:12px 10px}
+  .msg-b{max-width:84%}
+}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
 .kpi{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh1)}
 .kpi .lb{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
@@ -730,6 +798,31 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="cfgcard"><div class="ic">🔌</div><h4>Integrações com transportadoras</h4><p>Conecte a API de cada transportadora para receber a pré-lista de pacotes automaticamente.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">🏢</div><h4>Bases e pontos</h4><p>Cadastre mais de um ponto de distribuição sob a mesma conta e alterne entre eles.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><span class="badge b-wt">desativado</span></div>
+        </div>
+      </section>
+
+      <!-- MENSAGENS (WhatsApp com os motoristas) -->
+      <section class="page" id="pg-mensagens">
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-1-0610</span></div></div></div>
+        <div class="msg-wrap" id="msg-wrap">
+          <div class="msg-lista">
+            <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
+            <div class="msg-itens" id="msg-itens"><div class="msg-vazio">Carregando…</div></div>
+          </div>
+          <div class="msg-chat" id="msg-chat">
+            <div class="msg-vazio" id="msg-vazio"><b>Mensagens da DELTADIS</b>Escolha um motorista ao lado para ver a conversa.<br>Tudo fica guardado aqui no histórico.</div>
+            <div class="msg-hd" id="msg-hd"><button class="voltar" onclick="msgVoltar()">←</button><div class="msg-av" id="msg-hd-av"></div><div><b id="msg-hd-nm"></b><small id="msg-hd-sub"></small></div></div>
+            <div class="msg-corpo" id="msg-corpo"></div>
+            <div class="msg-aviso" id="msg-aviso"></div>
+            <div class="msg-anexo" id="msg-anexo"></div>
+            <div class="msg-comp" id="msg-comp">
+              <input type="file" id="msg-arq" style="display:none" accept="image/*,application/pdf,audio/*,video/mp4,.doc,.docx,.xls,.xlsx,.txt" onchange="msgEscolherArq(this)">
+              <button class="bt" id="msg-bt-arq" title="Anexar foto, PDF ou áudio" onclick="el('msg-arq').click()">📎</button>
+              <textarea id="msg-tx" rows="1" placeholder="Digite uma mensagem" onkeydown="msgTecla(event)" oninput="msgAuto(this)" onpaste="msgColar(event)"></textarea>
+              <button class="bt env" id="msg-bt-env" title="Enviar" onclick="msgEnviar()">➤</button>
+            </div>
+            <div class="msg-quem" id="msg-quem"></div>
+          </div>
         </div>
       </section>
 
@@ -2155,6 +2248,201 @@ function badgeStatus(st){
   return '<span class="badge '+m[0]+'">'+esc(m[1])+'</span>';
 }
 
+/* ══ MENSAGENS (WhatsApp com os motoristas) ══ */
+var MSG={mt:'',conv:[],msgs:[],janela:false,anexo:null,timer:null,badge:null,blobs:{},nome:'',fone:true,enviando:false,primeira:true};
+var MSG_CORES=['#7C3AED','#EC4899','#16A34A','#1D4ED8','#DC2626','#B08A00','#0E7490','#9333EA'];
+function msgCor(s){ var h=0,i; s=String(s||''); for(i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return MSG_CORES[h%MSG_CORES.length]; }
+function msgIni(n){ var p=String(n||'?').trim().split(/\s+/); return ((p[0]||'?').charAt(0)+(p.length>1?p[p.length-1].charAt(0):'')).toUpperCase(); }
+function msgHora(t){ var d=new Date(Number(t)||0); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function msgDiaRot(t){
+  var d=new Date(Number(t)||0), h=new Date(), ont=new Date(); ont.setDate(h.getDate()-1);
+  function k(x){ return x.getFullYear()+'-'+x.getMonth()+'-'+x.getDate(); }
+  if(k(d)===k(h)) return 'Hoje'; if(k(d)===k(ont)) return 'Ontem';
+  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+}
+function msgLerJson(r){ return r.json().catch(function(){ return {ok:false}; }); }
+function msgIniciarBadge(){
+  if(MSG.badge) return;
+  msgBuscarConv();
+  MSG.badge=setInterval(msgBuscarConv,30000);
+}
+function msgBuscarConv(){
+  return fetch(DELTADIS_API+'/mesa/whats-conversas',{cache:'no-store'}).then(msgLerJson).then(function(d){
+    if(!d||!d.ok) return;
+    MSG.conv=d.conversas||[]; msgPintarBadge();
+    if(PAG==='mensagens') msgPintarLista();
+  }).catch(function(){});
+}
+function msgPintarBadge(){
+  var tot=0,i; for(i=0;i<MSG.conv.length;i++) tot+=Number(MSG.conv[i].nao_lidas)||0;
+  var bs=document.querySelectorAll('[data-p="mensagens"]');
+  for(i=0;i<bs.length;i++){
+    var o=bs[i].querySelector('.nbadge'); if(o) o.parentNode.removeChild(o);
+    if(tot>0){ var b=document.createElement('i'); b.className='nbadge'; b.textContent=tot>99?'99+':tot; bs[i].appendChild(b); }
+  }
+}
+function msgAbrirTela(){
+  msgBuscarConv();
+  clearInterval(MSG.timer);
+  MSG.timer=setInterval(function(){ if(PAG!=='mensagens'){ clearInterval(MSG.timer); return; } msgBuscarConv(); if(MSG.mt) msgCarregar(true); },8000);
+}
+function msgPreview(c){
+  var u=c.ultima; if(!u) return c.tem_fone?'Sem mensagens ainda':'sem telefone cadastrado';
+  var t=String(u.texto||''), m=t.match(/^\[(imagem|documento|áudio|vídeo|figurinha)\]$/);
+  if(m){ var ic={imagem:'📷 ',documento:'📄 ',áudio:'🎤 ',vídeo:'🎥 ',figurinha:'🙂 '}[m[1]]; t=ic+m[1].charAt(0).toUpperCase()+m[1].slice(1); }
+  return (u.dir==='out'?'Você: ':'')+t;
+}
+function msgPintarLista(){
+  var q=(el('msg-q').value||'').trim().toLowerCase(), h='',i, n=0;
+  for(i=0;i<MSG.conv.length;i++){
+    var c=MSG.conv[i]; if(q && String(c.n||'').toLowerCase().indexOf(q)<0) continue; n++;
+    var u=c.ultima, nl=Number(c.nao_lidas)||0;
+    h+='<div class="msg-it'+(c.mt===MSG.mt?' on':'')+(c.tem_fone?'':' semfone')+'" onclick="msgAbrir(\''+esc(c.mt)+'\')">'+
+      '<div class="msg-av" style="background:'+msgCor(c.n)+'">'+esc(msgIni(c.n))+'</div>'+
+      '<div class="mi"><div class="l1"><span class="nm">'+esc(c.n)+'</span><span class="hr'+(nl?' nv':'')+'">'+(u?esc(msgDiaRot(u.t)==='Hoje'?msgHora(u.t):msgDiaRot(u.t)):'')+'</span></div>'+
+      '<div class="l2"><span class="pv">'+esc(msgPreview(c))+'</span>'+(nl?'<span class="nl">'+nl+'</span>':'')+'</div></div></div>';
+  }
+  el('msg-itens').innerHTML=h||'<div class="msg-vazio">'+(MSG.conv.length?'Nenhum motorista encontrado.':'Nenhum motorista cadastrado ainda.')+'</div>';
+}
+function msgAbrir(mt){
+  MSG.mt=mt; MSG.primeira=true; MSG.msgs=[]; msgLimparAnexo();
+  var c=null,i; for(i=0;i<MSG.conv.length;i++) if(MSG.conv[i].mt===mt) c=MSG.conv[i];
+  MSG.fone=!!(c&&c.tem_fone);
+  el('msg-wrap').classList.add('chat-aberto');
+  el('msg-vazio').style.display='none';
+  el('msg-hd').style.display='flex'; el('msg-corpo').style.display='block'; el('msg-comp').style.display='flex';
+  var av=el('msg-hd-av'); av.style.background=msgCor(c&&c.n); av.textContent=msgIni(c&&c.n);
+  el('msg-hd-nm').textContent=(c&&c.n)||''; el('msg-hd-sub').textContent=MSG.fone?'WhatsApp':'sem telefone cadastrado';
+  var q=el('msg-quem'); q.style.display='block'; q.textContent='Você está respondendo como '+((DD_USER&&DD_USER.nome)||'operador');
+  el('msg-corpo').innerHTML='<div class="msg-vazio">Carregando…</div>';
+  msgPintarLista(); msgCarregar(false);
+  setTimeout(function(){ try{ el('msg-tx').focus(); }catch(e){} },50);
+}
+function msgVoltar(){ MSG.mt=''; el('msg-wrap').classList.remove('chat-aberto'); msgPintarLista(); }
+function msgCarregar(silencioso){
+  var mt=MSG.mt; if(!mt) return;
+  fetch(DELTADIS_API+'/mesa/whats-mensagens?mt='+encodeURIComponent(mt),{cache:'no-store'}).then(msgLerJson).then(function(d){
+    if(mt!==MSG.mt) return;
+    if(!d||!d.ok){ if(!silencioso) el('msg-corpo').innerHTML='<div class="msg-vazio">Não consegui carregar a conversa. Tente de novo.</div>'; return; }
+    var antes=MSG.msgs.length, ult=antes?MSG.msgs[antes-1].id:0, novo=d.mensagens||[], mudou=(novo.length!==antes)||(novo.length&&novo[novo.length-1].id!==ult);
+    var sts=''; novo.forEach(function(m){ sts+=m.st; }); var stsAntes=''; MSG.msgs.forEach(function(m){ stsAntes+=m.st; });
+    MSG.msgs=novo; MSG.janela=!!d.janela_aberta;
+    if(mudou||MSG.primeira||sts!==stsAntes) msgPintarConversa();
+    msgPintarRodape();
+    if(mudou) msgBuscarConv();
+  }).catch(function(){});
+}
+function msgTick(m){
+  if(m.dir!=='out') return '';
+  var s=m.st||'';
+  if(s==='failed') return '<span class="tk erro" title="Falhou">⚠</span>';
+  if(s==='read') return '<span class="tk lido">✓✓</span>';
+  if(s==='delivered') return '<span class="tk">✓✓</span>';
+  return '<span class="tk">✓</span>';
+}
+function msgBalao(m){
+  var out=m.dir==='out', h='<div class="msg-b '+(out?'out':'in')+'">';
+  if(out && m.por){ var auto=(m.por==='Automático'); h+='<div class="por'+(auto?' auto':'')+'" '+(auto?'':'style="color:'+msgCor(m.por)+'"')+'>'+esc(m.por)+'</div>'; }
+  var tp=m.tipo||'', cap=String(m.texto||''), semLegenda=/^\[(imagem|documento|áudio|vídeo|figurinha)\]$/.test(cap);
+  if(tp==='image'||tp==='sticker') h+='<img class="mm" data-mid="'+m.id+'" alt="foto" onclick="msgVerImg('+m.id+')">';
+  else if(tp==='audio') h+='<audio controls preload="none" data-mid="'+m.id+'"></audio>';
+  else if(tp==='video') h+='<video controls preload="none" data-mid="'+m.id+'"></video>';
+  else if(tp==='document') h+='<div class="doc" onclick="msgBaixar('+m.id+',\''+esc(String(m.arq||'documento').replace(/'/g,''))+'\')">📄 <span>'+esc(m.arq||'documento')+'</span></div>';
+  if(cap && !(tp && semLegenda)) h+='<div class="txt">'+esc(cap)+'</div>';
+  h+='<div class="hh">'+esc(msgHora(m.t))+msgTick(m)+'</div><div class="msg-clr"></div></div>';
+  return h;
+}
+function msgPintarConversa(){
+  var c=el('msg-corpo'), perto=(c.scrollHeight-c.scrollTop-c.clientHeight)<120, h='', ult='',i;
+  if(!MSG.msgs.length) h='<div class="msg-vazio">Nenhuma mensagem ainda.<br>Escreva abaixo para começar.</div>';
+  for(i=0;i<MSG.msgs.length;i++){
+    var m=MSG.msgs[i], dia=msgDiaRot(m.t);
+    if(dia!==ult){ h+='<div class="msg-clr"></div><div class="msg-dia"><span>'+esc(dia)+'</span></div>'; ult=dia; }
+    h+=msgBalao(m);
+  }
+  c.innerHTML=h+'<div class="msg-clr"></div>';
+  if(perto||MSG.primeira) c.scrollTop=c.scrollHeight;
+  MSG.primeira=false;
+  msgCarregarMidias();
+}
+function msgBlob(id){
+  if(MSG.blobs[id]) return Promise.resolve(MSG.blobs[id]);
+  return fetch(DELTADIS_API+'/mesa/whats-midia?id='+id).then(function(r){ if(!r.ok) throw new Error('x'); return r.blob(); }).then(function(b){ var u=URL.createObjectURL(b); MSG.blobs[id]=u; return u; });
+}
+function msgCarregarMidias(){
+  var els=el('msg-corpo').querySelectorAll('[data-mid]'),i;
+  for(i=0;i<els.length;i++){ (function(e){
+    if(e.getAttribute('data-ok')) return; e.setAttribute('data-ok','1');
+    msgBlob(e.getAttribute('data-mid')).then(function(u){ e.src=u; }).catch(function(){ e.setAttribute('alt','arquivo indisponível'); e.style.minHeight='0'; });
+  })(els[i]); }
+}
+function msgVerImg(id){ msgBlob(id).then(function(u){ window.open(u,'_blank'); }); }
+function msgBaixar(id,nome){ msgBlob(id).then(function(u){ var a=document.createElement('a'); a.href=u; a.download=nome||'arquivo'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }).catch(function(){ aviso('Arquivo não está mais disponível.'); }); }
+function msgPintarRodape(){
+  var av=el('msg-aviso'), tx=el('msg-tx'), arq=el('msg-bt-arq'), env=el('msg-bt-env');
+  if(!MSG.fone){ av.style.display='block'; av.textContent='Este motorista não tem telefone cadastrado. Cadastre em Motoristas para conversar.'; tx.disabled=true; arq.disabled=true; env.disabled=true; return; }
+  tx.disabled=false; env.disabled=false;
+  if(MSG.janela){ av.style.display='none'; arq.disabled=false; tx.placeholder='Digite uma mensagem'; }
+  else{ av.style.display='block'; av.innerHTML='⏳ O motorista não escreve há mais de 24h. O WhatsApp só deixa enviar um <b>aviso</b> (modelo aprovado) agora. O que você digitar sai como: “Olá [nome], aqui é da DELTADIS. Aviso: …”. Anexos só depois que ele responder.'; arq.disabled=true; tx.placeholder='Escreva o aviso'; }
+}
+function msgAuto(t){ t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,120)+'px'; }
+function msgTecla(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); msgEnviar(); } }
+function msgLimparAnexo(){ MSG.anexo=null; var a=el('msg-anexo'); if(a){ a.style.display='none'; a.innerHTML=''; } var f=el('msg-arq'); if(f) f.value=''; }
+function msgMostrarAnexo(){
+  var a=el('msg-anexo'), x=MSG.anexo; if(!x){ a.style.display='none'; return; }
+  a.style.display='flex';
+  a.innerHTML=(x.prev?'<img src="'+x.prev+'">':'<span style="font-size:26px">📄</span>')+'<div><b>'+esc(x.nome)+'</b><br><small>'+Math.round(x.tam/1024)+' KB · escreva uma legenda abaixo, se quiser</small></div><span class="x" onclick="msgLimparAnexo()">✕</span>';
+}
+function msgColar(e){
+  var it=(e.clipboardData&&e.clipboardData.items)||[],i;
+  for(i=0;i<it.length;i++){ if(it[i].type.indexOf('image/')===0){ var f=it[i].getAsFile(); if(f){ e.preventDefault(); msgProcessar(f); return; } } }
+}
+function msgEscolherArq(inp){ var f=inp.files&&inp.files[0]; if(f) msgProcessar(f); }
+function msgProcessar(f){
+  if(!MSG.janela){ aviso('Anexo só depois que o motorista responder.'); return; }
+  var LIM=1400000;
+  if(/^image\//.test(f.type)){
+    var rd=new FileReader();
+    rd.onload=function(){
+      var im=new Image();
+      im.onload=function(){
+        var w=im.width,h=im.height,mx=1600,k=Math.min(1,mx/Math.max(w,h)), cv=document.createElement('canvas');
+        cv.width=Math.round(w*k); cv.height=Math.round(h*k);
+        var cx=cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,cv.width,cv.height); cx.drawImage(im,0,0,cv.width,cv.height);
+        var q=0.82, du=cv.toDataURL('image/jpeg',q);
+        while(du.length*0.75>LIM && q>0.4){ q-=0.1; du=cv.toDataURL('image/jpeg',q); }
+        if(du.length*0.75>LIM){ aviso('Foto grande demais.'); return; }
+        MSG.anexo={nome:(f.name||'foto').replace(/\.[^.]+$/,'')+'.jpg',mime:'image/jpeg',b64:du.split(',')[1],tam:Math.round(du.length*0.75),prev:du};
+        msgMostrarAnexo();
+      };
+      im.onerror=function(){ aviso('Não consegui ler essa foto.'); };
+      im.src=rd.result;
+    };
+    rd.readAsDataURL(f); return;
+  }
+  if(f.size>LIM){ aviso('Arquivo grande demais (máximo ~1,4 MB).'); return; }
+  var r2=new FileReader();
+  r2.onload=function(){ MSG.anexo={nome:f.name||'arquivo',mime:f.type||'application/octet-stream',b64:String(r2.result).split(',')[1],tam:f.size,prev:''}; msgMostrarAnexo(); };
+  r2.readAsDataURL(f);
+}
+function msgEnviar(){
+  if(MSG.enviando||!MSG.mt) return;
+  var tx=el('msg-tx'), texto=tx.value.trim(), bt=el('msg-bt-env');
+  if(!texto && !MSG.anexo) return;
+  MSG.enviando=true; bt.disabled=true;
+  var url, corpo;
+  if(MSG.janela){ url='/mesa/whats-responder'; corpo={mt:MSG.mt,texto:texto}; if(MSG.anexo) corpo.arquivo={nome:MSG.anexo.nome,mime:MSG.anexo.mime,b64:MSG.anexo.b64}; }
+  else{ url='/mesa/whats-avisar'; corpo={tipo:'aviso',texto:texto,mts:[MSG.mt]}; }
+  fetch(DELTADIS_API+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo)}).then(msgLerJson).then(function(d){
+    MSG.enviando=false; bt.disabled=false;
+    var falha=null;
+    if(!d||!d.ok) falha=(d&&d.mensagem)||'Não foi possível enviar.';
+    else if(d.itens && d.itens[0] && !d.itens[0].ok) falha=d.itens[0].erro==='sem_telefone'?'Motorista sem telefone.':('Não foi possível enviar: '+(d.itens[0].erro||'erro'));
+    if(falha){ aviso(esc(falha)); return; }
+    tx.value=''; msgAuto(tx); msgLimparAnexo(); msgCarregar(false); msgBuscarConv();
+  }).catch(function(){ MSG.enviando=false; bt.disabled=false; aviso('Sem conexão com o servidor.'); });
+}
+
 /* ══ navegação ══ (ícones no padrão do dashboard)
    Menu do computador (lateral) e do celular (tabbar de baixo): a Mesa aparece nos dois.
    (Já ficou oculta no lateral, dando lugar ao Mapeamento — voltou em 02/10.) */
@@ -2164,6 +2452,7 @@ var NAV_DESKTOP=[
   {id:'mesa',       lb:'Mesa',       ic:'<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M7 4V2M17 4V2M7 10H17M7 14H14"/>'},
   {id:'mapeamento', lb:'Mapeamento', ic:'<path d="M12 21s7-6.2 7-11.2A7 7 0 105 9.8C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.6"/>'},
   {id:'motoristas', lb:'Motoristas', ic:'<rect x="1" y="7" width="15" height="10" rx="1.5"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>'},
+  {id:'mensagens',  lb:'Mensagens',  ic:'<path d="M21 11.5a8.4 8.4 0 01-8.9 8.4 8.6 8.6 0 01-3.7-.9L3 20l1.2-4.9a8.4 8.4 0 1116.8-3.6z"/>'},
   {id:'financeiro', lb:'Financeiro', ic:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V16.5M9.3 14.3C9.3 15.5 10.4 16.2 12 16.2C13.6 16.2 14.7 15.5 14.7 14.2C14.7 11.6 9.3 12.6 9.3 10C9.3 8.7 10.4 8 12 8C13.6 8 14.7 8.7 14.7 9.9"/>'},
   {id:'config',     lb:'Configurações', ic:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>'}
 ];
@@ -2172,6 +2461,7 @@ var NAV_MOBILE=[
   {id:'pedidos',    lb:'Pedidos',    ic:'<rect x="3" y="8" width="18" height="12" rx="1.5"/><path d="M3 8L12 3L21 8"/>'},
   {id:'mesa',       lb:'Mesa',       ic:'<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M7 4V2M17 4V2M7 10H17M7 14H14"/>'},
   {id:'motoristas', lb:'Motoristas', ic:'<rect x="1" y="7" width="15" height="10" rx="1.5"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>'},
+  {id:'mensagens',  lb:'Msgs',  ic:'<path d="M21 11.5a8.4 8.4 0 01-8.9 8.4 8.6 8.6 0 01-3.7-.9L3 20l1.2-4.9a8.4 8.4 0 1116.8-3.6z"/>'},
   {id:'financeiro', lb:'Financeiro', ic:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V16.5M9.3 14.3C9.3 15.5 10.4 16.2 12 16.2C13.6 16.2 14.7 15.5 14.7 14.2C14.7 11.6 9.3 12.6 9.3 10C9.3 8.7 10.4 8 12 8C13.6 8 14.7 8.7 14.7 9.9"/>'},
   {id:'config',     lb:'Configurações', ic:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>'}
 ];
@@ -2186,6 +2476,7 @@ function montarNav(){
   for(i=0;i<NAV_MOBILE.length;i++){var m=NAV_MOBILE[i];
     tb+='<button class="'+(m.id===PAG?'on':'')+'" data-p="'+m.id+'" onclick="ir(\''+m.id+'\')">'+svgIco(m.ic)+'<span>'+m.lb+'</span></button>';}
   el('tabbar').innerHTML=tb;
+  try{ msgPintarBadge(); }catch(e){}
 }
 function ir(p){
   PAG=p;
@@ -2195,6 +2486,7 @@ function ir(p){
   for(i=0;i<ps.length;i++) ps[i].classList.toggle('on', ps[i].id==='pg-'+p);
   var bs=document.querySelectorAll('.side button,.tabbar button');
   for(i=0;i<bs.length;i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-p')===p);
+  if(p==='mensagens') msgAbrirTela(); else clearInterval(MSG.timer);
   if(p==='mapeamento' && typeof mpBuscar==='function'){ MP_ENQ=true; setTimeout(mpBuscar,30); }
   window.scrollTo(0,0);
 }
@@ -2289,6 +2581,7 @@ function relogio(){
 
 function montarTudo(){
   montarNav();
+  try{ msgIniciarBadge(); }catch(e){}
   pintarIndicadores();
   pintarDashboard();
   pintarPedidos();
