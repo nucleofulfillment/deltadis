@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-57-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-59-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1328,7 +1328,7 @@ function bpFecharCamera(){
 }
 function bpTela(){
   return '<div class="card"><h3 style="margin:0 0 2px">Bipar meus pacotes</h3>'+
-    (PT.sel?'<p style="margin:0 0 6px;font-size:12.5px">📍 <b>'+esc(PT.sel.nome)+'</b>'+(BP.meus.length?'':' · <a style="color:var(--roxo);font-weight:700" onclick="ptAbrir()">trocar</a>')+'</p>':'')+
+    (PT.sel?'<p style="margin:0 0 6px;font-size:12.5px">📍 <b>'+esc(PT.sel.nome)+'</b> · <a style="color:var(--roxo);font-weight:700" onclick="ptAbrir()">trocar</a></p>':'')+
     '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px"><b id="bp-cnt">'+BP.meus.length+'</b> pacote(s) na sua lista. Bipe todos que você pegou e depois monte a rota.</p>'+
     '<div id="bp-ult"></div>'+
     '<div class="search"><span>🔎</span><input id="bp-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')bpDigitado()"></div>'+
@@ -2126,7 +2126,7 @@ function renderFinalizado(){
    ══════════════════════════════════════════════════════════ */
 function badgePagamento(p){ return p==='pago' ? '<span class="badge b-ok">Pago</span>' : '<span class="badge b-wt">A pagar</span>'; }
 var FIN_PONTO='';   /* '' = todos os pontos de coleta */
-var PONTO_PAINEL='Painel DELTADIS';
+var PONTO_PAINEL='Sem ponto informado';
 function finPontoDe(x){ return x.ponto||PONTO_PAINEL; }
 function finPontos(){ var u={}, o=[], i; for(i=0;i<ENTREGAS.length;i++){ var n=finPontoDe(ENTREGAS[i]); if(!u[n]){ u[n]=1; o.push(n); } } return o; }
 function finEscolher(n){ FIN_PONTO=n||''; pintarFinanceiro(); }
