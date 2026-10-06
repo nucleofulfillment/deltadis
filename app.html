@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-69-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-70-0610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -834,6 +834,7 @@ function concluirParada(status, extra){
   LOTE_ATUAL[PONTEIRO].hora=horaAgora();
   if(extra) LOTE_ATUAL[PONTEIRO].janela=extra;
   if(status==='entregue'){ somEntregaOk(); rpAvisarEntrega(LOTE_ATUAL[PONTEIRO]); }
+  else if(status==='ausente' && LOTE_ATUAL[PONTEIRO].origem==='painel') rpAvisarStatus(LOTE_ATUAL[PONTEIRO],'ausente');
   PONTEIRO++;
   if(PONTEIRO>=LOTE_ATUAL.length){ finalizarRota(); return; }
   renderInicio();
@@ -913,6 +914,12 @@ function rpAvisarEntrega(p){
   var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now()});
   rpSalvaFilaEnt(f); rpDescarregarEnt();
 }
+/* (v70) ausente / devolvido à base também vão pro servidor (o ponto confere na devolução) */
+function rpAvisarStatus(p,status){
+  if(!p || !p.cod || !RP.mt) return;
+  var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',status:status,mt:String(RP.mt),mtn:RP.mtn||'',t:Date.now()});
+  rpSalvaFilaEnt(f); rpDescarregarEnt();
+}
 function rpDescarregarEnt(){
   if(ENT_ENVIANDO) return; var f=rpFilaEnt(); if(!f.length) return;
   var lote=f.slice(0,50); ENT_ENVIANDO=true;
@@ -941,6 +948,7 @@ function rpSaida(tipo,i,status){
   RP.conf=null; var p=(tipo==='extra')?RP.extra[i]:LOTE_ATUAL[i]; if(!p) return;
   var cod=p.cod, painel=(tipo==='extra')||p.origem==='painel';
   SAIDAS.push({cod:cod,cliente:p.cliente||'',status:status,hora:horaAgora()});
+  if(painel && status==='devolvido') rpAvisarStatus(p,'devolvido');
   if(painel){ rpMarcarFeitos([cod]); RP.total=Math.max(0,(RP.total||0)-1); if(status==='remarcada') rpRegistrarRemarcado(cod); }
   aviso(status==='remarcada'?'Remarcada: entra no próximo lote':'Devolvida à base: registre também no app da transportadora');
   if(tipo==='extra'){ RP.fora[cod]=true; RP.extra.splice(i,1); RP.semLoc=Math.max(0,RP.semLoc-1); RP.semNomes=RP.extra.map(function(e){ return e.cliente||e.cod; }); renderInicio(); return; }
