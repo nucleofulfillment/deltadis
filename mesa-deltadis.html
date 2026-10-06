@@ -230,7 +230,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-09-0510</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-10-0510</p>
   </div>
 </div>
 
@@ -635,6 +635,11 @@ function fecharCamera(){
 function hojeLocalDe(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 function hojeLocal(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 var RM={dia:'',itens:[],ass:[]};
+/* (10) cada FECHAMENTO do motorista é um romaneio (06/10/26-1, 06/10/26-2…) — nunca soma coletas diferentes */
+function romRot(r){ return r?(r==='Em andamento'?'Romaneio em andamento':'Romaneio '+r):'Aguardando bipagem do motorista'; }
+function romPeso(r){ return r===''?3:(r==='Em andamento'?2:1); }
+function romNum(r){ var m=String(r).match(/-(\d+)$/); return m?parseInt(m[1],10):0; }
+function romOrdena(a,b){ var pa=a.split('\u0001'), pb=b.split('\u0001'); if(pa[0]!==pb[0]) return pa[0]<pb[0]?-1:1; var wa=romPeso(pa[1]), wb=romPeso(pb[1]); if(wa!==wb) return wa-wb; return romNum(pa[1])-romNum(pb[1]); }
 function abrirRomaneio(){
   el('rm-transp-ic').innerHTML='📦'; el('rm-transp-ic').style.background='#F4EEFB';
   el('rm-transp-nome').textContent=MOT?MOT.n:'Todos os motoristas';
@@ -654,14 +659,15 @@ function carregarRomaneio(){
     var g={}, ordem=[], i, k, h='';
     var nNl=it.filter(function(x){ return x.nl; }).length; el('rm-tot').innerHTML='· '+it.length+' pacote'+(it.length===1?'':'s')+(nNl?' · <b style="color:#B91C1C">⚠ '+nNl+' não localizado'+(nNl===1?'':'s')+'</b>':'');
     if(!it.length){ el('rm-lista').innerHTML='<div class="rm-vazio">Nenhum pacote bipado neste dia'+(MOT?' para '+esc(MOT.n):'')+'.</div>'; return; }
-    for(i=it.length-1;i>=0;i--){ k=it[i].mtn||'Sem motorista'; if(!g[k]){ g[k]={}; ordem.push(k); }
+    for(i=it.length-1;i>=0;i--){ k=(it[i].mtn||'Sem motorista')+'\u0001'+(it[i].rom||''); if(!g[k]){ g[k]={}; ordem.push(k); }
       var tn=(achaTr(it[i].tr)||{n:it[i].tr}).n; (g[k][tn]=g[k][tn]||[]).push(it[i]); }
-    ordem.forEach(function(mn){
-      var tot=0, trs=Object.keys(g[mn]); trs.forEach(function(t){ tot+=g[mn][t].length; });
-      h+='<div style="font-weight:800;margin:14px 0 6px;font-size:14px">'+esc(mn)+' <span style="color:#8A7FA3;font-weight:600">· '+tot+'</span></div>';
+    ordem.sort(romOrdena);
+    ordem.forEach(function(mk){ var mn=mk.split('\u0001')[0], rm=mk.split('\u0001')[1];
+      var tot=0, trs=Object.keys(g[mk]); trs.forEach(function(t){ tot+=g[mk][t].length; });
+      h+='<div style="font-weight:800;margin:14px 0 6px;font-size:14px">'+esc(mn)+' <span style="color:#8A7FA3;font-weight:600">— '+esc(romRot(rm))+' · '+tot+'</span></div>';
       trs.forEach(function(t){
-        h+='<div class="rm-end" style="margin:6px 0 4px;font-weight:700">'+esc(t)+' — '+g[mn][t].length+'</div>';
-        g[mn][t].forEach(function(p,n){ var dt=new Date(p.t), hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+        h+='<div class="rm-end" style="margin:6px 0 4px;font-weight:700">'+esc(t)+' — '+g[mk][t].length+'</div>';
+        g[mk][t].forEach(function(p,n){ var dt=new Date(p.t), hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
           h+='<div class="rm-item"><div class="rm-item-esq"><div class="rm-seq">'+(n+1)+'</div><div><div class="rm-cliente">'+esc(p.cod)+'</div><div class="rm-end">'+hh+(p.por?' · bipado por '+esc(p.por):'')+'</div>'+(p.nl?'<div style="color:#B91C1C;font-weight:800;font-size:12px;margin-top:2px">⚠ NÃO LOCALIZADO pelo motorista — procurar o pacote</div>':'')+'</div></div></div>'; });
       });
     });
@@ -680,9 +686,11 @@ function logoRelatorioHtml(){
 }
 function htmlRomaneio(itens,dia,logo){
   var g={}, ordem=[], i, k, agora=new Date(), emitido=dataBR(hojeLocal())+' '+('0'+agora.getHours()).slice(-2)+':'+('0'+agora.getMinutes()).slice(-2), corpo='';
-  for(i=0;i<itens.length;i++){ k=itens[i].mtn||'Sem motorista'; if(!g[k]){ g[k]=[]; ordem.push(k); } g[k].push(itens[i]); }
-  ordem.forEach(function(mn,ix){
-    var lst=g[mn].slice().sort(function(a,b){ return a.t-b.t; }), porTr={}, trOrd=[], conf={}, n;
+  for(i=0;i<itens.length;i++){ k=(itens[i].mtn||'Sem motorista')+'\u0001'+(itens[i].rom||''); if(!g[k]){ g[k]=[]; ordem.push(k); } g[k].push(itens[i]); }
+  ordem.sort(romOrdena);
+  ordem.forEach(function(mk,ix){
+    var mn=mk.split('\u0001')[0], rm=mk.split('\u0001')[1];
+    var lst=g[mk].slice().sort(function(a,b){ return a.t-b.t; }), porTr={}, trOrd=[], conf={}, n;
     lst.forEach(function(p){ var tn=(achaTr(p.tr)||{n:p.tr}).n; if(!porTr[tn]){ porTr[tn]=0; trOrd.push(tn); } porTr[tn]++; if(p.por) conf[p.por]=1; });
     var resumo='<table class="res"><thead><tr><th>Transportadora</th><th style="text-align:right">Pacotes</th></tr></thead><tbody>';
     trOrd.forEach(function(t){ resumo+='<tr><td>'+esc(t)+'</td><td style="text-align:right">'+porTr[t]+'</td></tr>'; });
@@ -702,7 +710,7 @@ function htmlRomaneio(itens,dia,logo){
     } else linHtml='<div class="lin"><div><span></span>Assinatura do motorista — '+esc(mn)+'</div><div><span></span>Data e hora</div></div>';
     corpo+='<section'+(ix>0?' class="nova"':'')+'>'+
       '<div class="cab">'+logo+'<div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
-      '<h1>Romaneio de entrada — '+esc(mn)+'</h1>'+
+      '<h1>'+(rm&&rm!=='Em andamento'?'Romaneio '+esc(rm):'Romaneio de entrada')+' — '+esc(mn)+(rm?(rm==='Em andamento'?' (rota em andamento)':''):' (aguardando bipagem do motorista)')+'</h1>'+
       '<p style="color:#555">Dia '+dataBR(dia)+' &nbsp;|&nbsp; '+lst.length+' pacote'+(lst.length===1?'':'s')+(lst.filter(function(p){ return p.nl; }).length?' &nbsp;|&nbsp; <b style="color:#b91c1c">'+lst.filter(function(p){ return p.nl; }).length+' não localizado(s) pelo motorista</b>':'')+' &nbsp;|&nbsp; Emitido em '+emitido+'</p>'+
       '<h2>Resumo por transportadora</h2>'+resumo+
       '<h2>Pacotes entregues ao motorista</h2>'+det+
@@ -711,7 +719,7 @@ function htmlRomaneio(itens,dia,logo){
       (nomesConf?'<p class="peq">Conferido na Mesa por: '+esc(nomesConf)+'</p>':'')+'</div>'+
       '</section>';
   });
-  return '<!doctype html><html><head><meta charset="utf-8"><title>Romaneio de entrada '+dataBR(dia)+'</title>'+
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Romaneio '+dataBR(dia)+'</title>'+
     '<style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;padding:0;color:#111;font-size:9px}h1{font-size:15px;margin:6px 0 2px}h2{font-size:11px;margin:12px 0 2px;color:#4c1d95}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:8px;margin-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:4px}thead{display:table-header-group}tr{page-break-inside:avoid}td,th{border-bottom:1px solid #ddd;padding:2px 5px;font-size:9px;text-align:left;line-height:1.25;white-space:nowrap}th{background:#f3effb;border-bottom:1px solid #999}tbody tr:nth-child(even){background:#faf8fe}table.res{width:60%}tr.tot td{font-weight:bold;background:#f3effb}p{margin:3px 0;font-size:10px}.peq{font-size:9px;color:#666}section.nova{page-break-before:always}.ass{margin-top:22px;page-break-inside:avoid;border:1px solid #d9cff0;border-radius:6px;padding:10px 12px}.lin{display:flex;gap:30px;margin-top:38px}.lin div{flex:1;font-size:9px;color:#555}.lin div:first-child{flex:1.6}.lin span{display:block;border-top:1px solid #111;margin-bottom:3px}.asgs{display:flex;gap:30px;margin-top:12px;flex-wrap:wrap}.asg{flex:1;min-width:200px;font-size:9px;color:#555}.asg img{height:48px;display:block;margin-bottom:2px}.asg span{display:block;border-top:1px solid #111;margin-bottom:3px}</style></head>'+
     '<body>'+corpo+'<script>window.onload=function(){window.print();}</'+'script></body></html>';
 }
