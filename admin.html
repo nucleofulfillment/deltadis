@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <input id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-10-3009</div>
+      <div class="bld">DELTADIS-ADMIN-11-0610</div>
     </div>
   </div>
 </div>
@@ -301,6 +301,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div id="cli-corpo"><div id="lista-clientes"><div class="vazio">Carregando...</div></div></div>
     </div>
     <div class="card">
+      <h3><span>Planos</span><span class="sub2" id="pl-resumo"></span><span class="dir"><span class="lnk" onclick="abrirPlano()">+ Novo plano</span></span></h3>
+      <div id="lista-planos"><div class="vazio">Carregando...</div></div>
+    </div>
+    <div class="card">
       <h3><span>Fluxo de caixa</span><span class="dir"><span class="lnk" onclick="carregarFluxo();carregarSaldo()">↻ Atualizar</span><span class="lnk" onclick="abrirLanc()">+ Novo lançamento</span></span></h3>
       <div class="filtros" id="fc-filtros"></div>
       <div id="fc-aviso"></div>
@@ -311,7 +315,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-10-3009</div>
+    <div class="bld">DELTADIS-ADMIN-11-0610</div>
   </main>
 </div>
 
@@ -360,7 +364,52 @@ function iniciar(){
   if(!FC.ini){var h=hojeIso();FC.ini=h.slice(0,7)+'-01';FC.fim=ultDia(h.slice(0,7));}
   recarregar();
 }
-function recarregar(){carregarClientes();carregarFluxo();carregarSaldo();}
+function recarregar(){carregarClientes();carregarPlanos();carregarFluxo();carregarSaldo();}
+/* ── Planos de assinatura (fixo mensal + valor por pacote) — o site mostra os ativos no botão "Assinar" ── */
+var PLANOS=[];
+function carregarPlanos(){
+  chamar('GET','/admin/planos').then(function(d){
+    if(!d.ok){el('lista-planos').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</div>';return;}
+    PLANOS=d.planos||[]; desenharPlanos();
+  }).catch(function(){});
+}
+function desenharPlanos(){
+  var at=PLANOS.filter(function(p){return p.ativo;}).length;
+  el('pl-resumo').textContent=at+' ativo'+(at===1?'':'s');
+  if(!PLANOS.length){el('lista-planos').innerHTML='<div class="vazio">Nenhum plano ainda. Clique em "+ Novo plano".</div>';return;}
+  el('lista-planos').innerHTML=PLANOS.map(function(p){
+    return '<div class="cli"><div class="av">'+esc((p.nome||'?').charAt(0).toUpperCase())+'</div><div style="min-width:160px"><div class="nome">'+esc(p.nome)+'</div><div class="id">'+esc(p.descricao||'sem descrição')+' · <span class="tag '+(p.ativo?'on':'off')+'">'+(p.ativo?'Ativo':'Desativado')+'</span></div></div>'+
+      '<div class="dados"><div><b>'+reais(p.fixo_centavos)+'</b>fixo mensal</div><div><b>'+reais(p.pacote_centavos)+'</b>por pacote</div><div><b>'+(p.franquia||0)+'</b>pacotes inclusos</div></div>'+
+      '<button class="btn pri peq" onclick="abrirPlano(\''+esc(p.id)+'\')">Abrir</button></div>';
+  }).join('');
+}
+function abrirPlano(id){
+  var p=id?PLANOS.filter(function(x){return x.id===id;})[0]:null; if(id&&!p) return;
+  abrirModal('<h3>'+(p?esc(p.nome):'Novo plano')+'</h3><p class="sub">Cobrança: valor fixo por mês + valor por pacote. Se houver pacotes inclusos, o valor por pacote só vale depois deles.</p>'+
+  '<label>Nome do plano</label><input id="pl-nome" value="'+esc(p?p.nome:'')+'" placeholder="ex: Essencial">'+
+  '<label>Descrição curta (aparece no site)</label><input id="pl-desc" value="'+esc(p?p.descricao:'')+'" placeholder="ex: Para pontos de até 500 pacotes por mês">'+
+  '<div class="linha2"><div><label>Fixo mensal (R$)</label><input id="pl-fixo" inputmode="decimal" value="'+esc(p?deCentavos(p.fixo_centavos):'')+'" placeholder="0,00"></div><div><label>Valor por pacote (R$)</label><input id="pl-pac" inputmode="decimal" value="'+esc(p?deCentavos(p.pacote_centavos):'')+'" placeholder="0,00"></div></div>'+
+  '<div class="linha2"><div><label>Pacotes inclusos no fixo</label><input id="pl-fr" inputmode="numeric" value="'+esc(p?(p.franquia||0):0)+'"></div><div><label>Ordem no site (menor aparece primeiro)</label><input id="pl-ord" inputmode="numeric" value="'+esc(p?(p.ordem||0):0)+'"></div></div>'+
+  '<div class="erro" id="pl-erro"></div>'+
+  '<div class="acoes" style="margin-top:10px;justify-content:space-between">'+(p?'<button class="btn peq '+(p.ativo?'perigo':'')+'" onclick="planoAtivo(\''+esc(p.id)+'\','+(p.ativo?0:1)+')">'+(p.ativo?'Desativar plano':'Reativar plano')+'</button>':'<span></span>')+
+  '<span><button class="btn" onclick="fechar()">Cancelar</button> <button class="btn pri" id="pl-btn" onclick="salvarPlano('+(p?'\''+esc(p.id)+'\'':'null')+')">Salvar</button></span></div>');
+}
+function salvarPlano(id){
+  var nome=el('pl-nome').value.trim(); if(!nome){el('pl-erro').textContent='Informe o nome do plano.';return;}
+  var corpo={nome:nome,descricao:el('pl-desc').value.trim(),fixo_centavos:paraCentavos(el('pl-fixo').value),pacote_centavos:paraCentavos(el('pl-pac').value),franquia:parseInt(el('pl-fr').value,10)||0,ordem:parseInt(el('pl-ord').value,10)||0};
+  el('pl-btn').disabled=true; el('pl-erro').textContent='';
+  chamar(id?'PATCH':'POST',id?'/admin/planos/'+encodeURIComponent(id):'/admin/planos',corpo).then(function(d){
+    if(!d.ok){el('pl-erro').textContent=d.mensagem||'Erro ao salvar.';el('pl-btn').disabled=false;return;}
+    fechar();toast('Plano salvo!');carregarPlanos();
+  }).catch(function(){el('pl-btn').disabled=false;});
+}
+function planoAtivo(id,ativo){
+  chamar('PATCH','/admin/planos/'+encodeURIComponent(id),{ativo:ativo}).then(function(d){
+    if(!d.ok){toast(d.mensagem||'Erro.',true);return;}
+    fechar();toast(ativo?'Plano reativado.':'Plano desativado.');carregarPlanos();
+  }).catch(function(){});
+}
+
 
 function carregarClientes(){
   chamar('GET','/admin/clientes').then(function(d){
