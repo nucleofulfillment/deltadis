@@ -230,7 +230,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-11-0510</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-12-0510</p>
   </div>
 </div>
 
@@ -477,7 +477,7 @@ function pintarCards(){
   var h='',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i];
     var ativaCls=(ATIVA && ATIVA.id===t.id)?' ativa':'';
-    h+='<div class="card'+ativaCls+'" onclick="'+(t.somente?'abrirRomaneio()':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+' bipados hoje</div></div>';}
+    h+='<div class="card'+ativaCls+'" onclick="'+(t.somente?'abrirRomaneio(\'app\')':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+' bipados hoje</div></div>';}
   el('mesa-cards').innerHTML=h;
 }
 
@@ -640,9 +640,11 @@ function romRot(r){ return r?(r==='Em andamento'?'Romaneio em andamento':'Romane
 function romPeso(r){ return r===''?3:(r==='Em andamento'?2:1); }
 function romNum(r){ var m=String(r).match(/-(\d+)$/); return m?parseInt(m[1],10):0; }
 function romOrdena(a,b){ var pa=a.split('\u0001'), pb=b.split('\u0001'); if(pa[0]!==pb[0]) return pa[0]<pb[0]?-1:1; var wa=romPeso(pa[1]), wb=romPeso(pb[1]); if(wa!==wb) return wa-wb; return romNum(pa[1])-romNum(pb[1]); }
-function abrirRomaneio(){
-  el('rm-transp-ic').innerHTML='📦'; el('rm-transp-ic').style.background='#F4EEFB';
-  el('rm-transp-nome').textContent=MOT?MOT.n:'Todos os motoristas';
+var RMF='';
+function abrirRomaneio(f){
+  RMF=(f==='app')?'app':'';
+  el('rm-transp-ic').innerHTML=RMF?'📱':'📦'; el('rm-transp-ic').style.background='#F4EEFB';
+  el('rm-transp-nome').textContent=(RMF?'Bipados no app — ':'')+(MOT?MOT.n:'Todos os motoristas');
   el('rm-resumo').innerHTML='Dia: <input type="date" id="rm-dia" value="'+hojeLocal()+'" onchange="carregarRomaneio()" style="border:1px solid #E3D9F2;border-radius:8px;padding:4px 8px;font-family:inherit"> <span id="rm-tot"></span>'+(MOT?'':'<div style="font-size:11.5px;color:#8A7FA3;margin-top:4px">Escolha um motorista na tela para ver só os pacotes dele.</div>');
   el('rm-lista').innerHTML='<div class="rm-vazio">Carregando…</div>';
   el('rm-overlay').classList.add('on');
@@ -652,7 +654,7 @@ function carregarRomaneio(){
   var dia=el('rm-dia').value||hojeLocal();
   api('/mesa/entradas?dia='+encodeURIComponent(dia)).then(function(d){
     if(!d||!d.ok){ el('rm-lista').innerHTML='<div class="rm-vazio">Não consegui carregar.</div>'; return; }
-    var it=(d.itens||[]).filter(function(x){ return !MOT || String(x.mt||'')===String(MOT.id); });
+    var it=(d.itens||[]).filter(function(x){ return (!MOT || String(x.mt||'')===String(MOT.id)) && (!RMF || x.tr==='Bipado no app'); });
     RM={dia:dia,itens:it,ass:[]};
     /* (08) assinaturas dos motoristas (feitas no app ao montar a rota) — saem no PDF; se não carregar, o PDF sai com a linha em branco como antes */
     api('/mesa/assinaturas?dia='+encodeURIComponent(dia)).then(function(a){ if(a&&a.ok&&RM.dia===dia) RM.ass=a.assinaturas||[]; }).catch(function(){});
