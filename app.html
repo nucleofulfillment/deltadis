@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-64-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-65-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -868,7 +868,7 @@ function atualizarChromeApp(){
   if(!t||!r) return;
   var cheio = (PAG==='inicio' && EST==='em_rota' && !SAIU_TELA_CHEIA);
   t.style.display = cheio ? 'none' : 'flex';
-  r.style.display = cheio ? 'none' : 'flex';
+  r.style.display = 'flex';   /* (65) menu do rodapé SEMPRE fixo, até o app ficar pronto */
   if(EST==='em_rota' && typeof rpAjustaAltura==='function') rpAjustaAltura();
 }
 function voltarDeTelaCheia(){ EST='rp_lista'; renderInicio(); }
@@ -1120,12 +1120,23 @@ function rpCarregarPonto(){
 }
 setTimeout(rpCarregarPonto,1500); setInterval(rpCarregarPonto,600000);
 function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(PT.sel&&PT.sel.endereco)?PT.sel.endereco:((c.base&&c.base!==RP_BASE_PADRAO)?c.base:rpBasePonto()), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), assina:(c.assina==='sim'?'sim':'nao'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
+/* (65) "assinar o romaneio" fica guardado no servidor: salva uma vez e vale em qualquer aparelho, e se o aparelho esquecer, o app busca de novo */
+function rpCarregarCfgServidor(){
+  if(!DD_M_TOKEN) return;
+  rpApi('/motorista/cfg').then(function(d){
+    if(!d||!d.ok||!d.definido) return;
+    var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){}
+    var v=d.assina?'sim':'nao'; if(c.assina!==v){ c.assina=v; try{ localStorage.setItem('dd_cfg',JSON.stringify(c)); }catch(e){} var s=el('cfg-assina'); if(s) s.value=v; }
+  }).catch(function(){});
+}
+setTimeout(rpCarregarCfgServidor,1200); setInterval(rpCarregarCfgServidor,300000);
 function rpSalvarCfg(){
   var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30; if(!RP_TESTE){ try{ mx=(JSON.parse(localStorage.getItem('dd_cfg')||'{}').max); }catch(e){} if(mx==null) mx=30; }
   try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear',assina:el('cfg-assina').value==='sim'?'sim':'nao'})); }catch(e){}
   rpAtualizar();
+  if(DD_M_TOKEN){ rpApi('/motorista/cfg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assina:el('cfg-assina').value==='sim'})}).then(function(d){ if(!d||!d.ok) aviso('Salvei neste aparelho, mas não consegui guardar no servidor. Tente de novo.'); }).catch(function(){ aviso('Salvei neste aparelho, mas sem internet não guardei no servidor.'); }); }
   aviso('Configurações salvas');
 }
 function rpKm(x){ return x.toFixed(1).replace('.',',')+' km'; }
@@ -1341,6 +1352,8 @@ function bpRemover(cod){
 }
 function bpFechar(){
   if(!BP.meus.length){ aviso('Bipe ao menos um pacote antes de montar a rota'); return; }
+  var sem=BP.meus.filter(function(m){ return !m.e; }).length;
+  if(sem>0){ aviso(sem+' pacote'+(sem===1?'':'s')+' sem endereço. Toque no pacote e fale o endereço, ou remova com ✕ — só monta a rota com todos os endereços.'); return; }
   var fm=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length;
   if(fm>0&&!confirm('Faltam '+fm+' pacote'+(fm===1?'':'s')+' do romaneio da Mesa sem bipar. Montar a rota mesmo assim?')) return;
   bpFecharCamera();
