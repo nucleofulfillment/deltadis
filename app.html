@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-51-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-53-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -428,7 +428,6 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="field"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
         <div class="field"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
-        <div class="field"><label>Valor por pacote entregue (R$)</label><input class="inp" id="cfg-vp" type="text" inputmode="decimal" placeholder="Ex.: 4,50"><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Usado no Financeiro quando o seu cadastro não tem valor por pacote.</p></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
       </div>
@@ -895,7 +894,7 @@ function rpFilaEnt(){ try{ return JSON.parse(localStorage.getItem('dd_fila_ent')
 function rpSalvaFilaEnt(f){ try{ localStorage.setItem('dd_fila_ent',JSON.stringify(f.slice(-500))); }catch(e){} }
 function rpAvisarEntrega(p){
   if(!p || p.origem!=='painel' || !p.cod || !RP.mt) return;
-  var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now(),valor:(function(){ try{ return Number(JSON.parse(localStorage.getItem('dd_cfg')||'{}').vp)||0; }catch(e){ return 0; } })()});
+  var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now()});
   rpSalvaFilaEnt(f); rpDescarregarEnt();
 }
 function rpDescarregarEnt(){
@@ -1111,10 +1110,10 @@ function rpCarregarPonto(){
 setTimeout(rpCarregarPonto,1500); setInterval(rpCarregarPonto,600000);
 function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(PT.sel&&PT.sel.endereco)?PT.sel.endereco:((c.base&&c.base!==RP_BASE_PADRAO)?c.base:rpBasePonto()), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
 function rpSalvarCfg(){
-  var vp=parseFloat(String(el('cfg-vp').value).replace(',','.')); if(!isFinite(vp)||vp<0) vp=0; var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
+  var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30; if(!RP_TESTE){ try{ mx=(JSON.parse(localStorage.getItem('dd_cfg')||'{}').max); }catch(e){} if(mx==null) mx=30; }
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear',vp:vp})); }catch(e){}
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear'})); }catch(e){}
   rpAtualizar();
   aviso('Configurações salvas');
 }
@@ -1125,8 +1124,7 @@ function rpKmEntre(a,b){ var R=6371,q=Math.PI/180,dl=(b.lat-a.lat)*q,dg=(b.lng-a
 /* trava de segurança: ponto de outra cidade ou muito longe do grosso das paradas NÃO entra na rota */
 function rpMarcarLonge(lista){
   var com=lista.filter(function(p){ return p.lat!=null; }), i, p;
-  lista.forEach(function(p){ p._longe=false; if((p.flags||[]).indexOf('cidade_diferente')>=0||(p.flags||[]).indexOf('longe_da_base')>=0) p._longe=true; });
-  try{ var bg0=RP.baseGeo[rpCfg().base]||null; if(bg0) com.forEach(function(p){ var kb=rpKmEntre(bg0,p); p._kmBase=kb; if(kb>60) p._longe=true; }); }catch(e){}
+  lista.forEach(function(p){ p._longe=false; if((p.flags||[]).indexOf('cidade_diferente')>=0) p._longe=true; });   /* o ponto de coleta NUNCA bloqueia endereço: só vale a cidade do próprio pacote */
   if(com.length>=3){
     /* referência = o grupo MAIS NUMEROSO de paradas (não muda quando entra mais uma); empate → o grupo mais perto da base */
     var bg=null; try{ bg=RP.baseGeo[rpCfg().base]||null; }catch(e){}
@@ -1181,12 +1179,17 @@ var BP={camFn:null,atual:'',idx:{},meus:[],outros:{},ult:null,ok:false,carregand
 function bpNorm(v){ return String(v==null?'':v).replace(/[^A-Za-z0-9_.-]/g,''); }
 function bpTr(cod){ var c=String(cod).toUpperCase(); if(/^AJ/.test(c)) return 'anj'; if(/^GP.*BR$/.test(c)) return 'pic'; return ''; }
 function somErroBip(){ _tom(220,0,0.18,0.5); _tom(180,0.2,0.22,0.5); try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){} }
-/* parada sem pacote bipado: pergunta se tem código de rastreio */
+/* parada sem rastreio: pergunta se o pacote tem código de rastreio */
 function srPerguntar(){
   var o=document.createElement('div'); o.id='sr-ov'; o.style.cssText='position:fixed;inset:0;background:rgba(15,5,30,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px';
-  o.innerHTML='<div class="card" style="width:100%;max-width:380px;margin:0"><h3 style="margin:0 0 6px">Esse pacote tem código de rastreio?</h3><p style="margin:0 0 14px;color:var(--muted);font-size:12.5px">Com código, bipe o pacote para ele entrar certinho na sua lista. Sem código, cadastre só o endereço.</p><button class="btn pri wide" style="margin-bottom:8px" onclick="srFechar();var i=el(\'bp-cod\');if(i)i.focus()">Tem — vou bipar</button><button class="btn sec wide" style="margin-bottom:8px" onclick="srFechar();vzAbrir(\'\',\'voz\')">Não tem — só o endereço</button><button class="btn sec wide" onclick="srFechar()">Cancelar</button></div>';
+  o.innerHTML='<div class="card" style="width:100%;max-width:380px;margin:0"><h3 style="margin:0 0 14px">Esse pacote tem rastreio?</h3><button class="btn pri wide" style="margin-bottom:8px" onclick="srSim()">Sim</button><button class="btn sec wide" style="margin-bottom:8px" onclick="srNao()">Não</button><button class="btn sec wide" onclick="srFechar()">Cancelar</button></div>';
   document.body.appendChild(o);
 }
+function srSim(){
+  srFechar();
+  setTimeout(function(){ var i=el('bp-cod'); if(!i) return; try{ i.scrollIntoView({block:'center'}); }catch(e){} i.focus(); i.style.boxShadow='0 0 0 3px #7C3AED'; setTimeout(function(){ i.style.boxShadow=''; },1800); aviso('Bipe o pacote agora'); },80);
+}
+function srNao(){ srFechar(); setTimeout(function(){ vzAbrir('','voz'); },30); }
 function srFechar(){ var o=el('sr-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
 /* ══ (37) PONTO DE COLETA — o motorista escolhe onde pegou os pacotes antes de bipar; a rota sai dele ══ */
 function ptGravar(){ try{ if(PT.sel) localStorage.setItem('dd_ponto_sel',JSON.stringify(PT.sel)); else localStorage.removeItem('dd_ponto_sel'); }catch(e){} }
@@ -1242,7 +1245,7 @@ function bpCarregar(){
     if(!d||!d.ok){ BP.ult={t:'err',m:'Não consegui carregar seus pacotes. Confira a internet.'}; bpAtualizar(); return; }
     var i, x; BP.idx={}; for(i=0;i<d.lista.length;i++){ x=d.lista[i]; BP.idx[x.c.toLowerCase()]=x; if(x.s) BP.idx[x.s.toLowerCase()]=x; }
     BP.outros={}; for(x in (d.outros||{})) BP.outros[x.toLowerCase()]=d.outros[x];
-    BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e};
+    BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,v:(m.valor>0?Number(m.valor):0)};
       if(m.end_rua){ it.e=1; it.novo=false; it.r=m.end_rua+(m.end_num?', '+m.end_num:''); it.d={cep:m.end_cep||'',num:m.end_num||'',comp:m.end_comp||'',rua:m.end_rua,bai:m.end_bai||'',cid:m.end_cid||''}; }
       return it; });
     BP.ok=true; bpAtualizar(); if(EST==='sem_lote') renderInicio();
@@ -1250,7 +1253,7 @@ function bpCarregar(){
 }
 function bpItemHtml(m){
   var info;
-  if(m.e) info='<span style="color:#166534;font-weight:700;font-size:12px">✔ '+esc(m.r||((m.cl||'')+'' ))+'</span>';
+  if(m.e) info='<span style="color:#166534;font-weight:700;font-size:12px">✔ '+esc(m.r||((m.cl||'')+'' ))+(vzExterno()?(m.v>0?' · '+vzMoeda(m.v):' · <span style="color:#B45309">sem valor</span>'):'')+'</span>';
   else info='<span style="color:#B45309">'+(m.novo?'sem dados':'endereço incompleto')+' · toque e fale o endereço</span>';
   return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FFFBF2;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+esc(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':m.cod)+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
@@ -1329,7 +1332,7 @@ function bpTela(){
     '<div id="bp-ult"></div>'+
     '<div class="search"><span>🔎</span><input id="bp-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')bpDigitado()"></div>'+
     '<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn pri" style="flex:1" onclick="bpCamera()">📷 Usar a câmera</button><button class="btn sec" style="flex:1" onclick="bpDigitado()">Registrar</button></div>'+
-    '<button class="btn sec wide" style="margin:-4px 0 14px" onclick="srPerguntar()">🎤 Parada sem pacote (falar o endereço)</button>'+
+    '<button class="btn sec wide" style="margin:-4px 0 14px" onclick="srPerguntar()">🎤 Parada sem rastreio (falar o endereço)</button>'+
     '<div id="bp-lista"></div>'+
     '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">Montar minha rota</button></div></div>';
 }
@@ -1421,11 +1424,12 @@ function vzAbrir(cod,modo){
   var ov=document.createElement('div'); ov.id='vz-ov';
   ov.style.cssText=ed?'position:fixed;inset:0;background:rgba(15,5,30,.6);z-index:9998;display:flex;align-items:flex-end;justify-content:center':'position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;justify-content:center;pointer-events:none';
   ov.innerHTML='<div style="background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:14px 16px 16px;max-height:92vh;overflow:auto;pointer-events:auto;box-shadow:0 -6px 24px rgba(60,20,110,.28)">'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:800;color:var(--roxo-esc)">'+(ed?'✔ Endereço do pacote':(cod?'Falando o endereço de:':'Parada sem pacote'))+'</div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:800;color:var(--roxo-esc)">'+(ed?'✔ Endereço do pacote':(cod?'Falando o endereço de:':'Parada sem rastreio'))+'</div>'+
     '<div style="font-size:12px;color:var(--muted);word-break:break-all">'+(cod?esc(cod):'sem etiqueta')+'</div></div><div id="vz-falt" style="font-size:11.5px;font-weight:800;color:var(--roxo-esc);background:var(--s3);border-radius:10px;padding:4px 9px;white-space:nowrap"></div></div>'+
     '<div id="vz-stat" onclick="vzOuvir(true)" style="margin:10px 0 6px;padding:14px 12px;border-radius:16px;background:var(--grad-arte);color:#fff;text-align:center;font-weight:800;font-size:15px"></div>'+
     '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:6px;min-height:15px;text-align:center"></div>'+
     '<div id="vz-dbg" style="font-size:10.5px;color:#9A8FB0;margin-bottom:6px;text-align:center"></div>'+
+    (vzExterno()?'<div style="margin:0 0 8px"><label style="font-size:11px;font-weight:700">Valor desta entrega (R$) — ou fale “valor 8 reais”</label><div class="search" style="margin:0"><input id="vz-val" inputmode="decimal" placeholder="Ex.: 8,50" value="'+(it&&it.v>0?esc(String(it.v).replace('.',',')):'')+'"></div></div>':'')+
     '<div id="vz-campos" style="display:'+(ed?'block':'none')+'">'+
     '<div style="display:flex;gap:8px"><div style="flex:1.4"><label style="font-size:11px;font-weight:700">CEP</label><div class="search" style="margin:0"><input id="vz-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="vzCepDig()" value="'+esc(d.cep||'')+'"></div></div>'+
     '<div style="flex:1"><label style="font-size:11px;font-weight:700">Número</label><div class="search" style="margin:0"><input id="vz-num" placeholder="123 ou S/N" value="'+esc(d.num||'')+'"></div></div></div>'+
@@ -1435,13 +1439,19 @@ function vzAbrir(cod,modo){
     '<div class="search" style="margin:8px 0 6px"><input id="vz-rua0" placeholder="Nome da rua (ex.: Rua das Flores)"></div>'+
     '<div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:2"><input id="vz-cid0" placeholder="Cidade" value="'+esc(vzLer('c'))+'"></div><div class="search" style="margin:0;flex:.6"><input id="vz-uf0" maxlength="2" placeholder="UF" value="'+esc(vzLer('u'))+'" style="text-transform:uppercase"></div><button class="btn sec" style="padding:4px 12px" onclick="vzBuscarRua()">Buscar</button></div></details></div>'+
     '<div id="vz-cand" style="margin-bottom:8px"></div>'+
-    '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="vzFechar()">'+(ed?'Fechar':'Concluir')+'</button>'+(ed?'<button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar(false)">Salvar</button>':'<button class="btn sec" style="flex:1" onclick="vzCampos(true)">⌨ Digitar</button>')+'</div></div>';
+    '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="'+(ed?'vzFechar()':'vzConcluir()')+'">'+(ed?'Fechar':'Concluir')+'</button>'+(ed?'<button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar(false)">Salvar</button>':'<button class="btn sec" style="flex:1" id="vz-dig" onclick="vzCampos(true)">⌨ Digitar</button>')+'</div></div>';
   document.body.appendChild(ov);
   vzFalt(); bpAtualizar();
   if(ed){ vzStat('Toque aqui para falar de novo','#6D28D9'); if(d.cep&&d.cep.length===8) vzCepDig(); else if(it&&it.r) el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px">'+esc(it.r)+'</div>'; }
   else { vzStat(VZ.ouvindo?'🎤 Pode falar…  (CEP e número, ou rua, número, bairro e cidade)':'Ativando o microfone…','#7C3AED'); if(!VZ.ouvindo) vzOuvir(); }
 }
-function vzCampos(v){ var c=el('vz-campos'); if(c) c.style.display=v?'block':'none'; }
+function vzCampos(v){ var c=el('vz-campos'); if(c) c.style.display=v?'block':'none'; var b=el('vz-dig'); if(b&&v&&VZ.modo!=='edit'){ b.textContent='Salvar'; b.className='btn pri'; b.onclick=function(){ vzSalvar(false); }; } }
+/* Concluir: se o endereço digitado está completo, salva antes de fechar (antes só fechava e perdia o que foi digitado) */
+function vzConcluir(){
+  var c=el('vz-cep'), n=el('vz-num');
+  if(c&&n&&c.value.replace(/\D/g,'').length===8&&n.value.trim()&&VZ.achou!==null&&!VZ.busy){ vzSalvar(false); return; }
+  vzFechar();
+}
 function vzFalt(){ var f=el('vz-falt'); if(f){ var n=vzFaltam(); f.textContent=n?('faltam '+n):'todos ✔'; } }
 function vzStat(t,cor){ var s=el('vz-stat'); if(s){ s.textContent=t; s.style.background=cor||'var(--grad-arte)'; } }
 function vzParar(){ try{ if(VZ.rec){ VZ.rec.onend=null; VZ.rec.onerror=null; VZ.rec.onresult=null; VZ.rec.abort(); } }catch(e){} VZ.rec=null; VZ.ouvindo=false; VZ.vazio=0; if(VZ.tmr){ clearTimeout(VZ.tmr); VZ.tmr=null; } }
@@ -1528,7 +1538,17 @@ function vzCiclo(SR){
   try{ r.start(); }catch(e){ VZ.ouvindo=false; vzDbg('não abriu: '+(e&&e.name)); vzStat('Toque aqui para falar','#B45309'); }
 }
 function vzProcessar(t){
-  var p=vzParse(t), ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
+  var ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
+  if(vzExterno()){
+    var vv=vzValor(t);
+    if(vv.v!=null){
+      var restoV=vv.resto.replace(/[,.;]/g,' ').trim();
+      if(restoV.length<4){ vzValorSo(vv.v); return; }   /* só o valor */
+      if(el('vz-val')) el('vz-val').value=String(vv.v).replace('.',',');
+      t=vv.resto;
+    }
+  }
+  var p=vzParse(t);
   if(p.compSo){ vzCompSo(p.comp); return; }
   if(p.num&&el('vz-num')) el('vz-num').value=p.num.toUpperCase();
   if(el('vz-comp')) el('vz-comp').value=p.comp||'';
@@ -1585,6 +1605,49 @@ function vzCompSo(comp){
     var it=vzItem(L.cod); if(it&&it.d) it.d.comp=d.comp; L.comp=d.comp; L.t=Date.now();
     somBipeOk(); vzStat('✔ '+comp+' → '+L.rua+', '+L.num+' (pacote anterior)','#16A34A');
   }).catch(function(){ VZ.trans=false; vzStat('Sem conexão. Complemento não salvo','#B91C1C'); });
+}
+/* valor falado: "valor 8 reais", "8 reais e 50 centavos", "valor oito e cinquenta", "r$ 8,50" → número; devolve o texto sem a parte do valor */
+function vzValorNum(x){
+  var T={vinte:20,trinta:30,quarenta:40,cinquenta:50,sessenta:60,setenta:70,oitenta:80,noventa:90,cem:100,cento:100};
+  var p=vzNum(String(x||'').toLowerCase()).split(/\s+/).filter(Boolean), i, tot=0, ok=false;
+  for(i=0;i<p.length;i++){ if(p[i]==='e') continue; if(T.hasOwnProperty(p[i])){ tot+=T[p[i]]; ok=true; } else if(/^\d+$/.test(p[i])){ tot+=Number(p[i]); ok=true; } else return null; }
+  return ok?tot:null;
+}
+function vzValor(t){
+  var s=String(t||''), low=s.toLowerCase(), m, v=null, ini, fim;
+  var NUM='(?:\\d+(?:[.,]\\d{1,2})?|[a-zçéêíóú]+(?:\\s+e\\s+[a-zçéêíóú]+)?)';
+  /* 1) "valor X reais [e Y centavos]" / "X reais [e Y centavos]" / "R$ 8,50" */
+  var re1=new RegExp('(?:valor\\s*(?:de|é|e)?\\s*)?(?:r\\$\\s*)?('+NUM+')\\s*(?:reais|real)(?:\\s*e\\s*('+NUM+')\\s*centavos?)?','i');
+  m=re1.exec(low);
+  if(m){ var a=/^\d/.test(m[1])?Number(m[1].replace(',','.')):vzValorNum(m[1]); if(a!=null){ v=a; if(m[2]){ var c=/^\d/.test(m[2])?Number(m[2].replace(',','.')):vzValorNum(m[2]); if(c!=null&&c<100) v+=c/100; } ini=m.index; fim=m.index+m[0].length; } }
+  /* 2) "valor 8,50" / "valor oito e cinquenta" / "valor 8" (sem a palavra reais) */
+  if(v==null){
+    var re2=new RegExp('valor\\s*(?:de|é)?\\s*(?:r\\$\\s*)?(\\d+(?:[.,]\\d{1,2})?|[a-zçéêíóú]+(?:\\s+e\\s+[a-zçéêíóú]+){0,2})','i'); m=re2.exec(low);
+    if(m){ var q=m[1], e2=/^(\S+)\s+e\s+(\S+)$/.exec(q), a2;
+      if(/^\d/.test(q)) a2=Number(q.replace(',','.'));
+      else if(e2){ var u=vzValorNum(e2[1]), c2=vzValorNum(e2[2]); a2=(u!=null&&c2!=null)?(c2<100&&u<100&&c2>=10?u+c2/100:u+c2):null; }
+      else a2=vzValorNum(q);
+      if(a2!=null&&isFinite(a2)){ v=a2; ini=m.index; fim=m.index+m[0].length; } }
+  }
+  if(v==null||!isFinite(v)||v<0||v>1000) return {v:null,resto:s};
+  return {v:Math.round(v*100)/100,resto:(s.slice(0,ini)+' '+s.slice(fim)).replace(/\s+/g,' ').trim()};
+}
+function vzMoeda(v){ return 'R$ '+Number(v).toFixed(2).replace('.',','); }
+function vzExterno(){ return !!(PT.sel&&PT.sel.tipo==='externo'); }
+/* só o valor falado: vale para o pacote salvo há pouco (se ainda sem valor); senão preenche o campo do que está aberto */
+function vzValorSo(v){
+  var L=VZ.last, campo=el('vz-val');
+  if(VZ.modo!=='edit'&&L&&!L.v&&Date.now()-L.t<=90000){
+    VZ.trans=true; vzStat('Salvando o valor…','#6D28D9');
+    rpApi('/motorista/endereco',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:L.cod,cep:L.cep,num:L.num,comp:L.comp,rua:L.rua,bai:L.bai,cid:L.cid,valor:v})}).then(function(d){
+      VZ.trans=false;
+      if(!d||!d.ok){ somErroBip(); vzStat('Não salvou o valor. Toque no pacote e edite','#B91C1C'); return; }
+      var it=vzItem(L.cod); if(it) it.v=v; L.v=v; L.t=Date.now(); bpAtualizar();
+      somBipeOk(); vzStat('✔ '+vzMoeda(v)+' → '+L.rua+', '+L.num+' (pacote anterior)','#16A34A');
+    }).catch(function(){ VZ.trans=false; vzStat('Sem conexão. Valor não salvo','#B91C1C'); });
+    return;
+  }
+  if(campo){ campo.value=String(v).replace('.',','); vzStat('Valor: '+vzMoeda(v),'#6D28D9'); } else vzStat('Valor só vale para pontos de coleta que não usam DELTADIS','#B45309');
 }
 function vzTentaSalvar(){
   if(VZ.modo==='edit'){ vzStat('Confira e toque em Salvar','#6D28D9'); return; }
@@ -1646,13 +1709,13 @@ function vzSalvar(auto){
     pre=rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,tr:'',ponto:PT.sel?PT.sel.nome:''})}).then(function(d){ if(!d||!d.ok||d.resultado!=='novo') throw new Error('bipar'); });
   }
   pre.then(function(){
-    return rpApi('/motorista/endereco',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,cep:cep,num:num,comp:comp,rua:rua,bai:bai,cid:cid})});
+    return rpApi('/motorista/endereco',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,cep:cep,num:num,comp:comp,rua:rua,bai:bai,cid:cid,valor:(el('vz-val')&&(el('vz-val').value||'').trim()!==''?parseFloat(String(el('vz-val').value).replace(',','.')):undefined)})});
   }).then(function(d){
     fim();
     if(!d||!d.ok){ somErroBip(); vzCampos(true); vzStat((d&&d.mensagem)||'Não salvou. Confira e toque em Salvar','#B91C1C'); return; }
-    var ref=d.rua+', '+d.num, dd={cep:d.cep,num:d.num,comp:d.comp,rua:d.rua,bai:d.bai,cid:d.cid}, it=vzItem(cod);
-    if(it){ it.e=1; it.r=ref; it.novo=false; it.d=dd; } else BP.meus.push({cod:cod,t:Date.now(),cl:'',r:ref,e:1,novo:false,d:dd});
-    VZ.last={cod:cod,cep:d.cep,num:d.num,comp:d.comp,rua:d.rua,bai:d.bai,cid:d.cid,t:Date.now()};
+    var ref=d.rua+', '+d.num, dd={cep:d.cep,num:d.num,comp:d.comp,rua:d.rua,bai:d.bai,cid:d.cid}, it=vzItem(cod), vS=(d.valor>0?Number(d.valor):0);
+    if(it){ it.e=1; it.r=ref; it.novo=false; it.d=dd; if(d.valor!=null) it.v=vS; } else BP.meus.push({cod:cod,t:Date.now(),cl:'',r:ref,e:1,novo:false,d:dd,v:vS});
+    VZ.last={cod:cod,cep:d.cep,num:d.num,comp:d.comp,rua:d.rua,bai:d.bai,cid:d.cid,v:vS,t:Date.now()};
     somBipeOk(); BP.ult=null; bpAtualizar(); vzFalt(); vzStat('✔ Salvo: '+ref,'#16A34A');
     if(modo==='edit'){ setTimeout(vzFechar,700); return; }
     /* corrida: passa sozinho para o próximo sem endereço (ou para outra parada avulsa); o microfone continua ligado */
@@ -1712,7 +1775,7 @@ function rpCalcular(){
     rpMarcarLonge(sel);
     var pts=sel.filter(function(p){ return p.lat!=null && !p.inc && !p._longe; }), extra=sel.filter(function(p){ return !(p.lat!=null && !p.inc && !p._longe); });
     RP.semLoc=sel.length-pts.length; RP.semNomes=extra.map(function(p){ return p.cliente||p.cod; });
-    if(!pts.length){ rpErro('Nenhum endereço da rota foi localizado perto do ponto de coleta. Confira cidade e rua dos pacotes.'); return; }
+    if(!pts.length){ rpErro('Nenhum endereço da rota foi localizado no mapa. Confira cidade e rua dos pacotes.'); return; }
     return rpApi('/rota/calcular',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({base:base,pontos:pts.map(function(p){return {lat:p.lat,lng:p.lng};}),minPorParada:cfg.pm,modelo:cfg.modelo})}).then(function(c){
       if(!c.ok) throw new Error('falhou');
       RP.res=c; RP.pendReal=false; RP.pts=pts; RP.extra=extra; RP.opc=c[cfg.modelo]?cfg.modelo:(c.linear?'linear':'circular'); EST='rp_escolher'; renderInicio(); if(RP.semLoc>0 && !RP._bipou){ RP._bipou=true; rpApito(); }
@@ -1846,7 +1909,7 @@ function salvarEndereco(){
   if(lote){ p.raw=w; p.endereco=w.rua+(w.num?', '+w.num:'')+(w.comp?' ('+w.comp+')':''); p.bairro=w.bai; p.cid=w.cid; }
   else { p.rua=w.rua; p.num=w.num; p.comp=w.comp; p.bai=w.bai; p.cid=w.cid; p.cep=w.cep; }
   rpApi('/rota/localizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:[{cod:p.cod,rua:w.rua,num:w.num,comp:w.comp,bai:w.bai,cid:w.cid,cep:w.cep}]})}).then(function(d){
-    var g=d&&d.ok&&d.itens&&d.itens[0], ok=g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0&&(g.flags||[]).indexOf('longe_da_base')<0;
+    var g=d&&d.ok&&d.itens&&d.itens[0], ok=g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0;
     if(!ok){ fecharTudo(); aviso('Endereço salvo, mas não achei no mapa. Tente outro CEP/rua, remarque ou devolva.'); RP.ajustou=false; renderInicio(); return; }
     if(lote){ p.lat=g.lat; p.lng=g.lng; p.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); p.semLocal=false; p.motivo=''; RP.reord=true; fecharTudo(); aviso('Endereço localizado no mapa'); RP.ajustou=false; renderInicio(); }
     else { p.lat=g.lat; p.lng=g.lng; p.precisao=g.precisao; p.flags=g.flags||[]; p.inc=false; p._longe=false; fecharTudo();
@@ -2142,7 +2205,7 @@ function pintarConta(){
   mostra('cta-cap',P.cap>0?(P.cap+' pacotes'):''); mostra('cta-valor',P.valorPadrao>0?(moeda(P.valorPadrao)+' por pacote'):'');
   var card=el('cta-regiao')&&el('cta-regiao').parentNode&&el('cta-regiao').parentNode.parentNode;
   if(card){ var alg=P.regiao||veic.trim()||P.cap>0||P.valorPadrao>0; card.style.display=alg?'block':'none'; }
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; try{ var vv=JSON.parse(localStorage.getItem('dd_cfg')||'{}').vp; el('cfg-vp').value=vv?String(vv).replace('.',','):''; }catch(e){} el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo;
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo;
   rpPintarIdentidade();
 }
 function salvarSenha(){
