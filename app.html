@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-78-0610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-78B-0610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1123,10 +1123,11 @@ function ddGuardarM(tk,us){ var ant=DD_M_USER; if(tk&&ant&&us&&String(ant.id)!==
 function rpApi(caminho,opts){
   if(DD_M_TOKEN){
     opts=opts||{}; var h={}, h0=opts.headers||{}, k; for(k in h0) h[k]=h0[k]; h['Authorization']='Bearer '+DD_M_TOKEN; opts.headers=h;
-    return fetch(RP_API+caminho,opts).then(function(r){
+    var tm=null; try{ if(!opts.signal){ var ctl=new AbortController(); opts.signal=ctl.signal; tm=setTimeout(function(){ ctl.abort(); },25000); } }catch(e){}   /* (78b) sem resposta em 25s: desiste em vez de travar a tela */
+    return fetch(RP_API+caminho,opts).then(function(r){ if(tm) clearTimeout(tm);
       if(r.status===401){ ddGuardarM('',null); if(el('app')&&el('app').style.display!=='none'){ sair(); var m=el('lg-msg'); if(m) m.textContent='Sua sessão acabou. Entre de novo.'; } }
       return r.json();
-    });
+    },function(e){ if(tm) clearTimeout(tm); throw e; });
   }
   return fetch(RP_API+caminho+(caminho.indexOf('?')>=0?'&':'?')+'key='+encodeURIComponent(RP_KEY),opts).then(function(r){return r.json();});
 }
