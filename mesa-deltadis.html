@@ -61,7 +61,7 @@
 
   /* ══ layout em duas colunas: logos à esquerda, contagem à direita ══ */
   .mesa-layout{display:flex;align-items:flex-start;gap:20px;max-width:980px;width:100%;margin-top:18px;flex:1;min-height:0}
-  .col-esq{flex:0 0 336px}
+  .col-esq{flex:0 0 336px;max-height:100%;overflow-y:auto;padding-right:4px}
   .col-dir{flex:1;min-width:340px}
 
   .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-content:start;width:100%}
@@ -230,7 +230,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-10-0510</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-11-0510</p>
   </div>
 </div>
 
@@ -296,7 +296,6 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </g></svg>
       <span class="suf"> · Mesa</span>
     </div>
-    <div class="sub">Entrada de pacotes — 1º escolha o motorista, 2º a transportadora, e bipe. Pode trocar de transportadora a qualquer momento.</div>
   </div>
 
   <div class="mesa-layout">
@@ -447,7 +446,8 @@ var TRANSPORTADORAS=[
   {id:'lsl', n:'Ls Log',             ini:'LL', cor:'#9333EA', hoje:0, dominio:'lslog.com.br'},
   {id:'din', n:'Dinâmica',           ini:'DI', cor:'#B08A00', hoje:0, dominio:'dinamicagroup.com.br'},
   {id:'dia', n:'Diálogo Logística',  ini:'DL', cor:'#6D28D9', hoje:0, dominio:'dialogologistica.com.br'},
-  {id:'lgb', n:'Log GB',             ini:'LG', cor:'#16A34A', hoje:0, dominio:null}
+  {id:'lgb', n:'Log GB',             ini:'LG', cor:'#16A34A', hoje:0, dominio:null},
+  {id:'app', n:'Bipado no app',      ini:'📱', cor:'#6D28D9', hoje:0, dominio:null, somente:true}
 ];
 /* login: usa a mesma entrada do painel (se o painel já estava aberto neste navegador, entra direto) */
 var DD_TOKEN='', DD_USER=null;
@@ -477,7 +477,7 @@ function pintarCards(){
   var h='',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i];
     var ativaCls=(ATIVA && ATIVA.id===t.id)?' ativa':'';
-    h+='<div class="card'+ativaCls+'" onclick="abrirMesa(\''+t.id+'\')"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+' bipados hoje</div></div>';}
+    h+='<div class="card'+ativaCls+'" onclick="'+(t.somente?'abrirRomaneio()':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+' bipados hoje</div></div>';}
   el('mesa-cards').innerHTML=h;
 }
 
@@ -835,7 +835,7 @@ function sairLogin(msg){
 function carregarContagemDia(){
   api('/mesa/entradas').then(function(d){
     if(!d||!d.ok) return;
-    var i,j,c={}; for(i=0;i<d.itens.length;i++) c[d.itens[i].tr]=(c[d.itens[i].tr]||0)+1;
+    var i,j,c={}; for(i=0;i<d.itens.length;i++){var k=d.itens[i].tr==='Bipado no app'?'app':d.itens[i].tr; c[k]=(c[k]||0)+1;}
     for(j=0;j<TRANSPORTADORAS.length;j++) TRANSPORTADORAS[j].hoje=c[TRANSPORTADORAS[j].id]||0;
     pintarCards();
   }).catch(function(){});
