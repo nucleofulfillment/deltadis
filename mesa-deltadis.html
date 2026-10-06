@@ -166,6 +166,7 @@
   .mot-box input{width:100%;box-sizing:border-box;border:1px solid var(--border2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;background:var(--s2);color:var(--text)}
   .mot-box select{width:100%;border:1px solid var(--border2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;background:var(--s2);color:var(--text)}
   .cards.bloq{opacity:.4;pointer-events:none}
+  .cards.bloq .card.livre{opacity:1;pointer-events:auto}
 </style>
 </head>
 <div id="login">
@@ -230,7 +231,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-12-0510</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-13-0610</p>
   </div>
 </div>
 
@@ -433,6 +434,24 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </div>
 </div>
 
+<div class="rm-overlay" id="dv-overlay">
+  <div class="rm-modal">
+    <div class="rm-head">
+      <button class="rm-fechar" onclick="fecharDevolucoes()">✕</button>
+      <div class="rm-head-esq"><div><div class="rm-head-tit">↩ Retorno à base</div><div class="rm-transp-nome">Bipe os pacotes que o motorista está devolvendo</div></div></div>
+    </div>
+    <div class="rm-corpo">
+      <input id="dv-scan" autocomplete="off" placeholder="Bipe ou digite o código e tecle Enter" onkeydown="dvBipar(event)" style="width:100%;box-sizing:border-box;border:1px solid #E3D9F2;border-radius:10px;padding:11px 12px;font-family:inherit;font-size:14px;margin-bottom:10px">
+      <div class="rm-resumo" id="dv-resumo">Carregando…</div>
+      <div class="rm-lista" id="dv-lista"></div>
+    </div>
+    <div class="rm-rodape">
+      <button class="btn sec" onclick="fecharDevolucoes()">Fechar</button>
+      <button class="btn pri" onclick="dvConfirmar()">✔ Confirmar retorno e gerar romaneio</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* mesma lista de transportadoras do painel principal (mesmos códigos) */
 var DELTADIS_API='https://api.deltadis.com.br';
@@ -447,7 +466,8 @@ var TRANSPORTADORAS=[
   {id:'din', n:'Dinâmica',           ini:'DI', cor:'#B08A00', hoje:0, dominio:'dinamicagroup.com.br'},
   {id:'dia', n:'Diálogo Logística',  ini:'DL', cor:'#6D28D9', hoje:0, dominio:'dialogologistica.com.br'},
   {id:'lgb', n:'Log GB',             ini:'LG', cor:'#16A34A', hoje:0, dominio:null},
-  {id:'app', n:'Bipado no app',      ini:'📱', cor:'#6D28D9', hoje:0, dominio:null, somente:true}
+  {id:'app', n:'Bipado no app',      ini:'📱', cor:'#6D28D9', hoje:0, dominio:null, somente:true},
+  {id:'dev', n:'Devoluções',         ini:'↩', cor:'#B45309', hoje:0, dominio:null, somente:true, dev:true}
 ];
 /* login: usa a mesma entrada do painel (se o painel já estava aberto neste navegador, entra direto) */
 var DD_TOKEN='', DD_USER=null;
@@ -477,7 +497,7 @@ function pintarCards(){
   var h='',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i];
     var ativaCls=(ATIVA && ATIVA.id===t.id)?' ativa':'';
-    h+='<div class="card'+ativaCls+'" onclick="'+(t.somente?'abrirRomaneio(\'app\')':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+' bipados hoje</div></div>';}
+    h+='<div class="card'+ativaCls+(t.somente?' livre':'')+'" onclick="'+(t.dev?'abrirDevolucoes()':t.somente?'abrirRomaneio(\'app\')':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+(t.dev?' a conferir':' bipados hoje')+'</div></div>';}
   el('mesa-cards').innerHTML=h;
 }
 
@@ -730,6 +750,68 @@ function abrirRelatorioRomaneio(){
   var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups para gerar o romaneio.'); return; }
   w.document.open(); w.document.write(htmlRomaneio(RM.itens,RM.dia,logoRelatorioHtml())); w.document.close();
 }
+/* ══ (v13) RETORNO À BASE — o colaborador bipa o pacote devolvido, confirma, sai o romaneio de devolução; com 3 tentativas o pacote vai pro financeiro do motorista ══ */
+var DV={pend:[],sel:[]};
+function dvMotivo(m){ return m==='ausente'?'Ausente':(m==='nao_localizado'?'Não localizado':'—'); }
+function contarDevolucoes(){
+  api('/mesa/devolucoes').then(function(d){ if(!d||!d.ok) return; var n=d.itens.filter(function(x){ return !x.conferido; }).length, i;
+    for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].dev) TRANSPORTADORAS[i].hoje=n; pintarCards(); }).catch(function(){});
+}
+function abrirDevolucoes(){
+  DV.sel=[]; DV.pend=[]; el('dv-lista').innerHTML=''; el('dv-resumo').textContent='Carregando…'; el('dv-overlay').classList.add('on');
+  api('/mesa/devolucoes').then(function(d){
+    if(!d||!d.ok){ el('dv-resumo').textContent='Não consegui carregar.'; return; }
+    DV.pend=d.itens.filter(function(x){ return !x.conferido; }); dvPintar();
+    setTimeout(function(){ var f=el('dv-scan'); if(f) f.focus(); },60);
+  }).catch(function(){ el('dv-resumo').textContent='Sem conexão.'; });
+}
+function fecharDevolucoes(){ el('dv-overlay').classList.remove('on'); contarDevolucoes(); }
+function dvPintar(){
+  var h='', i, p, n=DV.pend.length;
+  el('dv-resumo').innerHTML=n+' pacote'+(n===1?'':'s')+' devolvido'+(n===1?'':'s')+' pelo motorista aguardando retorno · <b>'+DV.sel.length+' bipado'+(DV.sel.length===1?'':'s')+' agora</b>';
+  for(i=DV.sel.length-1;i>=0;i--){ p=DV.sel[i]; var tn=(p.tent||0)+1;
+    h+='<div class="rm-item"><div class="rm-item-esq"><div class="rm-seq">'+(i+1)+'</div><div><div class="rm-cliente">'+esc(p.cod)+'</div><div class="rm-end">'+esc(p.mtn||'')+' · '+tn+'ª tentativa · '+dvMotivo(p.mot)+'</div><div class="rm-end" style="font-weight:700;color:'+(tn>=3?'#047857':'#B45309')+'">'+(tn>=3?'💰 vai pro financeiro do motorista':'sem pagamento (menos de 3 tentativas)')+'</div></div></div><button class="btn sec" style="padding:6px 10px" onclick="dvRemover('+i+')">✕</button></div>'; }
+  el('dv-lista').innerHTML=h||'<div class="rm-vazio">Nenhum pacote bipado ainda.</div>';
+}
+function dvRemover(i){ DV.sel.splice(i,1); dvPintar(); }
+function dvBipar(ev){
+  if(ev && ev.key!=='Enter') return;
+  var f=el('dv-scan'), c=String(f.value||'').trim().toLowerCase(); f.value=''; if(!c) return;
+  var i, ja=false, ach=-1;
+  for(i=0;i<DV.sel.length;i++) if(String(DV.sel[i].cod).toLowerCase()===c) ja=true;
+  if(ja){ aviso('Este pacote já foi bipado.'); f.focus(); return; }
+  for(i=0;i<DV.pend.length;i++) if(String(DV.pend[i].cod).toLowerCase()===c){ ach=i; break; }
+  if(ach<0){ aviso('Este pacote não consta como devolvido pelo motorista.'); f.focus(); return; }
+  DV.sel.push(DV.pend[ach]); dvPintar(); f.focus();
+}
+function dvConfirmar(){
+  if(!DV.sel.length){ aviso('Bipe ao menos um pacote.'); return; }
+  var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups para gerar o romaneio.'); return; }
+  try{ w.document.write('<p style="font-family:Arial;padding:20px">Gerando o romaneio de devolução…</p>'); }catch(e){}
+  api('/mesa/devolucoes-conferir',{method:'POST',body:JSON.stringify({cods:DV.sel.map(function(x){ return x.cod; })})}).then(function(d){
+    if(!d||!d.ok||!d.itens||!d.itens.length){ try{ w.close(); }catch(e){} aviso('Não consegui confirmar. Tente de novo.'); return; }
+    w.document.open(); w.document.write(htmlDevolucao(d.itens,logoRelatorioHtml())); w.document.close();
+    aviso(d.itens.length+' pacote'+(d.itens.length===1?'':'s')+' conferido'+(d.itens.length===1?'':'s')); DV.sel=[]; fecharDevolucoes();
+  }).catch(function(){ try{ w.close(); }catch(e){} aviso('Sem conexão. Nada foi confirmado.'); });
+}
+function htmlDevolucao(itens,logo){
+  var g={}, ordem=[], i, ag=new Date(), emitido=dataBR(hojeLocal())+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2), corpo='', por=(itens[0]&&itens[0].por)||'';
+  for(i=0;i<itens.length;i++){ var k=itens[i].mtn||'Sem motorista'; if(!g[k]){ g[k]=[]; ordem.push(k); } g[k].push(itens[i]); }
+  ordem.forEach(function(mn,ix){
+    var lst=g[mn], pg=lst.filter(function(p){ return p.paga; }).length, t='<table><thead><tr><th style="width:28px">#</th><th>Código de rastreio</th><th>Tentativas</th><th>Motivo</th><th>Financeiro</th></tr></thead><tbody>';
+    lst.forEach(function(p,j){ t+='<tr><td>'+(j+1)+'</td><td><b>'+esc(p.cod)+'</b></td><td>'+p.tentativas+'ª</td><td>'+dvMotivo(p.mot)+'</td><td>'+(p.paga?'<b style="color:#047857">Paga ao motorista</b>':'Sem pagamento (menos de 3 tentativas)')+'</td></tr>'; });
+    t+='</tbody></table>';
+    corpo+='<section'+(ix>0?' class="nova"':'')+'><div class="cab">'+logo+'<div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
+      '<h1>Romaneio de devolução — '+esc(mn)+'</h1>'+
+      '<p style="color:#555">'+lst.length+' pacote'+(lst.length===1?'':'s')+' devolvido'+(lst.length===1?'':'s')+' à base &nbsp;|&nbsp; '+pg+' com pagamento ao motorista (3 tentativas) &nbsp;|&nbsp; Emitido em '+emitido+'</p>'+
+      '<h2>Pacotes devolvidos</h2>'+t+
+      '<div class="ass"><p>Declaro que os <b>'+lst.length+'</b> pacote'+(lst.length===1?'':'s')+' acima foram devolvidos à base e conferidos pelo código de rastreio.</p>'+
+      '<div class="lin"><div><span></span>Assinatura do motorista — '+esc(mn)+'</div><div><span></span>Responsável da base'+(por?': '+esc(por):'')+'</div></div></div></section>';
+  });
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Romaneio de devolução '+dataBR(hojeLocal())+'</title>'+
+    '<style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;padding:0;color:#111;font-size:9px}h1{font-size:15px;margin:6px 0 2px}h2{font-size:11px;margin:12px 0 2px;color:#4c1d95}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:8px;margin-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:4px}thead{display:table-header-group}tr{page-break-inside:avoid}td,th{border-bottom:1px solid #ddd;padding:2px 5px;font-size:9px;text-align:left;line-height:1.25;white-space:nowrap}th{background:#f3effb;border-bottom:1px solid #999}tbody tr:nth-child(even){background:#faf8fe}p{margin:3px 0;font-size:10px}section.nova{page-break-before:always}.ass{margin-top:22px;page-break-inside:avoid;border:1px solid #d9cff0;border-radius:6px;padding:10px 12px}.lin{display:flex;gap:30px;margin-top:38px}.lin div{flex:1;font-size:9px;color:#555}.lin span{display:block;border-top:1px solid #111;margin-bottom:3px}</style></head>'+
+    '<body>'+corpo+'<script>window.onload=function(){window.print();}</'+'script></body></html>';
+}
 function fecharRomaneio(){ el('rm-overlay').classList.remove('on'); }
 function imprimirRomaneio(){ window.print(); }
 
@@ -838,9 +920,10 @@ function carregarContagemDia(){
   api('/mesa/entradas').then(function(d){
     if(!d||!d.ok) return;
     var i,j,c={}; for(i=0;i<d.itens.length;i++){var k=d.itens[i].tr==='Bipado no app'?'app':d.itens[i].tr; c[k]=(c[k]||0)+1;}
-    for(j=0;j<TRANSPORTADORAS.length;j++) TRANSPORTADORAS[j].hoje=c[TRANSPORTADORAS[j].id]||0;
+    for(j=0;j<TRANSPORTADORAS.length;j++) if(!TRANSPORTADORAS[j].dev) TRANSPORTADORAS[j].hoje=c[TRANSPORTADORAS[j].id]||0;
     pintarCards();
   }).catch(function(){});
+  contarDevolucoes();
 }
 function entrar(){
   var em=(el('lg-email').value||'').trim(), se=el('lg-senha').value||'', m=el('lg-msg');
