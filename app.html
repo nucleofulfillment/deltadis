@@ -358,7 +358,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-48-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-49-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1393,8 +1393,10 @@ function vzParseRua(t){
     seg.livre.push(w);
   }
   var rua=seg.rua.join(' '); if(/\d{3,}/.test(rua)) rua='';
+  var bai=seg.bai.join(' '), cid=seg.cid.join(' '), livre=seg.livre;
+  if(bai&&!cid){ livre=seg.bai.concat(livre); bai=''; }   /* "bairro Nações Balneário Camboriú": sem a palavra cidade, o que vem depois do bairro é bairro + cidade — quem separa é a lista de municípios */
   var num=sn?'S/N':(vzJunta(seg.num)[0]||'');
-  return {cep:'',rua:rua,num:num,comp:vzComp(vzJunta(vzNum(seg.comp.join(' ')).split(/\s+/).filter(Boolean))),bai:seg.bai.join(' '),cid:seg.cid.join(' '),livre:seg.livre};
+  return {cep:'',rua:rua,num:num,comp:vzComp(vzJunta(vzNum(seg.comp.join(' ')).split(/\s+/).filter(Boolean))),bai:bai,cid:cid,livre:livre};
 }
 function vzLer(k){ try{ return localStorage.getItem('dd_vz_'+k)||(k==='u'?'SC':''); }catch(e){ return k==='u'?'SC':''; } }
 function vzGravar(k,v){ try{ localStorage.setItem('dd_vz_'+k,v); }catch(e){} }
@@ -1530,24 +1532,32 @@ function vzProcessar(t){
 function vzRuaFluxo(p){
   var dt=el('vz-det'); if(dt) dt.open=true;
   el('vz-rua0').value=p.rua; vzStat('Procurando a rua…','#6D28D9');
-  var tent=[], L=p.livre||[], k;
-  if(p.cid) tent.push({cid:p.cid,bai:p.bai||L.join(' ')});
-  else{
-    for(k=Math.min(3,L.length);k>=1;k--) tent.push({cid:L.slice(L.length-k).join(' '),bai:L.slice(0,L.length-k).join(' ')});
-    tent.push({cid:vzLer('c'),bai:(p.bai||L.join(' '))});
-  }
-  var i=0;
-  function prox(){
-    if(i>=tent.length) return Promise.resolve(0);
-    var tt=tent[i++]; if(!tt.cid) return prox();
-    el('vz-cid0').value=tt.cid;
-    return vzBuscarRua(tt.bai).then(function(n){
-      if(!n) return prox();
-      if(n===1) return vzEscolher(0).then(function(){ return 1; });
-      return 2;
-    });
-  }
-  return prox().then(function(r){
+  var L=p.livre||[], txtC=p.cid||L.join(' '), pre;
+  /* 1º: o servidor acha o município (e a UF) na lista oficial do IBGE; o que sobra é o bairro */
+  if(txtC) pre=rpApi('/motorista/cidade?t='+encodeURIComponent(txtC)+'&uf='+encodeURIComponent(vzLer('u'))+(p.cid?'&exato=1':'')).then(function(d){ return (d&&d.ok&&d.achou)?d:null; }).catch(function(){ return null; });
+  else pre=Promise.resolve(null);
+  return pre.then(function(c){
+    var tent=[], k;
+    if(c) tent.push({cid:c.cid,uf:c.uf,bai:p.bai||c.bai||''});
+    /* reserva (se a lista não achou): tenta cada pedaço final como cidade, e por último a cidade usada da última vez */
+    if(p.cid) tent.push({cid:p.cid,bai:p.bai});
+    else{
+      for(k=Math.min(3,L.length);k>=1;k--) tent.push({cid:L.slice(L.length-k).join(' '),bai:L.slice(0,L.length-k).join(' ')});
+      tent.push({cid:vzLer('c'),bai:(p.bai||L.join(' '))});
+    }
+    var i=0;
+    function prox(){
+      if(i>=tent.length) return Promise.resolve(0);
+      var tt=tent[i++]; if(!tt.cid) return prox();
+      el('vz-cid0').value=tt.cid; if(tt.uf&&el('vz-uf0')) el('vz-uf0').value=tt.uf;
+      return vzBuscarRua(tt.bai).then(function(n){
+        if(!n) return prox();
+        if(n===1) return vzEscolher(0).then(function(){ return 1; });
+        return 2;
+      });
+    }
+    return prox();
+  }).then(function(r){
     if(r===0){ vzCampos(true); vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }
     else if(r===2){ vzCampos(true); vzStat('Toque na rua certa','#B45309'); }
     return r;
