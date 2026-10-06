@@ -803,7 +803,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-5-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-6-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -3907,6 +3907,7 @@ function mostrarMpTip(ev,idx){
 }
 function esconderMpTip(){ el('mp-tip').classList.remove('on'); }
 
+function mtFiltra(st){ var b=el('mt-lst-box'); if(!b) return; if(b.style.display==='none') mtListagem(); var tr=b.querySelectorAll('tr[data-st]'), i, fa=(b.getAttribute('data-f')===st); b.setAttribute('data-f',fa?'':st); for(i=0;i<tr.length;i++) tr[i].style.display=(fa||tr[i].getAttribute('data-st')===st)?'':'none'; }
 function mtListagem(){ var b=el('mt-lst-box'), t=el('mt-lst-btn'); if(!b) return; var ab=b.style.display==='none'; b.style.display=ab?'block':'none'; if(t) t.innerHTML=t.innerHTML.replace(ab?'▾':'▴',ab?'▴':'▾'); }
 function abrirMotorista(id){
   var m=motorista(id); if(!m) return;
@@ -3944,17 +3945,18 @@ function abrirMotorista(id){
     var oc=[], oi, op, cont={}, ordemSt=['em rota','coletado','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','entregue'], tAb=0;
     for(oi=0;oi<PEDIDOS.length;oi++){ op=PEDIDOS[oi]; if(op.mt!==m.id || op.fechId) continue;
       cont[op.st]=(cont[op.st]||0)+1; tAb++;
-      if(op.st!=='entregue') oc.push(op); }
+      oc.push(op); }
+    oc.sort(function(x,y){ var kx=(x.dia||'')+' '+(x.hora||''), ky=(y.dia||'')+' '+(y.hora||''); return kx<ky?1:(kx>ky?-1:0); });
     var rotSt={'em rota':'Em rota',coletado:'Base','tentativa 1':'Tentativa 1','tentativa 2':'Tentativa 2','tentativa 3':'Tentativa 3',devolvido:'Devolvido',extraviado:'Extraviado',entregue:'Entregue'}, resHtml='', ks=ordemSt.slice(), kk;
     for(kk in cont){ if(ks.indexOf(kk)<0) ks.push(kk); }
-    ks.forEach(function(k){ if(cont[k]) resHtml+='<span style="display:inline-block;margin:2px 8px 2px 0;font-size:12px"><b>'+cont[k]+'</b> '+esc(rotSt[k]||k)+'</span>'; });
+    ks.forEach(function(k){ if(cont[k]) resHtml+='<span style="display:inline-block;margin:2px 8px 2px 0;font-size:12px;cursor:pointer" onclick="mtFiltra(\''+esc(k)+'\')" title="Filtrar a listagem"><b>'+cont[k]+'</b> '+esc(rotSt[k]||k)+'</span>'; });
     h+='<div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="btn sec" id="mt-lst-btn" onclick="mtListagem()">Listagem ('+oc.length+') ▾</button><div style="font-size:12.5px;color:var(--muted)">'+(tAb?resHtml:'Nenhum pacote em aberto.')+'</div></div>';
     h+='<div id="mt-lst-box" style="display:none">';
-    if(!oc.length) h+='<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhum pacote pendente.</div>';
+    if(!oc.length) h+='<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhum pacote.</div>';
     else {
       h+='<div class="tb-wrap" style="margin-top:6px;overflow:auto;max-height:260px"><table class="tb"><tbody>';
       for(oi=0;oi<oc.length&&oi<200;oi++){ op=oc[oi];
-        h+='<tr style="cursor:pointer" onclick="fecharTudo();abrirPedido(\''+esc(op.cod)+'\')"><td><b>'+esc(op.cod)+'</b>'+cpBtn(op.cod)+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(op.cliente||'')+'</span>'+((op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(op.obs)+'</span>':'')+'</td><td>'+badgeStatus(op.st)+'</td></tr>'; }
+        h+='<tr data-st="'+esc(op.st)+'" style="cursor:pointer" onclick="fecharTudo();abrirPedido(\''+esc(op.cod)+'\')"><td><b>'+esc(op.cod)+'</b>'+cpBtn(op.cod)+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(op.cliente||'')+(op.dia?' · '+esc(op.dia.split('-').reverse().slice(0,2).join('/'))+(op.hora?' '+esc(op.hora):''):'')+'</span>'+((op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(op.obs)+'</span>':'')+'</td><td>'+badgeStatus(op.st)+'</td></tr>'; }
       h+='</tbody></table></div>';
       if(oc.length>200) h+='<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Mostrando 200 de '+oc.length+'</div>';
     }
