@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-72-0610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-73-0610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1861,7 +1861,7 @@ function rpErro(t){ EST='sem_lote'; renderInicio(); aviso(t||'Sem conexão com o
 function rpBuscar(){
   /* modo foguete: 1ª chamada descobre o total; o resto vem em paralelo (4 por vez).
      O limite conta só as paradas que TÊM localização: se vierem sem endereço, busca mais até completar. */
-  var mx=rpCfg().max, feitos=rpFeitos().cods, N=12, blocos={}, total=0, prox=N;
+  var mx=rpCfg().max, feitos=(RP.bipMode?[]:rpFeitos().cods), N=12, blocos={}, total=0, prox=N;
   function pega(ini){ return rpApi('/rota/pontos?mt='+encodeURIComponent(RP.mt)+'&ini='+ini+'&n='+N+'&todos=1'+(RP.bipMode?'&bip=1':'')).then(function(d){ if(!d||!d.ok) throw new Error('falhou'); d.itens.forEach(function(q){ if(!q.cliente && /^VOZ[0-9A-Z]{6,}$/.test(q.cod)) q.cliente='Sem rastreio'; }); blocos[ini]=d.itens; total=d.total; return d; }); }
   function ordenados(){ var k=Object.keys(blocos).map(Number).sort(function(a,b){return a-b;}), t=[], i; for(i=0;i<k.length;i++) t=t.concat(blocos[k[i]]); return t.filter(function(p){ return feitos.indexOf(p.cod)<0; }); }
   function boas(){ return ordenados().filter(function(p){ return p.lat!=null && !p.inc; }).length; }
