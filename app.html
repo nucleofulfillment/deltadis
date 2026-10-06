@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-56-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-57-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -394,6 +394,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <!-- FINANCEIRO -->
     <section class="pagina" id="pg-financeiro">
       <h2 class="titulo-pg" style="display:flex;justify-content:space-between;align-items:center">Financeiro<span class="vertodos" onclick="abrirExtrato()">▤ Extrato</span></h2>
+      <div id="fin-pontos" style="display:none;gap:6px;overflow-x:auto;margin:0 0 10px;padding-bottom:2px"></div>
       <div class="kpis3" id="fin-resumo"></div>
       <div id="fin-lista"></div>
     </section>
@@ -2124,24 +2125,51 @@ function renderFinalizado(){
    FINANCEIRO — lote a lote, com km, valor gerado e situação de pagamento
    ══════════════════════════════════════════════════════════ */
 function badgePagamento(p){ return p==='pago' ? '<span class="badge b-ok">Pago</span>' : '<span class="badge b-wt">A pagar</span>'; }
+var FIN_PONTO='';   /* '' = todos os pontos de coleta */
+var PONTO_PAINEL='Painel DELTADIS';
+function finPontoDe(x){ return x.ponto||PONTO_PAINEL; }
+function finPontos(){ var u={}, o=[], i; for(i=0;i<ENTREGAS.length;i++){ var n=finPontoDe(ENTREGAS[i]); if(!u[n]){ u[n]=1; o.push(n); } } return o; }
+function finEscolher(n){ FIN_PONTO=n||''; pintarFinanceiro(); }
 function pintarFinanceiro(){
-  var totalPago=0,totalAReceber=0,totalKm=0,i;
-  for(i=0;i<LOTES.length;i++){var l=LOTES[i];
-    totalPago+=(l.valorPago||0); totalAReceber+=Math.max(0,(l.valor||0)-(l.valorPago||0));
-    totalKm+=(l.km||0);}
-  el('fin-resumo').innerHTML=
-    '<div class="kpi"><div class="lb">Recebido</div><div class="vl">'+moeda(totalPago)+'</div></div>'+
-    '<div class="kpi"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(totalAReceber)+'</div></div>'+
-    '<div class="kpi"><div class="lb">KM no total</div><div class="vl">'+totalKm.toFixed(1)+'</div></div>';
-  var h='';
-  for(i=0;i<LOTES.length;i++){var l2=LOTES[i], valor=l2.valor||0;
+  var pts=finPontos(), cp=el('fin-pontos');
+  if(FIN_PONTO&&pts.indexOf(FIN_PONTO)<0) FIN_PONTO='';
+  if(cp){
+    if(pts.length>1){
+      var ch='<button class="btn '+(FIN_PONTO===''?'pri':'sec')+'" style="padding:7px 14px;min-width:0;white-space:nowrap;flex:none" onclick="finEscolher(\'\')">Todos</button>', k;
+      for(k=0;k<pts.length;k++) ch+='<button class="btn '+(FIN_PONTO===pts[k]?'pri':'sec')+'" style="padding:7px 14px;min-width:0;white-space:nowrap;flex:none" data-p="'+esc(pts[k])+'" onclick="finEscolher(this.getAttribute(\'data-p\'))">📍 '+esc(pts[k])+'</button>';
+      cp.innerHTML=ch; cp.style.display='flex';
+    } else { cp.style.display='none'; cp.innerHTML=''; FIN_PONTO=''; }
+  }
+  var totalPago=0,totalAReceber=0,totalKm=0,i, h='';
+  if(!FIN_PONTO){
+    for(i=0;i<LOTES.length;i++){var l=LOTES[i];
+      totalPago+=(l.valorPago||0); totalAReceber+=Math.max(0,(l.valor||0)-(l.valorPago||0));
+      totalKm+=(l.km||0);}
+    el('fin-resumo').innerHTML=
+      '<div class="kpi"><div class="lb">Recebido</div><div class="vl">'+moeda(totalPago)+'</div></div>'+
+      '<div class="kpi"><div class="lb cg">A receber</div><div class="vl vg">'+moeda(totalAReceber)+'</div></div>'+
+      '<div class="kpi"><div class="lb">KM no total</div><div class="vl">'+totalKm.toFixed(1)+'</div></div>';
+  } else {
+    /* visão de UM ponto de coleta: entregas e valor gerado só daquele ponto (pagamento e km são do dia inteiro, por isso ficam na visão "Todos") */
+    var mine=ENTREGAS.filter(function(x){ return finPontoDe(x)===FIN_PONTO; }), tv=0;
+    mine.forEach(function(x){ tv+=Number(x.valor)||0; });
+    el('fin-resumo').innerHTML=
+      '<div class="kpi"><div class="lb">Entregas</div><div class="vl">'+mine.length+'</div></div>'+
+      '<div class="kpi"><div class="lb cg">Valor gerado</div><div class="vl vg">'+moeda(tv)+'</div></div>'+
+      '<div class="kpi"><div class="lb">Média por entrega</div><div class="vl">'+moeda(mine.length?tv/mine.length:0)+'</div></div>';
+  }
+  for(i=0;i<LOTES.length;i++){var l2=LOTES[i], valor=l2.valor||0, ent=l2.entregues, ptsDia='';
+    if(FIN_PONTO){
+      var dd=ENTREGAS.filter(function(x){ return x.data===l2.data&&finPontoDe(x)===FIN_PONTO; });
+      if(!dd.length) continue;
+      ent=dd.length; valor=0; dd.forEach(function(x){ valor+=Number(x.valor)||0; });
+    } else if(l2.pontos&&l2.pontos.length){ ptsDia='<div class="lote-transp" style="margin-top:2px">📍 '+esc(l2.pontos.map(function(p){ return p.nome; }).join(' · '))+'</div>'; }
     h+='<div class="lote-card" onclick="abrirLote('+l2.id+')">'+
-       '<div class="lote-topo"><b>Lote de '+dataBR(l2.data)+'</b>'+badgePagamento(l2.pagamento)+'</div>'+
-       '<div class="lote-transp">'+esc(l2.transportadoras.join(' · '))+'</div>'+
-       ((l2.pontos&&l2.pontos.length)?'<div class="lote-transp" style="margin-top:2px">📍 '+esc(l2.pontos.map(function(p){ return p.nome; }).join(' · '))+'</div>':'')+
-       '<div class="lote-linha"><span>'+l2.totalPacotes+' pacotes</span><span class="ok">'+l2.entregues+' entregues</span><span class="warn">'+l2.devolvidos+' devolvidos</span><span class="danger">'+l2.naoLocalizados+' não localiz.</span></div>'+
-       '<div class="lote-rodape"><span>'+(l2.km>0?(l2.km+' km · ~'+l2.tempoMin+' min'):'km não registrado')+'</span><b>'+moeda(valor)+'</b></div>'+
-       '<div class="lote-fechamento">'+(l2.fechamento==='fechado'?'✔ Já entrou no fechamento':'⏳ Ainda não entrou no fechamento')+'</div>'+
+       '<div class="lote-topo"><b>Lote de '+dataBR(l2.data)+'</b>'+(FIN_PONTO?'':badgePagamento(l2.pagamento))+'</div>'+
+       (FIN_PONTO?'<div class="lote-transp">📍 '+esc(FIN_PONTO)+'</div>':'<div class="lote-transp">'+esc(l2.transportadoras.join(' · '))+'</div>'+ptsDia)+
+       '<div class="lote-linha">'+(FIN_PONTO?'':'<span>'+l2.totalPacotes+' pacotes</span>')+'<span class="ok">'+ent+' entregues</span>'+(FIN_PONTO?'':'<span class="warn">'+l2.devolvidos+' devolvidos</span><span class="danger">'+l2.naoLocalizados+' não localiz.</span>')+'</div>'+
+       '<div class="lote-rodape"><span>'+(FIN_PONTO?'':(l2.km>0?(l2.km+' km · ~'+l2.tempoMin+' min'):'km não registrado'))+'</span><b>'+moeda(valor)+'</b></div>'+
+       (FIN_PONTO?'':'<div class="lote-fechamento">'+(l2.fechamento==='fechado'?'✔ Já entrou no fechamento':'⏳ Ainda não entrou no fechamento')+'</div>')+
      '</div>';}
   el('fin-lista').innerHTML=h||'<div class="empty">'+(avisoResumo()||'Nenhum lote ainda')+'</div>';
 }
@@ -2164,7 +2192,7 @@ function abrirLote(id){
   h+='<div class="sh-row"><span class="k">Pagamento</span><span class="v">'+badgePagamento(l.pagamento)+'</span></div>';
   h+='<h4 style="margin:14px 0 4px">Transportadoras deste lote</h4>';
   for(i=0;i<l.transportadoras.length;i++) h+='<div class="sh-row"><span class="k">'+esc(l.transportadoras[i])+'</span><span class="v">'+(l.transportadoras.length===1?l.totalPacotes+' pacotes':'')+'</span></div>';
-  var pd=ENTREGAS.filter(function(x){ return x.data===l.data; });
+  var pd=ENTREGAS.filter(function(x){ return x.data===l.data&&(!FIN_PONTO||finPontoDe(x)===FIN_PONTO); });
   h+='<h4 style="margin:14px 0 4px">Pedidos deste lote ('+pd.length+')</h4>';
   if(!pd.length) h+='<div class="empty" style="padding:10px 0">Nenhum pedido entregue neste dia.</div>';
   for(i=0;i<pd.length;i++){ var x=pd[i]; h+='<div class="sh-row" style="align-items:flex-start"><span class="k" style="flex:1;min-width:0"><b style="color:var(--roxo-esc)">'+esc(x.cliente||x.cod)+'</b><br><span style="font-size:11.5px">'+esc(x.endereco||'')+(x.hora?' · '+esc(x.hora):'')+((x.ponto&&l.pontos&&l.pontos.length>1)?' · 📍 '+esc(x.ponto):'')+'</span></span><span class="v">'+(x.valor!=null?moeda(x.valor):'')+'</span></div>'; }
