@@ -343,7 +343,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-43-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-44-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -737,8 +737,8 @@ function metaHoje(){
     var painel=0; for(i=0;i<LOTE_ATUAL.length;i++){ var st=LOTE_ATUAL[i].status;
       if(st==='entregue') feitos++; else if(st==='pendente'||st==null) falta++;
       if(LOTE_ATUAL[i].origem==='painel') painel++; }
-    falta+=Math.max(0,(RP.total||0)-painel);   /* pacotes do motorista que ficaram fora da rota (limite de paradas) */
-  } else falta=RP.total||0;
+    if(!BIP_ROTA) falta+=Math.max(0,(RP.total||0)-painel);   /* pacotes do motorista que ficaram fora da rota (limite de paradas) */
+  } else falta=BIP_ROTA?(BP.meus?BP.meus.length:0):(RP.total||0);
   return {feitos:feitos, meta:Math.max(feitos+falta,feitos)};
 }
 
@@ -1113,6 +1113,7 @@ function rpAtualizar(){
   rpApi('/rota/motoristas').then(function(d){
     if(!d||!d.ok) return;
     RP.on=true; RP.lista=d.motoristas||[]; RP.total=0;
+    if(BIP_ROTA && !BP.ok && !BP.carregando) bpCarregar();
     if(RP.mt){ var i; for(i=0;i<RP.lista.length;i++) if(String(RP.lista[i].mt)===String(RP.mt)){ RP.mtn=RP.lista[i].mtn||''; RP.total=Math.max(0,RP.lista[i].total-rpFeitos().cods.length); } }
     rpPintarIdentidade();
     if(EST==='sem_lote' && PAG==='inicio') renderInicio();
@@ -1169,7 +1170,7 @@ function bpCarregar(){
     BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e};
       if(m.end_rua){ it.e=1; it.novo=false; it.r=m.end_rua+(m.end_num?', '+m.end_num:''); it.d={cep:m.end_cep||'',num:m.end_num||'',comp:m.end_comp||'',rua:m.end_rua,bai:m.end_bai||'',cid:m.end_cid||''}; }
       return it; });
-    BP.ok=true; bpAtualizar();
+    BP.ok=true; bpAtualizar(); if(EST==='sem_lote') renderInicio();
   }).catch(function(){ BP.carregando=false; BP.ult={t:'err',m:'Sem conexão. Tente de novo.'}; bpAtualizar(); });
 }
 function bpItemHtml(m){
