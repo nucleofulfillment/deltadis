@@ -803,7 +803,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-1-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-2-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -2383,7 +2383,7 @@ function msgPintarRodape(){
   if(!MSG.fone){ av.style.display='block'; av.textContent='Este motorista não tem telefone cadastrado. Cadastre em Motoristas para conversar.'; tx.disabled=true; arq.disabled=true; env.disabled=true; return; }
   tx.disabled=false; env.disabled=false;
   if(MSG.janela){ av.style.display='none'; arq.disabled=false; tx.placeholder='Digite uma mensagem'; }
-  else{ av.style.display='block'; av.innerHTML='⏳ O motorista não escreve há mais de 24h. O WhatsApp só deixa enviar um <b>aviso</b> (modelo aprovado) agora. O que você digitar sai como: “Olá [nome], aqui é da DELTADIS. Aviso: …”. Anexos só depois que ele responder.'; arq.disabled=true; tx.placeholder='Escreva o aviso'; }
+  else{ av.style.display='block'; av.innerHTML='⏳ O motorista não escreve há mais de 24h. Para falar com ele, mande a chamada <b>“Olá [nome], tudo bem? Aqui é da DELTADIS.”</b> Quando ele responder, a conversa fica livre por 24h. <button class="btn pri" style="padding:7px 14px;margin-left:8px;font-size:12.5px" onclick="msgChamar()">👋 Chamar motorista</button>'; arq.disabled=true; tx.disabled=true; env.disabled=true; tx.placeholder='Chame o motorista para liberar a conversa'; }
 }
 function msgAuto(t){ t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,120)+'px'; }
 function msgTecla(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); msgEnviar(); } }
@@ -2425,14 +2425,22 @@ function msgProcessar(f){
   r2.onload=function(){ MSG.anexo={nome:f.name||'arquivo',mime:f.type||'application/octet-stream',b64:String(r2.result).split(',')[1],tam:f.size,prev:''}; msgMostrarAnexo(); };
   r2.readAsDataURL(f);
 }
-function msgEnviar(){
+function msgChamar(){
   if(MSG.enviando||!MSG.mt) return;
+  MSG.enviando=true;
+  fetch(DELTADIS_API+'/mesa/whats-chamar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mt:MSG.mt})}).then(msgLerJson).then(function(d){
+    MSG.enviando=false;
+    if(!d||!d.ok){ aviso(esc((d&&d.mensagem)||'Não foi possível enviar.')); return; }
+    aviso('Chamada enviada! Quando ele responder, a conversa libera.'); msgCarregar(false); msgBuscarConv();
+  }).catch(function(){ MSG.enviando=false; aviso('Sem conexão com o servidor.'); });
+}
+function msgEnviar(){
+  if(MSG.enviando||!MSG.mt||!MSG.janela) return;
   var tx=el('msg-tx'), texto=tx.value.trim(), bt=el('msg-bt-env');
   if(!texto && !MSG.anexo) return;
   MSG.enviando=true; bt.disabled=true;
-  var url, corpo;
-  if(MSG.janela){ url='/mesa/whats-responder'; corpo={mt:MSG.mt,texto:texto}; if(MSG.anexo) corpo.arquivo={nome:MSG.anexo.nome,mime:MSG.anexo.mime,b64:MSG.anexo.b64}; }
-  else{ url='/mesa/whats-avisar'; corpo={tipo:'aviso',texto:texto,mts:[MSG.mt]}; }
+  var url='/mesa/whats-responder', corpo={mt:MSG.mt,texto:texto};
+  if(MSG.anexo) corpo.arquivo={nome:MSG.anexo.nome,mime:MSG.anexo.mime,b64:MSG.anexo.b64};
   fetch(DELTADIS_API+url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo)}).then(msgLerJson).then(function(d){
     MSG.enviando=false; bt.disabled=false;
     var falha=null;
