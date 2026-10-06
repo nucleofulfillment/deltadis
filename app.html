@@ -364,7 +364,14 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-78B-0610</p>
+    <button class="btn sec wide" id="lg-prim-btn" onclick="primeiroAcesso()">Primeiro acesso / esqueci o PIN</button>
+    <div id="lg-prim" style="display:none;margin-top:10px">
+      <p class="sub">Enviamos um código de 6 dígitos no seu WhatsApp. Digite o código e escolha o seu PIN.</p>
+      <div class="field"><label>Código do WhatsApp</label><input class="inp" id="lg-cod" inputmode="numeric" maxlength="6" placeholder="000000"></div>
+      <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
+      <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
+    </div>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-79-0610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -661,6 +668,34 @@ function entrar(){
       if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível entrar. Tente de novo.'; return; }
       ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; abrirApp();
     }).catch(function(){ b.disabled=false; b.textContent='Entrar'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+}
+function primeiroAcesso(){
+  var tel=el('lg-tel').value.trim(), m=el('lg-msg'), b=el('lg-prim-btn');
+  m.style.color='#c0392b'; m.textContent='';
+  if(!tel){ m.textContent='Digite o seu telefone acima e toque de novo.'; return; }
+  b.disabled=true; b.textContent='Enviando código...';
+  fetch(RP_API+'/auth/motorista/codigo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefone:tel})})
+    .then(function(r){return r.json().catch(function(){return {ok:false};});})
+    .then(function(d){
+      b.disabled=false; b.textContent='Primeiro acesso / esqueci o PIN';
+      if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível enviar o código.'; return; }
+      el('lg-prim').style.display='block'; m.style.color='#16A34A'; m.textContent='Código enviado! Veja o seu WhatsApp.';
+      try{ el('lg-cod').focus(); }catch(e){}
+    }).catch(function(){ b.disabled=false; b.textContent='Primeiro acesso / esqueci o PIN'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+}
+function definirPin(){
+  var tel=el('lg-tel').value.trim(), cod=el('lg-cod').value.trim(), pin=el('lg-novopin').value.trim(), m=el('lg-msg'), b=el('lg-pin-btn');
+  m.style.color='#c0392b'; m.textContent='';
+  if(!/^\d{6}$/.test(cod)){ m.textContent='Digite o código de 6 números.'; return; }
+  if(!/^\d{4,6}$/.test(pin)){ m.textContent='O PIN deve ter de 4 a 6 números.'; return; }
+  b.disabled=true; b.textContent='Salvando...';
+  fetch(RP_API+'/auth/motorista/definir-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefone:tel,codigo:cod,pin:pin})})
+    .then(function(r){return r.json().catch(function(){return {ok:false};});})
+    .then(function(d){
+      b.disabled=false; b.textContent='Salvar PIN e entrar';
+      if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar o PIN.'; return; }
+      ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; el('lg-cod').value=''; el('lg-novopin').value=''; el('lg-prim').style.display='none'; abrirApp();
+    }).catch(function(){ b.disabled=false; b.textContent='Salvar PIN e entrar'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
 function sair(){
   fecharTudo();
