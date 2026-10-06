@@ -560,9 +560,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="lg-form">
       <h2>Entrar</h2>
       <p class="sub">Use o e-mail cadastrado no ponto de distribuição.</p>
-      <div class="field"><label>E-mail</label><input class="inp" id="lg-email" type="email" autocomplete="username" placeholder="voce@ponto.com.br"></div>
-      <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+      <div class="field"><label>E-mail</label><input class="inp" id="lg-email" type="email" autocomplete="username" placeholder="voce@ponto.com.br" onkeydown="if(event.key==='Enter')entrar()"></div>
+      <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()"></div>
       <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
+      <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
       <p class="bld">DELTADIS-BASE-118-0510</p>
     </div>
@@ -803,7 +804,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-7-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-8-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -2545,7 +2546,43 @@ function abrirApp(){
   var av=document.querySelector('.tb-av'); if(av&&DD_USER&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
   try{ montarTudo(); carregarPonto(); }finally{ srvCarregar(); }
 }
+/* ── (120) entrar com CÓDIGO: 6 dígitos no WhatsApp e no e-mail do cadastro (sem senha) ── */
+var LG={modo:'senha',etapa:1};
+function lgPintar(){
+  var cod=LG.modo==='codigo', e=el('lg-email'), s=el('lg-senha'), lbE=e.parentNode.querySelector('label'), lbS=s.parentNode.querySelector('label');
+  lbE.textContent=cod?'E-mail ou celular':'E-mail'; e.type=cod?'text':'email';
+  s.parentNode.style.display=(cod&&LG.etapa===1)?'none':'';
+  if(cod&&LG.etapa===2){ lbS.textContent='Código de 6 dígitos'; s.type='text'; s.setAttribute('inputmode','numeric'); s.maxLength=6; s.placeholder='000000'; s.autocomplete='one-time-code'; }
+  else { lbS.textContent='Senha'; s.type='password'; s.removeAttribute('inputmode'); s.removeAttribute('maxlength'); s.placeholder='••••••••'; s.autocomplete='current-password'; }
+  el('lg-btn').textContent=!cod?'Entrar':(LG.etapa===1?'Enviar código':'Entrar');
+  el('lg-alt').textContent=cod?'Voltar para e-mail e senha':'Entrar com código (WhatsApp ou e-mail)';
+}
+function lgAlternar(){ LG.modo=(LG.modo==='senha')?'codigo':'senha'; LG.etapa=1; el('lg-senha').value=''; el('lg-msg').textContent=''; lgPintar(); }
+function entrarCodigo(){
+  var ct=el('lg-email').value.trim(), m=el('lg-msg'), b=el('lg-btn'); m.style.color='#c0392b'; m.textContent='';
+  if(!ct){ m.textContent='Digite o e-mail ou o celular cadastrado.'; return; }
+  b.disabled=true;
+  if(LG.etapa===1){
+    fetch(DELTADIS_API+'/auth/codigo/enviar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contato:ct})})
+      .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+        b.disabled=false;
+        if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível enviar o código.'; return; }
+        LG.etapa=2; lgPintar(); m.style.color='#2e7d32'; m.textContent='Enviamos um código para o seu WhatsApp e e-mail. Digite abaixo (vale 10 minutos).'; el('lg-senha').focus();
+      }).catch(function(){ b.disabled=false; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+    return;
+  }
+  var cd=el('lg-senha').value.replace(/\D/g,'');
+  if(cd.length!==6){ b.disabled=false; m.textContent='O código tem 6 números.'; return; }
+  fetch(DELTADIS_API+'/auth/codigo/confirmar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contato:ct,codigo:cd})})
+    .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+      b.disabled=false;
+      if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Código inválido. Tente de novo.'; return; }
+      if(d.usuario.perfil==='master'){ m.textContent='Este acesso é do administrador. Use a página admin.'; return; }
+      LG.modo='senha'; LG.etapa=1; lgPintar(); ddGuardar(d.token,d.usuario); el('lg-senha').value=''; abrirApp();
+    }).catch(function(){ b.disabled=false; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+}
 function entrar(){
+  if(LG.modo==='codigo') return entrarCodigo();
   var em=el('lg-email').value.trim(), se=el('lg-senha').value, m=el('lg-msg'), b=el('lg-btn');
   m.textContent='';
   if(!em||!se){ m.textContent='Digite o e-mail e a senha.'; return; }

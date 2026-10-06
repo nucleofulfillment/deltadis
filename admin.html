@@ -267,8 +267,9 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <label for="lg-senha">Senha</label>
       <input id="lg-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()">
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
+      <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-11-0610</div>
+      <div class="bld">DELTADIS-ADMIN-12-0610</div>
     </div>
   </div>
 </div>
@@ -315,7 +316,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-11-0610</div>
+    <div class="bld">DELTADIS-ADMIN-12-0610</div>
   </main>
 </div>
 
@@ -349,7 +350,41 @@ function chamar(metodo,caminho,corpo){
 function ddMostrarLogin(){document.documentElement.classList.remove('dd-ret');}
 function mostrarLogin(msg){ddMostrarLogin();el('app').style.display='none';el('login').style.display='grid';el('lg-erro').textContent=msg||'';el('lg-btn').disabled=false;el('lg-btn').textContent='Entrar';}
 function sair(vencida){TOKEN='';USUARIO=null;lsDel(TK_KEY);lsDel(US_KEY);mostrarLogin(vencida===true?'Sessão expirada. Entre de novo.':'');}
+/* ── entrar com CÓDIGO (WhatsApp e e-mail do cadastro) ── */
+var LG={modo:'senha',etapa:1};
+function lgPintar(){
+  var cod=LG.modo==='codigo', e=el('lg-email'), s=el('lg-senha'), lbE=document.querySelector('label[for="lg-email"]'), lbS=document.querySelector('label[for="lg-senha"]');
+  lbE.textContent=cod?'E-mail ou celular':'E-mail'; e.type=cod?'text':'email';
+  var oculto=(cod&&LG.etapa===1); s.style.display=oculto?'none':''; lbS.style.display=oculto?'none':'';
+  if(cod&&LG.etapa===2){ lbS.textContent='Código de 6 dígitos'; s.type='text'; s.setAttribute('inputmode','numeric'); s.maxLength=6; s.placeholder='000000'; s.autocomplete='one-time-code'; }
+  else { lbS.textContent='Senha'; s.type='password'; s.removeAttribute('inputmode'); s.removeAttribute('maxlength'); s.placeholder='••••••••'; s.autocomplete='current-password'; }
+  el('lg-btn').textContent=!cod?'Entrar':(LG.etapa===1?'Enviar código':'Entrar');
+  el('lg-alt').textContent=cod?'Voltar para e-mail e senha':'Entrar com código (WhatsApp ou e-mail)';
+}
+function lgAlternar(){LG.modo=(LG.modo==='senha')?'codigo':'senha';LG.etapa=1;el('lg-senha').value='';el('lg-erro').textContent='';lgPintar();}
+function entrarCodigo(){
+  var ct=el('lg-email').value.trim(); el('lg-erro').style.color='';el('lg-erro').textContent='';
+  if(!ct){el('lg-erro').textContent='Digite o e-mail ou o celular cadastrado.';return;}
+  el('lg-btn').disabled=true;
+  if(LG.etapa===1){
+    chamar('POST','/auth/codigo/enviar',{contato:ct}).then(function(d){
+      el('lg-btn').disabled=false;
+      if(!d.ok){el('lg-erro').textContent=d.mensagem||'Não foi possível enviar o código.';return;}
+      LG.etapa=2;lgPintar();el('lg-erro').style.color='#15803D';el('lg-erro').textContent='Enviamos um código para o WhatsApp e o e-mail. Digite acima (vale 10 minutos).';el('lg-senha').focus();
+    }).catch(function(){el('lg-btn').disabled=false;el('lg-erro').textContent='Sem conexão com o servidor.';});
+    return;
+  }
+  var cd=el('lg-senha').value.replace(/\D/g,'');
+  if(cd.length!==6){el('lg-btn').disabled=false;el('lg-erro').textContent='O código tem 6 números.';return;}
+  chamar('POST','/auth/codigo/confirmar',{contato:ct,codigo:cd}).then(function(d){
+    el('lg-btn').disabled=false;
+    if(!d.ok){el('lg-erro').textContent=d.mensagem||'Código inválido.';return;}
+    if(!d.usuario||d.usuario.perfil!=='master'){el('lg-erro').textContent='Esta área é só do administrador do DeltaDis.';return;}
+    LG.modo='senha';LG.etapa=1;lgPintar();TOKEN=d.token;USUARIO=d.usuario;lsSet(TK_KEY,TOKEN);lsSet(US_KEY,JSON.stringify(USUARIO));el('lg-senha').value='';iniciar();
+  }).catch(function(){el('lg-btn').disabled=false;el('lg-erro').textContent='Sem conexão com o servidor.';});
+}
 function entrar(){
+  if(LG.modo==='codigo') return entrarCodigo();
   var e=el('lg-email').value.trim(), s=el('lg-senha').value;
   if(!e||!s){el('lg-erro').textContent='Preencha e-mail e senha.';return;}
   el('lg-btn').disabled=true;el('lg-btn').textContent='Entrando...';el('lg-erro').textContent='';
