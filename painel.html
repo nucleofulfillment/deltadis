@@ -187,7 +187,7 @@ a{color:inherit}
 .msg-b video{display:block;max-width:300px;width:100%;border-radius:6px}
 .msg-b .doc{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.05);border-radius:8px;padding:10px 12px;cursor:pointer;margin-bottom:3px;font-size:13.5px;font-weight:600}
 .msg-clr{clear:both}
-.msg-aviso{display:none;background:#FFF4CC;color:#7A5B00;font-size:12.8px;padding:8px 16px;border-top:1px solid #F1E2A3;line-height:1.45}
+.msg-aviso{display:none;background:#F0F2F5;color:#54656F;font-size:13px;padding:10px 16px;border-top:1px solid #E9EDEF;line-height:1.45}
 .msg-anexo{display:none;align-items:center;gap:10px;background:#F0F2F5;padding:8px 16px;border-top:1px solid #E9EDEF;font-size:13px;color:#41525D}
 .msg-anexo img{height:46px;border-radius:6px}
 .msg-anexo span.x{margin-left:auto;cursor:pointer;font-size:16px;color:#667781}
@@ -803,7 +803,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-2-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-5-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1508,6 +1508,29 @@ function bipAbsorver(){
   }).catch(function(){ BIP_ABS.rodando=false; });
 }
 setInterval(bipAbsorver,20000);
+/* ── (118) STATUS vindo do app: entregue / ausente / devolvido feito pelo motorista atualiza o pacote no painel ── */
+var BIP_ST={rodando:false};
+function bipStatusSync(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || BIP_ST.rodando || document.hidden) return;
+  BIP_ST.rodando=true;
+  fetch(DELTADIS_API+'/mesa/bipagens-status',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    BIP_ST.rodando=false;
+    if(!d || !d.ok || !d.itens || !d.itens.length) return;
+    var idx={}, i, b, p, ns, mud=0, tn;
+    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
+    for(i=0;i<d.itens.length;i++){
+      b=d.itens[i]; p=idx[b.cod]; if(!p || p.fechId) continue;
+      tn=(parseInt(b.tent,10)||0)+1;
+      if(b.st==='entregue') ns='entregue';
+      else if(b.st==='ausente' || b.st==='nao_localizado') ns='tentativa '+Math.min(3,tn);
+      else if(b.st==='devolvido' || b.st==='devolvido_ok') ns=(tn>=3?'devolvido':'tentativa '+tn);
+      else continue;
+      if(p.st!==ns){ p.st=ns; if(ns==='entregue'&&!p.ent) { var _d=new Date(); p.ent=hojeISO()+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2); } mud++; }
+    }
+    if(mud){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); }
+  }).catch(function(){ BIP_ST.rodando=false; });
+}
+setInterval(bipStatusSync,30000); setTimeout(bipStatusSync,6000);
 
 function srvMigrar(){
   srvBarraFechar(); SRV.pronto=true; aviso('Enviando seus dados para o servidor...');
@@ -2075,6 +2098,11 @@ function fecharCicloMotorista(){
   lancDoFechamento(m,f);
   if(REAL) salvarLocal();
   aviso('Ciclo fechado! '+pedidosDoFechamento.length+' pacote(s), '+moeda(saldo)+'.');
+  if(REAL){ try{ fetch(DELTADIS_API+'/mesa/whats-fechamento',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mt:String(id)})}).then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+    if(d&&d.ok) aviso('Ciclo fechado e motorista avisado no WhatsApp ✓');
+    else if(d&&d.erro==='sem_telefone') aviso('Ciclo fechado. Motorista sem telefone cadastrado: não foi avisado no WhatsApp.');
+    else aviso('Ciclo fechado. Não consegui avisar no WhatsApp.');
+  }).catch(function(){}); }catch(eW){} }
   abrirRepasseMotorista(id);
 }
 function abrirDetalheFechamento(mid,fid){
@@ -2383,7 +2411,7 @@ function msgPintarRodape(){
   if(!MSG.fone){ av.style.display='block'; av.textContent='Este motorista não tem telefone cadastrado. Cadastre em Motoristas para conversar.'; tx.disabled=true; arq.disabled=true; env.disabled=true; return; }
   tx.disabled=false; env.disabled=false;
   if(MSG.janela){ av.style.display='none'; arq.disabled=false; tx.placeholder='Digite uma mensagem'; }
-  else{ av.style.display='block'; av.innerHTML='⏳ O motorista não escreve há mais de 24h. Para falar com ele, mande a chamada <b>“Olá [nome], tudo bem? Aqui é da DELTADIS.”</b> Quando ele responder, a conversa fica livre por 24h. <button class="btn pri" style="padding:7px 14px;margin-left:8px;font-size:12.5px" onclick="msgChamar()">👋 Chamar motorista</button>'; arq.disabled=true; tx.disabled=true; env.disabled=true; tx.placeholder='Chame o motorista para liberar a conversa'; }
+  else{ av.style.display='block'; av.innerHTML='<button class="btn pri" style="padding:8px 16px;font-size:13px" onclick="msgChamar()">👋 Chamar motorista</button><span style="margin-left:10px">para liberar a conversa</span>'; arq.disabled=true; tx.disabled=true; env.disabled=true; tx.placeholder='Conversa fechada'; }
 }
 function msgAuto(t){ t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,120)+'px'; }
 function msgTecla(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); msgEnviar(); } }
@@ -3879,6 +3907,7 @@ function mostrarMpTip(ev,idx){
 }
 function esconderMpTip(){ el('mp-tip').classList.remove('on'); }
 
+function mtListagem(){ var b=el('mt-lst-box'), t=el('mt-lst-btn'); if(!b) return; var ab=b.style.display==='none'; b.style.display=ab?'block':'none'; if(t) t.innerHTML=t.innerHTML.replace(ab?'▾':'▴',ab?'▴':'▾'); }
 function abrirMotorista(id){
   var m=motorista(id); if(!m) return;
   el('mt-nome-sheet').textContent=m.n;
@@ -3912,18 +3941,24 @@ function abrirMotorista(id){
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(m.tel)+'</span></div>';
   h+='<div id="mt-app-box" style="margin:10px 0"></div>';
   if(REAL){
-    var oc=[], oi, op;
-    for(oi=0;oi<PEDIDOS.length;oi++){ op=PEDIDOS[oi]; if(op.mt!==m.id || op.st==='entregue') continue;
-      if(ehTentativa(op.st)||op.st==='devolvido'||op.st==='extraviado'||(op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')) oc.push(op); }
-    h+='<div style="margin-top:14px;font-weight:700;font-size:13px">Ocorrências ('+oc.length+')</div>';
-    if(!oc.length) h+='<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhum pacote com problema.</div>';
+    var oc=[], oi, op, cont={}, ordemSt=['em rota','coletado','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','entregue'], tAb=0;
+    for(oi=0;oi<PEDIDOS.length;oi++){ op=PEDIDOS[oi]; if(op.mt!==m.id || op.fechId) continue;
+      cont[op.st]=(cont[op.st]||0)+1; tAb++;
+      if(op.st!=='entregue') oc.push(op); }
+    var rotSt={'em rota':'Em rota',coletado:'Base','tentativa 1':'Tentativa 1','tentativa 2':'Tentativa 2','tentativa 3':'Tentativa 3',devolvido:'Devolvido',extraviado:'Extraviado',entregue:'Entregue'}, resHtml='', ks=ordemSt.slice(), kk;
+    for(kk in cont){ if(ks.indexOf(kk)<0) ks.push(kk); }
+    ks.forEach(function(k){ if(cont[k]) resHtml+='<span style="display:inline-block;margin:2px 8px 2px 0;font-size:12px"><b>'+cont[k]+'</b> '+esc(rotSt[k]||k)+'</span>'; });
+    h+='<div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="btn sec" id="mt-lst-btn" onclick="mtListagem()">Listagem ('+oc.length+') ▾</button><div style="font-size:12.5px;color:var(--muted)">'+(tAb?resHtml:'Nenhum pacote em aberto.')+'</div></div>';
+    h+='<div id="mt-lst-box" style="display:none">';
+    if(!oc.length) h+='<div class="empty" style="padding:8px 0;font-size:12.5px">Nenhum pacote pendente.</div>';
     else {
-      h+='<div class="tb-wrap" style="margin-top:6px;overflow:visible;max-height:none"><table class="tb"><tbody>';
-      for(oi=0;oi<oc.length&&oi<100;oi++){ op=oc[oi];
+      h+='<div class="tb-wrap" style="margin-top:6px;overflow:auto;max-height:260px"><table class="tb"><tbody>';
+      for(oi=0;oi<oc.length&&oi<200;oi++){ op=oc[oi];
         h+='<tr style="cursor:pointer" onclick="fecharTudo();abrirPedido(\''+esc(op.cod)+'\')"><td><b>'+esc(op.cod)+'</b>'+cpBtn(op.cod)+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(op.cliente||'')+'</span>'+((op.obs&&op.obs!=='em aberto'&&op.obs!=='na base')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(op.obs)+'</span>':'')+'</td><td>'+badgeStatus(op.st)+'</td></tr>'; }
       h+='</tbody></table></div>';
-      if(oc.length>100) h+='<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Mostrando 100 de '+oc.length+'</div>';
+      if(oc.length>200) h+='<div style="font-size:11.5px;color:var(--muted);margin-top:4px">Mostrando 200 de '+oc.length+'</div>';
     }
+    h+='</div>';
   }
   if(m.email) h+='<div class="sh-row"><span class="k">E-mail</span><span class="v">'+esc(m.email)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Documentos</span><span class="v">'+esc(m.doc)+'</span></div>';
