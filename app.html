@@ -343,7 +343,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-45-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-47-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1261,7 +1261,7 @@ function bpTela(){
 /* ══ (35) VOZ POR CEP OU RUA — toque no pacote, fale, salva sozinho e passa para o próximo ══ */
 var VZ={cod:'',novo:false,modo:'voz',rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false,cand:null,vivo:false,tmr:null,micOk:false,semPerm:false,micErr:'',txtT:null,vazio:0,trans:false};
 function vzNum(t){
-  var m={zero:0,um:1,uma:1,dois:2,duas:2,tres:3,'três':3,quatro:4,cinco:5,seis:6,meia:6,sete:7,oito:8,nove:9}, p=String(t||'').toLowerCase().replace(/[.,;:\-]/g,' ').split(/\s+/), o=[], i;
+  var m={zero:0,um:1,uma:1,dois:2,duas:2,tres:3,'três':3,quatro:4,cinco:5,seis:6,meia:6,sete:7,oito:8,nove:9,dez:10,onze:11,doze:12,treze:13,catorze:14,quatorze:14,quinze:15,dezesseis:16,dezessete:17,dezoito:18,dezenove:19,vinte:20,cem:100}, p=String(t||'').toLowerCase().replace(/[.,;:\-]/g,' ').split(/\s+/), o=[], i;
   for(i=0;i<p.length;i++){ if(!p[i]) continue; if(m.hasOwnProperty(p[i])) o.push(String(m[p[i]])); else o.push(p[i]); }
   return o.join(' ');
 }
@@ -1293,18 +1293,41 @@ function vzResto(tk){
 function vzParse(t){
   var s=vzNum(t), tk=s.split(/\s+/).filter(Boolean), i, dg='', fim=-1;
   if(tk[0]==='cep') tk=tk.slice(1);
+  /* só complemento ("apartamento 413"): não é número de casa */
+  if(/^(complemento|apartamento|apto|ap|bloco|casa|sala|loja|fundos|andar|cobertura|conjunto|torre)$/.test(tk[0]||'')) return {compSo:true,comp:vzComp(vzJunta(tk)),cep:'',num:'',rua:''};
   /* CEP: 8 dígitos juntando os primeiros pedaços numéricos */
   for(i=0;i<tk.length;i++){ if(/^\d+$/.test(tk[i])){ dg+=tk[i]; if(dg.length>=8){ fim=i; break; } } else break; }
   if(fim>=0 && dg.length===8){ var r=vzResto(tk.slice(fim+1)); return {cep:dg,num:r.num,comp:r.comp,rua:''}; }
-  /* sem CEP: rua + número + complemento (nome da rua em texto original, sem trocar "sete" por 7) */
-  var og=String(t||'').toLowerCase().replace(/[,;]/g,' ').split(/\s+/).filter(Boolean), ot=og.slice(), k=-1;
-  if(ot[0]==='cep') ot=ot.slice(1);
-  for(i=1;i<ot.length;i++){ if(/^(n[uú]mero|numero|n[ºo°])$/.test(ot[i])){ k=i; break; } }
-  if(k<0){ for(i=1;i<ot.length;i++){ if(/^\d+[a-z]?$/.test(ot[i])||/^(zero|um|dois|tres|três|quatro|cinco|seis|sete|oito|nove)$/.test(ot[i])&&i>=ot.length-1&&false){ k=i; break; } } }
-  if(k<0) return {cep:'',num:'',comp:'',rua:og.join(' ')};
-  var rua=ot.slice(0,k).join(' '), rs=vzResto(vzNum(ot.slice(k).join(' ')).split(/\s+/).filter(Boolean));
-  if(/\d{3,}/.test(rua)) rua='';
-  return {cep:'',num:rs.num,comp:rs.comp,rua:rua};
+  /* sem CEP: rua [número] [complemento] [bairro] [cidade] — cada coisa no seu campo */
+  return vzParseRua(t);
+}
+function vzParseRua(t){
+  var og=String(t||'').toLowerCase().replace(/[,;]/g,' ').replace(/\bsem\s+n[uú]mero\b/g,' sn ').split(/\s+/).filter(Boolean), i, w, nx, cur='rua', sn=false;
+  if(og[0]==='cep') og=og.slice(1);
+  var K_NUM=/^(n[uú]mero|numero|n[ºo°])$/, K_COMP=/^(apartamento|apto|ap|bloco|casa|sala|loja|fundos|andar|cobertura|conjunto|torre|lote|quadra)$/, seg={rua:[],num:[],bai:[],cid:[],comp:[],livre:[]};
+  function ehNum(x){ return /^\d+[a-z]?$/.test(vzNum(x)); }
+  for(i=0;i<og.length;i++){
+    w=og[i]; nx=og[i+1]||'';
+    if(/^(sn|s\/n)$/.test(w)){ sn=true; cur='livre'; continue; }
+    if(K_NUM.test(w)&&cur!=='num'){ cur='num'; continue; }
+    if(w==='bairro'){ cur='bai'; continue; }
+    if(/^(cidade|munic[ií]pio|municipio)$/.test(w)){ cur='cid'; continue; }
+    if(w==='complemento'){ cur='comp'; continue; }
+    if(K_COMP.test(w)&&(cur!=='rua'||ehNum(nx)||/^[a-z]$/.test(nx))){ seg.comp.push(w); cur='compn'; continue; }
+    if(cur==='compn'){ if(ehNum(w)||/^[a-z]$/.test(w)){ seg.comp.push(w); continue; } cur='livre'; }
+    if(cur==='rua'){
+      if(/^\d+[a-z]?$/.test(w)&&seg.rua.length&&!/^(de|do|da)$/.test(nx)){ cur='num'; seg.num.push(w); continue; }   /* "rua 7 de setembro" fica no nome; "rua das flores 93" vira número */
+      seg.rua.push(w); continue;
+    }
+    if(cur==='num'){ if(ehNum(w)){ seg.num.push(vzNum(w)); continue; } cur='livre'; }
+    if(cur==='bai'){ seg.bai.push(w); continue; }
+    if(cur==='cid'){ seg.cid.push(w); continue; }
+    if(cur==='comp'){ seg.comp.push(w); continue; }
+    seg.livre.push(w);
+  }
+  var rua=seg.rua.join(' '); if(/\d{3,}/.test(rua)) rua='';
+  var num=sn?'S/N':(vzJunta(seg.num)[0]||'');
+  return {cep:'',rua:rua,num:num,comp:vzComp(vzJunta(vzNum(seg.comp.join(' ')).split(/\s+/).filter(Boolean))),bai:seg.bai.join(' '),cid:seg.cid.join(' '),livre:seg.livre};
 }
 function vzLer(k){ try{ return localStorage.getItem('dd_vz_'+k)||(k==='u'?'SC':''); }catch(e){ return k==='u'?'SC':''; } }
 function vzGravar(k,v){ try{ localStorage.setItem('dd_vz_'+k,v); }catch(e){} }
@@ -1339,7 +1362,7 @@ function vzAbrir(cod,modo){
   document.body.appendChild(ov);
   vzFalt(); bpAtualizar();
   if(ed){ vzStat('Toque aqui para falar de novo','#6D28D9'); if(d.cep&&d.cep.length===8) vzCepDig(); else if(it&&it.r) el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px">'+esc(it.r)+'</div>'; }
-  else { vzStat(VZ.ouvindo?'🎤 Pode falar…  (CEP e número, ou rua e número)':'Ativando o microfone…','#7C3AED'); if(!VZ.ouvindo) vzOuvir(); }
+  else { vzStat(VZ.ouvindo?'🎤 Pode falar…  (CEP e número, ou rua, número, bairro e cidade)':'Ativando o microfone…','#7C3AED'); if(!VZ.ouvindo) vzOuvir(); }
 }
 function vzCampos(v){ var c=el('vz-campos'); if(c) c.style.display=v?'block':'none'; }
 function vzFalt(){ var f=el('vz-falt'); if(f){ var n=vzFaltam(); f.textContent=n?('faltam '+n):'todos ✔'; } }
@@ -1401,7 +1424,7 @@ function vzOuvir(manual){
 function vzCiclo(SR){
   if(!VZ.vivo) return;
   var r=new SR(), final=false; r.lang='pt-BR'; r.interimResults=true; r.maxAlternatives=1; r.continuous=false; VZ.rec=r; VZ.ouvindo=true;
-  vzStat('🎤 Pode falar…  (CEP e número, ou rua e número)','#7C3AED'); vzDbg('microfone aberto');
+  vzStat('🎤 Pode falar…  (CEP e número, ou rua, número, bairro e cidade)','#7C3AED'); vzDbg('microfone aberto');
   r.onaudiostart=function(){ vzDbg('microfone aberto ✔'); };
   r.onspeechstart=function(){ VZ.vazio=0; vzDbg('captando sua voz…'); vzStat('🎙 Estou te ouvindo…','#6D28D9'); };
   r.onresult=function(ev){
@@ -1429,12 +1452,54 @@ function vzCiclo(SR){
 }
 function vzProcessar(t){
   var p=vzParse(t), ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
+  if(p.compSo){ vzCompSo(p.comp); return; }
   if(p.num&&el('vz-num')) el('vz-num').value=p.num.toUpperCase();
   if(el('vz-comp')) el('vz-comp').value=p.comp||'';
   if(p.cep){ el('vz-cep').value=p.cep.substring(0,5)+'-'+p.cep.substring(5); vzStat('Buscando o CEP…','#6D28D9'); VZ.trans=true; vzCepDig().then(function(){ VZ.trans=false; vzTentaSalvar(); }); return; }
-  if(p.rua){ var dt=el('vz-det'); if(dt) dt.open=true; el('vz-rua0').value=p.rua; vzStat('Procurando a rua…','#6D28D9'); VZ.trans=true;
-    vzBuscarRua().then(function(n){ if(n===1) return vzEscolher(0).then(function(){ VZ.trans=false; vzTentaSalvar(); }); VZ.trans=false; vzCampos(true); if(n>1) vzStat('Toque na rua certa','#B45309'); else vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }); return; }
+  if(p.rua){ VZ.trans=true; vzRuaFluxo(p).then(function(r){ VZ.trans=false; if(r===1) vzTentaSalvar(); }); return; }
   vzStat('Não entendi. Fale de novo','#B45309');
+}
+/* rua falada: acha a cidade e o bairro no que foi dito, procura a rua e já carrega o CEP sozinho */
+function vzRuaFluxo(p){
+  var dt=el('vz-det'); if(dt) dt.open=true;
+  el('vz-rua0').value=p.rua; vzStat('Procurando a rua…','#6D28D9');
+  var tent=[], L=p.livre||[], k;
+  if(p.cid) tent.push({cid:p.cid,bai:p.bai||L.join(' ')});
+  else{
+    for(k=Math.min(3,L.length);k>=1;k--) tent.push({cid:L.slice(L.length-k).join(' '),bai:L.slice(0,L.length-k).join(' ')});
+    tent.push({cid:vzLer('c'),bai:(p.bai||L.join(' '))});
+  }
+  var i=0;
+  function prox(){
+    if(i>=tent.length) return Promise.resolve(0);
+    var tt=tent[i++]; if(!tt.cid) return prox();
+    el('vz-cid0').value=tt.cid;
+    return vzBuscarRua(tt.bai).then(function(n){
+      if(!n) return prox();
+      if(n===1) return vzEscolher(0).then(function(){ return 1; });
+      return 2;
+    });
+  }
+  return prox().then(function(r){
+    if(r===0){ vzCampos(true); vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }
+    else if(r===2){ vzCampos(true); vzStat('Toque na rua certa','#B45309'); }
+    return r;
+  });
+}
+/* "apartamento 413" falado sozinho: vale para o pacote que acabou de ser salvo (ou para o que está sendo preenchido) */
+function vzCompSo(comp){
+  var L=VZ.last, pend=(VZ.achou===true && !((el('vz-num')||{}).value||'').trim());
+  if(VZ.modo==='edit'||pend||!L||Date.now()-L.t>90000){
+    if(el('vz-comp')){ el('vz-comp').value=comp; vzCampos(true); vzStat('Complemento: '+comp,'#6D28D9'); } else vzStat('Fale o endereço primeiro','#B45309');
+    return;
+  }
+  VZ.trans=true; vzStat('Salvando o complemento…','#6D28D9');
+  rpApi('/motorista/endereco',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:L.cod,cep:L.cep,num:L.num,comp:comp,rua:L.rua,bai:L.bai,cid:L.cid})}).then(function(d){
+    VZ.trans=false;
+    if(!d||!d.ok){ somErroBip(); vzStat('Não salvou o complemento. Toque no pacote e edite','#B91C1C'); return; }
+    var it=vzItem(L.cod); if(it&&it.d) it.d.comp=d.comp; L.comp=d.comp; L.t=Date.now();
+    somBipeOk(); vzStat('✔ '+comp+' → '+L.rua+', '+L.num+' (pacote anterior)','#16A34A');
+  }).catch(function(){ VZ.trans=false; vzStat('Sem conexão. Complemento não salvo','#B91C1C'); });
 }
 function vzTentaSalvar(){
   if(VZ.modo==='edit'){ vzStat('Confira e toque em Salvar','#6D28D9'); return; }
@@ -1460,13 +1525,17 @@ function vzCepDig(){
         '<div class="search" style="margin:0 0 6px"><input id="vz-rua" placeholder="Rua"></div><div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:1"><input id="vz-bai" placeholder="Bairro"></div><div class="search" style="margin:0;flex:1"><input id="vz-cid" placeholder="Cidade"></div></div>'; }
   }).catch(function(){ var r3=el('vz-res'); if(r3) r3.innerHTML='<div style="color:#B91C1C;font-size:13px">Sem conexão.</div>'; });
 }
-function vzBuscarRua(){
+function vzNormT(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
+function vzBuscarRua(bai){
   var rua=(el('vz-rua0').value||'').trim(), cid=(el('vz-cid0').value||'').trim(), uf=(el('vz-uf0').value||'').trim().toUpperCase(), c=el('vz-cand');
   if(rua.length<3||cid.length<2||uf.length!==2){ var dt=el('vz-det'); if(dt) dt.open=true; aviso('Informe rua, cidade e UF'); vzStat('Informe a cidade e a UF','#B45309'); return Promise.resolve(0); }
-  vzGravar('c',cid); vzGravar('u',uf);
+  vzGravar('u',uf);
   return rpApi('/motorista/rua?uf='+encodeURIComponent(uf)+'&cid='+encodeURIComponent(cid)+'&rua='+encodeURIComponent(rua)).then(function(d){
     var c2=el('vz-cand'); if(!c2) return 0;
     if(!d||!d.ok){ c2.innerHTML='<div style="color:#B91C1C;font-size:13px">'+esc((d&&d.mensagem)||'Não consegui buscar.')+'</div>'; return 0; }
+    var its=d.itens||[];
+    if(bai&&its.length>1){ var bn=vzNormT(bai), fl=its.filter(function(x){ var xb=vzNormT(x.bai); return xb&&(xb.indexOf(bn)>=0||bn.indexOf(xb)>=0); }); if(fl.length) its=fl; }
+    d.itens=its; if(its.length) vzGravar('c',cid);
     VZ.cand=d.itens; if(d.itens.length===1){ c2.innerHTML=''; return 1; }
     if(!d.itens.length){ c2.innerHTML='<div style="color:#8A5A00;font-size:13px">Não achei essa rua. Confira o nome ou use o CEP.</div>'; return 0; }
     var h='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Toque na rua certa:</div>', i, x;
@@ -1498,6 +1567,7 @@ function vzSalvar(auto){
     if(!d||!d.ok){ somErroBip(); vzCampos(true); vzStat((d&&d.mensagem)||'Não salvou. Confira e toque em Salvar','#B91C1C'); return; }
     var ref=d.rua+', '+d.num, dd={cep:d.cep,num:d.num,comp:d.comp,rua:d.rua,bai:d.bai,cid:d.cid}, it=vzItem(cod);
     if(it){ it.e=1; it.r=ref; it.novo=false; it.d=dd; } else BP.meus.push({cod:cod,t:Date.now(),cl:'',r:ref,e:1,novo:false,d:dd});
+    VZ.last={cod:cod,cep:d.cep,num:d.num,comp:d.comp,rua:d.rua,bai:d.bai,cid:d.cid,t:Date.now()};
     somBipeOk(); BP.ult=null; bpAtualizar(); vzFalt(); vzStat('✔ Salvo: '+ref,'#16A34A');
     if(modo==='edit'){ setTimeout(vzFechar,700); return; }
     /* corrida: passa sozinho para o próximo sem endereço (ou para outra parada avulsa); o microfone continua ligado */
@@ -1929,6 +1999,10 @@ function abrirLote(id){
   h+='<div class="sh-row"><span class="k">Pagamento</span><span class="v">'+badgePagamento(l.pagamento)+'</span></div>';
   h+='<h4 style="margin:14px 0 4px">Transportadoras deste lote</h4>';
   for(i=0;i<l.transportadoras.length;i++) h+='<div class="sh-row"><span class="k">'+esc(l.transportadoras[i])+'</span><span class="v">'+(l.transportadoras.length===1?l.totalPacotes+' pacotes':'')+'</span></div>';
+  var pd=ENTREGAS.filter(function(x){ return x.data===l.data; });
+  h+='<h4 style="margin:14px 0 4px">Pedidos deste lote ('+pd.length+')</h4>';
+  if(!pd.length) h+='<div class="empty" style="padding:10px 0">Nenhum pedido entregue neste dia.</div>';
+  for(i=0;i<pd.length;i++){ var x=pd[i]; h+='<div class="sh-row" style="align-items:flex-start"><span class="k" style="flex:1;min-width:0"><b style="color:var(--roxo-esc)">'+esc(x.cliente||x.cod)+'</b><br><span style="font-size:11.5px">'+esc(x.endereco||'')+(x.hora?' · '+esc(x.hora):'')+'</span></span><span class="v">'+(x.valor!=null?moeda(x.valor):'')+'</span></div>'; }
   el('sh-lote-corpo').innerHTML=h;
   abrir('sh-lote');
 }
