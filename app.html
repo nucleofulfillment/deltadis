@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-65-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-67-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -994,7 +994,7 @@ function numAtualizar(){
   var vb=el('num-voz'); if(vb) vb.textContent=NUM.voz?'🔊 Voz ligada':'🔇 Voz desligada';
   var h='', r=NUM.ult;
   if(!r) h='<div style="border:2px dashed #E3D9F2;border-radius:18px;padding:30px 12px;text-align:center;color:var(--muted);font-size:13px">Bipe um pacote para ver o número dele</div>';
-  else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:22px 12px;text-align:center"><div style="font-size:22px;font-weight:800">Fora da rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+esc(r.cod)+'<br>Este pacote não está na rota criada.</div></div>';
+  else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:22px 12px;text-align:center"><div style="font-size:22px;font-weight:800">Fora da rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+cpCod(r.cod)+'<br>Este pacote não está na rota criada.</div></div>';
   else h='<div style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-radius:18px;padding:18px 12px;text-align:center"><div style="font-size:13px;opacity:.85">Número do pacote</div><div style="font-size:84px;font-weight:800;line-height:1">'+r.pos+'</div><div style="font-size:13px;margin-top:8px;font-weight:700">'+esc(r.cl||r.cod)+'</div><div style="font-size:12px;opacity:.9">'+esc(r.end)+'</div></div>';
   if(u) u.innerHTML=h;
   var nl=el('num-lista'); if(nl){ var lh='', k, q; for(k=0;k<LOTE_ATUAL.length;k++){ q=LOTE_ATUAL[k]; var ok=!!NUM.feitos[k+1]; lh+='<div class="bp-item"><span class="bp-seq"'+(ok?' style="background:#DCFCE7;color:#166534"':'')+'>'+(ok?'✔':(k+1))+'</span><div class="bp-info" style="flex:1"><b>Nº '+(k+1)+' · '+esc(q.cliente||q.cod)+'</b><span>'+esc(q.endereco||'')+'</span></div></div>'; } nl.innerHTML=lh; }
@@ -1274,11 +1274,22 @@ function bpCarregar(){
     BP.ok=true; bpAtualizar(); if(EST==='sem_lote') renderInicio();
   }).catch(function(){ BP.carregando=false; BP.ult={t:'err',m:'Sem conexão. Tente de novo.'}; bpAtualizar(); });
 }
+/* (67) número do pacote com ícone de copiar: tocou no número, copia sozinho */
+function copiarCod(c){
+  c=String(c||''); if(!c) return;
+  function ok(){ aviso('Código copiado: '+c); }
+  function velho(){ try{ var t=document.createElement('textarea'); t.value=c; t.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(t); t.select(); t.setSelectionRange(0,t.value.length); var r=document.execCommand('copy'); document.body.removeChild(t); if(r) ok(); else aviso('Não consegui copiar. Segure no número para copiar.'); }catch(e){ aviso('Não consegui copiar. Segure no número para copiar.'); } }
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(c).then(ok).catch(velho); } else velho(); }catch(e){ velho(); }
+}
+function cpCod(c){
+  var e=esc(c);
+  return '<span data-c="'+e+'" onclick="event.stopPropagation();copiarCod(this.getAttribute(\'data-c\'))" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;-webkit-tap-highlight-color:transparent">'+e+'<svg viewBox="0 0 24 24" style="width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.75"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></span>';
+}
 function bpItemHtml(m){
   var info;
   if(m.e) info='<span style="color:#166534;font-weight:700;font-size:12px">✔ '+esc(m.r||((m.cl||'')+'' ))+(vzExterno()?(m.v>0?' · '+vzMoeda(m.v):' · <span style="color:#B45309">sem valor</span>'):'')+'</span>';
   else info='<span style="color:#B45309">'+(m.novo?'sem dados':'endereço incompleto')+' · toque e fale o endereço</span>';
-  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FFFBF2;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+esc(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':m.cod)+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FFFBF2;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
 function metaPintar(){ var m=metaHoje(), t=el('meta-txt'), f=el('meta-fill'); if(t) t.textContent=m.feitos+' / '+m.meta+' entregas'; if(f) f.style.width=Math.min(100,Math.round(m.feitos/Math.max(1,m.meta)*100))+'%'; }
 function bpAtualizar(){
@@ -1288,7 +1299,7 @@ function bpAtualizar(){
   var uh='';
   if(BP.carregando) uh='<div class="aviso-acao" style="margin:0 0 12px"><b>Carregando seus pacotes…</b></div>';
   else if(BP.ult){ var cor={ok:['#ECFDF3','#B7EBC9','#166534'],novo:['#EFF6FF','#BFDBFE','#1E40AF'],rep:['#FFF7E6','#F5D9A0','#8A5A00'],err:['#FCEBEB','#F3C9C9','#B91C1C']}[BP.ult.t]||['#F4EEFB','#E3D9F2','#5B5170'];
-    uh='<div style="border:1px solid '+cor[1]+';background:'+cor[0]+';color:'+cor[2]+';border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px">'+BP.ult.m+(BP.ult.cod?'<b style="display:block;font-size:15px;margin-top:3px;word-break:break-all">'+esc(BP.ult.cod)+'</b>':'')+'</div>'; }
+    uh='<div style="border:1px solid '+cor[1]+';background:'+cor[0]+';color:'+cor[2]+';border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px">'+BP.ult.m+(BP.ult.cod?'<b style="display:block;font-size:15px;margin-top:3px;word-break:break-all">'+cpCod(BP.ult.cod)+'</b>':'')+'</div>'; }
   u.innerHTML=uh+bpMesaHtml();
   var h='', i, n=BP.meus.length;
   if(!n) h='<div class="empty">Nenhum pacote bipado ainda</div>';
@@ -1338,8 +1349,8 @@ function bpMesaHtml(){
   var h='<div style="border:1px solid '+(falta.length?'#F5D9A0':'#B7EBC9')+';background:'+(falta.length?'#FFF7E6':'#ECFDF3')+';border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px"><b style="color:'+(falta.length?'#8A5A00':'#166534')+'">📋 Romaneio da Mesa: '+bip+' de '+tot+' bipados'+(nls.length?' · '+nls.length+' não localizado'+(nls.length===1?'':'s'):'')+'</b>';
   if(!falta.length&&!nls.length) h+='<div style="color:#166534;margin-top:3px">✔ Todos os pacotes do romaneio foram conferidos.</div>';
   else if(!falta.length) h+='<div style="color:#166534;margin-top:3px">✔ Os demais pacotes foram conferidos.</div>';
-  if(falta.length){ h+='<div style="color:#8A5A00;margin:3px 0 4px">Faltam bipar:</div>'; for(i=0;i<falta.length&&i<30;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#5B3A00;word-break:break-all">'+esc(falta[i].cod)+(falta[i].tr?' <span style="font-weight:500;color:#8A5A00">· '+esc(falta[i].tr)+'</span>':'')+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(falta[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),true)">Não localizei</button></div>'; if(falta.length>30) h+='<div style="color:#8A5A00">… e mais '+(falta.length-30)+'</div>'; }
-  if(nls.length){ h+='<div style="color:#B91C1C;margin:6px 0 3px;font-weight:700">⚠ Não localizados (Mesa avisada):</div>'; for(i=0;i<nls.length;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#7F1D1D;word-break:break-all">'+esc(nls[i].cod)+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(nls[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),false)">Desfazer</button></div>'; }
+  if(falta.length){ h+='<div style="color:#8A5A00;margin:3px 0 4px">Faltam bipar:</div>'; for(i=0;i<falta.length&&i<30;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#5B3A00;word-break:break-all">'+cpCod(falta[i].cod)+(falta[i].tr?' <span style="font-weight:500;color:#8A5A00">· '+esc(falta[i].tr)+'</span>':'')+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(falta[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),true)">Não localizei</button></div>'; if(falta.length>30) h+='<div style="color:#8A5A00">… e mais '+(falta.length-30)+'</div>'; }
+  if(nls.length){ h+='<div style="color:#B91C1C;margin:6px 0 3px;font-weight:700">⚠ Não localizados (Mesa avisada):</div>'; for(i=0;i<nls.length;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#7F1D1D;word-break:break-all">'+cpCod(nls[i].cod)+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(nls[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),false)">Desfazer</button></div>'; }
   return h+'</div>';
 }
 function bpDigitado(){ var i=el('bp-cod'); if(!i) return; var v=i.value; i.value=''; bpBipar(v); }
@@ -1353,7 +1364,7 @@ function bpRemover(cod){
 function bpFechar(){
   if(!BP.meus.length){ aviso('Bipe ao menos um pacote antes de montar a rota'); return; }
   var sem=BP.meus.filter(function(m){ return !m.e; }).length;
-  if(sem>0){ aviso(sem+' pacote'+(sem===1?'':'s')+' sem endereço. Toque no pacote e fale o endereço, ou remova com ✕ — só monta a rota com todos os endereços.'); return; }
+  if(sem>0){ aviso('Atenção: pacote sem endereço. Cadastre para continuar.'); return; }
   var fm=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length;
   if(fm>0&&!confirm('Faltam '+fm+' pacote'+(fm===1?'':'s')+' do romaneio da Mesa sem bipar. Montar a rota mesmo assim?')) return;
   bpFecharCamera();
@@ -2146,7 +2157,7 @@ function listaBipados(){
   if(!LOTE_ATUAL.length) return '<div class="empty">Nenhum pacote bipado ainda</div>';
   var h='',i;
   for(i=LOTE_ATUAL.length-1;i>=0;i--){var p=LOTE_ATUAL[i];
-    h+='<div class="bp-item"><span class="bp-seq">'+p.seq+'</span><div class="bp-info"><b>'+esc(p.cod)+'</b><span>'+esc(p.cliente)+' · '+esc(p.bairro)+'</span></div></div>';}
+    h+='<div class="bp-item"><span class="bp-seq">'+p.seq+'</span><div class="bp-info"><b>'+cpCod(p.cod)+'</b><span>'+esc(p.cliente)+' · '+esc(p.bairro)+'</span></div></div>';}
   return h;
 }
 function renderEmRota(){
@@ -2181,7 +2192,7 @@ function renderEmRota(){
        '</div>'+
        '<h2 class="end-2l">'+esc(atual.endereco)+'</h2>'+
        '<p style="margin:0 0 3px;color:var(--muted2);font-size:13.5px;font-weight:700">'+esc(atual.cliente)+'</p>'+
-       '<p style="margin:0;color:var(--muted);font-size:11.5px">Pacote '+esc(atual.cod)+' · '+esc(atual.bairro)+'</p>'+
+       '<p style="margin:0;color:var(--muted);font-size:11.5px">Pacote '+cpCod(atual.cod)+' · '+esc(atual.bairro)+'</p>'+
        (atual.semLocal?'<div class="aviso-acao"><b>'+esc(atual.motivo||'Sem localização')+'</b><p>Este pacote não foi achado no mapa. Cadastre o endereço certo, ou remarque a entrega.</p><button class="btn pri wide" onclick="abrirEndereco()">✏️ Cadastrar / corrigir endereço</button></div>':'')+
        '<div class="acoes-fixas"><div class="grade-acoes">'+
          '<button class="acao-g acao-off" onclick="concluirParada(\'nao_localizado\')"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.3-4.3"/><path d="M10.5 8c1.2 0 1.8.7 1.8 1.5 0 1.3-1.8 1.4-1.8 2.7"/><circle cx="10.5" cy="14.6" r=".35" fill="#fff" stroke="none"/></svg><small>Não localiz.</small></button>'+
