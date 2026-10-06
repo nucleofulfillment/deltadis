@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>DELTADIS — App do Motorista</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -129,9 +129,9 @@ html.dd-ret #splash{display:flex}
 @keyframes pulsePin{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
 
 /* ══ moldura de app (fica com cara de celular em telas largas) ══ */
-#app{display:none;height:100vh;background:var(--bg);flex-direction:column;position:relative;overflow:hidden}
+#app{display:none;height:100vh;height:100dvh;background:var(--bg);flex-direction:column;position:relative;overflow:hidden}
 @media (min-width:560px){
-  #app{max-width:430px;margin:24px auto;border-radius:36px;box-shadow:var(--sh3);border:9px solid #1F0A3D;overflow:hidden;height:calc(100vh - 48px)}
+  #app{max-width:430px;margin:24px auto;border-radius:36px;box-shadow:var(--sh3);border:9px solid #1F0A3D;overflow:hidden;height:calc(100vh - 48px);height:calc(100dvh - 48px)}
 }
 .topo{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.85);backdrop-filter:blur(8px);flex:none;z-index:20}
 .topo-logo{display:flex;align-items:center;gap:8px}
@@ -148,7 +148,7 @@ html.dd-ret #splash{display:flex}
 .vertodos{font-size:12.5px;font-weight:700;color:var(--roxo);cursor:pointer}
 .vertodos:hover{filter:brightness(1.15)}
 
-.rodape{display:flex;flex:none;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--border);padding:6px 4px;z-index:20}
+.rodape{display:flex;flex:none;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--border);padding:6px 4px;padding-bottom:calc(6px + env(safe-area-inset-bottom));z-index:20}
 .rodape button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:transparent;padding:8px 2px;color:var(--muted);font-size:9.5px;font-weight:700;cursor:pointer}
 .rodape button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2}
 .rodape button.on{color:var(--roxo)}
@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-77-0610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-78-0610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
