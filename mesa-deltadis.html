@@ -231,7 +231,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-15-0610</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-16-0610</p>
   </div>
 </div>
 
@@ -460,12 +460,9 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="rm-head-esq"><div><div class="rm-head-tit">📣 Avisar motoristas</div><div class="rm-transp-nome">Mensagem pelo WhatsApp, enviada para cada motorista</div></div></div>
     </div>
     <div class="rm-corpo">
-      <div style="display:flex;gap:16px;margin-bottom:12px;font-size:13.5px">
-        <label><input type="radio" name="av-tipo" value="pacotes" checked onchange="avTipo()"> Pacotes chegaram</label>
-        <label><input type="radio" name="av-tipo" value="aviso" onchange="avTipo()"> Aviso livre</label>
-      </div>
-      <div id="av-ajuda" class="rm-resumo">Cada motorista recebe a quantidade de pacotes que foi bipada para ele hoje. Quem não tem pacote hoje não recebe.</div>
-      <textarea id="av-texto" oninput="avPrever()" maxlength="400" placeholder="Escreva o aviso (até 400 letras)" style="display:none;width:100%;box-sizing:border-box;min-height:70px;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px"></textarea>
+      <div class="rm-resumo" style="margin-bottom:6px">Mensagem (pode editar). <b>{qtd}</b> vira a quantidade de pacotes de cada motorista; quem não tem pacote hoje não recebe.</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn sec" style="padding:7px 12px;font-size:12.5px" onclick="avModelo()">↺ Pacotes chegaram</button><button class="btn sec" style="padding:7px 12px;font-size:12.5px" onclick="avLimpar()">Mensagem em branco</button></div>
+      <textarea id="av-texto" oninput="avPrever()" maxlength="400" placeholder="Escreva o aviso (até 400 letras)" style="display:block;width:100%;box-sizing:border-box;min-height:70px;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px"></textarea>
       <div style="background:#E7F5EC;border-radius:12px;padding:10px 12px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#5b7a66;margin-bottom:5px">COMO VAI CHEGAR NO WHATSAPP DO MOTORISTA</div><div id="av-previa" style="background:#fff;border-radius:10px 10px 10px 2px;padding:9px 12px;font-size:14px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.08);white-space:pre-wrap"></div></div>
       <div class="rm-resumo" id="av-resumo">Carregando…</div>
       <div class="rm-lista" id="av-lista"></div>
@@ -806,23 +803,22 @@ function abrirAvisar(){
   }).catch(function(){ el('av-resumo').textContent='Sem conexão.'; });
 }
 function fecharAvisar(){ el('av-overlay').classList.remove('on'); }
-function avTipo(){
-  var t=document.querySelector('input[name="av-tipo"]:checked').value;
-  el('av-texto').style.display=(t==='aviso')?'block':'none';
-  el('av-ajuda').style.display=(t==='pacotes')?'block':'none'; avPrever();
-}
+var AV_PADRAO='chegaram {qtd} pacotes para você no ponto DELTADIS. Pode retirar!';
+function avTipo(){ if(!el('av-texto').value) el('av-texto').value=AV_PADRAO; avPrever(); }
+function avModelo(){ el('av-texto').value=AV_PADRAO; avPrever(); }
+function avLimpar(){ el('av-texto').value=''; avPrever(); el('av-texto').focus(); }
 function avPrever(){
-  var t=document.querySelector('input[name="av-tipo"]:checked').value, ck=document.querySelector('.av-chk:checked'), nome='Carlos';
+  var ck=document.querySelector('.av-chk:checked'), nome='Carlos';
   if(ck){ AV.mots.forEach(function(m){ if(m.id===ck.value) nome=String(m.n||'').split(' ')[0]||nome; }); }
   var tx=el('av-texto').value.trim();
-  el('av-previa').textContent = t==='pacotes' ? ('Olá '+nome+', chegaram 12 pacotes para você no ponto DELTADIS. Pode retirar!') : ('Olá '+nome+', aviso da DELTADIS: '+(tx||'(o texto que você escrever aparece aqui)'));
+  el('av-previa').textContent='Olá '+nome+', aviso da DELTADIS: '+(tx?tx.replace(/\{qtd\}/g,'12').replace(/\{nome\}/g,nome):'(o texto que você escrever aparece aqui)');
 }
 function avTodos(){ setTimeout(avPrever,0); var c=document.querySelectorAll('.av-chk:not(:disabled)'), todos=true; c.forEach(function(x){ if(!x.checked) todos=false; }); c.forEach(function(x){ x.checked=!todos; }); }
 function avEnviar(){
-  var t=document.querySelector('input[name="av-tipo"]:checked').value, mts=[], texto=el('av-texto').value.trim();
+  var t='aviso', mts=[], texto=el('av-texto').value.trim();
   document.querySelectorAll('.av-chk:checked').forEach(function(x){ mts.push(x.value); });
   if(!mts.length){ el('av-resumo').textContent='Marque pelo menos um motorista.'; return; }
-  if(t==='aviso' && !texto){ el('av-resumo').textContent='Escreva o aviso.'; return; }
+  if(!texto){ el('av-resumo').textContent='Escreva o aviso.'; return; }
   var b=el('av-enviar'); b.disabled=true; el('av-resumo').textContent='Enviando…';
   api('/mesa/whats-avisar',{method:'POST',body:JSON.stringify({tipo:t,texto:texto,mts:mts})}).then(function(d){
     b.disabled=false;
