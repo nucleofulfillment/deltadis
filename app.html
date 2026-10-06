@@ -364,7 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-63-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-64-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -428,6 +428,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="field" id="cfg-max-box" style="display:none"><label>Máximo de paradas por rota (só teste)</label><input class="inp" id="cfg-max" type="number" min="0" max="500" step="1"></div>
         <div class="field"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
         <div class="field"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
+        <div class="field"><label>Assinar o romaneio ao montar a rota</label><select class="inp" id="cfg-assina"><option value="nao">Não</option><option value="sim">Sim</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: ao montar a rota o app pergunta se o romaneio está fechado e pede a sua assinatura. Use quando o ponto exige o romaneio assinado.</p></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
@@ -1118,12 +1119,12 @@ function rpCarregarPonto(){
   }).catch(function(){});
 }
 setTimeout(rpCarregarPonto,1500); setInterval(rpCarregarPonto,600000);
-function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(PT.sel&&PT.sel.endereco)?PT.sel.endereco:((c.base&&c.base!==RP_BASE_PADRAO)?c.base:rpBasePonto()), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
+function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(PT.sel&&PT.sel.endereco)?PT.sel.endereco:((c.base&&c.base!==RP_BASE_PADRAO)?c.base:rpBasePonto()), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), assina:(c.assina==='sim'?'sim':'nao'), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
 function rpSalvarCfg(){
   var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30; if(!RP_TESTE){ try{ mx=(JSON.parse(localStorage.getItem('dd_cfg')||'{}').max); }catch(e){} if(mx==null) mx=30; }
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear'})); }catch(e){}
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear',assina:el('cfg-assina').value==='sim'?'sim':'nao'})); }catch(e){}
   rpAtualizar();
   aviso('Configurações salvas');
 }
@@ -1342,7 +1343,46 @@ function bpFechar(){
   if(!BP.meus.length){ aviso('Bipe ao menos um pacote antes de montar a rota'); return; }
   var fm=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length;
   if(fm>0&&!confirm('Faltam '+fm+' pacote'+(fm===1?'':'s')+' do romaneio da Mesa sem bipar. Montar a rota mesmo assim?')) return;
-  bpFecharCamera(); RP.bipMode=true; rpIniciar();
+  bpFecharCamera();
+  if(rpCfg().assina==='sim'){ asgAbrir(); return; }
+  RP.bipMode=true; rpIniciar();
+}
+/* ══ (64) ASSINATURA DO ROMANEIO — opcional (Minha conta → Minhas rotas). Pergunta "Romaneio fechado?"; Sim → assina com o dedo; fica gravada no servidor ══ */
+var ASG={desenhou:false,pts:0,busy:false};
+function asgFechar(){ var o=el('asg-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
+function asgAbrir(){
+  asgFechar();
+  var o=document.createElement('div'); o.id='asg-ovl'; o.style.cssText='position:fixed;inset:0;background:rgba(15,5,30,.88);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px';
+  o.innerHTML='<div class="card" id="asg-box" style="width:min(94vw,420px);margin:0"></div>';
+  document.body.appendChild(o); asgPergunta();
+}
+function asgPergunta(){
+  var n=BP.meus.length;
+  el('asg-box').innerHTML='<h3 style="margin:0 0 6px">Romaneio fechado?</h3><p style="margin:0 0 16px;color:var(--muted);font-size:13px">'+n+' pacote'+(n===1?'':'s')+' no seu romaneio. Confirme que está tudo conferido para assinar.</p><div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="asgFechar()">Não</button><button class="btn pri" style="flex:1" onclick="asgTela()">Sim</button></div>';
+}
+function asgTela(){
+  ASG.desenhou=false; ASG.pts=0; ASG.busy=false;
+  el('asg-box').innerHTML='<h3 style="margin:0 0 6px">Assine aqui</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">Assinatura do motorista — '+BP.meus.length+' pacote(s)</p><canvas id="asg-cv" width="600" height="260" style="width:100%;height:auto;aspect-ratio:600/260;background:#fff;border:2px dashed var(--border2);border-radius:12px;touch-action:none;display:block"></canvas><p id="asg-msg" style="margin:8px 0 0;font-size:12.5px;color:#B91C1C;min-height:16px"></p><div style="display:flex;gap:10px;margin-top:8px"><button class="btn sec" style="flex:1" onclick="asgLimpar()">Limpar</button><button class="btn pri" style="flex:1" id="asg-ok" onclick="asgConfirmar()">Confirmar</button></div><button class="btn sec wide" style="margin-top:10px" onclick="asgFechar()">Cancelar</button>';
+  var cv=el('asg-cv'), cx=cv.getContext('2d'), des=false, lx=0, ly=0;
+  cx.lineWidth=4; cx.lineCap='round'; cx.lineJoin='round'; cx.strokeStyle='#1a1030';
+  function pos(e){ var r=cv.getBoundingClientRect(); return {x:(e.clientX-r.left)*cv.width/r.width, y:(e.clientY-r.top)*cv.height/r.height}; }
+  cv.onpointerdown=function(e){ e.preventDefault(); des=true; var p=pos(e); lx=p.x; ly=p.y; try{ cv.setPointerCapture(e.pointerId); }catch(x){} cx.beginPath(); cx.arc(lx,ly,1.6,0,6.3); cx.fillStyle='#1a1030'; cx.fill(); ASG.pts++; };
+  cv.onpointermove=function(e){ if(!des) return; e.preventDefault(); var p=pos(e); cx.beginPath(); cx.moveTo(lx,ly); cx.lineTo(p.x,p.y); cx.stroke(); lx=p.x; ly=p.y; ASG.pts++; ASG.desenhou=true; };
+  cv.onpointerup=cv.onpointercancel=function(){ des=false; };
+}
+function asgLimpar(){ var cv=el('asg-cv'); if(!cv) return; cv.getContext('2d').clearRect(0,0,cv.width,cv.height); ASG.desenhou=false; ASG.pts=0; var m=el('asg-msg'); if(m) m.textContent=''; }
+function asgConfirmar(){
+  var m=el('asg-msg'), cv=el('asg-cv'); if(!cv||ASG.busy) return;
+  if(!ASG.desenhou||ASG.pts<8){ m.textContent='Assine dentro do quadro antes de confirmar.'; return; }
+  /* fundo branco (PNG sem transparência fica legível no PDF) */
+  var t=document.createElement('canvas'); t.width=cv.width; t.height=cv.height; var tx=t.getContext('2d'); tx.fillStyle='#fff'; tx.fillRect(0,0,t.width,t.height); tx.drawImage(cv,0,0);
+  var img=t.toDataURL('image/png'), cods=BP.meus.map(function(x){ return x.cod; });
+  ASG.busy=true; el('asg-ok').textContent='Salvando…'; m.textContent='';
+  rpApi('/motorista/romaneio-assinar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assinatura:img,cods:cods})}).then(function(d){
+    ASG.busy=false;
+    if(!d||!d.ok){ el('asg-ok').textContent='Confirmar'; m.textContent=(d&&d.mensagem)||'Não consegui salvar a assinatura. Tente de novo.'; return; }
+    asgFechar(); aviso('Romaneio assinado'); RP.bipMode=true; rpIniciar();
+  }).catch(function(){ ASG.busy=false; el('asg-ok').textContent='Confirmar'; m.textContent='Sem conexão. A assinatura NÃO foi salva. Tente de novo.'; });
 }
 function bpSair(){ bpFecharCamera(); EST='sem_lote'; renderInicio(); }
 /* câmera: lê o código de barras pelo próprio navegador (Chrome do Android); em aparelho sem suporte, use o campo de digitar/leitor */
@@ -2273,7 +2313,7 @@ function pintarConta(){
   mostra('cta-cap',P.cap>0?(P.cap+' pacotes'):''); mostra('cta-valor',P.valorPadrao>0?(moeda(P.valorPadrao)+' por pacote'):'');
   var card=el('cta-regiao')&&el('cta-regiao').parentNode&&el('cta-regiao').parentNode.parentNode;
   if(card){ var alg=P.regiao||veic.trim()||P.cap>0||P.valorPadrao>0; card.style.display=alg?'block':'none'; }
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo;
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo; el('cfg-assina').value=cf.assina;
   rpPintarIdentidade();
 }
 function salvarSenha(){
