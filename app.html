@@ -343,7 +343,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-44-0510</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-45-0510</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -817,6 +817,7 @@ function finalizarRota(){
   try{ if(doPainel&&ROTA_KM>0) rpApi('/motorista/lote-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({km:ROTA_KM,min:ROTA_MIN,lote:'l'+LOTES_HOJE[0].id})}).then(function(){ carregarResumo(); }).catch(function(){}); }catch(e){}
   var cp=[]; for(i=0;i<LOTE_ATUAL.length;i++) if(LOTE_ATUAL[i].origem==='painel') cp.push(LOTE_ATUAL[i].cod);
   if(cp.length){ rpMarcarFeitos(cp); RP.total=Math.max(0,(RP.total||0)-cp.length); rpAtualizar(); }
+  setTimeout(carregarResumo,2500);   /* dá tempo das últimas entregas chegarem ao servidor; o Financeiro e o Histórico leem de lá */
   EST='finalizado'; SAIDAS=[];
   renderInicio();
 }
@@ -869,7 +870,7 @@ function rpFilaEnt(){ try{ return JSON.parse(localStorage.getItem('dd_fila_ent')
 function rpSalvaFilaEnt(f){ try{ localStorage.setItem('dd_fila_ent',JSON.stringify(f.slice(-500))); }catch(e){} }
 function rpAvisarEntrega(p){
   if(!p || p.origem!=='painel' || !p.cod || !RP.mt) return;
-  var f=rpFilaEnt(); f.push({cod:p.cod,mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now()});
+  var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',mt:String(RP.mt),mtn:RP.mtn||'',cli:p.cliente||'',lat:(p.lat==null?null:p.lat),lng:(p.lng==null?null:p.lng),t:Date.now()});
   rpSalvaFilaEnt(f); rpDescarregarEnt();
 }
 function rpDescarregarEnt(){
