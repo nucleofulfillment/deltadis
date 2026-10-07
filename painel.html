@@ -767,6 +767,18 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         </div>
       </section>
 
+      <section class="page" id="pg-veiculos">
+        <div class="pghd"><div><h1>Veículos</h1><div class="sub">frota cadastrada no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="veAbrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="veAbrirCad(\'\')">+ Cadastrar</button></div></div>
+        <div class="card">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px"><div class="search" style="flex:1;min-width:220px;max-width:none;margin:0"><span>🔎</span><input id="ve-busca" placeholder="buscar veículo ou placa" oninput="pintarVeiculos()"></div><div class="pills" id="ve-filtros" style="display:contents"></div></div>
+          <div class="tb-wrap"><table class="tb">
+            <colgroup><col style="width:23%"><col style="width:10%"><col style="width:8%"><col style="width:25%"><col style="width:17%"><col style="width:17%"></colgroup>
+            <thead><tr><th>Modelo</th><th>Cor</th><th>Ano</th><th>Multa</th><th>IPVA</th><th>Licenciamento</th></tr></thead>
+            <tbody id="ve-corpo"></tbody>
+          </table></div>
+        </div>
+      </section>
+
       <!-- FINANCEIRO (GMV mora aqui) -->
       <section class="page" id="pg-financeiro">
         <div class="pghd"><div><h1>Financeiro</h1><div class="sub">movimento do ponto de distribuição</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirCustos()">+ Custo Operacional</button></div></div>
@@ -815,7 +827,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-22-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-23-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1054,6 +1066,34 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Mensagem</label><textarea class="inp" id="nt-msg" rows="3" style="resize:vertical">Olá! Já pode vir coletar os pacotes no ponto de coleta.</textarea></div>
     <div id="nt-qtd" style="font-size:12.5px;color:var(--muted);margin-bottom:8px"></div>
     <button class="btn pri wide" onclick="enviarNotifColeta()">Enviar notificação</button>
+  </div>
+</div>
+
+<div class="sheet wide" id="sh-veiculo">
+  <div class="sh-hd"><h3 id="ve-tit">Cadastrar veículo</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div class="field"><label>Placa</label><input class="inp" id="ve-placa" maxlength="8" placeholder="ABC1D23" style="text-transform:uppercase"></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px"><div class="field"><label>Modelo</label><input class="inp" id="ve-modelo" placeholder="Ex.: Fiorino"></div><div class="field"><label>Cor</label><input class="inp" id="ve-cor" placeholder="Branca"></div><div class="field"><label>Ano</label><input class="inp" id="ve-ano" inputmode="numeric" maxlength="4" placeholder="2022"></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Motorista (opcional)</label><select class="inp" id="ve-mot"></select></div><div class="field"><label>Grupo (opcional)</label><select class="inp" id="ve-grp"></select></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Vencimento do IPVA</label><input class="inp" type="date" id="ve-ipva"></div><div class="field"><label>Vencimento do licenciamento</label><input class="inp" type="date" id="ve-lic"></div></div>
+    <div class="field"><label>Renavam (opcional)</label><input class="inp" id="ve-renavam" inputmode="numeric" maxlength="11"></div>
+    <div id="ve-msg" style="font-size:12.5px;color:#DC2626;margin:0 0 8px"></div>
+    <button class="btn pri wide" id="ve-salvar" onclick="veSalvar()">Salvar veículo</button>
+    <button class="btn sec wide" id="ve-remover" style="display:none;margin-top:8px;color:#DC2626" onclick="veRemover()">Remover veículo</button>
+  </div>
+</div>
+
+<div class="sheet wide" id="sh-vgrupo">
+  <div class="sh-hd"><h3>Criar grupo de veículos</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Dê um nome ao grupo e marque os veículos que fazem parte.</p>
+    <div class="field"><label>Nome do grupo</label><input class="inp" id="vg-nome" placeholder="ex: Utilitários — Norte da Ilha"></div>
+    <div id="vg-lista" style="max-height:240px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:4px 8px"></div>
+    <div id="vg-msg" style="font-size:12.5px;color:#DC2626;margin:8px 0 0"></div>
+    <button class="btn pri wide" id="vg-salvar" style="margin-top:12px" onclick="veSalvarGrupo()">Salvar grupo</button>
+    <button class="btn sec wide" id="vg-cancelar" style="display:none;margin-top:8px" onclick="veAbrirGrupo()">Cancelar edição</button>
+    <h4 style="margin:18px 0 6px;font-size:13px">Grupos criados</h4>
+    <div id="vg-existentes"></div>
   </div>
 </div>
 
@@ -2534,6 +2574,7 @@ var NAV_DESKTOP=[
   {id:'mesa',       lb:'Mesa',       ic:'<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M7 4V2M17 4V2M7 10H17M7 14H14"/>'},
   {id:'mapeamento', lb:'Mapeamento', ic:'<path d="M12 21s7-6.2 7-11.2A7 7 0 105 9.8C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.6"/>'},
   {id:'motoristas', lb:'Motoristas', ic:'<rect x="1" y="7" width="15" height="10" rx="1.5"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>'},
+  {id:'veiculos',   lb:'Veículos',   ic:'<path d="M5 17h14M5 17a2 2 0 110-4M19 17a2 2 0 100-4M3 13l2-6h14l2 6M7 10h10"/>'},
   {id:'mensagens',  lb:'Mensagens',  ic:'<path d="M21 11.5a8.4 8.4 0 01-8.9 8.4 8.6 8.6 0 01-3.7-.9L3 20l1.2-4.9a8.4 8.4 0 1116.8-3.6z"/>'},
   {id:'financeiro', lb:'Financeiro', ic:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V16.5M9.3 14.3C9.3 15.5 10.4 16.2 12 16.2C13.6 16.2 14.7 15.5 14.7 14.2C14.7 11.6 9.3 12.6 9.3 10C9.3 8.7 10.4 8 12 8C13.6 8 14.7 8.7 14.7 9.9"/>'},
   {id:'config',     lb:'Configurações', ic:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>'}
@@ -2568,6 +2609,7 @@ function ir(p){
   for(i=0;i<ps.length;i++) ps[i].classList.toggle('on', ps[i].id==='pg-'+p);
   var bs=document.querySelectorAll('.side button,.tabbar button');
   for(i=0;i<bs.length;i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-p')===p);
+  if(p==='veiculos') veCarregar();
   if(p==='mensagens') msgAbrirTela(); else clearInterval(MSG.timer);
   if(p==='mapeamento' && typeof mpBuscar==='function'){ MP_ENQ=true; setTimeout(mpBuscar,30); }
   window.scrollTo(0,0);
@@ -3500,6 +3542,130 @@ function enviarNotifColeta(){
   aviso('Notificação registrada para '+ids.length+' motorista(s). O envio pelo WhatsApp entra depois.');
 }
 /* ponto de coleta (base): fica no servidor; o app do motorista e o mapa daqui leem de lá */
+/* ══ VEÍCULOS ══ cadastro + grupos + consulta de multas sob demanda (APIBrasil, R$ 8,00 por consulta) */
+var VE={lista:[],grupos:[],ok:false,consultaOk:true}, VE_FIL={veic:[],grp:[]}, VE_DD=null, VE_ED='', VE_GED='', VE_OPTS={veic:[],grp:[]}, VE_OCUP={};
+var VE_BELL='<svg viewBox="0 0 24 24" style="width:14px;height:14px;flex:none;stroke:#DC2626;fill:#FEE2E2;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>';
+function veApi(corpo,cb){
+  fetch(DELTADIS_API+'/veiculos?key='+encodeURIComponent(DELTADIS_API_KEY),corpo?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo)}:{})
+  .then(function(r){return r.json();}).then(function(d){ if(d&&d.ok&&d.lista){ VE.lista=d.lista; VE.grupos=d.grupos||[]; VE.ok=true; if(d.consulta_ok!==undefined) VE.consultaOk=!!d.consulta_ok; } cb(d); }).catch(function(){ cb(null); });
+}
+function veCarregar(){ veApi(null,function(){ pintarVeiculos(); }); }
+function veMoeda(v){ return 'R$ '+Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function veDataBR(iso){ var p=String(iso||'').split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):''; }
+function veVenc(iso,deb){
+  var h='', vencida=iso && iso<hojeISO();
+  if(!iso) h='<span style="color:var(--muted)">—</span>';
+  else h=(vencida?'<span style="display:inline-flex;align-items:center;gap:5px;color:#DC2626;font-weight:700" title="Vencido">'+VE_BELL+veDataBR(iso)+'</span>':veDataBR(iso));
+  if(deb>0) h+='<div style="font-size:11px;color:#DC2626;font-weight:700;margin-top:2px;display:flex;align-items:center;gap:4px">'+VE_BELL+'em aberto '+veMoeda(deb)+'</div>';
+  return h;
+}
+function veMulta(v){
+  var m=v.multas, id=esc(v.id);
+  if(VE_OCUP[v.id]) return '<span style="color:var(--muted);font-size:12px">Consultando…</span>';
+  if(!m) return '<button class="btn sec sm" onclick="event.stopPropagation();veConsultar(\''+id+'\')">Consultar</button>';
+  var q=m.qtd||0, d=new Date(m.t), dt=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2);
+  var h=q>0?('<span style="display:inline-flex;align-items:center;gap:5px;color:#DC2626;font-weight:700">'+VE_BELL+q+(q===1?' multa':' multas')+' · '+veMoeda(m.valor_multas)+'</span>'):'<span style="color:#16A34A;font-weight:700">Sem multas</span>';
+  return h+'<div style="font-size:11px;color:var(--muted);margin-top:2px">consultado em '+dt+' · <span class="vertodos" onclick="event.stopPropagation();veConsultar(\''+id+'\')">atualizar</span></div>';
+}
+function veConsultar(id){
+  var v=null,i; for(i=0;i<VE.lista.length;i++) if(VE.lista[i].id===id) v=VE.lista[i]; if(!v||VE_OCUP[id]) return;
+  if(!VE.consultaOk){ aviso('A consulta de multas ainda não foi configurada.'); return; }
+  if(!confirm('Consultar multas e débitos da placa '+v.placa+'?\nCada consulta custa R$ 8,00.')) return;
+  VE_OCUP[id]=1; pintarVeiculos();
+  veApi({acao:'consultar',id:id,forcar:true},function(d){ delete VE_OCUP[id]; pintarVeiculos(); if(!d||!d.ok) aviso((d&&d.mensagem)||'Não consegui consultar agora. Tente de novo.'); else aviso('Consulta feita'); });
+}
+function veOpcoes(){
+  var m={}, i, k, o={veic:[],grp:[]};
+  for(i=0;i<VE.lista.length;i++) m[VE.lista[i].modelo||'Sem modelo']=1;
+  for(k in m) o.veic.push({v:k,l:k}); o.veic.sort(function(a,b){return a.l.localeCompare(b.l);});
+  for(i=0;i<VE.grupos.length;i++) o.grp.push({v:VE.grupos[i].id,l:VE.grupos[i].nome+' ('+(VE.grupos[i].ids||[]).length+')'});
+  return o;
+}
+function vePassa(v){
+  var f=VE_FIL, i, ok;
+  if(f.veic.length && f.veic.indexOf(v.modelo||'Sem modelo')<0) return false;
+  if(f.grp.length){ ok=false; for(i=0;i<VE.grupos.length;i++) if(f.grp.indexOf(VE.grupos[i].id)>=0 && (VE.grupos[i].ids||[]).indexOf(v.id)>=0) ok=true; if(!ok) return false; }
+  return true;
+}
+function veFiltros(){
+  VE_OPTS=veOpcoes();
+  var defs=[{k:'veic',l:'Veículo'},{k:'grp',l:'Grupo'}], h='', d, j, n, o, sel, k;
+  for(d=0;d<defs.length;d++){ k=defs[d].k; n=VE_FIL[k].length; o=VE_OPTS[k];
+    h+='<span class="dd" onclick="event.stopPropagation()"><span class="pill'+(n?' on':'')+'" onclick="veAbrirDd(\''+k+'\')">'+defs[d].l+(n?(' ('+n+')'):'')+' ▾</span>';
+    if(VE_DD===k){ h+='<div class="dd-panel">';
+      if(!o.length) h+='<div style="padding:8px;font-size:12.5px;color:var(--muted)">'+(k==='grp'?'Nenhum grupo criado ainda':'Nada cadastrado')+'</div>';
+      for(j=0;j<o.length;j++){ sel=VE_FIL[k].indexOf(o[j].v)>=0; h+='<label><input type="checkbox" '+(sel?'checked ':'')+'onchange="veAlternaFiltro(\''+k+'\','+j+')"> '+esc(o[j].l)+'</label>'; }
+      h+='</div>'; }
+    h+='</span>';
+  }
+  if(VE_FIL.veic.length+VE_FIL.grp.length) h+='<span class="vertodos" onclick="VE_FIL={veic:[],grp:[]};pintarVeiculos()">Limpar filtros</span>';
+  el('ve-filtros').innerHTML=h;
+}
+function veAbrirDd(k){ VE_DD=(VE_DD===k)?null:k; veFiltros(); }
+function veAlternaFiltro(k,j){ var v=VE_OPTS[k][j].v, p=VE_FIL[k].indexOf(v); if(p>=0) VE_FIL[k].splice(p,1); else VE_FIL[k].push(v); pintarVeiculos(); }
+document.addEventListener('click',function(){ if(VE_DD){ VE_DD=null; if(el('ve-filtros')) veFiltros(); } });
+function pintarVeiculos(){
+  if(!el('ve-corpo')) return;
+  veFiltros();
+  var q=(el('ve-busca').value||'').toLowerCase().trim(), h='', i, v, n=0;
+  for(i=0;i<VE.lista.length;i++){ v=VE.lista[i];
+    if(q && (v.placa+' '+(v.modelo||'')+' '+(v.cor||'')+' '+(v.motorista||'')).toLowerCase().indexOf(q)<0) continue;
+    if(!vePassa(v)) continue; n++;
+    h+='<tr style="cursor:pointer" onclick="veAbrirCad(\''+esc(v.id)+'\')"><td><b>'+esc(v.modelo||'Sem modelo')+'</b><div style="font-size:11.5px;color:var(--muted);margin-top:2px">'+esc(v.placa)+(v.motorista?' · '+esc(v.motorista):'')+'</div></td>'
+      +'<td>'+esc(v.cor||'—')+'</td><td>'+esc(v.ano||'—')+'</td><td>'+veMulta(v)+'</td><td>'+veVenc(v.ipva_venc,v.multas&&v.multas.ipva)+'</td><td>'+veVenc(v.lic_venc,v.multas&&v.multas.lic)+'</td></tr>';
+  }
+  if(!h) h='<tr><td colspan="6"><div class="empty">'+(VE.ok?(VE.lista.length?'Nenhum veículo encontrado':'Nenhum veículo cadastrado ainda. Toque em + Cadastrar.'):'Carregando…')+'</div></td></tr>';
+  el('ve-corpo').innerHTML=h;
+}
+function veAbrirCad(id){
+  VE_ED=id||''; var v=null,i; for(i=0;i<VE.lista.length;i++) if(VE.lista[i].id===id) v=VE.lista[i];
+  el('ve-tit').textContent=v?'Editar veículo':'Cadastrar veículo';
+  var f={'ve-placa':'placa','ve-modelo':'modelo','ve-cor':'cor','ve-ano':'ano','ve-ipva':'ipva_venc','ve-lic':'lic_venc','ve-renavam':'renavam'}, k;
+  for(k in f) el(k).value=v?(v[f[k]]||''):'';
+  var mh='<option value="">—</option>'; for(i=0;i<MOTORISTAS.length;i++) mh+='<option value="'+esc(MOTORISTAS[i].n)+'"'+((v&&v.motorista===MOTORISTAS[i].n)?' selected':'')+'>'+esc(MOTORISTAS[i].n)+'</option>';
+  if(v&&v.motorista&&!MOTORISTAS.some(function(m){return m.n===v.motorista;})) mh+='<option value="'+esc(v.motorista)+'" selected>'+esc(v.motorista)+'</option>';
+  el('ve-mot').innerHTML=mh;
+  var gh='<option value="">—</option>', g; for(i=0;i<VE.grupos.length;i++){ g=VE.grupos[i]; gh+='<option value="'+esc(g.id)+'"'+((v&&(g.ids||[]).indexOf(v.id)>=0)?' selected':'')+'>'+esc(g.nome)+'</option>'; }
+  el('ve-grp').innerHTML=gh;
+  el('ve-msg').textContent=''; el('ve-salvar').disabled=false; el('ve-salvar').textContent='Salvar veículo'; el('ve-remover').style.display=v?'':'none';
+  abrir('sh-veiculo');
+}
+function veSalvar(){
+  var placa=(el('ve-placa').value||'').trim(); if(placa.replace(/[^A-Za-z0-9]/g,'').length<7){ el('ve-msg').textContent='Informe a placa do veículo.'; return; }
+  var b=el('ve-salvar'); b.disabled=true; b.textContent='Salvando…'; el('ve-msg').textContent='';
+  veApi({acao:'salvar',grupo_id:el('ve-grp').value,veiculo:{id:VE_ED,placa:placa,modelo:el('ve-modelo').value,cor:el('ve-cor').value,ano:el('ve-ano').value,motorista:el('ve-mot').value,ipva_venc:el('ve-ipva').value,lic_venc:el('ve-lic').value,renavam:el('ve-renavam').value}},function(d){
+    b.disabled=false; b.textContent='Salvar veículo';
+    if(d&&d.ok){ aviso('Veículo salvo'); fecharTudo(); pintarVeiculos(); } else el('ve-msg').textContent=(d&&d.mensagem)||'Não consegui salvar. Tente de novo.';
+  });
+}
+function veRemover(){
+  if(!VE_ED||!confirm('Remover este veículo?')) return;
+  veApi({acao:'remover',id:VE_ED},function(d){ if(d&&d.ok){ aviso('Veículo removido'); fecharTudo(); pintarVeiculos(); } else el('ve-msg').textContent='Não consegui remover. Tente de novo.'; });
+}
+function veAbrirGrupo(){ VE_GED=''; el('vg-nome').value=''; el('vg-msg').textContent=''; el('vg-salvar').textContent='Salvar grupo'; el('vg-cancelar').style.display='none'; veListaGrupo({}); veGruposExistentes(); abrir('sh-vgrupo'); }
+function veListaGrupo(marc){
+  var h='', i, v; if(!VE.lista.length) h='<div style="padding:10px;font-size:12.5px;color:var(--muted)">Cadastre veículos primeiro.</div>';
+  for(i=0;i<VE.lista.length;i++){ v=VE.lista[i];
+    h+='<label style="display:flex;gap:9px;align-items:center;padding:7px 4px;font-size:13px;cursor:pointer"><input type="checkbox" value="'+esc(v.id)+'" '+(marc[v.id]?'checked':'')+'> <b>'+esc(v.modelo||'Sem modelo')+'</b> <span style="color:var(--muted)">'+esc(v.placa)+'</span></label>'; }
+  el('vg-lista').innerHTML=h;
+}
+function veGruposExistentes(){
+  var h='', i, g; if(!VE.grupos.length) h='<div style="font-size:12.5px;color:var(--muted)">Nenhum grupo criado ainda.</div>';
+  for(i=0;i<VE.grupos.length;i++){ g=VE.grupos[i];
+    h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px"><b style="flex:1">'+esc(g.nome)+'</b><span style="color:var(--muted)">'+(g.ids||[]).length+' veículo(s)</span><span class="vertodos" onclick="veEditarGrupo(\''+esc(g.id)+'\')">editar</span><span class="vertodos" style="color:#DC2626" onclick="veRemoverGrupo(\''+esc(g.id)+'\')">excluir</span></div>'; }
+  el('vg-existentes').innerHTML=h;
+}
+function veEditarGrupo(id){
+  var g=null,i; for(i=0;i<VE.grupos.length;i++) if(VE.grupos[i].id===id) g=VE.grupos[i]; if(!g) return;
+  VE_GED=id; el('vg-nome').value=g.nome; var mk={}; for(i=0;i<(g.ids||[]).length;i++) mk[g.ids[i]]=1; veListaGrupo(mk);
+  el('vg-salvar').textContent='Salvar alterações'; el('vg-cancelar').style.display='';
+}
+function veSalvarGrupo(){
+  var nome=(el('vg-nome').value||'').trim(); if(!nome){ el('vg-msg').textContent='Dê um nome ao grupo.'; return; }
+  var ids=[], cs=el('vg-lista').querySelectorAll('input:checked'), i; for(i=0;i<cs.length;i++) ids.push(cs[i].value);
+  veApi({acao:'grupo-salvar',grupo:{id:VE_GED,nome:nome,ids:ids}},function(d){ if(d&&d.ok){ aviso('Grupo salvo'); veAbrirGrupo(); pintarVeiculos(); } else el('vg-msg').textContent=(d&&d.mensagem)||'Não consegui salvar. Tente de novo.'; });
+}
+function veRemoverGrupo(id){ if(!confirm('Excluir este grupo? Os veículos continuam cadastrados.')) return; veApi({acao:'grupo-remover',id:id},function(d){ if(d&&d.ok){ var k=VE_FIL.grp.indexOf(id); if(k>=0) VE_FIL.grp.splice(k,1); veAbrirGrupo(); pintarVeiculos(); } else el('vg-msg').textContent='Não consegui excluir.'; }); }
 var WA_ATIVO=null;
 function waPintar(){ var c=el('wa-chk'), b=el('wa-badge'); if(!c||!b) return; if(WA_ATIVO===null){ b.textContent='carregando…'; c.disabled=true; return; } c.disabled=false; c.checked=!!WA_ATIVO; b.textContent=WA_ATIVO?'ativo':'desativado'; b.className='badge '+(WA_ATIVO?'b-ok':'b-wt'); }
 function waCarregar(){ fetch(DELTADIS_API+'/config/whats?key='+encodeURIComponent(DELTADIS_API_KEY)).then(function(r){return r.json();}).then(function(d){ if(d&&d.ok){ WA_ATIVO=!!d.ativo; waPintar(); } }).catch(function(){}); }
