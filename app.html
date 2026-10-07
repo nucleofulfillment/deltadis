@@ -273,6 +273,7 @@ html.dd-ret #splash{display:flex}
 .rota-tela .mapa-mock{flex:1 1 auto;min-height:46vh}
 .rota-tela.com-aviso .mapa-mock{min-height:20vh}
 .rota-tela .info-full{flex:none}
+#fin-pontos::-webkit-scrollbar{display:none;height:0}
 .sheet-handle{display:flex;justify-content:center;align-items:center;height:34px;margin:-12px 0 0;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
 .sheet-arr .parada-tag,.sheet-arr .end-2l{touch-action:none}
 .sheet-handle i{width:56px;height:6px;border-radius:99px;background:rgba(109,40,217,.35)}
@@ -385,7 +386,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-83-0710</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-84-0710</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -416,7 +417,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <section class="pagina" id="pg-financeiro">
       <h2 class="titulo-pg" style="display:flex;justify-content:space-between;align-items:center">Financeiro<span class="vertodos" onclick="abrirExtrato()">▤ Extrato</span></h2>
       <button class="btn sec wide" style="margin:0 0 10px" onclick="romAbrir()">＋ Criar romaneio</button>
-      <div id="fin-pontos" style="display:none;gap:6px;overflow-x:auto;margin:0 0 10px;padding-bottom:2px"></div>
+      <div id="fin-pontos" style="display:none;gap:6px;overflow-x:auto;margin:0 0 10px;padding-bottom:6px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch"></div>
       <div class="kpis3" id="fin-resumo"></div>
       <div id="fin-lista"></div>
     </section>
