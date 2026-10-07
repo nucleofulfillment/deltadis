@@ -62,16 +62,17 @@
   /* ══ layout em duas colunas: logos à esquerda, contagem à direita ══ */
   .mesa-layout{display:flex;flex-direction:column;align-items:stretch;gap:12px;max-width:1080px;width:100%;margin-top:14px;flex:1;min-height:0}
   .col-esq{flex:0 0 auto;width:100%}
-  .col-dir{flex:1;min-width:0;min-height:0;overflow-y:auto;padding:2px 2px 8px}
+  .col-dir{flex:1;min-width:0;min-height:0;overflow-y:auto;padding:2px 2px 14px}
 
   .cards{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-content:start;width:100%}
-  .card{position:relative;padding:9px 6px;text-align:center;border:1px solid var(--border);border-radius:12px;background:var(--s1);cursor:pointer;transition:transform .15s ease,border-color .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(31,10,61,.05)}
+  .card{position:relative;padding:8px 10px;display:flex;align-items:center;gap:9px;text-align:left;border:1px solid var(--border);border-radius:12px;background:var(--s1);cursor:pointer;transition:transform .15s ease,border-color .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(31,10,61,.05)}
   .card:hover{transform:translateY(-3px);border-color:#D8B8EE;box-shadow:0 20px 45px -22px rgba(31,10,61,.28)}
   .card.ativa{border-color:#6D28D9;box-shadow:0 0 0 3px rgba(109,40,217,.18)}
-  .card .ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 5px;color:#fff;font-weight:800;font-size:11px;overflow:hidden}
+  .card .ic{width:30px;height:30px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0;color:#fff;font-weight:800;font-size:11px;overflow:hidden}
   .card .ic img{width:100%;height:100%;object-fit:contain;background:#fff}
-  .card .cn{font-size:11.5px;font-weight:800;margin-bottom:2px;line-height:1.15;min-height:26px;display:flex;align-items:center;justify-content:center}
-  .card .cd{font-size:10px;color:var(--muted)}
+  .card .cn{font-size:11.5px;font-weight:800;margin-bottom:1px;line-height:1.15}
+  .card .tx{min-width:0;flex:1}
+  .card .cd{font-size:10px;color:var(--muted);white-space:nowrap}
 
   @media(max-width:900px){ html,body{overflow:auto} .wrap{height:auto;overflow:visible} .col-dir{overflow:visible} .cards{grid-template-columns:repeat(3,1fr)} .mot-box{flex-direction:column;align-items:stretch;gap:6px} }
   @media(max-width:560px){ .cards{grid-template-columns:repeat(2,1fr)} }
@@ -231,7 +232,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-21-0710</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-22-0710</p>
   </div>
 </div>
 
@@ -523,7 +524,7 @@ function pintarCards(){
   var h='',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i];
     var ativaCls=(ATIVA && ATIVA.id===t.id)?' ativa':'';
-    h+='<div class="card'+ativaCls+(t.somente?' livre':'')+'" onclick="'+(t.dev?'abrirDevolucoes()':t.somente?'abrirRomaneio(\'app\')':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+(t.dev?' a conferir':' bipados hoje')+'</div></div>';}
+    h+='<div class="card'+ativaCls+(t.somente?' livre':'')+'" onclick="'+(t.dev?'abrirDevolucoes()':t.somente?'abrirRomaneio(\'app\')':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="tx"><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+(t.dev?' a conferir':' bipados hoje')+'</div></div></div>';}
   el('mesa-cards').innerHTML=h;
 }
 
@@ -988,8 +989,7 @@ function initCurves(){
 function ajustarAlturaScan(){
   var grid=el('mesa-cards'), scan=el('scan');
   if(!grid || !scan) return;
-  if(window.innerWidth<=900){ scan.style.height=''; return; }
-  scan.style.height=grid.offsetHeight+'px';
+  scan.style.height=''; /* layout em cima/baixo: o card da contagem cresce sozinho */
 }
 var _rzTO=null;
 window.addEventListener('resize',function(){ clearTimeout(_rzTO); _rzTO=setTimeout(ajustarAlturaScan,120); });
