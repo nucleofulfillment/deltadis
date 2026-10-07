@@ -808,7 +808,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-14-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-15-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -2555,7 +2555,7 @@ function abrirApp(){
   el('app').style.display='block';
   var t=el('tb-tenant'); if(t) t.textContent=(DD_USER&&DD_USER.cliente_nome)||'';
   var av=document.querySelector('.tb-av'); if(av&&DD_USER&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
-  try{ montarTudo(); carregarPonto(); contaCarregar(); }finally{ srvCarregar(); }
+  try{ montarTudo(); carregarPonto(); contaRapido(); }finally{ srvCarregar(); }
 }
 /* ── (120) entrar com CÓDIGO: 6 dígitos no WhatsApp e no e-mail do cadastro (sem senha) ── */
 var LG={modo:'senha',etapa:1};
@@ -2620,6 +2620,12 @@ var CT={dados:null,timer:null};
 function ctMoeda(c){ return (Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function ctCnpj(v){ var d=String(v||'').replace(/\D/g,''); return d.length===14?d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5'):(v||'—'); }
 function ctFone(v){ var d=String(v||'').replace(/\D/g,''); if(d.indexOf('55')===0&&d.length>=12) d=d.slice(2); return d.length===11?d.replace(/^(\d{2})(\d{5})(\d{4})$/,'($1) $2-$3'):(d.length===10?d.replace(/^(\d{2})(\d{4})(\d{4})$/,'($1) $2-$3'):(v||'—')); }
+function contaBotao(nome){ var b=el('tb-plano'); if(b){ b.style.display=''; b.textContent='💳 '+(nome||'Meu plano'); } var mi=el('mav-plano'); if(mi) mi.style.display=''; }
+function contaRapido(){
+  if(!REAL||!DD_TOKEN||!DD_USER||(DD_USER.perfil!=='dono'&&DD_USER.perfil!=='gerente')) return;
+  var k='dd_plano_'+(DD_USER.cliente_id||DD_USER.cli||''); try{ var c=localStorage.getItem(k); if(c) contaBotao(c); }catch(e){}
+  fetch(DELTADIS_API+'/conta?leve=1',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){ if(!d||!d.ok) return; contaBotao(d.plano_nome); try{ localStorage.setItem(k,d.plano_nome||''); }catch(e){} }).catch(function(){});
+}
 function contaCarregar(cb){
   if(!REAL||!DD_TOKEN||!DD_USER||(DD_USER.perfil!=='dono'&&DD_USER.perfil!=='gerente')) return;
   fetch(DELTADIS_API+'/conta',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
@@ -2686,7 +2692,7 @@ function salvarMeusDados(){
     if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar. Tente de novo.'; return; }
     DD_USER=d.usuario; try{ localStorage.setItem('dd_user',JSON.stringify(d.usuario)); }catch(e){}
     var av=document.querySelector('.tb-av'); if(av&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
-    var _tn=el('tb-tenant'); if(_tn) _tn.textContent=DD_USER.cliente_nome||''; CT.dados=null; contaCarregar();
+    var _tn=el('tb-tenant'); if(_tn) _tn.textContent=DD_USER.cliente_nome||''; CT.dados=null; contaRapido();
     fecharTudo(); aviso('Dados atualizados!');
   }).catch(function(){ b.disabled=false; b.textContent='Salvar'; m.textContent='Sem conexão com o servidor.'; });
 }
