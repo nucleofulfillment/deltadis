@@ -103,12 +103,14 @@
   .av-pill.env{background:#DCFCE7;color:#166534}
   .btn-add:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
 
-  .scan-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:stretch}
-  .sg-acoes{min-width:0}
-  .sg-cnt{min-width:0;display:flex;flex-direction:column;justify-content:center;background:var(--s2);border:1px solid var(--border);border-radius:16px;padding:14px 16px}
-  .sg-cnt .cnt{font-size:84px;line-height:1;margin:2px 0 14px}
+  .scan-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:stretch;min-height:384px}
+  .sg-acoes{min-width:0;display:flex;flex-direction:column;justify-content:space-between;padding:14px 0}
+  .sg-acoes .manual,.sg-acoes label.auto,.sg-acoes .row,.sg-acoes .divisor{margin-top:0;margin-bottom:0}
+  .sg-cnt{min-width:0;display:flex;flex-direction:column;justify-content:space-between;background:var(--s2);border:1px solid var(--border);border-radius:16px;padding:14px 16px}
+  .sg-cnt .cnt{font-size:96px;line-height:1;margin:0}
+  .sg-cnt .cnt-mid{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
   .sg-cnt .cnt-rot{text-align:center;font-size:12px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px}
-  .sg-cnt .ult{margin-bottom:0;background:#fff}
+  .sg-cnt .ult{margin-bottom:0;min-height:62px;display:flex;flex-direction:column;justify-content:center;text-align:center;box-sizing:border-box}
   @media(max-width:900px){ .scan-grid{grid-template-columns:1fr} .sg-cnt{order:-1} }
   .manual{margin:2px 0 12px}
   .manual label{display:block;font-size:11.5px;font-weight:700;color:var(--muted2);margin-bottom:6px}
@@ -131,7 +133,7 @@
   .rm-head-esq .logo .wm{color:#fff;height:13px}
   .rm-head-esq .logo .mk{height:24px}
   .rm-head-tit{font-size:15px;font-weight:800;margin-top:2px}
-  .rm-head-transp{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+  .rm-head-transp{display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-right:44px}
   .rm-transp-ic{width:34px;height:34px;border-radius:9px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#6D28D9}
   .rm-transp-ic img{width:100%;height:100%;object-fit:contain}
   .rm-transp-nome{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.92)}
@@ -244,7 +246,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-28-0710</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-29-0710</p>
   </div>
 </div>
 
@@ -331,11 +333,9 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
         <div id="scan-conteudo" style="display:none">
           <h3 id="scan-nome">—</h3>
-          <p class="desc">Bipe a etiqueta (leitor ou câmera) ou digite o código. Só o código de rastreio entra agora; os dados do cliente vêm depois pela planilha.</p>
           <div class="scan-grid">
           <div class="sg-acoes">
           <div class="manual">
-            <label>Código de rastreio (o leitor digita aqui sozinho)</label>
             <div class="manual-row">
               <input type="text" id="scan-manual" placeholder="Bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter') registrarManual()">
               <button onclick="registrarManual()">Registrar</button>
@@ -353,8 +353,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           </div>
           </div>
           <div class="sg-cnt">
-            <div class="cnt-rot">pacotes contados</div>
-            <div class="cnt" id="scan-cnt">0</div>
+            <div class="cnt-mid"><div class="cnt-rot">pacotes contados</div>
+            <div class="cnt" id="scan-cnt">0</div></div>
             <div class="ult" id="scan-ult"><span class="ult-t">Aguardando a primeira bipagem…</span></div>
           </div>
           </div>
@@ -447,7 +447,6 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="rm-lista" id="rm-lista"></div>
     </div>
     <div class="rm-rodape">
-      <button class="btn sec" onclick="fecharRomaneio()">Fechar</button>
       <button class="btn pri" onclick="abrirRelatorioRomaneio()">🖨️ Imprimir / salvar PDF</button>
     </div>
   </div>
@@ -476,13 +475,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="rm-modal">
     <div class="rm-head">
       <button class="rm-fechar" onclick="fecharAvisar()">✕</button>
-      <div class="rm-head-esq"><div><div class="rm-head-tit">📣 Avisar motoristas</div><div class="rm-transp-nome">Mensagem pelo WhatsApp, enviada para cada motorista</div></div></div>
+      <div class="rm-head-esq"><div><div class="rm-head-tit"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg> Avisar motoristas</div><div class="rm-transp-nome">Mensagem pelo WhatsApp, enviada para cada motorista</div></div></div>
     </div>
     <div class="rm-corpo">
-      <div class="rm-resumo" style="margin-bottom:6px">Mensagem (pode editar). <b>{qtd}</b> vira a quantidade de pacotes de cada motorista; quem não tem pacote hoje não recebe.</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn sec" style="padding:7px 12px;font-size:12.5px" onclick="avModelo()">↺ Pacotes chegaram</button><button class="btn sec" style="padding:7px 12px;font-size:12.5px" onclick="avLimpar()">Mensagem em branco</button></div>
-      <textarea id="av-texto" oninput="avPrever()" maxlength="400" placeholder="Escreva o aviso (até 400 letras)" style="display:block;width:100%;box-sizing:border-box;min-height:70px;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px"></textarea>
-      <div style="background:#E7F5EC;border-radius:12px;padding:10px 12px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#5b7a66;margin-bottom:5px">COMO VAI CHEGAR NO WHATSAPP DO MOTORISTA</div><div id="av-previa" style="background:#fff;border-radius:10px 10px 10px 2px;padding:9px 12px;font-size:14px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.08);white-space:pre-wrap"></div></div>
+      <div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn pri" id="av-m-pac" style="padding:8px 12px;font-size:12.5px" onclick="avModo('pacotes')">Pacotes chegaram</button><button class="btn sec" id="av-m-bra" style="padding:8px 12px;font-size:12.5px" onclick="avModo('branco')">Mensagem em branco</button></div>
+      <textarea id="av-texto" oninput="avPrever()" maxlength="400" placeholder="Escreva o aviso (até 400 letras)" style="display:none;width:100%;box-sizing:border-box;min-height:70px;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px"></textarea>
+      <div id="av-prevbox" style="background:#E7F5EC;border-radius:12px;padding:10px 12px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#5b7a66;margin-bottom:5px">COMO VAI CHEGAR NO WHATSAPP DO MOTORISTA</div><div id="av-previa" style="background:#fff;border-radius:10px 10px 10px 2px;padding:9px 12px;font-size:14px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.08);white-space:pre-wrap"></div></div>
       <div id="av-cons" style="margin-bottom:12px"></div>
       <div class="rm-resumo" style="margin-bottom:6px">Enviar para:</div>
       <select id="av-dest" onchange="avDest()" style="width:100%;box-sizing:border-box;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px;background:#fff"><option value="">Escolher individualmente</option><option value="todos">Todos os motoristas</option></select>
@@ -493,7 +491,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="rm-rodape">
       <button class="btn sec" onclick="fecharAvisar()">Fechar</button>
       <button class="btn sec" onclick="avTodos()">Marcar todos</button>
-      <button class="btn pri" id="av-enviar" onclick="avEnviar()">📣 Enviar</button>
+      <button class="btn pri" id="av-enviar" onclick="avEnviar()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg> Enviar</button>
     </div>
   </div>
 </div>
@@ -903,9 +901,16 @@ function abrirAvisar(){
 function fecharAvisar(){ el('av-overlay').classList.remove('on'); }
 var AV_PADRAO='chegaram {qtd} pacotes para você no ponto {ponto}. Pode retirar!';
 function avTexto(t){ return String(t||'').replace(/\{ponto\}/g,AV.ponto); }
-function avTipo(){ if(!el('av-texto').value) el('av-texto').value=AV_PADRAO; avPrever(); }
-function avModelo(){ el('av-texto').value=AV_PADRAO; avPrever(); }
-function avLimpar(){ el('av-texto').value=''; avPrever(); el('av-texto').focus(); }
+function avTipo(){ avModo('pacotes'); }
+/* dois modos: "Pacotes chegaram" = texto fixo (só a prévia, sem editar) · "Mensagem em branco" = só o campo de digitar */
+function avModo(m){
+  AV.modo=m; var pac=(m==='pacotes');
+  el('av-texto').value=pac?AV_PADRAO:'';
+  el('av-texto').style.display=pac?'none':'block';
+  el('av-prevbox').style.display=pac?'block':'none';
+  el('av-m-pac').className='btn '+(pac?'pri':'sec'); el('av-m-bra').className='btn '+(pac?'sec':'pri');
+  avPrever(); if(!pac) el('av-texto').focus();
+}
 function avPrever(){
   var ck=document.querySelector('.av-chk:checked'), nome='Carlos';
   if(ck){ AV.mots.forEach(function(m){ if(m.id===ck.value) nome=String(m.n||'').split(' ')[0]||nome; }); }
