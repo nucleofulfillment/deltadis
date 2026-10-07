@@ -404,6 +404,13 @@ a{color:inherit}
 .cfgcards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .cfgcard{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--sh1)}
 .cfgcard .ic{width:38px;height:38px;border-radius:10px;background:var(--s3);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:17px}
+.wa-sw{position:relative;display:inline-block;width:42px;height:24px;flex:none;cursor:pointer}
+.wa-sw input{opacity:0;width:0;height:0;position:absolute}
+.wa-bl{position:absolute;inset:0;border-radius:24px;background:#CBC5D6;transition:.2s}
+.wa-bl:before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.2s}
+.wa-sw input:checked+.wa-bl{background:#16A34A}
+.wa-sw input:checked+.wa-bl:before{transform:translateX(18px)}
+.wa-sw input:disabled+.wa-bl{opacity:.5}
 .cfgcard h4{margin:0 0 5px;font-size:14px;font-weight:800}
 .cfgcard p{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.5}
 
@@ -802,13 +809,13 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard"><div class="ic">🔌</div><h4>Integrações com transportadoras</h4><p>Conecte a API de cada transportadora para receber a pré-lista de pacotes automaticamente.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">🏢</div><h4>Bases e pontos</h4><p>Cadastre mais de um ponto de distribuição sob a mesma conta e alterne entre eles.</p><span class="badge b-nu">em breve</span></div>
-          <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><span class="badge b-wt">desativado</span></div>
+          <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><div style="display:flex;align-items:center;gap:10px"><label class="wa-sw" title="Ligar ou desligar o WhatsApp desta empresa"><input type="checkbox" id="wa-chk" onchange="waAlternar(this.checked)" disabled><span class="wa-bl"></span></label><span class="badge b-wt" id="wa-badge">carregando…</span></div></div>
         </div>
       </section>
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-20-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-21-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -2567,7 +2574,7 @@ function abrirApp(){
   el('app').style.display='block';
   var t=el('tb-tenant'); if(t) t.textContent=(DD_USER&&DD_USER.cliente_nome)||'';
   var av=document.querySelector('.tb-av'); if(av&&DD_USER&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
-  try{ montarTudo(); carregarPonto(); contaRapido(); }finally{ srvCarregar(); }
+  try{ montarTudo(); carregarPonto(); waCarregar(); contaRapido(); }finally{ srvCarregar(); }
 }
 /* ── (120) entrar com CÓDIGO: 6 dígitos no WhatsApp e no e-mail do cadastro (sem senha) ── */
 var LG={modo:'senha',etapa:1};
@@ -3481,6 +3488,13 @@ function enviarNotifColeta(){
   aviso('Notificação registrada para '+ids.length+' motorista(s). O envio pelo WhatsApp entra depois.');
 }
 /* ponto de coleta (base): fica no servidor; o app do motorista e o mapa daqui leem de lá */
+var WA_ATIVO=null;
+function waPintar(){ var c=el('wa-chk'), b=el('wa-badge'); if(!c||!b) return; if(WA_ATIVO===null){ b.textContent='carregando…'; c.disabled=true; return; } c.disabled=false; c.checked=!!WA_ATIVO; b.textContent=WA_ATIVO?'ativo':'desativado'; b.className='badge '+(WA_ATIVO?'b-ok':'b-wt'); }
+function waCarregar(){ fetch(DELTADIS_API+'/config/whats?key='+encodeURIComponent(DELTADIS_API_KEY)).then(function(r){return r.json();}).then(function(d){ if(d&&d.ok){ WA_ATIVO=!!d.ativo; waPintar(); } }).catch(function(){}); }
+function waAlternar(on){ var c=el('wa-chk'); c.disabled=true;
+  fetch(DELTADIS_API+'/config/whats?key='+encodeURIComponent(DELTADIS_API_KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ativo:!!on})})
+  .then(function(r){return r.json();}).then(function(d){ if(d&&d.ok){ WA_ATIVO=!!d.ativo; aviso(WA_ATIVO?'WhatsApp ativado':'WhatsApp desativado'); } else aviso('Não consegui salvar. Tente de novo.'); waPintar(); })
+  .catch(function(){ aviso('Sem conexão. Tente de novo.'); waPintar(); }); }
 var PONTO=null;
 function carregarPonto(){
   fetch(DELTADIS_API+'/config/ponto?key='+encodeURIComponent(DELTADIS_API_KEY)).then(function(r){return r.json();}).then(function(d){
