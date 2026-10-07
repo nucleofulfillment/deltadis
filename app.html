@@ -386,7 +386,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-86-0710</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-87-0710</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -541,6 +541,26 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function el(id){return document.getElementById(id);}
 function moeda(v){return 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+/* rota em andamento guardada no aparelho: atualizar a página ou fechar o app não perde a rota (vale só pro mesmo motorista e no mesmo dia) */
+var ROTA_SIG='';
+function rotaGuardar(){
+  try{
+    var sig=PONTEIRO+'|'+LOTE_ATUAL.length+'|'+SAIDAS.length+'|'+(LOTE_ATUAL[0]?LOTE_ATUAL[0].cod:''); if(sig===ROTA_SIG) return; ROTA_SIG=sig;
+    var o={dia:hojeISO(),mt:String(RP.mt||''),ponteiro:PONTEIRO,lote:LOTE_ATUAL,saidas:SAIDAS,km:ROTA_KM,min:ROTA_MIN,rota:RP.rota,baseLL:RP.baseLL||null,opc:RP.opc};
+    try{ localStorage.setItem('dd_rota',JSON.stringify(o)); }
+    catch(e){ o.rota=null; try{ localStorage.setItem('dd_rota',JSON.stringify(o)); }catch(e2){} }
+  }catch(e){}
+}
+function rotaLimpar(){ ROTA_SIG=''; try{ localStorage.removeItem('dd_rota'); }catch(e){} }
+function rotaRestaurar(){
+  try{
+    var o=JSON.parse(localStorage.getItem('dd_rota')||'null'); if(!o) return false;
+    if(o.dia!==hojeISO()||String(o.mt)!==String(RP.mt||'')||!o.lote||!o.lote.length||o.ponteiro>=o.lote.length){ rotaLimpar(); return false; }
+    LOTE_ATUAL=o.lote; SAIDAS=o.saidas||[]; PONTEIRO=o.ponteiro||0; ROTA_KM=o.km||0; ROTA_MIN=o.min||0; RP.rota=o.rota||null; RP.baseLL=o.baseLL||null; RP.opc=o.opc||RP.opc;
+    ROTA_SIG=PONTEIRO+'|'+LOTE_ATUAL.length+'|'+SAIDAS.length+'|'+(LOTE_ATUAL[0]?LOTE_ATUAL[0].cod:'');
+    EST='em_rota'; return true;
+  }catch(e){ return false; }
+}
 function hojeISO(){var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function horaAgora(){var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
 function dataBR(iso){var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0];}
@@ -673,6 +693,7 @@ function abrirApp(){
   /* a rota do motorista vem do cadastro dele (mt_ref) — não há mais "Quem é você?" */
   if(DD_M_USER){ RP.mt=DD_M_USER.mt_ref||null; RP.mtn=DD_M_USER.nome||''; try{ if(RP.mt) localStorage.setItem('dd_mt',RP.mt); else localStorage.removeItem('dd_mt'); }catch(e){} }
   try{ rpCarregarPonto(); }catch(e){}
+  try{ rotaRestaurar(); }catch(e){}
   montarApp();
 }
 function entrar(){
@@ -867,7 +888,7 @@ function bipManual(){
   simularBipagem();
   if(el('bp-manual')) el('bp-manual').value='';
 }
-function cancelarLote(){ EST='sem_lote'; LOTE_ATUAL=[]; renderInicio(); }
+function cancelarLote(){ rotaLimpar(); EST='sem_lote'; LOTE_ATUAL=[]; renderInicio(); }
 function fecharLote(){
   if(!LOTE_ATUAL.length){ aviso('Bipe ao menos um pacote antes de fechar o lote'); return; }
   EST='calculando'; renderInicio();
@@ -895,6 +916,7 @@ function concluirParada(status, extra){
   renderInicio();
 }
 function finalizarRota(){
+  rotaLimpar();
   var entregues=0,devolvidos=0,naoLoc=0,remarc=0,detalhe=[],i;
   for(i=0;i<LOTE_ATUAL.length;i++){
     var p=LOTE_ATUAL[i];
@@ -917,7 +939,7 @@ function finalizarRota(){
   EST='finalizado'; SAIDAS=[];
   renderInicio();
 }
-function voltarInicio(){ EST='sem_lote'; LOTE_ATUAL=[]; SAIDAS=[]; SAIU_TELA_CHEIA=false; renderInicio(); }
+function voltarInicio(){ rotaLimpar(); EST='sem_lote'; LOTE_ATUAL=[]; SAIDAS=[]; SAIU_TELA_CHEIA=false; renderInicio(); }
 
 /* link real de navegação — abre o Google Maps do celular já com o endereço da parada atual */
 function linkNavegar(par){
@@ -1191,7 +1213,7 @@ var DD_M_TOKEN='', DD_M_USER=null;
 try{ DD_M_TOKEN=localStorage.getItem('dd_m_jwt')||''; DD_M_USER=JSON.parse(localStorage.getItem('dd_m_user')||'null'); }catch(e){}
 function ddMostrarLogin(){ document.documentElement.classList.remove('dd-ret'); var l=el('login'); if(l&&l.style.display!=='none') curvesLigar(); }
 /* dados guardados no aparelho que são de UM motorista: somem quando entra outro (ou quando sai) */
-function ddLimparLocal(){ try{ ['dd_ponto_sel','dd_num','dd_feitos','dd_fila_ent'].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){} }
+function ddLimparLocal(){ try{ ['dd_ponto_sel','dd_num','dd_feitos','dd_fila_ent','dd_rota'].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){} }
 function ddGuardarM(tk,us){ var ant=DD_M_USER; if(tk&&ant&&us&&String(ant.id)!==String(us.id)) ddLimparLocal(); if(!tk) ddLimparLocal(); DD_M_TOKEN=tk||''; DD_M_USER=us||null; try{ if(tk){ localStorage.setItem('dd_m_jwt',tk); localStorage.setItem('dd_m_user',JSON.stringify(us||null)); } else { localStorage.removeItem('dd_m_jwt'); localStorage.removeItem('dd_m_user'); localStorage.removeItem('dd_mt'); RP.mt=null; RP.mtn=''; RP.total=0; } }catch(e){} }
 function rpApi(caminho,opts){
   if(DD_M_TOKEN){
@@ -2254,6 +2276,7 @@ function rpMapaDesenhar(ajustar){
 
 function renderInicio(){
   var box=el('inicio-conteudo'); if(!box) return;
+  if(EST==='em_rota') rotaGuardar();
   var meta=metaHoje(), h='';
   if(EST!=='em_rota'){
     h+='<div class="meta-card meta-linha"><span class="meta-rot">Meta de hoje</span><div class="meta-barra"><div class="meta-fill" id="meta-fill" style="width:'+Math.min(100,Math.round(meta.feitos/meta.meta*100))+'%"></div></div><span class="meta-num" id="meta-txt">'+meta.feitos+'/'+meta.meta+'</span></div>';
