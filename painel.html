@@ -91,6 +91,8 @@ a{color:inherit}
 #srv-bar b{display:block;margin-bottom:4px}
 #srv-bar button{margin:8px 8px 0 0;padding:8px 14px;border-radius:8px;border:1px solid #d97706;background:#fff;color:#78350f;font-weight:700;font-size:13px;cursor:pointer}
 #srv-bar button.pri{background:#d97706;color:#fff}
+.tb-plano{font-family:inherit;font-size:12px;font-weight:800;color:var(--roxo,#6D28D9);background:var(--s3);border:1px solid var(--border2);border-radius:99px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.tb-plano:hover{background:var(--s2)}
 .tb-tenant{font-size:11px;font-weight:700;color:var(--muted);background:var(--s3);border:1px solid var(--border2);border-radius:99px;padding:3px 10px;margin-left:6px}
 .tb-right{display:flex;align-items:center;gap:14px}
 .tb-clock{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted2);background:var(--s3);border:1px solid var(--border);border-radius:8px;padding:6px 10px}
@@ -627,6 +629,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </g></svg><span class="tb-tenant" id="tb-tenant"></span><span class="tb-srv" id="tb-srv"></span>
     </div>
     <div class="tb-right">
+      <button class="tb-plano" id="tb-plano" style="display:none" onclick="contaAbrir()" title="Meu plano e cobrança">💳 Meu plano</button>
       <div class="tb-data" id="tb-data-topo"></div>
       <div class="tb-tempo"><span class="ti" id="tb-tempo-ic">🌤️</span><span id="tb-tempo-vl">24°C</span></div>
       <div class="tb-clock"><i class="live"></i><span id="tb-hora">--:--</span></div>
@@ -635,6 +638,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="menu-lista" id="menu-av-l" onclick="event.stopPropagation()">
           <div class="quem"><b id="mav-nome">—</b><small id="mav-mail"></small></div>
           <button onclick="menuAvFecha();abrirMeusDados()">👤 Meus dados</button>
+          <button id="mav-plano" style="display:none" onclick="menuAvFecha();contaAbrir()">💳 Meu plano</button>
           <button onclick="menuAvFecha();abrirTrocarSenhaPainel()">🔑 Trocar senha</button>
           <button class="sair" onclick="menuAvFecha();sair()">⎋ Sair</button>
         </div>
@@ -804,7 +808,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-12-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-13-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -939,6 +943,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <p id="md-msg" style="color:#c0392b;font-weight:700;font-size:13px;min-height:18px;margin:4px 0 10px"></p>
     <button class="btn pri wide" id="md-btn" onclick="salvarMeusDados()">Salvar</button>
   </div>
+</div>
+<div class="sheet" id="sh-plano">
+  <div class="sh-hd"><h3>Meu plano</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd"><div id="ct-corpo"><div style="color:var(--muted);font-size:13px">Carregando...</div></div></div>
 </div>
 <div class="sheet" id="sh-trocar-senha">
   <div class="sh-hd"><h3>Trocar senha</h3><button onclick="fecharTudo()">✕</button></div>
@@ -2545,7 +2553,7 @@ function abrirApp(){
   el('app').style.display='block';
   var t=el('tb-tenant'); if(t) t.textContent=(DD_USER&&DD_USER.cliente_nome)||'';
   var av=document.querySelector('.tb-av'); if(av&&DD_USER&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
-  try{ montarTudo(); carregarPonto(); }finally{ srvCarregar(); }
+  try{ montarTudo(); carregarPonto(); contaCarregar(); }finally{ srvCarregar(); }
 }
 /* ── (120) entrar com CÓDIGO: 6 dígitos no WhatsApp e no e-mail do cadastro (sem senha) ── */
 var LG={modo:'senha',etapa:1};
@@ -2605,6 +2613,61 @@ function menuAv(e){ e.stopPropagation(); var m=el('menu-av-l'); if(!m) return;
   m.classList.toggle('on'); }
 function menuAvFecha(){ var m=el('menu-av-l'); if(m) m.classList.remove('on'); }
 document.addEventListener('click',menuAvFecha);
+/* ── (123) MEU PLANO: plano contratado, pacotes do mês (variável) e cobrança do mês vigente ── */
+var CT={dados:null,timer:null};
+function ctMoeda(c){ return (Number(c||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function ctCnpj(v){ var d=String(v||'').replace(/\D/g,''); return d.length===14?d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5'):(v||'—'); }
+function ctFone(v){ var d=String(v||'').replace(/\D/g,''); if(d.indexOf('55')===0&&d.length>=12) d=d.slice(2); return d.length===11?d.replace(/^(\d{2})(\d{5})(\d{4})$/,'($1) $2-$3'):(d.length===10?d.replace(/^(\d{2})(\d{4})(\d{4})$/,'($1) $2-$3'):(v||'—')); }
+function contaCarregar(cb){
+  if(!REAL||!DD_TOKEN||!DD_USER||(DD_USER.perfil!=='dono'&&DD_USER.perfil!=='gerente')) return;
+  fetch(DELTADIS_API+'/conta',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if(!d||!d.ok) return; CT.dados=d;
+    var b=el('tb-plano'); if(b){ b.style.display=''; b.textContent='💳 '+(d.plano?d.plano.nome:'Meu plano'); }
+    var mi=el('mav-plano'); if(mi) mi.style.display='';
+    if(cb) cb(d);
+  }).catch(function(){});
+}
+function contaAbrir(){ el('ct-corpo').innerHTML='<div style="color:var(--muted);font-size:13px">Carregando...</div>'; abrir('sh-plano'); if(CT.dados) contaPintar(); contaCarregar(function(){ contaPintar(); }); }
+function ctLinha(k,v){ return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--muted)">'+k+'</span><b style="text-align:right">'+v+'</b></div>'; }
+function contaPintar(){
+  var d=CT.dados, box=el('ct-corpo'); if(!d||!box) return;
+  var pl=d.plano, mesTxt=(d.mes||'').slice(5,7)+'/'+(d.mes||'').slice(0,4), cb=d.cobranca||{estado:'nenhuma'}, h='';
+  h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">PLANO</div>'+
+     '<div style="border:1px solid var(--border2);border-radius:12px;padding:12px;background:var(--s2);margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">'+esc(pl?pl.nome:'Mensalidade')+'</b><b style="color:var(--roxo,#6D28D9);font-size:18px">'+ctMoeda(d.fixo_centavos)+'<span style="font-size:11px;color:var(--muted);font-weight:600">/mês</span></b></div>'+
+     (pl&&pl.descricao?'<div style="font-size:12.5px;color:var(--muted);margin-top:4px">'+esc(pl.descricao)+'</div>':'')+
+     '<div style="font-size:12.5px;margin-top:6px">'+(d.pacote_centavos>0?('Variável: <b>'+ctMoeda(d.pacote_centavos)+'</b> por pacote entregue'+(d.franquia>0?(' acima de <b>'+d.franquia+'</b> pacotes/mês'):'')):'Sem cobrança por pacote')+'</div></div>';
+  h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">ESTE MÊS ('+mesTxt+')</div>'+
+     ctLinha('Pacotes entregues',String(d.pacotes_mes))+
+     (d.franquia>0?ctLinha('Incluídos no plano',String(d.franquia))+ctLinha('Acima da franquia',String(d.excedente)):'')+
+     ctLinha('Fixo do plano',ctMoeda(d.fixo_centavos))+
+     ctLinha('Variável por pacote',ctMoeda(d.variavel_centavos))+
+     '<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:15px"><b>Total até agora</b><b style="color:var(--roxo,#6D28D9)">'+ctMoeda(d.total_centavos)+'</b></div>';
+  h+='<div id="ct-cob" style="margin:6px 0 14px">';
+  if(cb.estado==='pago') h+='<div style="padding:10px 12px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-weight:700;font-size:13px">✅ Mês pago'+(cb.tipo==='adesao'?' (1ª mensalidade, paga no cadastro)':'')+'. Obrigado!</div>';
+  else if(!d.cobranca_disponivel) h+='<div style="font-size:12.5px;color:var(--muted)">A cobrança online não está disponível para esta conta. Fale com a DeltaDis.</div>';
+  else h+='<button class="btn pri wide" id="ct-gerar" onclick="contaGerar()">'+(cb.estado==='aberta'?'Ver o Pix da cobrança do mês':'Gerar cobrança do mês · '+ctMoeda(d.total_centavos))+'</button><div style="font-size:11.5px;color:var(--muted);margin-top:6px">O valor considera os pacotes entregues até hoje. Se houver mais entregas depois, gere de novo para atualizar.</div>';
+  h+='<div id="ct-pix"></div><div id="ct-msg" style="color:#c0392b;font-weight:700;font-size:13px;margin-top:6px"></div></div>';
+  var r=d.responsavel||{};
+  h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">MINHA EMPRESA</div>'+
+     ctLinha('Empresa',esc(d.cliente.nome||'—'))+ctLinha('CNPJ',esc(ctCnpj(d.cliente.cnpj)))+ctLinha('Responsável',esc(r.nome||'—'))+ctLinha('E-mail',esc(r.email||'—'))+ctLinha('WhatsApp',esc(ctFone(r.telefone)));
+  box.innerHTML=h;
+}
+function contaGerar(){
+  var b=el('ct-gerar'), m=el('ct-msg'); if(!b) return; m.textContent=''; b.disabled=true; var t0=b.textContent; b.textContent='Gerando...';
+  fetch(DELTADIS_API+'/conta/cobranca',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+    b.disabled=false; b.textContent=t0;
+    if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível gerar a cobrança.'; return; }
+    if(d.estado==='pago'){ contaCarregar(function(){ contaPintar(); }); return; }
+    var qr=d.pix&&d.pix.imagem?'<img alt="QR Code Pix" src="data:image/png;base64,'+esc(d.pix.imagem)+'" style="width:180px;height:180px;display:block;margin:10px auto">':'';
+    el('ct-pix').innerHTML='<div style="margin-top:12px;text-align:center;font-size:13px">Pague <b>'+ctMoeda(d.valor_centavos)+'</b> no Pix</div>'+qr+
+      (d.pix&&d.pix.payload?'<textarea id="ct-copia" readonly rows="3" class="inp" style="font-size:11.5px">'+esc(d.pix.payload)+'</textarea><button class="btn sec wide" style="margin-top:6px" onclick="ctCopiar()">Copiar código Pix</button>':(d.link?'<a href="'+esc(d.link)+'" target="_blank" rel="noopener">Abrir a fatura</a>':''))+
+      '<div style="margin-top:10px;padding:9px 12px;border-radius:10px;background:var(--s3);font-size:12.5px;color:var(--muted)">⏳ Aguardando o pagamento. Esta tela atualiza sozinha quando cair.</div>';
+    if(CT.timer) clearInterval(CT.timer); var n=0;
+    CT.timer=setInterval(function(){ n++; if(n>200||!el('ct-pix')||el('ct-pix').offsetParent===null){ clearInterval(CT.timer); CT.timer=null; return; }
+      contaCarregar(function(x){ if(x.cobranca&&x.cobranca.estado==='pago'){ clearInterval(CT.timer); CT.timer=null; contaPintar(); aviso('Pagamento confirmado! ✅'); } }); },6000);
+  }).catch(function(){ b.disabled=false; b.textContent=t0; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+}
+function ctCopiar(){ var t=el('ct-copia'); if(!t) return; t.select(); try{ document.execCommand('copy'); }catch(e){} try{ navigator.clipboard.writeText(t.value); }catch(e){} aviso('Código Pix copiado'); }
 function abrirMeusDados(){ el('md-fone').value=(DD_USER&&DD_USER.telefone)||''; el('md-nome').value=(DD_USER&&DD_USER.nome)||''; el('md-email').value=(DD_USER&&DD_USER.email)||''; el('md-atual').value=''; el('md-msg').textContent=''; abrir('sh-meus-dados'); }
 function salvarMeusDados(){
   var m=el('md-msg'), b=el('md-btn'); m.textContent='';
