@@ -808,7 +808,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-13-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-14-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -936,6 +936,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet" id="sh-meus-dados">
   <div class="sh-hd"><h3>Meus dados</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
+    <div id="md-emp-box" style="display:none"><div class="field"><label>Nome da empresa</label><input class="inp" id="md-emp" autocomplete="organization"></div>
+    <div class="field"><label>CNPJ</label><input class="inp" id="md-cnpj" inputmode="numeric" placeholder="00.000.000/0000-00"></div></div>
     <div class="field"><label>Nome</label><input class="inp" id="md-nome" autocomplete="name"></div>
     <div class="field"><label>E-mail (usado para entrar)</label><input class="inp" id="md-email" type="email" autocomplete="username"></div>
     <div class="field"><label>Celular com DDD <span style="font-weight:500;color:var(--muted)">(recebe o código de entrada)</span></label><input class="inp" id="md-fone" type="tel" inputmode="tel" autocomplete="tel" placeholder="47 99999-9999"></div>
@@ -2635,10 +2637,10 @@ function contaPintar(){
   h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">PLANO</div>'+
      '<div style="border:1px solid var(--border2);border-radius:12px;padding:12px;background:var(--s2);margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">'+esc(pl?pl.nome:'Mensalidade')+'</b><b style="color:var(--roxo,#6D28D9);font-size:18px">'+ctMoeda(d.fixo_centavos)+'<span style="font-size:11px;color:var(--muted);font-weight:600">/mês</span></b></div>'+
      (pl&&pl.descricao?'<div style="font-size:12.5px;color:var(--muted);margin-top:4px">'+esc(pl.descricao)+'</div>':'')+
-     '<div style="font-size:12.5px;margin-top:6px">'+(d.pacote_centavos>0?('Variável: <b>'+ctMoeda(d.pacote_centavos)+'</b> por pacote entregue'+(d.franquia>0?(' acima de <b>'+d.franquia+'</b> pacotes/mês'):'')):'Sem cobrança por pacote')+'</div></div>';
+     '<div style="font-size:12.5px;margin-top:6px">'+(d.pacote_centavos>0?('Variável: <b>'+ctMoeda(d.pacote_centavos)+'</b> por pacote entregue'+(d.franquia>0&&!d.variavel_total?(' acima de <b>'+d.franquia+'</b> pacotes/mês'):(d.variavel_total?' desde o 1º pacote':''))):'Sem cobrança por pacote')+'</div></div>';
   h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">ESTE MÊS ('+mesTxt+')</div>'+
      ctLinha('Pacotes entregues',String(d.pacotes_mes))+
-     (d.franquia>0?ctLinha('Incluídos no plano',String(d.franquia))+ctLinha('Acima da franquia',String(d.excedente)):'')+
+     (d.franquia>0&&!d.variavel_total?ctLinha('Incluídos no plano',String(d.franquia))+ctLinha('Acima da franquia',String(d.excedente)):'')+
      ctLinha('Fixo do plano',ctMoeda(d.fixo_centavos))+
      ctLinha('Variável por pacote',ctMoeda(d.variavel_centavos))+
      '<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:15px"><b>Total até agora</b><b style="color:var(--roxo,#6D28D9)">'+ctMoeda(d.total_centavos)+'</b></div>';
@@ -2668,18 +2670,23 @@ function contaGerar(){
   }).catch(function(){ b.disabled=false; b.textContent=t0; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
 function ctCopiar(){ var t=el('ct-copia'); if(!t) return; t.select(); try{ document.execCommand('copy'); }catch(e){} try{ navigator.clipboard.writeText(t.value); }catch(e){} aviso('Código Pix copiado'); }
-function abrirMeusDados(){ el('md-fone').value=(DD_USER&&DD_USER.telefone)||''; el('md-nome').value=(DD_USER&&DD_USER.nome)||''; el('md-email').value=(DD_USER&&DD_USER.email)||''; el('md-atual').value=''; el('md-msg').textContent=''; abrir('sh-meus-dados'); }
+function abrirMeusDados(){ el('md-fone').value=(DD_USER&&DD_USER.telefone)||''; el('md-nome').value=(DD_USER&&DD_USER.nome)||''; el('md-email').value=(DD_USER&&DD_USER.email)||''; el('md-atual').value=''; el('md-msg').textContent='';
+  var _eb=el('md-emp-box'), _dn=!!(DD_USER&&DD_USER.perfil==='dono'&&DD_USER.cliente_id); _eb.style.display=_dn?'':'none';
+  if(_dn){ var _pe=function(d){ if(!d||!d.cliente) return; el('md-emp').value=d.cliente.nome||''; var c=String(d.cliente.cnpj||'').replace(/\D/g,''); el('md-cnpj').value=c.length===14?ctCnpj(c):c; };
+    el('md-emp').value=(DD_USER&&DD_USER.cliente_nome)||''; el('md-cnpj').value=''; if(CT.dados) _pe(CT.dados); contaCarregar(_pe); }
+  abrir('sh-meus-dados'); }
 function salvarMeusDados(){
   var m=el('md-msg'), b=el('md-btn'); m.textContent='';
   var nome=el('md-nome').value.trim(), email=el('md-email').value.trim(), atual=el('md-atual').value;
   if(!nome){ m.textContent='Informe o nome.'; return; } if(!email){ m.textContent='Informe o e-mail.'; return; }
   b.disabled=true; b.textContent='Salvando...';
-  fetch(DELTADIS_API+'/auth/meus-dados',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,email:email,telefone:el('md-fone').value.trim(),atual:atual})})
+  fetch(DELTADIS_API+'/auth/meus-dados',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify((function(){ var o={nome:nome,email:email,telefone:el('md-fone').value.trim(),atual:atual}; if(el('md-emp-box').style.display!=='none'){ o.empresa=el('md-emp').value.trim(); o.cnpj=el('md-cnpj').value.trim(); } return o; })())})
   .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
     b.disabled=false; b.textContent='Salvar';
     if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar. Tente de novo.'; return; }
     DD_USER=d.usuario; try{ localStorage.setItem('dd_user',JSON.stringify(d.usuario)); }catch(e){}
     var av=document.querySelector('.tb-av'); if(av&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
+    var _tn=el('tb-tenant'); if(_tn) _tn.textContent=DD_USER.cliente_nome||''; CT.dados=null; contaCarregar();
     fecharTudo(); aviso('Dados atualizados!');
   }).catch(function(){ b.disabled=false; b.textContent='Salvar'; m.textContent='Sem conexão com o servidor.'; });
 }

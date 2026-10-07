@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="versao" content="SITE-2-0610"><meta name="theme-color" content="#5328bc">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="versao" content="SITE-3-0610"><meta name="theme-color" content="#5328bc">
 <title>DELTADIS — Do recebimento à entrega, tudo em um só lugar</title>
 <meta name="description" content="Bipagem por transportadora, separação por motorista, financeiro e fechamento — o painel do seu ponto de distribuição.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -149,7 +149,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     </div>
   </div>
 </div>
-<div id="as-modal"><div class="as-card"><button type="button" class="as-x" onclick="asFechar()">×</button><div id="as-corpo"></div><div class="as-ver">DELTADIS-SITE-2-0610</div></div></div>
+<div id="as-modal"><div class="as-card"><button type="button" class="as-x" onclick="asFechar()">×</button><div id="as-corpo"></div><div class="as-ver">DELTADIS-SITE-3-0610</div></div></div>
 <script>
 /* ASSINAR: plano -> dados da empresa -> Pix -> conta criada quando o pagamento é confirmado */
 var DD_API='https://api.deltadis.com.br';
@@ -171,7 +171,7 @@ function asPlanos(){
   for(i=0;i<AS.planos.length;i++){ p=AS.planos[i];
     h+='<div class="as-plano"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:16px">'+asEsc(p.nome)+'</b><span style="font-size:20px;font-weight:800;color:#6D28D9">'+asMoeda(p.fixo_centavos)+'<span style="font-size:12px;font-weight:600;color:#8A7FA3">/mês</span></span></div>'+
        (p.descricao?'<div style="font-size:13px;color:#5B4F78;margin-top:4px;font-weight:500">'+asEsc(p.descricao)+'</div>':'')+
-       '<div style="font-size:12.5px;color:#8A7FA3;margin-top:6px;font-weight:600">'+(p.pacote_centavos>0?('+ '+asMoeda(p.pacote_centavos)+' por pacote'+(p.franquia>0?(' acima de '+p.franquia+' pacotes/mês'):'')):'Sem cobrança por pacote')+'</div>'+
+       '<div style="font-size:12.5px;color:#8A7FA3;margin-top:6px;font-weight:600">'+(p.pacote_centavos>0?('+ '+asMoeda(p.pacote_centavos)+' por pacote'+(p.franquia>0&&!p.variavel_total?(' acima de '+p.franquia+' pacotes/mês'):'')):'Sem cobrança por pacote')+'</div>'+
        '<button type="button" class="as-btn" style="margin-top:10px" onclick="asEscolher('+i+')">Assinar este plano</button></div>';
   }
   asCorpo(h);
