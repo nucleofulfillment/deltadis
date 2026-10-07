@@ -386,7 +386,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-87-0710</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-88-0710</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -546,7 +546,7 @@ var ROTA_SIG='';
 function rotaGuardar(){
   try{
     var sig=PONTEIRO+'|'+LOTE_ATUAL.length+'|'+SAIDAS.length+'|'+(LOTE_ATUAL[0]?LOTE_ATUAL[0].cod:''); if(sig===ROTA_SIG) return; ROTA_SIG=sig;
-    var o={dia:hojeISO(),mt:String(RP.mt||''),ponteiro:PONTEIRO,lote:LOTE_ATUAL,saidas:SAIDAS,km:ROTA_KM,min:ROTA_MIN,rota:RP.rota,baseLL:RP.baseLL||null,opc:RP.opc};
+    var o={dia:hojeISO(),mt:String(RP.mt||''),ponteiro:PONTEIRO,lote:LOTE_ATUAL,saidas:SAIDAS,km:ROTA_KM,min:ROTA_MIN,rota:RP.rota,baseLL:RP.baseLL||null,opc:RP.opc,bip:!!RP.bipMode,pt:PT.sel||null};
     try{ localStorage.setItem('dd_rota',JSON.stringify(o)); }
     catch(e){ o.rota=null; try{ localStorage.setItem('dd_rota',JSON.stringify(o)); }catch(e2){} }
   }catch(e){}
@@ -556,7 +556,7 @@ function rotaRestaurar(){
   try{
     var o=JSON.parse(localStorage.getItem('dd_rota')||'null'); if(!o) return false;
     if(o.dia!==hojeISO()||String(o.mt)!==String(RP.mt||'')||!o.lote||!o.lote.length||o.ponteiro>=o.lote.length){ rotaLimpar(); return false; }
-    LOTE_ATUAL=o.lote; SAIDAS=o.saidas||[]; PONTEIRO=o.ponteiro||0; ROTA_KM=o.km||0; ROTA_MIN=o.min||0; RP.rota=o.rota||null; RP.baseLL=o.baseLL||null; RP.opc=o.opc||RP.opc;
+    LOTE_ATUAL=o.lote; SAIDAS=o.saidas||[]; PONTEIRO=o.ponteiro||0; ROTA_KM=o.km||0; ROTA_MIN=o.min||0; RP.rota=o.rota||null; RP.baseLL=o.baseLL||null; RP.opc=o.opc||RP.opc; RP.bipMode=!!o.bip; if(o.bip&&!PT.sel&&o.pt) PT.sel=o.pt;
     ROTA_SIG=PONTEIRO+'|'+LOTE_ATUAL.length+'|'+SAIDAS.length+'|'+(LOTE_ATUAL[0]?LOTE_ATUAL[0].cod:'');
     EST='em_rota'; return true;
   }catch(e){ return false; }
