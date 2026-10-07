@@ -244,7 +244,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-27-0710</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-28-0710</p>
   </div>
 </div>
 
@@ -320,7 +320,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
     <div class="col-dir">
       <div class="scan" id="scan">
-        <button class="btn-add" id="btn-avisar" style="right:60px;font-size:16px" title="Avisar motoristas pelo WhatsApp" onclick="abrirAvisar()">📣</button>
+        <button class="btn-add" id="btn-avisar" style="right:60px;font-size:16px" title="Avisar motoristas pelo WhatsApp" onclick="abrirAvisar()"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg></button>
         <button class="btn-add" id="btn-romaneio" title="Romaneios de entrada (salvos)" onclick="abrirRomaneio()">+</button>
 
         <div class="scan-vazio" id="scan-vazio">
@@ -344,12 +344,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <label class="auto"><input type="checkbox" id="scan-auto"> Reconhecer a transportadora pelo código (AJ… = Anjun, GP…BR = Pichau)</label>
 
           <div class="row">
-            <button class="btn pri" onclick="abrirCamera()">📷 Bipar com a câmera</button>
+            <button class="btn sec" onclick="abrirCamera()">📷 Bipar com a câmera</button>
             <button class="btn sec" onclick="desfazerUltimo()" id="btn-desfazer" disabled>↩ Desfazer o último</button>
           </div>
           <div class="divisor"></div>
           <div class="row">
-            <button class="btn sec" onclick="encerrar()">Encerrar contagem</button>
+            <button class="btn pri" onclick="encerrar()">Encerrar contagem</button>
           </div>
           </div>
           <div class="sg-cnt">
@@ -483,6 +483,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn sec" style="padding:7px 12px;font-size:12.5px" onclick="avModelo()">↺ Pacotes chegaram</button><button class="btn sec" style="padding:7px 12px;font-size:12.5px" onclick="avLimpar()">Mensagem em branco</button></div>
       <textarea id="av-texto" oninput="avPrever()" maxlength="400" placeholder="Escreva o aviso (até 400 letras)" style="display:block;width:100%;box-sizing:border-box;min-height:70px;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px"></textarea>
       <div style="background:#E7F5EC;border-radius:12px;padding:10px 12px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#5b7a66;margin-bottom:5px">COMO VAI CHEGAR NO WHATSAPP DO MOTORISTA</div><div id="av-previa" style="background:#fff;border-radius:10px 10px 10px 2px;padding:9px 12px;font-size:14px;line-height:1.4;box-shadow:0 1px 1px rgba(0,0,0,.08);white-space:pre-wrap"></div></div>
+      <div id="av-cons" style="margin-bottom:12px"></div>
       <div class="rm-resumo" style="margin-bottom:6px">Enviar para:</div>
       <select id="av-dest" onchange="avDest()" style="width:100%;box-sizing:border-box;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px;background:#fff"><option value="">Escolher individualmente</option><option value="todos">Todos os motoristas</option></select>
       <div class="rm-resumo" id="av-resumo">Carregando…</div>
@@ -857,12 +858,12 @@ function abrirDevolucoes(){
 /* ===== Avisar motoristas (WhatsApp) ===== */
 var AV={mots:[],ok:false,grupos:[],ponto:'DELTADIS'};
 /* respostas dos motoristas ao aviso de hoje (🚫 recusou / 💬 respondeu) */
-var RESP={};
+var RESP={}, ICON_MEGA='<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
 function carregarRespostas(){
   api('/mesa/whats-respostas').then(function(d){
     if(!d||!d.ok) return; RESP={}; var n=0;
     (d.respostas||[]).forEach(function(r){ RESP[String(r.mt)]=r; if(r.recusou) n++; });
-    var b=el('btn-avisar'); if(b){ b.innerHTML='📣'+(n?'<span class="dot" title="'+n+' motorista(s) recusaram">'+n+'</span>':''); }
+    var b=el('btn-avisar'); if(b){ b.innerHTML=ICON_MEGA+(n?'<span class="dot" title="'+n+' motorista(s) recusaram">'+n+'</span>':''); }
     avIcones();
   }).catch(function(){});
 }
@@ -874,10 +875,31 @@ function respHtml(r,comTexto){
 }
 function avIcones(){
   document.querySelectorAll('.av-st').forEach(function(sp){ sp.innerHTML=respHtml(RESP[sp.getAttribute('data-id')],true); });
-  motChip();
+  avConsolidado(); motChip();
+}
+function avConsolidado(){
+  var c=el('av-cons'); if(!c) return;
+  var rec=[],resp=[],env=[];
+  Object.keys(RESP).forEach(function(k){ var r=RESP[k], nm=k, i; for(i=0;i<(AV.mots||[]).length;i++) if(String(AV.mots[i].id)===k) nm=AV.mots[i].n; for(i=0;i<MOTS.length;i++) if(String(MOTS[i].id)===k) nm=MOTS[i].n;
+    var it={n:nm,r:r}; if(r.recusou) rec.push(it); else if(r.respondeu) resp.push(it); else env.push(it); });
+  if(!rec.length&&!resp.length&&!env.length){ c.innerHTML=''; return; }
+  function lin(t,cls,l){ return l.length?'<div style="margin-top:6px"><span class="av-pill '+cls+'">'+t+' ('+l.length+')</span> <span style="font-size:13px">'+l.map(function(x){ return '<b>'+esc(x.n)+'</b>'+(x.r.respondeu?' <span style="color:#6b5f85">“'+esc(x.r.texto)+'”</span>':''); }).join(' · ')+'</span></div>':''; }
+  c.innerHTML='<div style="border:1px solid #E3D9F2;border-radius:12px;padding:10px 12px;background:#FBF9FF"><div style="font-size:11.5px;font-weight:800;color:#6b5f85;letter-spacing:.4px">SITUAÇÃO DOS AVISOS (ciclo atual)</div>'+lin('🚫 Recusaram','rec',rec)+lin('💬 Responderam','resp',resp)+lin('✔ Avisados, sem resposta','env',env)+'</div>';
 }
 function motChip(){ var c=el('mot-chip'); if(!c) return; c.innerHTML=MOT?respHtml(RESP[String(MOT.id)],false):''; c.title=(MOT&&RESP[String(MOT.id)]&&RESP[String(MOT.id)].texto)||''; }
 
+function abrirAvisar(){
+  AV.mots=[]; el('av-lista').innerHTML=''; el('av-res').innerHTML=''; el('av-resumo').textContent='Carregando…'; el('av-overlay').classList.add('on'); avTipo();
+  api('/mesa/whats-status').then(function(d){
+    if(!d||!d.ok){ el('av-resumo').textContent='Não consegui carregar.'; return; }
+    AV.ok=!!d.configurado; AV.ponto=d.ponto||'DELTADIS'; AV.mots=d.motoristas||[]; AV.grupos=d.grupos||[]; var so='<option value="">Escolher individualmente</option><option value="todos">Todos os motoristas</option>'; AV.grupos.forEach(function(g){ so+='<option value="g:'+esc(g.id)+'">Grupo '+esc(g.nome)+' ('+g.ids.length+')</option>'; }); el('av-dest').innerHTML=so; el('av-dest').value='';
+    el('av-resumo').textContent=AV.ok ? 'Marque quem vai receber:' : 'O WhatsApp da DELTADIS ainda não foi ligado. Você já pode ver a lista, mas o envio só funciona depois da configuração.';
+    var h='';
+    AV.mots.forEach(function(m){ h+='<label class="av-row" data-id="'+esc(m.id)+'" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:9px 12px;border:1px solid #E3D9F2;border-radius:10px;font-size:14px'+(m.tem_fone?'':';opacity:.5')+'"><input type="checkbox" class="av-chk" onchange="avPrever()" value="'+esc(m.id)+'"'+(m.tem_fone?'':' disabled')+'> <span style="flex:1">'+esc(m.n)+'</span><span class="av-st" data-id="'+esc(m.id)+'" style="flex:1 1 100%;order:5;padding-left:26px"></span>'+(m.tem_fone?'':'<span style="font-size:11.5px;color:#b45309">sem telefone</span>')+'</label>'; });
+    el('av-lista').innerHTML=h||'<div class="rm-vazio">Nenhum motorista cadastrado.</div>';
+    document.querySelectorAll('.av-chk').forEach(function(x){ x.checked=false; }); avPrever(); avIcones(); carregarRespostas();
+  }).catch(function(){ el('av-resumo').textContent='Sem conexão.'; });
+}
 function fecharAvisar(){ el('av-overlay').classList.remove('on'); }
 var AV_PADRAO='chegaram {qtd} pacotes para você no ponto {ponto}. Pode retirar!';
 function avTexto(t){ return String(t||'').replace(/\{ponto\}/g,AV.ponto); }
