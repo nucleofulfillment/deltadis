@@ -808,7 +808,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-17-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-18-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -2637,27 +2637,38 @@ function contaCarregar(cb){
 }
 function contaAbrir(){ el('ct-corpo').innerHTML='<div style="color:var(--muted);font-size:13px">Carregando...</div>'; abrir('sh-plano'); if(CT.dados) contaPintar(); contaCarregar(function(){ contaPintar(); }); }
 function ctLinha(k,v){ return '<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--muted)">'+k+'</span><b style="text-align:right">'+v+'</b></div>'; }
+function ctData(iso){ iso=String(iso||''); return iso.length>=10?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4):'—'; }
+function contaVencimento(){
+  var v=parseInt(el('ct-dia').value,10), m=el('ct-msg'); if(m) m.textContent='';
+  fetch(DELTADIS_API+'/conta/vencimento',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dia:v})}).then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+    if(!d||!d.ok){ if(m) m.textContent=(d&&d.mensagem)||'Não foi possível salvar.'; return; }
+    aviso('Vencimento salvo: dia '+d.dia_venc+' ✅'); contaCarregar(function(){ contaPintar(); });
+  }).catch(function(){ if(m) m.textContent='Sem conexão com o servidor.'; });
+}
 function contaPintar(){
   var d=CT.dados, box=el('ct-corpo'); if(!d||!box) return;
-  var pl=d.plano, mesTxt=(d.mes||'').slice(5,7)+'/'+(d.mes||'').slice(0,4), cb=d.cobranca||{estado:'nenhuma'}, h='';
+  var pl=d.plano, ci=d.ciclo, fa=d.fatura||{estado:'nenhuma'}, h='';
   h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:4px">PLANO</div>'+
-     '<div style="border:1px solid var(--border2);border-radius:12px;padding:12px;background:var(--s2);margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">'+esc(pl?pl.nome:'Mensalidade')+'</b><b style="color:var(--roxo,#6D28D9);font-size:18px">'+ctMoeda(d.fixo_centavos)+'<span style="font-size:11px;color:var(--muted);font-weight:600">/mês</span></b></div>'+
+     '<div style="border:1px solid var(--border2);border-radius:12px;padding:12px;background:var(--s2);margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">'+esc(pl?pl.nome:'Sem plano')+'</b><b style="color:var(--roxo,#6D28D9);font-size:18px">'+ctMoeda(ci?ci.fixo_centavos:0)+'<span style="font-size:11px;color:var(--muted);font-weight:600">/mês</span></b></div>'+
      (pl&&pl.descricao?'<div style="font-size:12.5px;color:var(--muted);margin-top:4px">'+esc(pl.descricao)+'</div>':'')+
      '<div style="font-size:12.5px;margin-top:6px">'+(d.pacote_centavos>0?('Variável: <b>'+ctMoeda(d.pacote_centavos)+'</b> por pacote entregue'+(d.franquia>0&&!d.variavel_total?(' acima de <b>'+d.franquia+'</b> pacotes/mês'):(d.variavel_total?' desde o 1º pacote':''))):'Sem cobrança por pacote')+'</div></div>';
-  var mAnt=(d.mes_ant||'').slice(5,7)+'/'+(d.mes_ant||'').slice(0,4), temAnt=(d.pacotes_ant>0||d.var_ja_cobrado);
-  h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">VARIÁVEL DE '+mesTxt+' (ACUMULADO)</div>'+
-     ctLinha('Pacotes entregues até agora',String(d.pacotes_mes))+
-     (d.franquia>0&&!d.variavel_total?ctLinha('Incluídos no plano',String(d.franquia))+ctLinha('Acima da franquia',String(d.exc_atual)):'')+
-     ctLinha('Variável até agora',ctMoeda(d.var_atual_centavos))+
-     '<div style="font-size:12px;color:var(--muted);margin:2px 0 14px">Fecha no fim do mês e é cobrado junto com o fixo do mês seguinte, no dia 01.</div>'+
-     '<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">PARA PAGAR AGORA ('+mesTxt+')</div>'+
-     ctLinha('Fixo do plano (adiantado)',ctMoeda(d.fixo_centavos))+
-     (temAnt?ctLinha('Variável de '+mAnt+(d.var_ja_cobrado?' (já cobrado)':''),ctMoeda(d.variavel_centavos)):'')+
-     '<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:15px"><b>Total</b><b style="color:var(--roxo,#6D28D9)">'+ctMoeda(d.total_centavos)+'</b></div>';
+  if(ci){
+    h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">CICLO ATUAL · '+ctData(ci.inicio)+' a '+ctData(ci.proxima_fatura)+'</div>'+
+       ctLinha('Pacotes entregues até agora',String(ci.pacotes))+
+       (d.franquia>0&&!d.variavel_total?ctLinha('Incluídos no plano',String(d.franquia))+ctLinha('Acima da franquia',String(ci.excedente)):'')+
+       ctLinha('Variável até agora',ctMoeda(ci.variavel_centavos))+
+       ctLinha('Próxima fatura vence em','<b>'+ctData(ci.proxima_fatura)+'</b>')+
+       '<div style="font-size:12px;color:var(--muted);margin:2px 0 6px">Ela traz o fixo do próximo ciclo ('+ctMoeda(ci.fixo_centavos)+') + o variável deste ciclo, num Pix só. Estimativa hoje: <b>'+ctMoeda(ci.total_centavos)+'</b>. A fatura é gerada sozinha no dia do vencimento.</div>';
+    if(ci.pode_mudar_dia){
+      var op=''; for(var i=1;i<=28;i++) op+='<option value="'+i+'"'+(i===ci.dia_venc?' selected':'')+'>Dia '+i+'</option>';
+      h+='<div style="margin:8px 0 14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="font-size:12.5px">Dia de vencimento das faturas:</span><select id="ct-dia" class="inp" style="width:auto">'+op+'</select><button class="btn sec" onclick="contaVencimento()">Salvar</button></div>';
+    } else h+='<div style="font-size:12px;color:var(--muted);margin:0 0 14px">Vencimento todo dia <b>'+ci.dia_venc+'</b>.</div>';
+  } else h+='<div style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Sua conta ainda não tem um plano ativo. Fale com a DeltaDis.</div>';
   h+='<div id="ct-cob" style="margin:6px 0 14px">';
-  if(cb.estado==='pago') h+='<div style="padding:10px 12px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-weight:700;font-size:13px">✅ Mês pago'+(cb.tipo==='adesao'?' (1ª mensalidade, paga no cadastro)':'')+'. Obrigado!</div>';
-  else if(!d.cobranca_disponivel) h+='<div style="font-size:12.5px;color:var(--muted)">A cobrança online não está disponível para esta conta. Fale com a DeltaDis.</div>';
-  else h+='<button class="btn pri wide" id="ct-gerar" onclick="contaGerar()">'+(cb.estado==='aberta'?'Ver o Pix da cobrança do mês':'Gerar cobrança do mês · '+ctMoeda(d.total_centavos))+'</button><div style="font-size:11.5px;color:var(--muted);margin-top:6px">Você pode antecipar o pagamento agora. Se não gerar, a cobrança sai sozinha no dia 01.</div>';
+  if(fa.estado==='pago'&&!(ci&&ci.devida)) h+='<div style="padding:10px 12px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-weight:700;font-size:13px">✅ Fatura paga'+(fa.tipo==='adesao'?' (1ª mensalidade, paga no cadastro)':'')+'. Obrigado!</div>';
+  else if(!ci||!d.cobranca_disponivel) { if(ci) h+='<div style="font-size:12.5px;color:var(--muted)">A cobrança online não está disponível para esta conta. Fale com a DeltaDis.</div>'; }
+  else if(fa.estado==='aberta'||fa.estado==='vencida') h+='<button class="btn pri wide" id="ct-gerar" onclick="contaGerar()">Ver o Pix da fatura · '+ctMoeda(fa.valor_centavos)+'</button>';
+  else if(ci.devida) h+='<button class="btn pri wide" id="ct-gerar" onclick="contaGerar()">Gerar fatura · '+ctMoeda(ci.total_centavos)+'</button>';
   h+='<div id="ct-pix"></div><div id="ct-msg" style="color:#c0392b;font-weight:700;font-size:13px;margin-top:6px"></div></div>';
   var r=d.responsavel||{};
   h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">MINHA EMPRESA</div>'+
@@ -2676,7 +2687,7 @@ function contaGerar(){
       '<div style="margin-top:10px;padding:9px 12px;border-radius:10px;background:var(--s3);font-size:12.5px;color:var(--muted)">⏳ Aguardando o pagamento. Esta tela atualiza sozinha quando cair.</div>';
     if(CT.timer) clearInterval(CT.timer); var n=0;
     CT.timer=setInterval(function(){ n++; if(n>200||!el('ct-pix')||el('ct-pix').offsetParent===null){ clearInterval(CT.timer); CT.timer=null; return; }
-      contaCarregar(function(x){ if(x.cobranca&&x.cobranca.estado==='pago'){ clearInterval(CT.timer); CT.timer=null; contaPintar(); aviso('Pagamento confirmado! ✅'); } }); },6000);
+      contaCarregar(function(x){ if(x.fatura&&x.fatura.estado==='pago'){ clearInterval(CT.timer); CT.timer=null; contaPintar(); aviso('Pagamento confirmado! ✅'); } }); },6000);
   }).catch(function(){ b.disabled=false; b.textContent=t0; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
 function ctCopiar(){ var t=el('ct-copia'); if(!t) return; t.select(); try{ document.execCommand('copy'); }catch(e){} try{ navigator.clipboard.writeText(t.value); }catch(e){} aviso('Código Pix copiado'); }
