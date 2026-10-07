@@ -60,20 +60,20 @@
   .voltar:hover{border-color:#6D28D9;color:#6D28D9}
 
   /* ══ layout em duas colunas: logos à esquerda, contagem à direita ══ */
-  .mesa-layout{display:flex;align-items:flex-start;gap:20px;max-width:980px;width:100%;margin-top:18px;flex:1;min-height:0}
-  .col-esq{flex:0 0 336px;max-height:100%;overflow-y:auto;padding-right:4px}
-  .col-dir{flex:1;min-width:340px}
+  .mesa-layout{display:flex;flex-direction:column;align-items:stretch;gap:12px;max-width:1080px;width:100%;margin-top:14px;flex:1;min-height:0}
+  .col-esq{flex:0 0 auto;width:100%}
+  .col-dir{flex:1;min-width:0;min-height:0;overflow-y:auto;padding:2px 2px 8px}
 
-  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-content:start;width:100%}
-  .card{position:relative;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--s1);cursor:pointer;transition:transform .15s ease,border-color .15s,box-shadow .15s;text-align:left;box-shadow:0 1px 2px rgba(31,10,61,.05)}
+  .cards{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-content:start;width:100%}
+  .card{position:relative;padding:9px 6px;text-align:center;border:1px solid var(--border);border-radius:12px;background:var(--s1);cursor:pointer;transition:transform .15s ease,border-color .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(31,10,61,.05)}
   .card:hover{transform:translateY(-3px);border-color:#D8B8EE;box-shadow:0 20px 45px -22px rgba(31,10,61,.28)}
   .card.ativa{border-color:#6D28D9;box-shadow:0 0 0 3px rgba(109,40,217,.18)}
-  .card .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:9px;color:#fff;font-weight:800;font-size:11px;overflow:hidden}
+  .card .ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin:0 auto 5px;color:#fff;font-weight:800;font-size:11px;overflow:hidden}
   .card .ic img{width:100%;height:100%;object-fit:contain;background:#fff}
-  .card .cn{font-size:13px;font-weight:800;margin-bottom:3px;line-height:1.2}
-  .card .cd{font-size:11px;color:var(--muted)}
+  .card .cn{font-size:11.5px;font-weight:800;margin-bottom:2px;line-height:1.15;min-height:26px;display:flex;align-items:center;justify-content:center}
+  .card .cd{font-size:10px;color:var(--muted)}
 
-  @media(max-width:900px){ html,body{overflow:auto} .wrap{height:auto;overflow:visible} .mesa-layout{flex-direction:column} .col-esq{flex:0 0 auto;width:100%} .cards{grid-template-columns:repeat(3,1fr)} }
+  @media(max-width:900px){ html,body{overflow:auto} .wrap{height:auto;overflow:visible} .col-dir{overflow:visible} .cards{grid-template-columns:repeat(3,1fr)} .mot-box{flex-direction:column;align-items:stretch;gap:6px} }
   @media(max-width:560px){ .cards{grid-template-columns:repeat(2,1fr)} }
 
   /* ══ painel de bipagem (coluna direita) ══ */
@@ -161,9 +161,9 @@
   .cam-box video{width:100%;height:100%;object-fit:cover}
   .cam-linha{position:absolute;left:8%;right:8%;top:50%;height:2px;background:#EC4899;box-shadow:0 0 12px #EC4899}
   .cam-info{color:#fff;font-size:13px;text-align:center;max-width:90vw}
-  .mot-box{background:#fff;border:1px solid var(--border2);border-radius:14px;padding:12px 14px;margin-bottom:14px}
-  .mot-box label{display:block;font-size:12px;font-weight:800;color:var(--muted2);margin-bottom:6px}
-  .mot-box input{width:100%;box-sizing:border-box;border:1px solid var(--border2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;background:var(--s2);color:var(--text)}
+  .mot-box{background:#fff;border:1px solid var(--border2);border-radius:14px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+  .mot-box label{display:block;font-size:12px;font-weight:800;color:var(--muted2);margin:0;white-space:nowrap}
+  .mot-box input{flex:1;min-width:0;box-sizing:border-box;border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:var(--s2);color:var(--text)}
   .mot-box select{width:100%;border:1px solid var(--border2);border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;background:var(--s2);color:var(--text)}
   .cards.bloq{opacity:.4;pointer-events:none}
   .cards.bloq .card.livre{opacity:1;pointer-events:auto}
@@ -231,7 +231,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-20-0610</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-21-0710</p>
   </div>
 </div>
 
