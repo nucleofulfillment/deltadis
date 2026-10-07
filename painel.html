@@ -808,7 +808,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-16-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-17-0610</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -2644,14 +2644,16 @@ function contaPintar(){
      '<div style="border:1px solid var(--border2);border-radius:12px;padding:12px;background:var(--s2);margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:16px">'+esc(pl?pl.nome:'Mensalidade')+'</b><b style="color:var(--roxo,#6D28D9);font-size:18px">'+ctMoeda(d.fixo_centavos)+'<span style="font-size:11px;color:var(--muted);font-weight:600">/mês</span></b></div>'+
      (pl&&pl.descricao?'<div style="font-size:12.5px;color:var(--muted);margin-top:4px">'+esc(pl.descricao)+'</div>':'')+
      '<div style="font-size:12.5px;margin-top:6px">'+(d.pacote_centavos>0?('Variável: <b>'+ctMoeda(d.pacote_centavos)+'</b> por pacote entregue'+(d.franquia>0&&!d.variavel_total?(' acima de <b>'+d.franquia+'</b> pacotes/mês'):(d.variavel_total?' desde o 1º pacote':''))):'Sem cobrança por pacote')+'</div></div>';
-  var mAnt=(d.mes_ant||'').slice(5,7)+'/'+(d.mes_ant||'').slice(0,4);
-  h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">COBRANÇA DE '+mesTxt+'</div>'+
+  var mAnt=(d.mes_ant||'').slice(5,7)+'/'+(d.mes_ant||'').slice(0,4), temAnt=(d.pacotes_ant>0||d.var_ja_cobrado);
+  h+='<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">VARIÁVEL DE '+mesTxt+' (ACUMULADO)</div>'+
+     ctLinha('Pacotes entregues até agora',String(d.pacotes_mes))+
+     (d.franquia>0&&!d.variavel_total?ctLinha('Incluídos no plano',String(d.franquia))+ctLinha('Acima da franquia',String(d.exc_atual)):'')+
+     ctLinha('Variável até agora',ctMoeda(d.var_atual_centavos))+
+     '<div style="font-size:12px;color:var(--muted);margin:2px 0 14px">Fecha no fim do mês e é cobrado junto com o fixo do mês seguinte, no dia 01.</div>'+
+     '<div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:2px">PARA PAGAR AGORA ('+mesTxt+')</div>'+
      ctLinha('Fixo do plano (adiantado)',ctMoeda(d.fixo_centavos))+
-     ctLinha('Pacotes entregues em '+mAnt,String(d.pacotes_ant))+
-     (d.franquia>0&&!d.variavel_total?ctLinha('Incluídos no plano',String(d.franquia))+ctLinha('Acima da franquia',String(d.excedente)):'')+
-     ctLinha('Variável de '+mAnt+(d.var_ja_cobrado?' (já cobrado)':''),ctMoeda(d.variavel_centavos))+
-     '<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:15px"><b>Total</b><b style="color:var(--roxo,#6D28D9)">'+ctMoeda(d.total_centavos)+'</b></div>'+
-     '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">Entregues neste mês até agora: <b>'+d.pacotes_mes+'</b> pacotes. Eles entram na cobrança do dia 01 do mês que vem, que é gerada sozinha.</div>';
+     (temAnt?ctLinha('Variável de '+mAnt+(d.var_ja_cobrado?' (já cobrado)':''),ctMoeda(d.variavel_centavos)):'')+
+     '<div style="display:flex;justify-content:space-between;padding:9px 0;font-size:15px"><b>Total</b><b style="color:var(--roxo,#6D28D9)">'+ctMoeda(d.total_centavos)+'</b></div>';
   h+='<div id="ct-cob" style="margin:6px 0 14px">';
   if(cb.estado==='pago') h+='<div style="padding:10px 12px;border-radius:10px;background:#e8f5e9;color:#2e7d32;font-weight:700;font-size:13px">✅ Mês pago'+(cb.tipo==='adesao'?' (1ª mensalidade, paga no cadastro)':'')+'. Obrigado!</div>';
   else if(!d.cobranca_disponivel) h+='<div style="font-size:12.5px;color:var(--muted)">A cobrança online não está disponível para esta conta. Fale com a DeltaDis.</div>';
