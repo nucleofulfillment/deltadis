@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-24-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-26-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1071,6 +1071,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   </div>
 </div>
 
+<div class="sheet wide" id="sh-veresult">
+  <div class="sh-hd"><h3 id="vr-tit">Resultado da consulta</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd" id="vr-bd"></div>
+</div>
 <div class="sheet wide" id="sh-veiculo">
   <div class="sh-hd"><h3 id="ve-tit">Cadastrar veículo</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
@@ -3587,8 +3591,22 @@ function veMulta(v){
   if(VE_OCUP[v.id]) return '<span style="color:var(--muted);font-size:12px">Consultando…</span>';
   if(!m) return '<button class="btn sec sm" onclick="event.stopPropagation();veConsultar(\''+id+'\')">Consultar</button>';
   var q=m.qtd||0, d=new Date(m.t), dt=('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2);
-  var h=q>0?('<span style="display:inline-flex;align-items:center;gap:5px;color:#DC2626;font-weight:700">'+VE_BELL+q+(q===1?' multa':' multas')+' · '+veMoeda(m.valor_multas)+'</span>'):'<span style="color:#16A34A;font-weight:700">Sem multas</span>';
-  return h+'<div style="font-size:11px;color:var(--muted);margin-top:2px">consultado em '+dt+' · <span class="vertodos" onclick="event.stopPropagation();veConsultar(\''+id+'\')">atualizar</span></div>';
+  var h=q>0?('<span style="display:inline-flex;align-items:center;gap:5px;color:#DC2626;font-weight:700;cursor:pointer" onclick="event.stopPropagation();veResultado(\''+id+'\')">'+VE_BELL+q+(q===1?' multa':' multas')+' · '+veMoeda(m.valor_multas)+'</span>'):'<span style="color:#16A34A;font-weight:700;cursor:pointer" onclick="event.stopPropagation();veResultado(\''+id+'\')">Sem multas</span>';
+  return h+'<div style="font-size:11px;color:var(--muted);margin-top:2px">consultado em '+dt+' · <span class="vertodos" onclick="event.stopPropagation();veResultado(\''+id+'\')">detalhes</span> · <span class="vertodos" onclick="event.stopPropagation();veConsultar(\''+id+'\')">atualizar</span></div>';
+}
+function veResultado(id){
+  var v=null,i; for(i=0;i<VE.lista.length;i++) if(VE.lista[i].id===id) v=VE.lista[i]; if(!v||!v.multas) return;
+  var m=v.multas, d=new Date(m.t), h='', L=m.lista||[], j, x;
+  el('vr-tit').textContent='Consulta · '+v.placa+(v.modelo?' · '+v.modelo:'');
+  function lin(n,val){ return '<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)"><span>'+n+'</span><b style="color:'+(val>0?'#DC2626':'#16A34A')+'">'+(val>0?veMoeda(val):'Sem débito')+'</b></div>'; }
+  h+='<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Consultado em '+('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear()+' às '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+'</div>';
+  h+='<div style="font-weight:700;margin:6px 0">Multas ('+(m.qtd||0)+')</div>';
+  if(!L.length) h+='<div style="padding:10px 0;color:#16A34A;font-weight:600">Nenhuma multa em aberto.</div>';
+  for(j=0;j<L.length;j++){ x=L[j]; h+='<div style="padding:11px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;gap:12px"><b>'+esc(x.descricao||'Multa')+'</b><b style="color:#DC2626;white-space:nowrap">'+veMoeda(x.valor)+'</b></div><div style="font-size:12px;color:var(--muted);margin-top:3px">'+(x.data?'Infração: '+esc(x.data)+' · ':'')+(x.venc?'Vence: '+esc(x.venc)+' · ':'')+esc(x.fonte||'')+(x.uf?' · '+esc(x.uf):'')+'</div></div>'; }
+  h+='<div style="font-weight:700;margin:18px 0 2px">Outros débitos</div>'+lin('IPVA',m.ipva)+lin('Licenciamento',m.lic)+lin('DPVAT',m.dpvat);
+  h+='<div style="display:flex;justify-content:space-between;padding:14px 0;font-size:15px"><b>Total em aberto</b><b style="color:'+(m.total>0?'#DC2626':'#16A34A')+'">'+(m.total>0?veMoeda(m.total):'R$ 0,00')+'</b></div>';
+  h+='<button class="btn sec" style="width:100%" onclick="fecharTudo();veConsultar(\''+esc(id)+'\')">Atualizar consulta (R$ 8,00)</button>';
+  el('vr-bd').innerHTML=h; abrir('sh-veresult');
 }
 function veConsultar(id){
   var v=null,i; for(i=0;i<VE.lista.length;i++) if(VE.lista[i].id===id) v=VE.lista[i]; if(!v||VE_OCUP[id]) return;
@@ -3641,16 +3659,27 @@ function pintarVeiculos(){
   el('ve-corpo').innerHTML=h;
 }
 var VE_FOTO=null, VE_SUJO={ipva:false,lic:false};
-function veFotoUrl(v){ return DELTADIS_API+'/veiculos/foto?key='+encodeURIComponent(DELTADIS_API_KEY)+'&id='+encodeURIComponent(v.id)+'&t='+(v.foto_t||0); }
+var VE_FT={};
+function veFotoUrl(v){
+  var k=v.id+'_'+(v.foto_t||0);
+  if(VE_FT[k]) return VE_FT[k];
+  if(VE_FT[k]===undefined){ VE_FT[k]='';
+    fetch(DELTADIS_API+'/veiculos/foto?key='+encodeURIComponent(DELTADIS_API_KEY)+'&id='+encodeURIComponent(v.id)+'&t='+(v.foto_t||0))
+    .then(function(r){ if(!r.ok) throw 0; return r.blob(); })
+    .then(function(b){ VE_FT[k]=URL.createObjectURL(b); pintarVeiculos(); })
+    .catch(function(){ delete VE_FT[k]; });
+  }
+  return '';
+}
 function veThumb(v,px){
   var st='width:'+px+'px;height:'+px+'px;border-radius:10px;flex:none;';
-  if(v.foto_t) return '<img src="'+veFotoUrl(v)+'" alt="" style="'+st+'object-fit:cover;background:var(--s3)">';
+  if(v.foto_t&&veFotoUrl(v)) return '<img src="'+veFotoUrl(v)+'" alt="" style="'+st+'object-fit:cover;background:var(--s3)" onerror="this.style.visibility=\'hidden\'">';
   return '<div style="'+st+'background:var(--s3);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:'+Math.round(px*.55)+'px;height:'+Math.round(px*.55)+'px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M5 17h14M5 17a2 2 0 110-4M19 17a2 2 0 100-4M3 13l2-6h14l2 6M7 10h10"/></svg></div>';
 }
 function veFotoPintar(v){
   var box=el('ve-foto-box'), tem=(VE_FOTO&&VE_FOTO!=='remover')||(!VE_FOTO&&v&&v.foto_t);
   if(VE_FOTO&&VE_FOTO!=='remover') box.innerHTML='<img src="'+VE_FOTO+'" style="width:100%;height:100%;object-fit:cover">';
-  else if(VE_FOTO!=='remover'&&v&&v.foto_t) box.innerHTML='<img src="'+veFotoUrl(v)+'" style="width:100%;height:100%;object-fit:cover">';
+  else if(VE_FOTO!=='remover'&&v&&v.foto_t&&veFotoUrl(v)) box.innerHTML='<img src="'+veFotoUrl(v)+'" style="width:100%;height:100%;object-fit:cover">';
   else box.innerHTML='<svg viewBox="0 0 24 24" style="width:30px;height:30px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
   el('ve-foto-bt').textContent=tem?'Trocar foto':'Adicionar foto'; el('ve-foto-rm').style.display=tem?'':'none';
 }
