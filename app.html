@@ -170,6 +170,17 @@ html.dd-ret #splash{display:flex}
 .info-full{margin:0 -16px;padding:16px 16px 22px;background:linear-gradient(180deg, rgba(243,236,251,0) 0%, rgba(243,236,251,0) 26%, #F3ECFB 48%, #F3ECFB 100%)}
 .mapa-abrir-maps{position:absolute;bottom:12px;right:12px;background:#fff;color:#1a73e8;font-weight:700;font-size:12.5px;padding:8px 14px;border-radius:8px;box-shadow:var(--sh2);text-decoration:none;z-index:6;display:inline-flex;align-items:center;gap:6px}
 .meta-topo{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted2);margin-bottom:8px}
+.meta-linha{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.meta-linha .meta-rot{font-size:12px;font-weight:800;color:var(--muted2);white-space:nowrap}
+.meta-linha .meta-barra{flex:1}
+.meta-linha .meta-num{font-size:12px;font-weight:800;color:var(--roxo-esc);white-space:nowrap}
+.bp-campo{display:flex;align-items:center;gap:10px;border:2px solid #7C3AED;border-radius:14px;padding:12px;margin-bottom:12px;background:#fff}
+.bp-campo input{border:none;outline:none;background:transparent;font-size:16px;font-weight:700;width:100%;color:var(--text);font-family:inherit}
+.bp-campo svg.ic{width:24px;height:24px;flex:none;stroke:#7C3AED;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bp-tec{width:40px;height:40px;border-radius:10px;border:none;background:#F1EAFB;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer;padding:0}
+.bp-tec svg{width:20px;height:20px;stroke:#5B21B6;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bp-acao{flex:1;border:none;border-radius:12px;background:#7C3AED;color:#fff;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.bp-acao svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .meta-barra{height:8px;border-radius:99px;background:var(--s3);overflow:hidden}
 .meta-fill{height:100%;background:var(--grad);border-radius:99px}
 .progresso{margin-bottom:14px}
@@ -180,7 +191,7 @@ html.dd-ret #splash{display:flex}
 /* lista de pacotes bipados */
 .bp-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
 .bp-item:last-child{border-bottom:none}
-.bp-seq{width:24px;height:24px;border-radius:50%;background:var(--s3);color:var(--roxo-esc);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.bp-seq{width:34px;height:34px;border-radius:50%;background:var(--s3);color:var(--roxo-esc);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
 .bp-info{display:flex;flex-direction:column;min-width:0;font-size:12.5px;line-height:1.4}
 .bp-info span{color:var(--muted);font-size:11px}
 
@@ -371,7 +382,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-79-0610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-80-0710</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1346,15 +1357,15 @@ function cpCod(c){
 }
 function bpItemHtml(m){
   var info;
-  if(m.e) info='<span style="color:#166534;font-weight:700;font-size:12px">✔ '+esc(m.r||((m.cl||'')+'' ))+(vzExterno()?(m.v>0?' · '+vzMoeda(m.v):' · <span style="color:#B45309">sem valor</span>'):'')+'</span>';
-  else info='<span style="color:#B45309">'+(m.novo?'sem dados':'endereço incompleto')+' · toque e fale o endereço</span>';
-  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FFFBF2;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq"'+(m.e?' style="background:#DCFCE7;color:#166534"':'')+'>'+(m.e?'✔':m.n)+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+info+'</div><button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+  if(m.e) info='<span style="color:#166534;font-weight:700;font-size:13px">'+esc(m.r||((m.cl||'')+'' ))+(vzExterno()?(m.v>0?' · '+vzMoeda(m.v):' · <span style="color:#B45309">sem valor</span>'):'')+'</span>';
+  else info='<span style="color:#BE185D;font-weight:700;font-size:13px">'+(m.novo?'Sem dados':'Endereço incompleto')+'</span>';
+  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FDF2F8;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq" style="'+(m.e?'background:#DCFCE7;color:#166534':'background:#FCE7F3;color:#BE185D')+'">'+m.n+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+info+'</div><button class="btn sec" style="padding:4px 9px;min-width:0;margin-left:8px;font-size:12px;background:transparent;color:#9A8FB0" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
-function metaPintar(){ var m=metaHoje(), t=el('meta-txt'), f=el('meta-fill'); if(t) t.textContent=m.feitos+' / '+m.meta+' entregas'; if(f) f.style.width=Math.min(100,Math.round(m.feitos/Math.max(1,m.meta)*100))+'%'; }
+function metaPintar(){ var m=metaHoje(), t=el('meta-txt'), f=el('meta-fill'); if(t) t.textContent=m.feitos+'/'+m.meta; if(f) f.style.width=Math.min(100,Math.round(m.feitos/Math.max(1,m.meta)*100))+'%'; }
 function bpAtualizar(){
   metaPintar();
   var c=el('bp-cnt'), u=el('bp-ult'), l=el('bp-lista'); if(!c) return;
-  c.textContent=BP.meus.length;
+  c.textContent=BP.meus.length+' '+(BP.meus.length===1?'pacote':'pacotes');
   var uh='';
   if(BP.carregando) uh='<div class="aviso-acao" style="margin:0 0 12px"><b>Carregando seus pacotes…</b></div>';
   else if(BP.ult){ var cor={ok:['#ECFDF3','#B7EBC9','#166534'],novo:['#EFF6FF','#BFDBFE','#1E40AF'],rep:['#FFF7E6','#F5D9A0','#8A5A00'],err:['#FCEBEB','#F3C9C9','#B91C1C']}[BP.ult.t]||['#F4EEFB','#E3D9F2','#5B5170'];
@@ -1405,14 +1416,13 @@ function bpMesaHtml(){
   var M=BP.mesa||[], i, falta=[], nls=[], tot=M.length, bip=0;
   if(!tot) return '';
   for(i=0;i<tot;i++){ if(M[i].b) bip++; else if(M[i].nl) nls.push(M[i]); else falta.push(M[i]); }
-  var h='<div style="border:1px solid '+(falta.length?'#F5D9A0':'#B7EBC9')+';background:'+(falta.length?'#FFF7E6':'#ECFDF3')+';border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px"><b style="color:'+(falta.length?'#8A5A00':'#166534')+'">📋 Romaneio da Mesa: '+bip+' de '+tot+' bipados'+(nls.length?' · '+nls.length+' não localizado'+(nls.length===1?'':'s'):'')+'</b>';
-  if(!falta.length&&!nls.length) h+='<div style="color:#166534;margin-top:3px">✔ Todos os pacotes do romaneio foram conferidos.</div>';
-  else if(!falta.length) h+='<div style="color:#166534;margin-top:3px">✔ Os demais pacotes foram conferidos.</div>';
-  if(falta.length){ h+='<div style="color:#8A5A00;margin:3px 0 4px">Faltam bipar:</div>'; for(i=0;i<falta.length&&i<30;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#5B3A00;word-break:break-all">'+cpCod(falta[i].cod)+(falta[i].tr?' <span style="font-weight:500;color:#8A5A00">· '+esc(falta[i].tr)+'</span>':'')+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(falta[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),true)">Não localizei</button></div>'; if(falta.length>30) h+='<div style="color:#8A5A00">… e mais '+(falta.length-30)+'</div>'; }
+  if(!falta.length&&!nls.length) return '';   /* tudo conferido: sem aviso */
+  var h='<div style="border:1px solid #F9A8D4;background:#FDF2F8;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px"><b style="color:#BE185D">Mesa: '+bip+' de '+tot+' bipados'+(nls.length?' · '+nls.length+' não localizado'+(nls.length===1?'':'s'):'')+'</b>';
+  if(falta.length){ h+='<div style="color:#9D174D;margin:3px 0 4px">Faltam bipar:</div>'; for(i=0;i<falta.length&&i<30;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#831843;word-break:break-all">'+cpCod(falta[i].cod)+(falta[i].tr?' <span style="font-weight:500;color:#9D174D">· '+esc(falta[i].tr)+'</span>':'')+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(falta[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),true)">Não localizei</button></div>'; if(falta.length>30) h+='<div style="color:#9D174D">… e mais '+(falta.length-30)+'</div>'; }
   if(nls.length){ h+='<div style="color:#B91C1C;margin:6px 0 3px;font-weight:700">⚠ Não localizados (Mesa avisada):</div>'; for(i=0;i<nls.length;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#7F1D1D;word-break:break-all">'+cpCod(nls[i].cod)+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(nls[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),false)">Desfazer</button></div>'; }
   return h+'</div>';
 }
-function bpDigitado(){ var i=el('bp-cod'); if(!i) return; var v=i.value; i.value=''; bpBipar(v); }
+function bpDigitado(){ clearTimeout(BP_T); var i=el('bp-cod'); if(!i) return; var v=i.value; i.value=''; if(v) bpBipar(v); try{ i.focus({preventScroll:true}); }catch(e){} }
 function bpRemover(cod){
   rpApi('/motorista/desbipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod})}).then(function(d){
     if(!d||!d.ok){ aviso('Não consegui remover agora.'); return; }
@@ -1492,17 +1502,36 @@ function bpFecharCamera(){
   var o=el('bp-cam'); if(o&&o.parentNode) o.parentNode.removeChild(o);
   BP.camFn=null;
 }
+var BP_IC={bar:'<svg class="ic" viewBox="0 0 24 24"><path d="M4 6v12M8 6v12M12 6v12M16 6v12M20 6v12"/></svg>',tec:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>'};
 function bpTela(){
-  return '<div class="card"><h3 style="margin:0 0 2px">Bipar meus pacotes</h3>'+
-    (PT.sel?'<p style="margin:0 0 6px;font-size:12.5px">📍 <b>'+esc(PT.sel.nome)+'</b> · <a style="color:var(--roxo);font-weight:700" onclick="ptAbrir()">trocar</a></p>':'')+
-    '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px"><b id="bp-cnt">'+BP.meus.length+'</b> pacote(s) na sua lista. Bipe todos que você pegou e depois monte a rota.</p>'+
+  BP.man=false;
+  return '<div class="card"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><b id="bp-cnt" style="font-size:15px">'+BP.meus.length+' '+(BP.meus.length===1?'pacote':'pacotes')+'</b><span style="color:var(--muted);font-size:12.5px">Bipe para iniciar a rota</span></div>'+
+    (PT.sel?'<p style="margin:0 0 8px;font-size:12.5px">📍 <b>'+esc(PT.sel.nome)+'</b> · <a style="color:var(--roxo);font-weight:700" onclick="ptAbrir()">trocar</a></p>':'')+
     '<div id="bp-ult"></div>'+
-    '<div class="search"><span>🔎</span><input id="bp-cod" placeholder="bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')bpDigitado()"></div>'+
-    '<div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn pri" style="flex:1" onclick="bpCamera()">📷 Usar a câmera</button><button class="btn sec" style="flex:1" onclick="bpDigitado()">Registrar</button></div>'+
-    '<button class="btn sec wide" style="margin:-4px 0 14px" onclick="srPerguntar()">🎤 Parada sem rastreio (falar o endereço)</button>'+
+    '<div class="bp-campo"><span id="bp-ico">'+BP_IC.bar+'</span><input id="bp-cod" placeholder="Aponte e bipe" inputmode="none" autocomplete="off" autocapitalize="characters" oninput="bpEntrada()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bpDigitado();}"><button class="bp-tec" id="bp-tec" aria-label="Digitar o código" onclick="bpModo()"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg></button><button class="btn pri" id="bp-reg" style="display:none;padding:10px 14px" onclick="bpDigitado()">Registrar</button></div>'+
+    '<div style="display:flex;gap:10px;margin-bottom:14px"><button class="bp-acao" onclick="bpCamera()"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Câmera</button><button class="bp-acao" onclick="srPerguntar()"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Sem rastreio</button></div>'+
     '<div id="bp-lista"></div>'+
     '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">Montar minha rota</button></div></div>';
 }
+/* leitor automático (padrão): campo sempre focado, registra sozinho ao bipar; ⌨ liga o modo digitar (sem registro automático) */
+var BP_T=null;
+function bpEntrada(){
+  clearTimeout(BP_T); if(BP.man) return;
+  var i=el('bp-cod'); if(i&&i.value.length>=8) BP_T=setTimeout(bpDigitado,250);
+}
+function bpModo(){
+  var i=el('bp-cod'); if(!i) return; BP.man=!BP.man; clearTimeout(BP_T);
+  i.setAttribute('inputmode',BP.man?'text':'none'); i.placeholder=BP.man?'Digite aqui':'Aponte e bipe';
+  var r=el('bp-reg'); if(r) r.style.display=BP.man?'':'none';
+  var ic=el('bp-ico'); if(ic) ic.style.display=BP.man?'none':''; var tb=el('bp-tec'); if(tb) tb.innerHTML=BP.man?'<svg viewBox="0 0 24 24"><path d="M4 6v12M8 6v12M12 6v12M16 6v12M20 6v12"/></svg>':'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>'; if(tb) tb.setAttribute('aria-label',BP.man?'Voltar ao leitor':'Digitar o código');
+  i.blur(); setTimeout(function(){ i.focus(); },60);
+}
+setInterval(function(){
+  var i=el('bp-cod'); if(!i||!i.offsetParent) return;
+  if(el('bp-cam')||el('asg-ovl')) return;
+  var a=document.activeElement; if(a&&a!==document.body&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')) return;
+  try{ i.focus({preventScroll:true}); }catch(e){}
+},800);
 /* ══ (35) VOZ POR CEP OU RUA — toque no pacote, fale, salva sozinho e passa para o próximo ══ */
 var VZ={cod:'',novo:false,modo:'voz',rua:'',bai:'',cid:'',cep:'',achou:null,rec:null,ouvindo:false,busy:false,cand:null,vivo:false,tmr:null,micOk:false,semPerm:false,micErr:'',txtT:null,vazio:0,trans:false};
 function vzNum(t){
@@ -2174,8 +2203,7 @@ function renderInicio(){
   var box=el('inicio-conteudo'); if(!box) return;
   var meta=metaHoje(), h='';
   if(EST!=='em_rota'){
-    h+='<div class="meta-card"><div class="meta-topo"><span>Meta de hoje</span><span id="meta-txt">'+meta.feitos+' / '+meta.meta+' entregas</span></div>'+
-       '<div class="meta-barra"><div class="meta-fill" id="meta-fill" style="width:'+Math.min(100,Math.round(meta.feitos/meta.meta*100))+'%"></div></div></div>';
+    h+='<div class="meta-card meta-linha"><span class="meta-rot">Meta de hoje</span><div class="meta-barra"><div class="meta-fill" id="meta-fill" style="width:'+Math.min(100,Math.round(meta.feitos/meta.meta*100))+'%"></div></div><span class="meta-num" id="meta-txt">'+meta.feitos+'/'+meta.meta+'</span></div>';
   }
 
   if(EST==='sem_lote'){

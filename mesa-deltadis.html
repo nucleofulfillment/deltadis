@@ -256,7 +256,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-30-0710</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-31-0710</p>
   </div>
 </div>
 
@@ -347,7 +347,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="sg-acoes">
           <div class="manual">
             <div class="manual-row">
-              <input type="text" id="scan-manual" placeholder="Bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter') registrarManual()">
+              <input type="text" id="scan-manual" placeholder="Bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter') registrarManual()" oninput="scanAuto()">
               <button onclick="registrarManual()">Registrar</button>
             </div>
           </div>
@@ -680,7 +680,17 @@ function registrarPacote(cod){
   }).catch(function(){ bipReverter(p,tr,cod,sid); somErro(); mostrarUlt('err','Sem conexão com o servidor. Esse pacote NÃO foi registrado — bipe de novo.',cod); });
 }
 
+/* leitor automático (igual ao Veltro): o código chegou inteiro (8+ caracteres) e parou 0,25 s → registra sozinho; Enter também registra */
+var SCAN_T=null;
+function scanAuto(){ clearTimeout(SCAN_T); var i=el('scan-manual'); if(i&&i.value.trim().length>=8) SCAN_T=setTimeout(registrarManual,250); }
+setInterval(function(){
+  if(!ATIVA) return; var i=el('scan-manual'); if(!i||!i.offsetParent) return;
+  var a=document.activeElement; if(a&&a!==document.body&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT')) return;
+  if(document.querySelector('[id$="-overlay"].on')) return;
+  try{ i.focus({preventScroll:true}); }catch(e){}
+},800);
 function registrarManual(){
+  clearTimeout(SCAN_T);
   if(!ATIVA) return;
   var inp=el('scan-manual'), val=(inp.value||'').trim();
   if(!val){ aviso('Digite ou bipe o código'); return; }
