@@ -298,6 +298,8 @@ a{color:inherit}
 .tb th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:700;padding:9px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
 .tb td{padding:11px 10px;border-bottom:1px solid var(--border);font-size:13px}
 .tb tr:hover td{background:var(--s2)}
+.tb.ve th,.tb.ve td{padding:15px 18px;vertical-align:middle}
+.tb.ve td.nw{white-space:nowrap}
 .tb tr{cursor:pointer}
 .veic-hover{cursor:help;border-bottom:1.5px dashed var(--border2);padding-bottom:1px}
 
@@ -771,8 +773,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="pghd"><div><h1>Veículos</h1><div class="sub">frota cadastrada no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="veAbrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="veAbrirCad()">+ Cadastrar</button></div></div>
         <div class="card">
           <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px"><div class="search" style="flex:1;min-width:220px;max-width:none;margin:0"><span>🔎</span><input id="ve-busca" placeholder="buscar veículo ou placa" oninput="pintarVeiculos()"></div><div class="pills" id="ve-filtros" style="display:contents"></div></div>
-          <div class="tb-wrap"><table class="tb">
-            <colgroup><col style="width:23%"><col style="width:10%"><col style="width:8%"><col style="width:25%"><col style="width:17%"><col style="width:17%"></colgroup>
+          <div class="tb-wrap"><table class="tb ve">
+            <colgroup><col style="width:27%"><col style="width:11%"><col style="width:11%"><col style="width:21%"><col style="width:15%"><col style="width:15%"></colgroup>
             <thead><tr><th>Modelo</th><th>Cor</th><th>Ano</th><th>Multa</th><th>IPVA</th><th>Licenciamento</th></tr></thead>
             <tbody id="ve-corpo"></tbody>
           </table></div>
@@ -827,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-23-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-24-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1072,11 +1074,16 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet wide" id="sh-veiculo">
   <div class="sh-hd"><h3 id="ve-tit">Cadastrar veículo</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <div class="field"><label>Placa</label><input class="inp" id="ve-placa" maxlength="8" placeholder="ABC1D23" style="text-transform:uppercase"></div>
-    <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px"><div class="field"><label>Modelo</label><input class="inp" id="ve-modelo" placeholder="Ex.: Fiorino"></div><div class="field"><label>Cor</label><input class="inp" id="ve-cor" placeholder="Branca"></div><div class="field"><label>Ano</label><input class="inp" id="ve-ano" inputmode="numeric" maxlength="4" placeholder="2022"></div></div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div id="ve-foto-box" style="width:84px;height:84px;border-radius:14px;background:var(--s3);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;overflow:hidden;flex:none;cursor:pointer" onclick="el('ve-foto-in').click()"></div>
+      <div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec sm" type="button" onclick="el('ve-foto-in').click()" id="ve-foto-bt">Adicionar foto</button><button class="btn sec sm" type="button" id="ve-foto-rm" style="display:none;color:#DC2626" onclick="veFotoRemover()">Remover foto</button></div><div style="font-size:11.5px;color:var(--muted);margin-top:6px">Foto do veículo (opcional)</div></div>
+      <input type="file" id="ve-foto-in" accept="image/*" style="display:none" onchange="veFotoEscolhida(this)">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Placa</label><input class="inp" id="ve-placa" maxlength="8" placeholder="ABC1D23" style="text-transform:uppercase" oninput="veAutoPreencher()"></div><div class="field"><label>Renavam (opcional)</label><input class="inp" id="ve-renavam" inputmode="numeric" maxlength="11" placeholder="00000000000"></div></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr;gap:10px"><div class="field"><label>Modelo</label><input class="inp" id="ve-modelo" placeholder="Ex.: Fiorino"></div><div class="field"><label>Cor</label><input class="inp" id="ve-cor" placeholder="Branca"></div><div class="field"><label>Ano</label><input class="inp" id="ve-ano" maxlength="9" placeholder="2019/2020"></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Motorista (opcional)</label><select class="inp" id="ve-mot"></select></div><div class="field"><label>Grupo (opcional)</label><select class="inp" id="ve-grp"></select></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Vencimento do IPVA</label><input class="inp" type="date" id="ve-ipva"></div><div class="field"><label>Vencimento do licenciamento</label><input class="inp" type="date" id="ve-lic"></div></div>
-    <div class="field"><label>Renavam (opcional)</label><input class="inp" id="ve-renavam" inputmode="numeric" maxlength="11"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>IPVA</label><input class="inp" type="date" id="ve-ipva" onchange="VE_SUJO.ipva=true"></div><div class="field"><label>Licenciamento</label><input class="inp" type="date" id="ve-lic" onchange="VE_SUJO.lic=true"></div></div>
+    <div id="ve-auto" style="font-size:11.5px;color:var(--muted);margin:-6px 0 12px;line-height:1.45"></div>
     <div id="ve-msg" style="font-size:12.5px;color:#DC2626;margin:0 0 8px"></div>
     <button class="btn pri wide" id="ve-salvar" onclick="veSalvar()">Salvar veículo</button>
     <button class="btn sec wide" id="ve-remover" style="display:none;margin-top:8px;color:#DC2626" onclick="veRemover()">Remover veículo</button>
@@ -3552,11 +3559,27 @@ function veApi(corpo,cb){
 function veCarregar(){ veApi(null,function(){ pintarVeiculos(); }); }
 function veMoeda(v){ return 'R$ '+Number(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 function veDataBR(iso){ var p=String(iso||'').split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):''; }
-function veVenc(iso,deb){
-  var h='', vencida=iso && iso<hojeISO();
-  if(!iso) h='<span style="color:var(--muted)">—</span>';
-  else h=(vencida?'<span style="display:inline-flex;align-items:center;gap:5px;color:#DC2626;font-weight:700" title="Vencido">'+VE_BELL+veDataBR(iso)+'</span>':veDataBR(iso));
-  if(deb>0) h+='<div style="font-size:11px;color:#DC2626;font-weight:700;margin-top:2px;display:flex;align-items:center;gap:4px">'+VE_BELL+'em aberto '+veMoeda(deb)+'</div>';
+/* vencimentos automáticos pelo FINAL DA PLACA (regra de SC): IPVA = cota única (final 1 = jan … final 9 = set, final 0 = out, último dia do mês); licenciamento = final 1 = mar … final 9 = nov, final 0 = dez (dia 30) */
+function veIso(a,m,d){ return a+'-'+('0'+m).slice(-2)+'-'+('0'+d).slice(-2); }
+function veAuto(placa){
+  var pl=String(placa||'').toUpperCase().replace(/[^A-Z0-9]/g,''); if(pl.length<7) return null;
+  var f=pl.charAt(pl.length-1); if(!/[0-9]/.test(f)) return null;
+  var n=parseInt(f,10), ano=new Date().getFullYear(), mi=(n===0?10:n), ml=(n===0?12:n+2);
+  return {ipva:veIso(ano,mi,new Date(ano,mi,0).getDate()), lic:veIso(ano,ml,n===0?30:new Date(ano,ml,0).getDate())};
+}
+function veDataDe(v,tipo){   /* data efetiva: a digitada no cadastro ou a automática; se a consulta mostrou que não há débito depois do vencimento, vale o do ano seguinte */
+  var au=veAuto(v.placa), iso=(tipo==='ipva'?v.ipva_venc:v.lic_venc)||(au?au[tipo]:''), auto=!((tipo==='ipva'?v.ipva_venc:v.lic_venc));
+  if(!iso) return {iso:'',auto:false,pago:false};
+  var m=v.multas, pago=false;
+  if(iso<hojeISO() && m && m.t>=Date.parse(iso+'T23:59:59') && Number(m[tipo])===0){ iso=(parseInt(iso.slice(0,4),10)+1)+iso.slice(4); pago=true; }
+  return {iso:iso,auto:auto,pago:pago};
+}
+function veVenc(v,tipo){
+  var d=veDataDe(v,tipo), deb=v.multas&&v.multas[tipo], h='', vencida=d.iso && d.iso<hojeISO();
+  if(!d.iso) h='<span style="color:var(--muted)">—</span>';
+  else if(vencida) h='<span style="display:inline-flex;align-items:center;gap:6px;color:#DC2626;font-weight:700" title="O vencimento já passou. Consulte para confirmar se está pago.">'+VE_BELL+veDataBR(d.iso)+'</span>';
+  else h='<span title="'+(d.auto?'Calculado pelo final da placa (regra de SC)':'Vencimento informado no cadastro')+'">'+veDataBR(d.iso)+'</span>';
+  if(deb>0) h+='<div style="font-size:11px;color:#DC2626;font-weight:700;margin-top:3px;display:flex;align-items:center;gap:4px">'+VE_BELL+'em aberto '+veMoeda(deb)+'</div>';
   return h;
 }
 function veMulta(v){
@@ -3611,29 +3634,63 @@ function pintarVeiculos(){
   for(i=0;i<VE.lista.length;i++){ v=VE.lista[i];
     if(q && (v.placa+' '+(v.modelo||'')+' '+(v.cor||'')+' '+(v.motorista||'')).toLowerCase().indexOf(q)<0) continue;
     if(!vePassa(v)) continue; n++;
-    h+='<tr style="cursor:pointer" onclick="veAbrirCad(\''+esc(v.id)+'\')"><td><b>'+esc(v.modelo||'Sem modelo')+'</b><div style="font-size:11.5px;color:var(--muted);margin-top:2px">'+esc(v.placa)+(v.motorista?' · '+esc(v.motorista):'')+'</div></td>'
-      +'<td>'+esc(v.cor||'—')+'</td><td>'+esc(v.ano||'—')+'</td><td>'+veMulta(v)+'</td><td>'+veVenc(v.ipva_venc,v.multas&&v.multas.ipva)+'</td><td>'+veVenc(v.lic_venc,v.multas&&v.multas.lic)+'</td></tr>';
+    h+='<tr style="cursor:pointer" onclick="veAbrirCad(\''+esc(v.id)+'\')"><td><div style="display:flex;align-items:center;gap:12px">'+veThumb(v,40)+'<div style="min-width:0"><b>'+esc(v.modelo||'Sem modelo')+'</b><div style="font-size:11.5px;color:var(--muted);margin-top:2px">'+esc(v.placa)+(v.motorista?' · '+esc(v.motorista):'')+'</div></div></div></td>'
+      +'<td>'+esc(v.cor||'—')+'</td><td class="nw">'+esc(v.ano||'—')+'</td><td>'+veMulta(v)+'</td><td class="nw">'+veVenc(v,'ipva')+'</td><td class="nw">'+veVenc(v,'lic')+'</td></tr>';
   }
   if(!h) h='<tr><td colspan="6"><div class="empty">'+(VE.ok?(VE.lista.length?'Nenhum veículo encontrado':'Nenhum veículo cadastrado ainda. Toque em + Cadastrar.'):'Carregando…')+'</div></td></tr>';
   el('ve-corpo').innerHTML=h;
 }
+var VE_FOTO=null, VE_SUJO={ipva:false,lic:false};
+function veFotoUrl(v){ return DELTADIS_API+'/veiculos/foto?key='+encodeURIComponent(DELTADIS_API_KEY)+'&id='+encodeURIComponent(v.id)+'&t='+(v.foto_t||0); }
+function veThumb(v,px){
+  var st='width:'+px+'px;height:'+px+'px;border-radius:10px;flex:none;';
+  if(v.foto_t) return '<img src="'+veFotoUrl(v)+'" alt="" style="'+st+'object-fit:cover;background:var(--s3)">';
+  return '<div style="'+st+'background:var(--s3);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" style="width:'+Math.round(px*.55)+'px;height:'+Math.round(px*.55)+'px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M5 17h14M5 17a2 2 0 110-4M19 17a2 2 0 100-4M3 13l2-6h14l2 6M7 10h10"/></svg></div>';
+}
+function veFotoPintar(v){
+  var box=el('ve-foto-box'), tem=(VE_FOTO&&VE_FOTO!=='remover')||(!VE_FOTO&&v&&v.foto_t);
+  if(VE_FOTO&&VE_FOTO!=='remover') box.innerHTML='<img src="'+VE_FOTO+'" style="width:100%;height:100%;object-fit:cover">';
+  else if(VE_FOTO!=='remover'&&v&&v.foto_t) box.innerHTML='<img src="'+veFotoUrl(v)+'" style="width:100%;height:100%;object-fit:cover">';
+  else box.innerHTML='<svg viewBox="0 0 24 24" style="width:30px;height:30px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>';
+  el('ve-foto-bt').textContent=tem?'Trocar foto':'Adicionar foto'; el('ve-foto-rm').style.display=tem?'':'none';
+}
+function veFotoEscolhida(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return; inp.value='';
+  var rd=new FileReader(); rd.onload=function(){ var im=new Image(); im.onload=function(){
+    var mx=800, k=Math.min(1,mx/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); VE_FOTO=c.toDataURL('image/jpeg',0.72); veFotoPintar(veAtual());
+  }; im.onerror=function(){ el('ve-msg').textContent='Não consegui abrir essa foto.'; }; im.src=rd.result; }; rd.readAsDataURL(f);
+}
+function veFotoRemover(){ VE_FOTO='remover'; veFotoPintar(veAtual()); }
+function veAtual(){ var i; for(i=0;i<VE.lista.length;i++) if(VE.lista[i].id===VE_ED) return VE.lista[i]; return null; }
+function veAutoPreencher(){
+  var au=veAuto(el('ve-placa').value), msg=el('ve-auto');
+  if(!au){ msg.textContent=''; return; }
+  if(!VE_SUJO.ipva) el('ve-ipva').value=au.ipva;
+  if(!VE_SUJO.lic) el('ve-lic').value=au.lic;
+  msg.textContent='Vencimentos calculados pelo final da placa (regra de SC). Se o veículo for de outro estado ou tiver uma data diferente, altere acima.';
+}
 function veAbrirCad(id){
-  VE_ED=id||''; var v=null,i; for(i=0;i<VE.lista.length;i++) if(VE.lista[i].id===id) v=VE.lista[i];
+  VE_ED=id||''; VE_FOTO=null; VE_SUJO={ipva:false,lic:false}; var v=veAtual();
   el('ve-tit').textContent=v?'Editar veículo':'Cadastrar veículo';
-  var f={'ve-placa':'placa','ve-modelo':'modelo','ve-cor':'cor','ve-ano':'ano','ve-ipva':'ipva_venc','ve-lic':'lic_venc','ve-renavam':'renavam'}, k;
+  var f={'ve-placa':'placa','ve-modelo':'modelo','ve-cor':'cor','ve-ano':'ano','ve-ipva':'ipva_venc','ve-lic':'lic_venc','ve-renavam':'renavam'}, k, i;
   for(k in f) el(k).value=v?(v[f[k]]||''):'';
+  if(v){ VE_SUJO.ipva=!!v.ipva_venc; VE_SUJO.lic=!!v.lic_venc; }
   var mh='<option value="">—</option>'; for(i=0;i<MOTORISTAS.length;i++) mh+='<option value="'+esc(MOTORISTAS[i].n)+'"'+((v&&v.motorista===MOTORISTAS[i].n)?' selected':'')+'>'+esc(MOTORISTAS[i].n)+'</option>';
   if(v&&v.motorista&&!MOTORISTAS.some(function(m){return m.n===v.motorista;})) mh+='<option value="'+esc(v.motorista)+'" selected>'+esc(v.motorista)+'</option>';
   el('ve-mot').innerHTML=mh;
   var gh='<option value="">—</option>', g; for(i=0;i<VE.grupos.length;i++){ g=VE.grupos[i]; gh+='<option value="'+esc(g.id)+'"'+((v&&(g.ids||[]).indexOf(v.id)>=0)?' selected':'')+'>'+esc(g.nome)+'</option>'; }
   el('ve-grp').innerHTML=gh;
-  el('ve-msg').textContent=''; el('ve-salvar').disabled=false; el('ve-salvar').textContent='Salvar veículo'; el('ve-remover').style.display=v?'':'none';
+  el('ve-msg').textContent=''; el('ve-auto').textContent=''; veAutoPreencher(); veFotoPintar(v);
+  el('ve-salvar').disabled=false; el('ve-salvar').textContent='Salvar veículo'; el('ve-remover').style.display=v?'':'none';
   abrir('sh-veiculo');
 }
 function veSalvar(){
   var placa=(el('ve-placa').value||'').trim(); if(placa.replace(/[^A-Za-z0-9]/g,'').length<7){ el('ve-msg').textContent='Informe a placa do veículo.'; return; }
   var b=el('ve-salvar'); b.disabled=true; b.textContent='Salvando…'; el('ve-msg').textContent='';
-  veApi({acao:'salvar',grupo_id:el('ve-grp').value,veiculo:{id:VE_ED,placa:placa,modelo:el('ve-modelo').value,cor:el('ve-cor').value,ano:el('ve-ano').value,motorista:el('ve-mot').value,ipva_venc:el('ve-ipva').value,lic_venc:el('ve-lic').value,renavam:el('ve-renavam').value}},function(d){
+  var au=veAuto(placa)||{}, ip=el('ve-ipva').value, lc=el('ve-lic').value; if(ip===au.ipva) ip=''; if(lc===au.lic) lc='';   /* só guarda a data se for diferente da automática */
+  var vv={id:VE_ED,placa:placa,modelo:el('ve-modelo').value,cor:el('ve-cor').value,ano:el('ve-ano').value,motorista:el('ve-mot').value,ipva_venc:ip,lic_venc:lc,renavam:el('ve-renavam').value}; if(VE_FOTO) vv.foto=VE_FOTO;
+  veApi({acao:'salvar',grupo_id:el('ve-grp').value,veiculo:vv},function(d){
     b.disabled=false; b.textContent='Salvar veículo';
     if(d&&d.ok){ aviso('Veículo salvo'); fecharTudo(); pintarVeiculos(); } else el('ve-msg').textContent=(d&&d.mensagem)||'Não consegui salvar. Tente de novo.';
   });
