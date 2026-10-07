@@ -96,6 +96,10 @@
 
   .btn-add{position:absolute;top:18px;right:18px;width:34px;height:34px;border-radius:50%;border:none;background:var(--grad);color:#fff;font-size:19px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px -3px rgba(109,40,217,.55);transition:transform .15s}
   .btn-add:hover{transform:scale(1.08)}
+  .btn-add .dot{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:99px;background:#DC2626;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 0 0 2px #fff}
+  .av-pill{display:inline-block;font-size:11.5px;font-weight:800;border-radius:99px;padding:2px 9px}
+  .av-pill.rec{background:#FEE2E2;color:#B91C1C}
+  .av-pill.resp{background:#E0F2FE;color:#0369A1}
   .btn-add:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
 
   .scan-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:22px;align-items:stretch}
@@ -239,7 +243,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-24-0710</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-26-0710</p>
   </div>
 </div>
 
@@ -548,6 +552,31 @@ var ATIVA=null, CNT=0, PACOTES=[], VISTOS={}, ULT=null, OCUPADO=false, MOT=null,
 
 function achaTr(id){ var i; for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].id===id) return TRANSPORTADORAS[i]; return null; }
 
+/* contagem em andamento fica guardada neste navegador: se atualizar a página (F5) ou fechar sem querer, volta de onde parou */
+var SESS_KEY='dd_mesa_sessao';
+function hojeChave(){ var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function salvarSessao(){
+  try{
+    if(!MOT || !ATIVA){ localStorage.removeItem(SESS_KEY); return; }
+    localStorage.setItem(SESS_KEY,JSON.stringify({dia:hojeChave(),mot:MOT.id,tr:ATIVA.id,cnt:CNT,pac:PACOTES.map(function(p){ return {seq:p.seq,cod:p.cod,tr:p.tr,tn:p.tn,hora:p.hora}; }),vistos:VISTOS,ult:ULT?ULT.cod:''}));
+  }catch(e){}
+}
+function restaurarSessao(){
+  try{
+    var raw=localStorage.getItem(SESS_KEY); if(!raw) return;
+    var d=JSON.parse(raw), m=null, i;
+    if(!d || d.dia!==hojeChave()){ localStorage.removeItem(SESS_KEY); return; }
+    for(i=0;i<MOTS.length;i++) if(String(MOTS[i].id)===String(d.mot)) m=MOTS[i];
+    var t=achaTr(d.tr); if(!m || !t) return;
+    MOT=m; el('mot-sel').value=m.n; el('mesa-cards').classList.remove('bloq');
+    PACOTES=(d.pac||[]).map(function(p){ p.pend=0; return p; }); VISTOS=d.vistos||{}; CNT=Number(d.cnt)||PACOTES.length;
+    ULT=PACOTES.length?PACOTES[PACOTES.length-1]:null;
+    abrirMesa(t.id);
+    el('btn-desfazer').disabled=!ULT;
+    if(ULT) mostrarUlt('ok','↻ Contagem retomada — último pacote',ULT.cod);
+    aviso('Contagem retomada: '+CNT+' pacote'+(CNT===1?'':'s')+' de '+m.n);
+  }catch(e){}
+}
 function tituloScan(){ return (MOT?MOT.n+' · ':'')+(ATIVA?ATIVA.n:''); }
 /* (09) o campo do motorista aceita DIGITAR (e filtra) ou escolher na lista */
 function normNome(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
@@ -564,6 +593,7 @@ function carregarMotoristas(){
     for(i=0;i<MOTS.length;i++) h+='<option value="'+esc(MOTS[i].n)+'"></option>';
     el('mot-lista').innerHTML=h;
     s.placeholder=MOTS.length?'digite ou escolha o motorista':'Nenhum motorista cadastrado no painel';
+    if(!MOT && !ATIVA) restaurarSessao();
   }).catch(function(){ el('mot-sel').placeholder='Não consegui carregar os motoristas'; });
 }
 function escolherMotorista(){
@@ -576,6 +606,7 @@ function escolherMotorista(){
   MOT=novo; if(novo) campo.value=novo.n;
   el('mesa-cards').classList.toggle('bloq',!MOT);
   if(MOT) aviso('Motorista: '+MOT.n+' — agora escolha a transportadora');
+  salvarSessao();
 }
 function abrirMesa(id){
   if(!MOT){ aviso('Escolha o motorista primeiro'); return; }
@@ -586,7 +617,7 @@ function abrirMesa(id){
   el('scan-vazio').style.display='none';
   el('scan-conteudo').style.display='block';
   
-  pintarCards();
+  pintarCards(); salvarSessao();
   setTimeout(function(){ var i=el('scan-manual'); if(i) i.focus(); },50);
 }
 
@@ -610,7 +641,7 @@ function bipReverter(p,tr,cod,sid){
   var i; for(i=PACOTES.length-1;i>=0;i--) if(PACOTES[i]===p){ PACOTES.splice(i,1); break; }
   delete VISTOS[cod]; CNT--; if(tr.hoje>0) tr.hoje--;
   ULT=PACOTES.length?PACOTES[PACOTES.length-1]:null; el('btn-desfazer').disabled=!ULT;
-  el('scan-cnt').textContent=CNT; pintarCards();
+  el('scan-cnt').textContent=CNT; pintarCards(); salvarSessao();
 }
 function registrarPacote(cod){
   if(!ATIVA) return;
@@ -619,7 +650,7 @@ function registrarPacote(cod){
   var tr=ATIVA;
   if(el('scan-auto').checked){
     var d0=detectarTr(cod), dt=d0?achaTr(d0):null;
-    if(dt && dt.id!==tr.id){ tr=dt; ATIVA=dt; el('scan-nome').textContent=tituloScan(); pintarCards(); aviso('Transportadora trocada para '+dt.n); }
+    if(dt && dt.id!==tr.id){ tr=dt; ATIVA=dt; el('scan-nome').textContent=tituloScan(); pintarCards(); aviso('Transportadora trocada para '+dt.n); salvarSessao(); }
   }
   if(VISTOS[cod]){ somErro(); mostrarUlt('rep','Já bipado nesta contagem ('+VISTOS[cod].tn+', '+VISTOS[cod].hora+')',cod); return; }
   var sid=SESS_BIP, mot=MOT, ag=new Date(), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2)+':'+('0'+ag.getSeconds()).slice(-2);
@@ -627,7 +658,7 @@ function registrarPacote(cod){
   var p={seq:CNT, cod:cod, tr:tr.id, tn:tr.n, hora:hora, pend:1}; PACOTES.push(p); VISTOS[cod]={tn:tr.n,hora:hora}; ULT=p;
   el('scan-cnt').textContent=CNT; el('btn-desfazer').disabled=false;
   mostrarUlt('ok','✔ Entrou — '+mot.n+' · '+tr.n,cod);
-  pintarCards(); somBipeOk();
+  pintarCards(); somBipeOk(); salvarSessao();
   api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,mt:mot.id,mtn:mot.n})}).then(function(d){
     if(!d||!d.ok){ bipReverter(p,tr,cod,sid); somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
     p.pend=0;
@@ -655,7 +686,7 @@ function desfazerUltimo(){
     var i; for(i=PACOTES.length-1;i>=0;i--) if(PACOTES[i].cod===p.cod){ PACOTES.splice(i,1); break; }
     delete VISTOS[p.cod]; CNT--; var t=achaTr(p.tr); if(t&&t.hoje>0) t.hoje--;
     ULT=PACOTES.length?PACOTES[PACOTES.length-1]:null; el('btn-desfazer').disabled=!ULT;
-    el('scan-cnt').textContent=CNT; mostrarUlt('rep','Desfeito',p.cod); pintarCards();
+    el('scan-cnt').textContent=CNT; mostrarUlt('rep','Desfeito',p.cod); pintarCards(); salvarSessao();
   }).catch(function(){ aviso('Sem conexão. Não desfiz.'); });
 }
 
@@ -668,7 +699,7 @@ function encerrar(){
   
   el('scan-ult').className='ult'; el('scan-ult').innerHTML='<span class="ult-t">Aguardando a primeira bipagem…</span>';
   el('btn-desfazer').disabled=true;
-  pintarCards();
+  pintarCards(); salvarSessao();
 }
 
 /* ══ Câmera (leitor de código de barras do próprio navegador — funciona no Chrome do Android) ══ */
@@ -824,15 +855,32 @@ function abrirDevolucoes(){
 
 /* ===== Avisar motoristas (WhatsApp) ===== */
 var AV={mots:[],ok:false,grupos:[],ponto:'DELTADIS'};
+/* respostas dos motoristas ao aviso de hoje (🚫 recusou / 💬 respondeu) */
+var RESP={};
+function carregarRespostas(){
+  api('/mesa/whats-respostas').then(function(d){
+    if(!d||!d.ok) return; RESP={}; var n=0;
+    (d.respostas||[]).forEach(function(r){ RESP[String(r.mt)]=r; if(r.recusou) n++; });
+    var b=el('btn-avisar'); if(b){ b.innerHTML='📣'+(n?'<span class="dot" title="'+n+' motorista(s) recusaram">'+n+'</span>':''); }
+    avIcones();
+  }).catch(function(){});
+}
+function avIcones(){
+  document.querySelectorAll('.av-st').forEach(function(sp){
+    var r=RESP[sp.getAttribute('data-id')];
+    sp.innerHTML=r?('<span class="av-pill '+(r.recusou?'rec':'resp')+'">'+(r.recusou?'🚫 Recusou':'💬 Respondeu')+'</span> <span style="font-size:12.5px;color:#6b5f85">“'+esc(r.texto)+'”</span>'):'';
+  });
+}
 function abrirAvisar(){
   AV.mots=[]; el('av-lista').innerHTML=''; el('av-res').innerHTML=''; el('av-resumo').textContent='Carregando…'; el('av-overlay').classList.add('on'); avTipo();
   api('/mesa/whats-status').then(function(d){
     if(!d||!d.ok){ el('av-resumo').textContent='Não consegui carregar.'; return; }
-    AV.ok=!!d.configurado; AV.ponto=d.ponto||'DELTADIS'; AV.mots=d.motoristas||[]; AV.grupos=d.grupos||[]; var so='<option value="">Escolher individualmente</option><option value="todos">Todos os motoristas</option>'; AV.grupos.forEach(function(g){ so+='<option value="g:'+esc(g.id)+'">Grupo '+esc(g.nome)+' ('+g.ids.length+')</option>'; }); el('av-dest').innerHTML=so;
+    AV.ok=!!d.configurado; AV.ponto=d.ponto||'DELTADIS'; AV.mots=d.motoristas||[]; AV.grupos=d.grupos||[]; var so='<option value="">Escolher individualmente</option><option value="todos">Todos os motoristas</option>'; AV.grupos.forEach(function(g){ so+='<option value="g:'+esc(g.id)+'">Grupo '+esc(g.nome)+' ('+g.ids.length+')</option>'; }); el('av-dest').innerHTML=so; el('av-dest').value='';
     el('av-resumo').textContent=AV.ok ? 'Marque quem vai receber:' : 'O WhatsApp da DELTADIS ainda não foi ligado. Você já pode ver a lista, mas o envio só funciona depois da configuração.';
     var h='';
-    AV.mots.forEach(function(m){ h+='<label class="av-row" data-id="'+esc(m.id)+'" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #E3D9F2;border-radius:10px;font-size:14px'+(m.tem_fone?'':';opacity:.5')+'"><input type="checkbox" class="av-chk" onchange="avPrever()" value="'+esc(m.id)+'"'+(m.tem_fone?'':' disabled')+'> <span style="flex:1">'+esc(m.n)+'</span>'+(m.tem_fone?'':'<span style="font-size:11.5px;color:#b45309">sem telefone</span>')+'</label>'; });
-    el('av-lista').innerHTML=h||'<div class="rm-vazio">Nenhum motorista cadastrado.</div>'; avPrever();
+    AV.mots.forEach(function(m){ h+='<label class="av-row" data-id="'+esc(m.id)+'" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:9px 12px;border:1px solid #E3D9F2;border-radius:10px;font-size:14px'+(m.tem_fone?'':';opacity:.5')+'"><input type="checkbox" class="av-chk" onchange="avPrever()" value="'+esc(m.id)+'"'+(m.tem_fone?'':' disabled')+'> <span style="flex:1">'+esc(m.n)+'</span><span class="av-st" data-id="'+esc(m.id)+'" style="flex:1 1 100%;order:5;padding-left:26px"></span>'+(m.tem_fone?'':'<span style="font-size:11.5px;color:#b45309">sem telefone</span>')+'</label>'; });
+    el('av-lista').innerHTML=h||'<div class="rm-vazio">Nenhum motorista cadastrado.</div>';
+    document.querySelectorAll('.av-chk').forEach(function(x){ x.checked=false; }); avPrever(); avIcones(); carregarRespostas();
   }).catch(function(){ el('av-resumo').textContent='Sem conexão.'; });
 }
 function fecharAvisar(){ el('av-overlay').classList.remove('on'); }
@@ -1020,6 +1068,7 @@ function mostrarApp(){
   initCurves(); fundoSegueCursor(); pintarCards();
   ajustarAlturaScan();
   carregarContagemDia(); carregarMotoristas();
+  carregarRespostas(); setInterval(carregarRespostas,60000);
 }
 function sairLogin(msg){
   DD_TOKEN=''; DD_USER=null; try{ localStorage.removeItem('dd_jwt'); localStorage.removeItem('dd_user'); }catch(e){}
