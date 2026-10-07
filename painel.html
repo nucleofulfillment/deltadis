@@ -808,7 +808,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-19-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-20-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1235,7 +1235,7 @@ function fatCarregar(){
     if(!d||!d.ok) return; var a=[],i,f;
     for(i=0;i<(d.faturas||[]).length;i++){ f=d.faturas[i];
       a.push({id:'fat_'+f.ref,sistema:true,tp:'out',categoria:'Tecnologia',data:String(f.venc||'').slice(0,10),vl:(Number(f.valor_centavos)||0)/100,status:f.pago?'pago':'pendente',link:f.link||'',
-        tt:(f.tipo==='adesao'?'DeltaDis — Adesão':'DeltaDis — Fatura'+(f.periodo_ini?' ('+ctData(f.periodo_ini).slice(0,5)+' a '+ctData(f.periodo_fim).slice(0,5)+')':''))}); }
+        tt:(f.tipo==='adesao'?'DeltaDis — Adesão':'DeltaDis — Fatura'+(f.tipo==='previsao'?' (previsão)':'')+(f.periodo_ini?' ('+ctData(f.periodo_ini).slice(0,5)+' a '+ctData(f.periodo_fim).slice(0,5)+')':''))}); }
     FAT_EXTRATO=a; try{ pintarFluxoCaixa(); }catch(e){}
   }).catch(function(){});
 }
