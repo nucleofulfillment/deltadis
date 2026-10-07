@@ -385,7 +385,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-82-0710</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-83-0710</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -483,8 +483,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <!-- ══ MODAL: detalhe do lote ══ -->
 <div class="ovl" id="ovl" onclick="fecharTudo()"></div>
 <div class="sheet" id="sh-lote">
-  <div class="sh-hd"><h3>Detalhe do lote</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><h3 style="margin:0">Detalhe do lote</h3><span id="lote-rom" style="color:var(--roxo);font-weight:800;font-size:13px;white-space:nowrap;cursor:pointer;padding:6px 0" onclick="romAbrir(LOTE_ROM_DIA)">＋ Romaneio</span></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd" id="sh-lote-corpo"></div>
+</div>
+<div class="sheet" id="sh-ped" style="z-index:95">
+  <div class="sh-hd"><h3>Resumo do pedido</h3><button onclick="el('sh-ped').classList.remove('on')">✕</button></div>
+  <div class="sh-bd" id="sh-ped-corpo"></div>
 </div>
 
 <!-- ══ MODAL: criar romaneio (pontos que não usam o DELTADIS) ══ -->
@@ -2422,13 +2426,13 @@ function pintarFinanceiro(){
 /* ══ (68) CRIAR ROMANEIO NO APP — pra coleta em ponto que NÃO usa o DELTADIS: o motorista escolhe o lote e sai o PDF ══ */
 var ROM={lotes:[]};
 function romHora(t){ var d=new Date(Number(t)||0); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
-function romAbrir(){
+function romAbrir(dia){
   el('sh-rom-corpo').innerHTML='<div class="empty">Carregando…</div>'; abrir('sh-rom');
   rpApi('/motorista/romaneio-lotes?dias=30').then(function(d){
     if(!d||!d.ok){ el('sh-rom-corpo').innerHTML='<div class="empty">Não consegui carregar. Confira a internet.</div>'; return; }
-    ROM.lotes=(d.lotes||[]).filter(function(l){ return l.externo; });
-    var h='<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">Escolha o lote para gerar o romaneio em PDF. Aparecem só os pontos que não usam o DELTADIS.</p>', i;
-    if(!ROM.lotes.length) h+='<div class="empty">Nenhum lote de ponto externo nos últimos 30 dias.</div>';
+    ROM.lotes=(d.lotes||[]).filter(function(l){ return dia?(l.dia===dia):l.externo; });
+    var h='<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">'+(dia?'Escolha o romaneio deste dia para gerar o PDF.':'Escolha o lote para gerar o romaneio em PDF. Aparecem só os pontos que não usam o DELTADIS.')+'</p>', i;
+    if(!ROM.lotes.length) h+='<div class="empty">'+(dia?'Nenhum romaneio neste dia.':'Nenhum lote de ponto externo nos últimos 30 dias.')+'</div>';
     for(i=0;i<ROM.lotes.length;i++){ var l=ROM.lotes[i], n=l.itens.length;
       h+='<div class="lote-card" onclick="romGerar('+i+')"><div class="lote-topo"><b>Romaneio '+esc(l.nome)+'</b>'+(l.aberto?'<span class="badge b-wt">Em andamento</span>':'')+'</div><div class="lote-transp">📍 '+esc(l.ponto)+'</div><div class="lote-linha"><span>'+dataBR(l.dia)+' · '+romHora(l.t)+'</span><span class="ok">'+n+' pacote'+(n===1?'':'s')+'</span></div><div class="lote-transp">Toque para gerar o PDF</div></div>'; }
     el('sh-rom-corpo').innerHTML=h;
@@ -2451,10 +2455,11 @@ function romGerar(i){
     '<script>window.onload=function(){window.print();}</'+'script></body></html>';
   w.document.open(); w.document.write(html); w.document.close();
 }
+var LOTE_ROM_DIA='', PED_LISTA=[];
 function abrirLote(id){
   var l=null,i; for(i=0;i<LOTES.length;i++) if(LOTES[i].id===id) l=LOTES[i];
   if(!l) return;
-  var valor=l.valor||0, h='';
+  var valor=l.valor||0, h=''; LOTE_ROM_DIA=l.data;
   h+='<div class="sh-row"><span class="k">Data do lote</span><span class="v">'+dataBR(l.data)+'</span></div>';
   if(l.pontos&&l.pontos.length) h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Ponto de coleta</span><span class="v" style="text-align:right">'+l.pontos.map(function(p){ return esc(p.nome)+(l.pontos.length>1?' ('+p.qtd+')':''); }).join('<br>')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Total de pacotes</span><span class="v">'+l.totalPacotes+'</span></div>';
@@ -2468,16 +2473,30 @@ function abrirLote(id){
   h+='<div class="sh-row"><span class="k">Valor gerado</span><span class="v">'+moeda(valor)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Fechamento</span><span class="v">'+(l.fechamento==='fechado'?'Fechado':'Em aberto')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Pagamento</span><span class="v">'+badgePagamento(l.pagamento)+'</span></div>';
-  h+='<h4 style="margin:14px 0 4px">Transportadoras deste lote</h4>';
-  for(i=0;i<l.transportadoras.length;i++) h+='<div class="sh-row"><span class="k">'+esc(l.transportadoras[i])+'</span><span class="v">'+(l.transportadoras.length===1?l.totalPacotes+' pacotes':'')+'</span></div>';
-  var pd=ENTREGAS.filter(function(x){ return x.data===l.data&&(!FIN_PONTO||finPontoDe(x)===FIN_PONTO); });
-  h+='<h4 style="margin:14px 0 4px">Pedidos deste lote ('+pd.length+')</h4>';
+  var tq=(l.transpQtd||[]).filter(function(x){ return x.n&&x.n!=='Pacotes bipados'; });
+  if(tq.length){ h+='<h4 style="margin:14px 0 4px">Transportadoras deste lote</h4>'; for(i=0;i<tq.length;i++) h+='<div class="sh-row"><span class="k">'+esc(tq[i].n)+'</span><span class="v">'+tq[i].q+' pacote'+(tq[i].q===1?'':'s')+'</span></div>'; }
+  var pd=ENTREGAS.filter(function(x){ return x.data===l.data&&(!FIN_PONTO||finPontoDe(x)===FIN_PONTO); }); PED_LISTA=pd;
+  h+='<div class="sh-row" style="cursor:pointer;margin-top:10px;align-items:center" onclick="pedAlterna()"><span style="font-size:15px;font-weight:800">Pedidos deste lote ('+pd.length+')</span><span class="v" id="ped-tg" style="color:var(--roxo)">+ lista</span></div>';
+  h+='<div id="ped-lista" style="display:none">';
   if(!pd.length) h+='<div class="empty" style="padding:10px 0">Nenhum pedido entregue neste dia.</div>';
-  for(i=0;i<pd.length;i++){ var x=pd[i]; h+='<div class="sh-row" style="align-items:flex-start"><span class="k" style="flex:1;min-width:0"><b style="color:var(--roxo-esc)">'+finSelo(x)+''+esc(x.cliente||x.cod)+'</b><br><span style="font-size:11.5px">'+esc(x.endereco||'')+(x.hora?' · '+esc(x.hora):'')+((x.ponto&&l.pontos&&l.pontos.length>1)?' · 📍 '+esc(x.ponto):'')+'</span></span><span class="v">'+(x.valor!=null?moeda(x.valor):'')+'</span></div>'; }
+  for(i=0;i<pd.length;i++){ var x=pd[i], dev=!!(x.dev||x.terceira);
+    h+='<div style="padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="pedResumo('+i+')">'+
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="min-width:0;font-weight:800;color:var(--roxo-esc);font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+finSelo(x)+esc(x.cliente||x.cod)+(x.hora?' <span style="font-weight:600;color:var(--muted);font-size:12px">· '+esc(x.hora)+'</span>':'')+'</span><span style="font-weight:800;font-size:13px;flex:none">'+(x.valor!=null?moeda(x.valor):'')+'</span></div>'+
+      '<div style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.endereco||'—')+'</div>'+
+      '<div style="font-size:12px;color:var(--muted2);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.ponto||'—')+'</div></div>'; }
+  h+='</div>';
   el('sh-lote-corpo').innerHTML=h;
   abrir('sh-lote');
 }
 
+function pedAlterna(){ var b=el('ped-lista'), g=el('ped-tg'); if(!b) return; var ab=b.style.display==='none'; b.style.display=ab?'block':'none'; if(g) g.textContent=ab?'− ocultar':'+ lista'; }
+function pedResumo(i){
+  var x=PED_LISTA[i]; if(!x) return;
+  function ln(k,v){ return '<div class="sh-row" style="align-items:flex-start"><span class="k">'+k+'</span><span class="v" style="max-width:68%;word-break:break-word">'+v+'</span></div>'; }
+  var sit=x.terceira?'Entregue (3ª tentativa)':(x.dev===1?'Devolvido · aguarda a base':(x.dev===2?'Devolvido à base':'Entregue'));
+  el('sh-ped-corpo').innerHTML=ln('Pedido',cpCod(x.cod))+(x.cliente&&x.cliente!==x.cod?ln('Cliente',esc(x.cliente)):'')+ln('Endereço',esc(x.endereco||'—'))+ln('Data',dataBR(x.data)+(x.hora?' · '+esc(x.hora):''))+ln('Ponto de coleta',esc(x.ponto||'—'))+ln('Situação',sit)+ln('Valor',x.valor!=null?moeda(x.valor):'—');
+  el('sh-ped').classList.add('on');
+}
 /* (77) selo do pacote devolvido à base: 3ª tentativa paga / aguardando a base / devolvido sem pagamento */
 function finSelo(x){
   var st='background:#FEF3C7;color:#B45309;border-radius:6px;padding:1px 6px;margin-right:6px;font-size:11px';
