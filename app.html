@@ -160,7 +160,9 @@ html.dd-ret #splash{display:flex}
 .acao-g{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:none;border-radius:15px;background:var(--grad);color:#fff;cursor:pointer;text-decoration:none;padding:11px 4px}
 .acao-g svg{width:21px;height:21px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .acao-g small{font-size:10px;font-weight:700;color:#fff}
+.acao-g{position:relative}
 .acao-g.tem-foto{box-shadow:0 0 0 3px var(--green)}
+.acao-g[data-n]::after{content:attr(data-n)'/2';position:absolute;top:4px;right:8px;font-size:10px;font-weight:800;color:#fff;background:var(--green);border-radius:99px;padding:1px 6px}
 .acao-g.entregue-btn{background:var(--green)}
 .canal-tag{font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;white-space:nowrap;flex:none}
 
@@ -271,8 +273,9 @@ html.dd-ret #splash{display:flex}
 .rota-tela .mapa-mock{flex:1 1 auto;min-height:46vh}
 .rota-tela.com-aviso .mapa-mock{min-height:20vh}
 .rota-tela .info-full{flex:none}
-.sheet-handle{display:flex;justify-content:center;padding:6px 0 10px;margin:-6px 0 0;touch-action:none;cursor:grab}
-.sheet-handle i{width:44px;height:5px;border-radius:99px;background:rgba(109,40,217,.35)}
+.sheet-handle{display:flex;justify-content:center;align-items:center;height:34px;margin:-12px 0 0;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.sheet-arr .parada-tag,.sheet-arr .end-2l{touch-action:none}
+.sheet-handle i{width:56px;height:6px;border-radius:99px;background:rgba(109,40,217,.35)}
 .rota-tela.sheet-baixo .mapa-mock{min-height:62vh}
 .rota-tela.sheet-baixo .progresso,.rota-tela.sheet-baixo .info-full .parada-tag,.rota-tela.sheet-baixo .info-full p,.rota-tela.sheet-baixo .aviso-acao,.rota-tela.sheet-baixo .info-full>.acoes-fixas>.btn{display:none}
 .rota-tela.sheet-baixo .end-2l{font-size:14.5px;margin:0 0 2px;min-height:0;-webkit-line-clamp:1}
@@ -382,7 +385,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-81-0710</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-82-0710</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -879,7 +882,8 @@ function concluirParada(status, extra){
   LOTE_ATUAL[PONTEIRO].status=status;
   LOTE_ATUAL[PONTEIRO].hora=horaAgora();
   if(extra) LOTE_ATUAL[PONTEIRO].janela=extra;
-  if(status==='entregue'){ somEntregaOk(); rpAvisarEntrega(LOTE_ATUAL[PONTEIRO]); }
+  if(status==='entregue'){ somEntregaOk(); rpAvisarEntrega(LOTE_ATUAL[PONTEIRO]); fotoEnviar(LOTE_ATUAL[PONTEIRO].cod); }
+  else if(LOTE_ATUAL[PONTEIRO]) delete FOTOS_ENT[LOTE_ATUAL[PONTEIRO].cod];
   else if(status==='ausente' && LOTE_ATUAL[PONTEIRO].origem==='painel') rpAvisarStatus(LOTE_ATUAL[PONTEIRO],'ausente');
   PONTEIRO++;
   if(PONTEIRO>=LOTE_ATUAL.length){ finalizarRota(); return; }
@@ -1132,12 +1136,30 @@ function confirmarRemarcacao(){
 }
 
 /* ══ comprovante — sempre bate foto na hora (câmera), nunca anexa arquivo pronto ══ */
+var FOTOS_ENT={};   /* cod → até 2 fotos (JPEG reduzido), enviadas ao servidor quando a entrega é concluída */
+function fotoPintar(){ var b=el('btn-foto-v'), p=LOTE_ATUAL[PONTEIRO], n=p&&FOTOS_ENT[p.cod]?FOTOS_ENT[p.cod].length:0; if(!b) return; b.classList.toggle('tem-foto',n>0); if(n) b.setAttribute('data-n',n); else b.removeAttribute('data-n'); }
+function fotoTirar(){
+  var p=LOTE_ATUAL[PONTEIRO]; if(!p) return;
+  if(FOTOS_ENT[p.cod]&&FOTOS_ENT[p.cod].length>=2){ FOTOS_ENT[p.cod]=[]; fotoPintar(); aviso('Refazendo: bata as 2 fotos de novo'); }
+  el('ft-comprovante').click();
+}
 function fotoComprovanteSelecionada(){
-  var inp=el('ft-comprovante'), btn=el('btn-foto-v');
-  if(!inp) return;
-  var f=inp.files[0];
-  if(btn) btn.classList.toggle('tem-foto', !!f);
-  if(f) aviso('Foto do comprovante capturada');
+  var inp=el('ft-comprovante'), p=LOTE_ATUAL[PONTEIRO];
+  if(!inp||!p) return;
+  var f=inp.files[0]; if(!f) return; var cod=p.cod, rd=new FileReader();
+  rd.onload=function(){ var im=new Image(); im.onload=function(){
+    var M=1000, k=Math.min(1,M/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+    var a=FOTOS_ENT[cod]||(FOTOS_ENT[cod]=[]); if(a.length<2) a.push(c.toDataURL('image/jpeg',0.65));
+    inp.value=''; fotoPintar(); aviso('Foto '+a.length+'/2 salva'+(a.length<2?' — pode bater mais uma':''));
+  }; im.onerror=function(){ aviso('Essa imagem não abriu. Tente de novo.'); inp.value=''; }; im.src=rd.result; };
+  rd.readAsDataURL(f);
+}
+function fotoEnviar(cod){
+  var a=FOTOS_ENT[cod]; if(!a||!a.length) return; var cp=a.slice(), n=0;
+  delete FOTOS_ENT[cod];
+  function tenta(){ rpApi('/motorista/foto-entrega',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,fotos:cp})}).then(function(d){ if(!d||!d.ok){ if(++n<4) setTimeout(tenta,5000*n); } }).catch(function(){ if(++n<4) setTimeout(tenta,5000*n); }); }
+  tenta();
 }
 
 /* ══ tela cheia do navegador (só pra simular o app durante os testes) ══ */
@@ -2164,12 +2186,30 @@ function rpCompletarCanais(){
 function sheetAjusta(b){ RP.sheetBaixo=b; var t=document.querySelector('.rota-tela'); if(t) t.classList.toggle('sheet-baixo',b); setTimeout(function(){ try{ if(RP.mapa) RP.mapa.resize(); }catch(e){} },60); }
 function sheetAlterna(){ if(RP._arrastou){ RP._arrastou=false; return; } sheetAjusta(!RP.sheetBaixo); }
 (function(){
-  var y0=null, dy=0;
-  function ini(e){ var h=e.target.closest&&e.target.closest('#sheet-h'); if(!h) return; y0=(e.touches?e.touches[0]:e).clientY; dy=0; }
-  function mov(e){ if(y0==null) return; dy=(e.touches?e.touches[0]:e).clientY-y0; }
-  function fim(){ if(y0==null) return; if(Math.abs(dy)>28){ RP._arrastou=true; sheetAjusta(dy>0); setTimeout(function(){ RP._arrastou=false; },350); } y0=null; dy=0; }
-  document.addEventListener('touchstart',ini,{passive:true}); document.addEventListener('touchmove',mov,{passive:true}); document.addEventListener('touchend',fim);
-  document.addEventListener('mousedown',ini); document.addEventListener('mousemove',mov); document.addEventListener('mouseup',fim);
+  /* arrastar a barra: o mapa acompanha o dedo; ao soltar, encaixa em cima (painel aberto) ou embaixo (painel recolhido) */
+  var y0=null, dy=0, mp=null, h0=0, hMin=0, hMax=0, mov=false, pid=null;
+  function alvo(e){ return e.target.closest&&e.target.closest('#sheet-h,.info-full .parada-tag,.info-full .end-2l'); }
+  function ini(e){
+    if(e.pointerType==='mouse'&&e.button!==0) return; if(!alvo(e)) return;
+    mp=document.querySelector('.rota-tela .mapa-mock'); if(!mp) return;
+    y0=e.clientY; dy=0; mov=false; pid=e.pointerId; h0=mp.getBoundingClientRect().height;
+    var vh=window.innerHeight/100; hMin=46*vh; hMax=62*vh;
+  }
+  function mv(e){
+    if(y0==null||e.pointerId!==pid) return; dy=e.clientY-y0;
+    if(!mov&&Math.abs(dy)>6){ mov=true; mp.style.transition='none'; try{ e.target.setPointerCapture(pid); }catch(x){} }
+    if(!mov) return;
+    var base=RP.sheetBaixo?hMax:hMin, h=Math.max(hMin,Math.min(hMax,base+dy)); mp.style.minHeight=h+'px';
+  }
+  function fim(e){
+    if(y0==null||(e&&e.pointerId!==pid)) return;
+    var fez=mov, baixo=RP.sheetBaixo; y0=null;
+    if(mp){ mp.style.transition=''; mp.style.minHeight=''; }
+    if(fez){ RP._arrastou=true; setTimeout(function(){ RP._arrastou=false; },350);
+      var vai=baixo?(dy<-24?false:true):(dy>24?true:false); sheetAjusta(vai); }
+    mov=false; dy=0;
+  }
+  document.addEventListener('pointerdown',ini); document.addEventListener('pointermove',mv); document.addEventListener('pointerup',fim); document.addEventListener('pointercancel',fim);
 })();
 function rpAjustaAltura(){ var sc=document.querySelector('.conteudo'), t=document.querySelector('.rota-tela'); if(sc&&t) t.style.minHeight=Math.max(300,sc.clientHeight-16)+'px'; }
 window.addEventListener('resize',function(){ if(EST==='em_rota') rpAjustaAltura(); });
@@ -2303,7 +2343,7 @@ function renderEmRota(){
          '<button class="acao-g acao-off" onclick="concluirParada(\'ausente\')"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.2"/><path d="M5 20c1.1-3.6 3.9-5.4 7-5.4"/><path d="M15.5 14.5l5 5M20.5 14.5l-5 5"/></svg><small>Ausente</small></button>'+
          '<button class="acao-g entregue-btn" onclick="concluirParada(\'entregue\')"><svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg><small>Entregue</small></button>'+
          '<button class="acao-g voltar-btn" onclick="voltarDeTelaCheia()"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><small>Voltar</small></button>'+
-         '<button class="acao-g" id="btn-foto-v" onclick="el(\'ft-comprovante\').click()"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.3 7l1.3-2.3h4.8L15.7 7"/><circle cx="12" cy="13.5" r="3.4"/></svg><small>Foto</small></button>'+
+         '<button class="acao-g'+(FOTOS_ENT[atual.cod]&&FOTOS_ENT[atual.cod].length?' tem-foto" data-n="'+FOTOS_ENT[atual.cod].length:'')+'" id="btn-foto-v" onclick="fotoTirar()"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.3 7l1.3-2.3h4.8L15.7 7"/><circle cx="12" cy="13.5" r="3.4"/></svg><small>Foto</small></button>'+
          (atual.telefone?('<a class="acao-g acao-off" href="https://wa.me/'+atual.telefone+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M20 12.3c0 4.1-3.6 7.4-8 7.4-1.2 0-2.3-.2-3.3-.6L4 20l1-4.4c-.7-1.1-1-2.4-1-3.7C4 7.8 7.6 4.5 12 4.5s8 3.3 8 7.8z"/><path d="M9 10.2c0 2.4 2.2 4.4 4.6 4.4"/></svg><small>Whats</small></a>'):'')+
        '</div>'+
        '<button class="btn pri wide" style="margin-top:12px" onclick="abrirRemarcar()">🔁 Remarcar entrega</button></div>'+
