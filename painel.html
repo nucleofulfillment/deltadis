@@ -76,6 +76,7 @@ a{color:inherit}
 .btn.pri{background:var(--grad);color:#fff}
 .btn.sec{background:var(--s3);color:var(--text);border:1px solid var(--border2)}
 .btn.wide{width:100%}
+.btn.sm{padding:7px 12px;font-size:12px}
 .lg-form .demo{margin:16px 0 0;text-align:center;font-size:11.5px;color:var(--muted);line-height:1.5}
 .lg-form .bld{margin:12px 0 0;text-align:center;font-size:10px;color:var(--s4);letter-spacing:.5px}
 
@@ -803,19 +804,18 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <section class="page" id="pg-config">
         <div class="pghd"><div><h1>Configurações</h1><div class="sub">integrações e estrutura do ponto</div></div></div>
         <div class="cfgcards">
-          <div class="cfgcard" style="cursor:pointer" onclick="abrirPonto()"><div class="ic">📍</div><h4>Ponto de coleta</h4><p>Endereço da base. É de onde o app do motorista sai e o centro do Mapeamento.</p><span class="badge b-in" id="pt-badge">configurar</span></div>
+          <div class="cfgcard" style="cursor:pointer" onclick="abrirPonto()"><div class="ic">📍</div><h4>Pontos de coleta</h4><p>Cadastre as bases onde os motoristas coletam e saem para entregar. Pode ter mais de um; o principal é a saída da rota no app e o centro do Mapeamento.</p><span class="badge b-in" id="pt-badge">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard"><div class="ic">🔌</div><h4>Integrações com transportadoras</h4><p>Conecte a API de cada transportadora para receber a pré-lista de pacotes automaticamente.</p><span class="badge b-nu">em breve</span></div>
-          <div class="cfgcard"><div class="ic">🏢</div><h4>Bases e pontos</h4><p>Cadastre mais de um ponto de distribuição sob a mesma conta e alterne entre eles.</p><span class="badge b-nu">em breve</span></div>
           <div class="cfgcard"><div class="ic">💬</div><h4>WhatsApp</h4><p>Módulo opcional de conversa automática com motoristas e destinatários.</p><div style="display:flex;align-items:center;gap:10px"><label class="wa-sw" title="Ligar ou desligar o WhatsApp desta empresa"><input type="checkbox" id="wa-chk" onchange="waAlternar(this.checked)" disabled><span class="wa-bl"></span></label><span class="badge b-wt" id="wa-badge">carregando…</span></div></div>
         </div>
       </section>
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-21-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-22-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1001,12 +1001,24 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </div>
 
 <div class="sheet wide" id="sh-ponto">
-  <div class="sh-hd"><h3>Ponto de coleta</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-hd"><h3 id="pt-tit">Pontos de coleta</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
-    <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Endereço da base onde os motoristas coletam e saem para entregar. O <b>app do motorista</b> usa esse endereço como saída da rota (o motorista ainda pode trocar no app dele) e o <b>Mapeamento</b> abre centrado aqui.</p>
-    <div class="field"><label>Endereço completo</label><input class="inp" id="pt-end" placeholder="Rua, número - bairro, cidade - UF, CEP"></div>
-    <div id="pt-res" style="font-size:12.5px;color:var(--muted);margin:2px 0 10px;line-height:1.5"></div>
-    <button class="btn pri wide" id="pt-salvar" onclick="salvarPonto()">Salvar e localizar</button>
+    <div id="pt-lista-v">
+      <p style="margin:0 0 12px;font-size:12.5px;color:var(--muted);line-height:1.5">Bases onde os motoristas coletam e saem para entregar. O <b>ponto principal</b> (★) é a saída da rota no <b>app do motorista</b> e o centro do <b>Mapeamento</b>.</p>
+      <div id="pt-lista"></div>
+      <button class="btn pri wide" style="margin-top:10px" onclick="ptForm('')">＋ Adicionar ponto</button>
+    </div>
+    <div id="pt-form-v" style="display:none">
+      <div class="field"><label>Nome do ponto</label><input class="inp" id="pt-nome" placeholder="Ex.: Base Florianópolis"></div>
+      <div class="field"><label>CEP</label><input class="inp" id="pt-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="ptCep()"><div id="pt-cep-msg" style="font-size:11.5px;color:var(--muted);margin-top:4px"></div></div>
+      <div class="field"><label>Rua</label><input class="inp" id="pt-rua"></div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px"><div class="field"><label>Número</label><input class="inp" id="pt-num"></div><div class="field"><label>Bairro</label><input class="inp" id="pt-bai"></div></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px"><div class="field"><label>Cidade</label><input class="inp" id="pt-cid"></div><div class="field"><label>Estado</label><input class="inp" id="pt-uf" maxlength="2" placeholder="SC" style="text-transform:uppercase"></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label>Telefone</label><input class="inp" id="pt-fone" inputmode="tel" placeholder="(00) 00000-0000"></div><div class="field"><label>E-mail</label><input class="inp" id="pt-mail" type="email"></div></div>
+      <div id="pt-res" style="font-size:12.5px;color:var(--muted);margin:2px 0 10px;line-height:1.5"></div>
+      <button class="btn pri wide" id="pt-salvar" onclick="salvarPonto()">Salvar e localizar</button>
+      <button class="btn sec wide" style="margin-top:8px" onclick="ptLista()">Voltar</button>
+    </div>
   </div>
 </div>
 
@@ -2574,7 +2586,7 @@ function abrirApp(){
   el('app').style.display='block';
   var t=el('tb-tenant'); if(t) t.textContent=(DD_USER&&DD_USER.cliente_nome)||'';
   var av=document.querySelector('.tb-av'); if(av&&DD_USER&&DD_USER.nome) av.textContent=DD_USER.nome.charAt(0).toUpperCase();
-  try{ montarTudo(); carregarPonto(); waCarregar(); contaRapido(); }finally{ srvCarregar(); }
+  try{ montarTudo(); carregarPonto(); ptCarregarLista(); waCarregar(); contaRapido(); }finally{ srvCarregar(); }
 }
 /* ── (120) entrar com CÓDIGO: 6 dígitos no WhatsApp e no e-mail do cadastro (sem senha) ── */
 var LG={modo:'senha',etapa:1};
@@ -3501,21 +3513,53 @@ function carregarPonto(){
     if(d&&d.ok){ PONTO=d.ponto||null; pintarBadgePonto(); if(MP_MAP&&MP_MAPA_OK) mpPintarBase(true); }
   }).catch(function(){});
 }
-function pintarBadgePonto(){ var b=el('pt-badge'); if(b) b.textContent=PONTO?'ok':'configurar'; }
-function abrirPonto(){
-  el('pt-end').value=PONTO?PONTO.endereco:'';
-  el('pt-res').innerHTML=PONTO?('Localizado em: <b>'+esc(PONTO.achado||PONTO.endereco)+'</b>'):'Ainda não configurado — o app usa um endereço padrão.';
-  el('pt-salvar').disabled=false; el('pt-salvar').textContent='Salvar e localizar'; abrir('sh-ponto');
+function pintarBadgePonto(){ var b=el('pt-badge'); if(!b) return; var n=PONTOS.length; b.textContent=n?(n+(n===1?' ponto':' pontos')):'configurar'; }
+var PONTOS=[], PT_ED='';
+function ptCarregarLista(cb){ fetch(DELTADIS_API+'/config/pontos?key='+encodeURIComponent(DELTADIS_API_KEY)).then(function(r){return r.json();}).then(function(d){ if(d&&d.ok){ PONTOS=d.pontos||[]; pintarBadgePonto(); } if(cb) cb(); }).catch(function(){ if(cb) cb(); }); }
+function abrirPonto(){ ptLista(); abrir('sh-ponto'); ptCarregarLista(ptLista); }
+function ptLista(){
+  el('pt-lista-v').style.display=''; el('pt-form-v').style.display='none'; el('pt-tit').textContent='Pontos de coleta';
+  var h='', i, p; if(!PONTOS.length) h='<div style="padding:14px;border:1px dashed var(--border);border-radius:12px;font-size:12.5px;color:var(--muted)">Nenhum ponto cadastrado ainda. O app usa um endereço padrão até você cadastrar o primeiro.</div>';
+  for(i=0;i<PONTOS.length;i++){ p=PONTOS[i];
+    h+='<div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;background:var(--s1)"><div style="display:flex;align-items:center;gap:8px"><b style="font-size:13.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(p.principal?'★ ':'')+esc(p.nome||'Ponto')+'</b>'+(p.principal?'<span class="badge b-ok">principal</span>':'')+'</div>'
+     +'<div style="font-size:12px;color:var(--muted);margin:4px 0 8px;line-height:1.45">'+esc(p.endereco||'')+(p.telefone?'<br>📞 '+esc(p.telefone):'')+(p.email?'<br>✉️ '+esc(p.email):'')+'</div>'
+     +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec sm" onclick="ptForm(\''+esc(p.id)+'\')">Editar</button>'+(p.principal?'':'<button class="btn sec sm" onclick="ptAcao(\'principal\',\''+esc(p.id)+'\')">Tornar principal</button>')+'<button class="btn sec sm" onclick="ptRemover(\''+esc(p.id)+'\')">Remover</button></div></div>';
+  }
+  el('pt-lista').innerHTML=h;
 }
+function ptForm(id){
+  PT_ED=id||''; var p=null, i; for(i=0;i<PONTOS.length;i++) if(PONTOS[i].id===PT_ED) p=PONTOS[i];
+  el('pt-lista-v').style.display='none'; el('pt-form-v').style.display=''; el('pt-tit').textContent=p?'Editar ponto':'Novo ponto';
+  var m={'pt-nome':'nome','pt-cep':'cep','pt-rua':'rua','pt-num':'numero','pt-bai':'bairro','pt-cid':'cidade','pt-uf':'uf','pt-fone':'telefone','pt-mail':'email'}, k;
+  for(k in m) el(k).value=p?(p[m[k]]||''):'';
+  el('pt-cep-msg').textContent=''; el('pt-res').innerHTML=(p&&!p.rua&&p.endereco)?('Endereço atual: <b>'+esc(p.endereco)+'</b><br>Preencha os campos acima para atualizar.'):'';
+  el('pt-salvar').disabled=false; el('pt-salvar').textContent='Salvar e localizar';
+}
+var PT_CEP_ULT='';
+function ptCep(){
+  var v=el('pt-cep').value.replace(/\D/g,'').slice(0,8); el('pt-cep').value=v.length>5?v.slice(0,5)+'-'+v.slice(5):v;
+  var msg=el('pt-cep-msg'); if(v.length!==8){ PT_CEP_ULT=''; msg.textContent=''; return; } if(v===PT_CEP_ULT) return; PT_CEP_ULT=v; msg.textContent='Buscando CEP…';
+  var ok=false, falhas=0;
+  function fim(x){ if(ok) return; ok=true; if(x.rua) el('pt-rua').value=x.rua; if(x.bairro) el('pt-bai').value=x.bairro; if(x.cidade) el('pt-cid').value=x.cidade; if(x.uf) el('pt-uf').value=x.uf; msg.textContent='✔ Endereço preenchido. Informe o número.'; el('pt-num').focus(); }
+  function falhou(){ falhas++; if(falhas>=2&&!ok) msg.textContent='CEP não encontrado. Preencha manualmente.'; }
+  fetch('https://brasilapi.com.br/api/cep/v1/'+v).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(j){ fim({rua:j.street,bairro:j.neighborhood,cidade:j.city,uf:j.state}); }).catch(falhou);
+  fetch('https://viacep.com.br/ws/'+v+'/json/').then(function(r){return r.json();}).then(function(j){ if(j.erro) throw 0; fim({rua:j.logradouro,bairro:j.bairro,cidade:j.localidade,uf:j.uf}); }).catch(falhou);
+}
+function ptPost(corpo,cb){
+  fetch(DELTADIS_API+'/config/pontos?key='+encodeURIComponent(DELTADIS_API_KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo)})
+  .then(function(r){return r.json();}).then(function(d){ if(d&&d.ok){ PONTOS=d.pontos||[]; pintarBadgePonto(); carregarPonto(); } cb(d); }).catch(function(){ cb(null); });
+}
+function ptAcao(acao,id){ ptPost({acao:acao,id:id},function(d){ if(!d||!d.ok){ aviso('Não consegui salvar. Tente de novo.'); return; } aviso(acao==='principal'?'Ponto principal alterado':'Ponto removido'); ptLista(); }); }
+function ptRemover(id){ var p=null,i; for(i=0;i<PONTOS.length;i++) if(PONTOS[i].id===id) p=PONTOS[i]; if(!confirm('Remover o ponto "'+((p&&p.nome)||'')+'"?')) return; ptAcao('remover',id); }
 function salvarPonto(){
-  var v=(el('pt-end').value||'').trim(); if(!v){ aviso('Digite o endereço do ponto de coleta'); return; }
+  var ponto={nome:el('pt-nome').value.trim(),cep:el('pt-cep').value,rua:el('pt-rua').value.trim(),numero:el('pt-num').value.trim(),bairro:el('pt-bai').value.trim(),cidade:el('pt-cid').value.trim(),uf:el('pt-uf').value.trim(),telefone:el('pt-fone').value.trim(),email:el('pt-mail').value.trim()};
+  if(!ponto.rua||!ponto.cidade){ aviso('Preencha ao menos rua e cidade'); return; }
   var b=el('pt-salvar'); b.disabled=true; b.textContent='Localizando…';
-  fetch(DELTADIS_API+'/config/ponto?key='+encodeURIComponent(DELTADIS_API_KEY),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endereco:v})})
-  .then(function(r){return r.json();}).then(function(d){
+  ptPost({acao:'salvar',id:PT_ED,ponto:ponto},function(d){
     b.disabled=false; b.textContent='Salvar e localizar';
-    if(d&&d.ok){ PONTO=d.ponto; pintarBadgePonto(); el('pt-res').innerHTML='✔ Salvo. Localizado em: <b>'+esc(PONTO.achado||PONTO.endereco)+'</b><br>Confira se é mesmo o lugar certo. Os apps pegam o novo endereço em até 10 minutos.'; if(MP_MAP&&MP_MAPA_OK) mpPintarBase(true); aviso('Ponto de coleta salvo'); }
+    if(d&&d.ok){ aviso('Ponto salvo'); ptLista(); }
     else el('pt-res').innerHTML='<span style="color:#DC2626">'+esc((d&&d.mensagem)||'Não consegui salvar. Tente de novo.')+'</span>';
-  }).catch(function(){ b.disabled=false; b.textContent='Salvar e localizar'; el('pt-res').innerHTML='<span style="color:#DC2626">Sem conexão com o servidor.</span>'; });
+  });
 }
 var GR_EDIT=null, GR_PRE=null;
 /* ciclo de repasse (Configurações): várias regras, cada uma para "todos" ou para um grupo de motoristas */
