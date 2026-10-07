@@ -239,7 +239,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-23-0710</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-24-0710</p>
   </div>
 </div>
 
@@ -481,6 +481,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="rm-resumo" style="margin-bottom:6px">Enviar para:</div>
       <select id="av-dest" onchange="avDest()" style="width:100%;box-sizing:border-box;border:1px solid #E3D9F2;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;margin-bottom:12px;background:#fff"><option value="">Escolher individualmente</option><option value="todos">Todos os motoristas</option></select>
       <div class="rm-resumo" id="av-resumo">Carregando…</div>
+      <div id="av-res" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
       <div class="rm-lista" id="av-lista"></div>
     </div>
     <div class="rm-rodape">
@@ -726,12 +727,15 @@ function carregarRomaneio(){
   api('/mesa/entradas?dia='+encodeURIComponent(dia)).then(function(d){
     if(!d||!d.ok){ el('rm-lista').innerHTML='<div class="rm-vazio">Não consegui carregar.</div>'; return; }
     var it=(d.itens||[]).filter(function(x){ return (!MOT || String(x.mt||'')===String(MOT.id)) && (!RMF || x.tr==='Bipado no app'); });
+    /* romaneio só existe depois do FECHAMENTO: pacote sem número de romaneio (ou rota ainda em andamento) NÃO entra aqui nem no PDF */
+    var abertos=it.filter(function(x){ return !x.rom || x.rom==='Em andamento'; });
+    it=it.filter(function(x){ return x.rom && x.rom!=='Em andamento'; });
     RM={dia:dia,itens:it,ass:[]};
     /* (08) assinaturas dos motoristas (feitas no app ao montar a rota) — saem no PDF; se não carregar, o PDF sai com a linha em branco como antes */
     api('/mesa/assinaturas?dia='+encodeURIComponent(dia)).then(function(a){ if(a&&a.ok&&RM.dia===dia) RM.ass=a.assinaturas||[]; }).catch(function(){});
     var g={}, ordem=[], i, k, h='';
-    var nNl=it.filter(function(x){ return x.nl; }).length; el('rm-tot').innerHTML='· '+it.length+' pacote'+(it.length===1?'':'s')+(nNl?' · <b style="color:#B91C1C">⚠ '+nNl+' não localizado'+(nNl===1?'':'s')+'</b>':'');
-    if(!it.length){ el('rm-lista').innerHTML='<div class="rm-vazio">Nenhum pacote bipado neste dia'+(MOT?' para '+esc(MOT.n):'')+'.</div>'; return; }
+    var nNl=it.filter(function(x){ return x.nl; }).length; el('rm-tot').innerHTML='· '+it.length+' pacote'+(it.length===1?'':'s')+' em romaneio fechado'+(abertos.length?'<div style="font-size:12px;color:#8A7FA3;margin-top:4px">'+abertos.length+' pacote'+(abertos.length===1?'':'s')+' bipado'+(abertos.length===1?'':'s')+' ainda sem fechamento — o romaneio só é gerado quando a contagem é finalizada.</div>':'')+(nNl?' · <b style="color:#B91C1C">⚠ '+nNl+' não localizado'+(nNl===1?'':'s')+'</b>':'');
+    if(!it.length){ el('rm-lista').innerHTML='<div class="rm-vazio">Nenhum romaneio fechado neste dia'+(MOT?' para '+esc(MOT.n):'')+'.</div>'; return; }
     for(i=it.length-1;i>=0;i--){ k=(it[i].mtn||'Sem motorista')+'\u0001'+(it[i].rom||''); if(!g[k]){ g[k]={}; ordem.push(k); }
       var tn=(achaTr(it[i].tr)||{n:it[i].tr}).n; (g[k][tn]=g[k][tn]||[]).push(it[i]); }
     ordem.sort(romOrdena);
@@ -798,7 +802,7 @@ function htmlRomaneio(itens,dia,logo){
     '<body>'+corpo+'<script>window.onload=function(){window.print();}</'+'script></body></html>';
 }
 function abrirRelatorioRomaneio(){
-  if(!RM.itens.length){ aviso('Não há pacotes neste dia para gerar o romaneio.'); return; }
+  if(!RM.itens.length){ aviso('Não há romaneio fechado neste dia para imprimir.'); return; }
   var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups para gerar o romaneio.'); return; }
   w.document.open(); w.document.write(htmlRomaneio(RM.itens,RM.dia,logoRelatorioHtml())); w.document.close();
 }
@@ -821,13 +825,13 @@ function abrirDevolucoes(){
 /* ===== Avisar motoristas (WhatsApp) ===== */
 var AV={mots:[],ok:false,grupos:[],ponto:'DELTADIS'};
 function abrirAvisar(){
-  AV.mots=[]; el('av-lista').innerHTML=''; el('av-resumo').textContent='Carregando…'; el('av-overlay').classList.add('on'); avTipo();
+  AV.mots=[]; el('av-lista').innerHTML=''; el('av-res').innerHTML=''; el('av-resumo').textContent='Carregando…'; el('av-overlay').classList.add('on'); avTipo();
   api('/mesa/whats-status').then(function(d){
     if(!d||!d.ok){ el('av-resumo').textContent='Não consegui carregar.'; return; }
     AV.ok=!!d.configurado; AV.ponto=d.ponto||'DELTADIS'; AV.mots=d.motoristas||[]; AV.grupos=d.grupos||[]; var so='<option value="">Escolher individualmente</option><option value="todos">Todos os motoristas</option>'; AV.grupos.forEach(function(g){ so+='<option value="g:'+esc(g.id)+'">Grupo '+esc(g.nome)+' ('+g.ids.length+')</option>'; }); el('av-dest').innerHTML=so;
     el('av-resumo').textContent=AV.ok ? 'Marque quem vai receber:' : 'O WhatsApp da DELTADIS ainda não foi ligado. Você já pode ver a lista, mas o envio só funciona depois da configuração.';
     var h='';
-    AV.mots.forEach(function(m){ h+='<label style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #E3D9F2;border-radius:10px;font-size:14px'+(m.tem_fone?'':';opacity:.5')+'"><input type="checkbox" class="av-chk" onchange="avPrever()" value="'+esc(m.id)+'"'+(m.tem_fone?'':' disabled')+'> <span style="flex:1">'+esc(m.n)+'</span>'+(m.tem_fone?'':'<span style="font-size:11.5px;color:#b45309">sem telefone</span>')+'</label>'; });
+    AV.mots.forEach(function(m){ h+='<label class="av-row" data-id="'+esc(m.id)+'" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #E3D9F2;border-radius:10px;font-size:14px'+(m.tem_fone?'':';opacity:.5')+'"><input type="checkbox" class="av-chk" onchange="avPrever()" value="'+esc(m.id)+'"'+(m.tem_fone?'':' disabled')+'> <span style="flex:1">'+esc(m.n)+'</span>'+(m.tem_fone?'':'<span style="font-size:11.5px;color:#b45309">sem telefone</span>')+'</label>'; });
     el('av-lista').innerHTML=h||'<div class="rm-vazio">Nenhum motorista cadastrado.</div>'; avPrever();
   }).catch(function(){ el('av-resumo').textContent='Sem conexão.'; });
 }
@@ -847,23 +851,26 @@ function avPrever(){
 function avDest(){
   var v=el('av-dest').value, ids=null;
   if(v==='todos') ids='*'; else if(v.indexOf('g:')===0){ AV.grupos.forEach(function(g){ if('g:'+g.id===v) ids=g.ids; }); }
+  /* grupo escolhido: só os motoristas do grupo aparecem na lista; "todos" e "individualmente" mostram a lista inteira */
+  document.querySelectorAll('.av-row').forEach(function(r){ var vis=(!ids||ids==='*'||ids.indexOf(r.getAttribute('data-id'))>=0); r.style.display=vis?'flex':'none'; });
   document.querySelectorAll('.av-chk').forEach(function(x){ x.checked = ids ? (ids==='*' ? !x.disabled : (ids.indexOf(x.value)>=0 && !x.disabled)) : false; });
   avPrever();
 }
-function avTodos(){ setTimeout(avPrever,0); var c=document.querySelectorAll('.av-chk:not(:disabled)'), todos=true; c.forEach(function(x){ if(!x.checked) todos=false; }); c.forEach(function(x){ x.checked=!todos; }); }
+function avTodos(){ setTimeout(avPrever,0); var c=[].filter.call(document.querySelectorAll('.av-chk:not(:disabled)'),function(x){ return x.parentNode.style.display!=='none'; }), todos=true; c.forEach(function(x){ if(!x.checked) todos=false; }); c.forEach(function(x){ x.checked=!todos; }); }
 function avEnviar(){
   var t='aviso', mts=[], texto=el('av-texto').value.trim();
   document.querySelectorAll('.av-chk:checked').forEach(function(x){ mts.push(x.value); });
   if(!mts.length){ el('av-resumo').textContent='Marque pelo menos um motorista.'; return; }
   if(!texto){ el('av-resumo').textContent='Escreva o aviso.'; return; }
-  var b=el('av-enviar'); b.disabled=true; el('av-resumo').textContent='Enviando…';
+  var b=el('av-enviar'); b.disabled=true; el('av-resumo').textContent='Enviando…'; el('av-res').innerHTML='';
   api('/mesa/whats-avisar',{method:'POST',body:JSON.stringify({tipo:t,texto:texto,mts:mts})}).then(function(d){
     b.disabled=false;
     if(!d||!d.ok){ el('av-resumo').textContent=(d&&d.mensagem)||'Não consegui enviar.'; return; }
     var motivo={sem_telefone:'sem telefone',sem_pacotes_hoje:'sem pacote hoje',telefone_invalido:'telefone inválido'};
     el('av-resumo').textContent='Enviados: '+d.enviados+(d.falhas?(' · Não enviados: '+d.falhas):'');
-    var h=''; (d.itens||[]).forEach(function(x){ h+='<div style="padding:8px 12px;border-radius:10px;font-size:13.5px;background:'+(x.ok?'#ECFDF5':'#FEF3C7')+'">'+(x.ok?'✔ ':'• ')+esc(x.n)+(x.ok?'':' — '+esc(motivo[x.erro]||x.erro||'falhou'))+'</div>'; });
-    el('av-lista').innerHTML=h;
+    var h=''; (d.itens||[]).forEach(function(x){ var er=String(x.erro||''); if(/template name does not exist|132001|132000|132012/i.test(er)) er='o modelo de mensagem ainda não está aprovado no WhatsApp (Meta)';
+      h+='<div style="padding:8px 12px;border-radius:10px;font-size:13.5px;background:'+(x.ok?'#ECFDF5':'#FEF3C7')+'">'+(x.ok?'✔ ':'• ')+esc(x.n)+(x.ok?'':' — '+esc(motivo[x.erro]||er||'falhou'))+'</div>'; });
+    el('av-res').innerHTML=h;
   }).catch(function(){ b.disabled=false; el('av-resumo').textContent='Sem conexão.'; });
 }
 function fecharDevolucoes(){ el('dv-overlay').classList.remove('on'); contarDevolucoes(); }
