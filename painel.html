@@ -808,7 +808,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-18-0610</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-19-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1226,7 +1226,19 @@ var DASH_G_INI=inicioMesISO();
 var DASH_G_FIM=hojeISO();
 
 /* fluxo de caixa: cada lançamento tem tipo (in/out), categoria, data (ISO) e status */
-var CATEGORIAS_FC=['Transportadora','Repasse motorista','Operacional','Outros'];
+var CATEGORIAS_FC=['Transportadora','Repasse motorista','Operacional','Tecnologia','Outros'];
+var FAT_EXTRATO=[], FAT_T=0;   /* faturas do DeltaDis: aparecem como saída Tecnologia, fora do EXTRATO (não editável) */
+function fatCarregar(){
+  if(!REAL||!DD_TOKEN||!DD_USER||(DD_USER.perfil!=='dono'&&DD_USER.perfil!=='gerente')) return;
+  if(Date.now()-FAT_T<60000) return; FAT_T=Date.now();
+  fetch(DELTADIS_API+'/conta/faturas',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if(!d||!d.ok) return; var a=[],i,f;
+    for(i=0;i<(d.faturas||[]).length;i++){ f=d.faturas[i];
+      a.push({id:'fat_'+f.ref,sistema:true,tp:'out',categoria:'Tecnologia',data:String(f.venc||'').slice(0,10),vl:(Number(f.valor_centavos)||0)/100,status:f.pago?'pago':'pendente',link:f.link||'',
+        tt:(f.tipo==='adesao'?'DeltaDis — Adesão':'DeltaDis — Fatura'+(f.periodo_ini?' ('+ctData(f.periodo_ini).slice(0,5)+' a '+ctData(f.periodo_fim).slice(0,5)+')':''))}); }
+    FAT_EXTRATO=a; try{ pintarFluxoCaixa(); }catch(e){}
+  }).catch(function(){});
+}
 var EXTRATO=[
   {id:1, tp:'in',  tt:'Repasse J&T Express', categoria:'Transportadora', data:'2026-09-24', vl:6420.00, status:'recebido'},
   {id:2, tp:'in',  tt:'Repasse Vex',         categoria:'Transportadora', data:'2026-09-24', vl:4260.00, status:'recebido'},
@@ -4329,6 +4341,7 @@ function pintarFinanceiroReal(){
   if(av) av.textContent=msg;
 }
 function pintarFinanceiro(){
+  fatCarregar();
   if(REAL) pintarFinanceiroReal();
   var gmv=0,repasse=0,i;
   for(i=0;i<PEDIDOS.length;i++) gmv+=PEDIDOS[i].vl;
@@ -4381,8 +4394,8 @@ function salvarNovaCategoria(){
 }
 
 function filtrarEXTRATO(){
-  var lista=[],i;
-  for(i=0;i<EXTRATO.length;i++){var e=EXTRATO[i];
+  var lista=[],i,all=EXTRATO.concat(FAT_EXTRATO);
+  for(i=0;i<all.length;i++){var e=all[i];
     if(FC_DATA_INI && e.data<FC_DATA_INI) continue;
     if(FC_DATA_FIM && e.data>FC_DATA_FIM) continue;
     if(FC_CAT!=='todas' && e.categoria!==FC_CAT) continue;
@@ -4394,7 +4407,7 @@ function filtrarEXTRATO(){
 }
 
 var FC_SEL={}, FC_STATUS='todos';   /* saídas marcadas pra autorizar / não pagar */
-function fcSelecionavel(e){ return e.tp==='out' && e.status!=='pago' && !travadoPix(e); }
+function fcSelecionavel(e){ return !e.sistema && e.tp==='out' && e.status!=='pago' && !travadoPix(e); }
 function fcSelecionarTodos(on){ var lista=filtrarEXTRATO(), i; FC_SEL={}; if(on) for(i=0;i<lista.length;i++) if(fcSelecionavel(lista[i])) FC_SEL[lista[i].id]=1; pintarFluxoCaixa(); }
 function fcMarcar(id,on){ if(on) FC_SEL[id]=1; else delete FC_SEL[id]; pintarFluxoCaixa(); }
 function fcLimparSel(){ FC_SEL={}; pintarFluxoCaixa(); }
@@ -4423,7 +4436,8 @@ function abrirCustos(){
 }
 function pintarCustos(){
   var ini=el('cu-ini').value, fim=el('cu-fim').value, so=el('cu-modo').value==='pagas', i, e, tot=0, por={}, cats=[], k;
-  for(i=0;i<EXTRATO.length;i++){ e=EXTRATO[i];
+  var allC=EXTRATO.concat(FAT_EXTRATO);
+  for(i=0;i<allC.length;i++){ e=allC[i];
     if(e.tp!=='out' || e.status==='recusado') continue;
     if(so && e.status!=='pago') continue;
     if((ini&&e.data<ini)||(fim&&e.data>fim)) continue;
@@ -4595,6 +4609,7 @@ function pintarFluxoCaixa(){
 
   var h='', nSel=0, tSel=0, nSelecionaveis=0;
   for(i=0;i<lista.length;i++){var e=lista[i], ok=fcSelecionavel(e); if(ok) nSelecionaveis++; if(ok && FC_SEL[e.id]){ nSel++; tSel+=Number(e.vl)||0; }
+    if(e.sistema){ h+='<tr><td></td><td>'+dataBR(e.data)+'</td><td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">Tecnologia</span></td><td style="font-weight:800;color:var(--red)">- '+moeda(e.vl)+'</td><td>'+badgeStatus(e.status)+'</td><td><div class="fc-acoes"><button title="Lançamento automático do sistema: não pode ser alterado" style="cursor:default">🔒</button>'+(e.link&&e.status!=='pago'?'<a href="'+esc(e.link)+'" target="_blank" rel="noopener" title="Abrir fatura"><button>🔗</button></a>':'')+'</div></td></tr>'; continue; }
     h+='<tr><td>'+(ok?('<input type="checkbox" '+(FC_SEL[e.id]?'checked ':'')+'onchange="fcMarcar('+e.id+',this.checked)">'):'')+'</td><td>'+dataBR(e.data)+'</td>'+
        '<td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria)+'</span>'+(e.pix?(' <span style="font-size:11px;color:var(--muted)">Pix: '+esc(e.pix)+'</span>'):'')+'</td>'+
        '<td style="font-weight:800;color:'+(e.tp==='in'?'var(--green)':'var(--red)')+'">'+(e.tp==='in'?'+ ':'- ')+moeda(e.vl)+'</td>'+
