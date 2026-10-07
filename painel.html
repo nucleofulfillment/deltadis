@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-28-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-29-0710</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1306,16 +1306,27 @@ function veFcCarregar(){
   veApi(null,function(){ try{ pintarFluxoCaixa(); }catch(e){} });
 }
 function veIsoData(d){ d=String(d||''); var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(d)||null; if(m) return m[1]+'-'+m[2]+'-'+m[3]; m=/^(\d{2})\/(\d{2})\/(\d{4})/.exec(d); return m?(m[3]+'-'+m[2]+'-'+m[1]):''; }
+function fcPagarVeiculo(id){
+  var l=veExtrato(), e=null, i, mx=0, ag=new Date();
+  for(i=0;i<l.length;i++) if(l[i].id===id) e=l[i]; if(!e) return;
+  if(!window.confirm('Marcar como PAGO (pagamento feito por fora do sistema)?\n\n'+e.tt+'\n'+moeda(e.vl))) return;
+  for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id>mx) mx=EXTRATO[i].id;
+  EXTRATO.push({id:mx+1,tp:'out',tt:e.tt,categoria:'Veículos',data:hojeISO(),vl:e.vl,status:'pago',decEm:isoDe(ag)+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2),vref:e.id,venc:e.data});
+  if(REAL) salvarLocal(); pintarFluxoCaixa(); aviso('Marcado como pago');
+}
 function veExtrato(){
-  var a=[], i, j, v, m, x, d, pl, dd, n;
+  var a=[], i, j, v, m, x, d, pl, dd, n, pagos={}, k, ch=function(t){ return String(t||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,60); };
   if(!VE||!VE.lista) return a;
+  for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].vref) pagos[EXTRATO[i].vref]=1;
   for(i=0;i<VE.lista.length;i++){ v=VE.lista[i]; m=v.multas; if(!m) continue; pl=v.placa+(v.modelo?' · '+v.modelo:'');
     for(j=0;j<(m.lista||[]).length;j++){ x=m.lista[j]; if(!(Number(x.valor)>0)) continue;
-      a.push({id:'vm_'+v.id+'_'+j,sistema:true,tp:'out',categoria:'Veículos',data:veIsoData(x.venc)||veIsoData(x.data)||hojeISO(),vl:Number(x.valor),status:'pendente',tt:'Multa — '+pl+(x.descricao?' ('+String(x.descricao).replace(/^Multa - /,'')+')':'')}); }
+      k='vm_'+v.id+'_'+ch(x.descricao||(x.venc+'_'+x.valor)); if(pagos[k]) continue;
+      a.push({id:k,sistema:true,tp:'out',categoria:'Veículos',data:veIsoData(x.venc)||veIsoData(x.data)||hojeISO(),vl:Number(x.valor),status:'pendente',tt:'Multa — '+pl+(x.descricao?' ('+String(x.descricao).replace(/^Multa - /,'')+')':'')}); }
     var tipos=[['ipva','IPVA'],['lic','Licenciamento'],['dpvat','DPVAT']];
     for(n=0;n<tipos.length;n++){ if(!(Number(m[tipos[n][0]])>0)) continue;
       dd=tipos[n][0]==='dpvat'?{iso:hojeISO()}:veDataDe(v,tipos[n][0]);
-      a.push({id:'vd_'+v.id+'_'+tipos[n][0],sistema:true,tp:'out',categoria:'Veículos',data:dd.iso||hojeISO(),vl:Number(m[tipos[n][0]]),status:'pendente',tt:tipos[n][1]+' — '+pl}); }
+      k='vd_'+v.id+'_'+tipos[n][0]+'_'+String(dd.iso||'').slice(0,4); if(pagos[k]) continue;
+      a.push({id:k,sistema:true,tp:'out',categoria:'Veículos',data:dd.iso||hojeISO(),vl:Number(m[tipos[n][0]]),status:'pendente',tt:tipos[n][1]+' — '+pl}); }
   }
   return a;
 }
@@ -4941,7 +4952,7 @@ function pintarFluxoCaixa(){
 
   var h='', nSel=0, tSel=0, nSelecionaveis=0;
   for(i=0;i<lista.length;i++){var e=lista[i], ok=fcSelecionavel(e); if(ok) nSelecionaveis++; if(ok && FC_SEL[e.id]){ nSel++; tSel+=Number(e.vl)||0; }
-    if(e.sistema){ h+='<tr><td></td><td>'+dataBR(e.data)+'</td><td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria||'Tecnologia')+'</span></td><td style="font-weight:800;color:var(--red)">- '+moeda(e.vl)+'</td><td>'+badgeStatus(e.status)+'</td><td><div class="fc-acoes"><button title="Lançamento automático do sistema: não pode ser alterado" style="cursor:default">🔒</button>'+(e.link&&e.status!=='pago'?'<a href="'+esc(e.link)+'" target="_blank" rel="noopener" title="Abrir fatura"><button>🔗</button></a>':'')+'</div></td></tr>'; continue; }
+    if(e.sistema){ h+='<tr><td></td><td>'+dataBR(e.data)+'</td><td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria||'Tecnologia')+'</span></td><td style="font-weight:800;color:var(--red)">- '+moeda(e.vl)+'</td><td>'+badgeStatus(e.status)+'</td><td><div class="fc-acoes">'+(/^v[md]_/.test(e.id)?'<button onclick="fcPagarVeiculo(\''+esc(e.id)+'\')" title="Marcar como pago (pagamento feito por fora)" style="color:var(--green)">✔</button>':'')+'<button title="Lançamento automático do sistema: não pode ser alterado" style="cursor:default">🔒</button>'+(e.link&&e.status!=='pago'?'<a href="'+esc(e.link)+'" target="_blank" rel="noopener" title="Abrir fatura"><button>🔗</button></a>':'')+'</div></td></tr>'; continue; }
     h+='<tr><td>'+(ok?('<input type="checkbox" '+(FC_SEL[e.id]?'checked ':'')+'onchange="fcMarcar('+e.id+',this.checked)">'):'')+'</td><td>'+dataBR(e.data)+'</td>'+
        '<td><b>'+esc(e.tt)+'</b><br><span class="fc-tag">'+esc(e.categoria)+'</span>'+(e.pix?(' <span style="font-size:11px;color:var(--muted)">Pix: '+esc(e.pix)+'</span>'):'')+'</td>'+
        '<td style="font-weight:800;color:'+(e.tp==='in'?'var(--green)':'var(--red)')+'">'+(e.tp==='in'?'+ ':'- ')+moeda(e.vl)+'</td>'+
