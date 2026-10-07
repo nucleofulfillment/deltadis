@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-14-0610</div>
+      <div class="bld">DELTADIS-ADMIN-15-0610</div>
     </div>
   </div>
 </div>
@@ -316,7 +316,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-14-0610</div>
+    <div class="bld">DELTADIS-ADMIN-15-0610</div>
   </main>
 </div>
 
@@ -492,6 +492,7 @@ function abrirCliente(id){
   var c=CLIENTES.filter(function(x){return x.id===id;})[0]; if(!c) return;
   abrirModal('<h3>'+esc(c.nome)+'</h3><p class="sub">'+esc(c.id)+'</p>'+
   '<label>Nome da empresa</label><input id="ec-nome" value="'+esc(c.nome)+'">'+
+  '<label>Plano</label><select id="ec-plano" onchange="planoDoCliente()"><option value="">Sem plano (valores manuais)</option>'+(PLANOS||[]).map(function(p){return '<option value="'+esc(p.id)+'"'+(c.plano_id===p.id?' selected':'')+'>'+esc(p.nome)+'</option>';}).join('')+'</select><p class="sub" id="ec-plano-info" style="margin:4px 0 0"></p>'+
   '<div class="linha2"><div><label>Mensalidade (R$)</label><input id="ec-men" inputmode="decimal" value="'+esc(deCentavos(c.mensalidade_centavos))+'"></div><div><label>Taxa por motorista (R$)</label><input id="ec-taxa" inputmode="decimal" value="'+esc(deCentavos(c.taxa_app_centavos))+'"></div></div>'+
   '<div class="linha2"><div><label>Dia do vencimento (1 a 31)</label><input id="ec-dia" inputmode="numeric" maxlength="2" value="'+esc(c.dia_venc||10)+'"></div><div></div></div>'+
   '<div class="erro" id="ec-erro"></div>'+
@@ -500,10 +501,17 @@ function abrirCliente(id){
   '<div style="margin-top:20px"><b>Acesso do dono ao painel</b></div><div id="ec-dono"><div class="vazio">Carregando...</div></div>'+
   '<p class="sub" style="margin-top:6px">Os motoristas e os acessos do app são cadastrados pelo próprio cliente, dentro do painel dele.</p>'+
   '<div class="acoes"><button class="btn" onclick="fechar()">Fechar</button></div>');
-  carregarDono(c.id);
+  carregarDono(c.id);planoDoCliente();
+}
+function planoDoCliente(){
+  var sel=el('ec-plano'),inf=el('ec-plano-info'),men=el('ec-men'); if(!sel) return;
+  var p=(PLANOS||[]).filter(function(x){return x.id===sel.value;})[0];
+  if(!p){inf.textContent='';men.disabled=false;return;}
+  men.value=deCentavos(p.fixo_centavos);men.disabled=true;
+  inf.textContent='Vale o plano: fixo '+reais(p.fixo_centavos)+' + '+reais(p.pacote_centavos)+' por pacote'+(p.franquia?(p.variavel_total?'':' acima de '+p.franquia+' pacotes'):'')+(p.variavel_total?' desde o 1º pacote':'')+'. A mensalidade manual é ignorada.';
 }
 function salvarCliente(id){
-  chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{nome:el('ec-nome').value.trim(),mensalidade_centavos:paraCentavos(el('ec-men').value),taxa_app_centavos:paraCentavos(el('ec-taxa').value),dia_venc:parseInt(el('ec-dia').value,10)||10}).then(function(d){
+  chamar('PATCH','/admin/clientes/'+encodeURIComponent(id),{plano_id:el('ec-plano').value,nome:el('ec-nome').value.trim(),mensalidade_centavos:paraCentavos(el('ec-men').value),taxa_app_centavos:paraCentavos(el('ec-taxa').value),dia_venc:parseInt(el('ec-dia').value,10)||10}).then(function(d){
     if(!d.ok){el('ec-erro').textContent=d.mensagem||d.erro||'Erro ao salvar.';return;}
     toast('Dados salvos.');recarregarMantendo(id);
   }).catch(function(){});
