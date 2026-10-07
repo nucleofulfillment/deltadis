@@ -386,7 +386,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-84-0710</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-85-0710</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -487,8 +487,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><h3 style="margin:0">Detalhe do lote</h3><span id="lote-rom" style="color:var(--roxo);font-weight:800;font-size:13px;white-space:nowrap;cursor:pointer;padding:6px 0" onclick="romAbrir(LOTE_ROM_DIA)">＋ Romaneio</span></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd" id="sh-lote-corpo"></div>
 </div>
-<div class="sheet" id="sh-ped" style="z-index:95">
-  <div class="sh-hd"><h3>Resumo do pedido</h3><button onclick="el('sh-ped').classList.remove('on')">✕</button></div>
+<div class="sheet" id="sh-ped" style="z-index:95;background:#EDEAF2;box-shadow:0 -10px 30px rgba(31,10,61,.28);border-top:1px solid rgba(109,40,217,.15)">
+  <div class="sh-hd" style="background:var(--grad);border-radius:18px 18px 0 0;border-bottom:none"><h3 style="color:#fff;margin:0">Resumo do pedido</h3><button style="background:rgba(255,255,255,.22);color:#fff" onclick="el('sh-ped').classList.remove('on')">✕</button></div>
   <div class="sh-bd" id="sh-ped-corpo"></div>
 </div>
 
