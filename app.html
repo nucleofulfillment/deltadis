@@ -387,7 +387,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-94-0810</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-95-0810</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1118,7 +1118,7 @@ function rlTela(){
     if(i<PONTEIRO) h+='<div class="rp-cartao feito" data-i="'+i+'"><span class="rp-ok">✓</span><span class="rp-num">'+(i+1)+'</span>'+txt+'<span class="badge b-wt">'+(nomes[p.status]||'Feita')+'</span></div>';
     else h+='<div class="rp-cartao'+(i===PONTEIRO?' atual':'')+'" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+',rlMover)">⣿</span><input class="rp-pos" type="number" inputmode="numeric" min="'+(PONTEIRO+1)+'" max="'+LOTE_ATUAL.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rlMover('+i+',this.value)">'+txt+(RP.preRota?'<div data-rlc="'+i+'" style="font-size:12px;padding:0 0 0 4px"></div>':'')+(p.semLocal?((RP.preRota&&rlFalta()>0)?'<div style="font-size:12px;color:#BE185D;font-weight:700;padding:4px 0">Bipe todos os pacotes para cadastrar este endereço</div>':rpAcoesSem('lote',i,p.cod)):'')+'</div>';
   }
-  h+='</div><button class="btn pri wide" style="margin-top:14px" onclick="'+(RP.preRota?'rlConcluir':'rlContinuar')+'()">'+(RP.preRota?'Concluir conferência e abrir o mapa':'Continuar rota')+'</button></div>';
+  h+='</div><button class="btn pri wide" style="margin-top:14px" onclick="'+(RP.preRota?'rlConcluir':'rlContinuar')+'()">'+(RP.preRota?'Concluir conferência e abrir o mapa':'Continuar rota')+'</button>'+(PONTEIRO===0?'<button class="btn sec wide" style="margin-top:10px" onclick="rlCancelar()">Cancelar esta rota e voltar ao início</button>':'')+'</div>';
   return h;
 }
 
@@ -1566,6 +1566,10 @@ function rlBipAtualizar(){
   if(u) u.innerHTML=h;
   var cs=document.querySelectorAll('[data-rlc]'), k; for(k=0;k<cs.length;k++){ var ix=Number(cs[k].getAttribute('data-rlc')), q=LOTE_ATUAL[ix]; if(q) cs[k].innerHTML=rlConferido(q)?'<span style="color:#166534;font-weight:700">✔ conferido</span>':'<span style="color:var(--muted)">falta bipar</span>'; }
   var inf=el('bp-caminfo'); if(inf&&BP.camFn===rlBipar) inf.innerHTML=(r&&r.t!=='err')?'<span style="font-size:64px;font-weight:800;color:#fff;display:block;line-height:1">'+r.pos+'</span>'+esc(r.cl||r.cod):(r?'Fora da rota':'Aponte para o código de barras');
+}
+function rlCancelar(){
+  if(!confirm('Cancelar esta rota e voltar ao início? Nenhuma entrega foi feita ainda; sua lista continua salva.')) return;
+  bpFecharCamera(); BP.camFn=null; RP.preRota=false; RP.asgVoltaRota=false; voltarInicio();
 }
 function rlConcluir(){
   var f=rlFalta();
