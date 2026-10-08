@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-31-0810</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-32-0810</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1926,7 +1926,7 @@ function importarPlanilha(linhas,c){
     var endComCep=[([sep.rua,sep.num].filter(Boolean).join(', ')+(sep.comp?' ('+sep.comp+')':'')), bairroNv, cidNv].filter(Boolean).join(' — ')+(cepNv?(' — CEP '+cepNv):'');
     if(!sep.rua && !sep.num) endComCep='';
     p=idx[cod];
-    if(p){ p.st=s.st; p.mt=mot?mot.id:null; p.obs=s.obs||''; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv){ p.bairro=endComCep; p.rua=sep.rua; p.num=sep.num; p.comp=sep.comp; p.bai=bairroNv; p.cid=cidNv; p.endOrig=endOrig; } if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; if(telNv) p.tel=telNv; if(canalNv) p.canal=canalNv; if(vendNv) p.vend=vendNv; atualizados++; }
+    if(p){ var soCriado=(String(s.obs||'').indexOf('ainda não chegou')>=0); if(!soCriado){ p.st=s.st; p.obs=s.obs||''; } if(mot) p.mt=mot.id; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv){ p.bairro=endComCep; p.rua=sep.rua; p.num=sep.num; p.comp=sep.comp; p.bai=bairroNv; p.cid=cidNv; p.endOrig=endOrig; } if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; if(telNv) p.tel=telNv; if(canalNv) p.canal=canalNv; if(vendNv) p.vend=vendNv; atualizados++; }
     else{
       p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, rua:sep.rua, num:sep.num, comp:sep.comp, bai:bairroNv, cid:cidNv, endOrig:endOrig, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'', tel:telNv, canal:canalNv, vend:vendNv,
          scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en, fechId:null};
