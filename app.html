@@ -387,7 +387,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-97-0810</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-100-0810</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -564,6 +564,7 @@ function rotaRestaurar(){
     EST='em_rota'; return true;
   }catch(e){ return false; }
 }
+document.addEventListener('visibilitychange',function(){ try{ if(!document.hidden&&EST==='rp_lista'&&RP.preRota) bpCarregar(true); }catch(e){} });
 function hojeISO(){var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function horaAgora(){var d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);}
 function dataBR(iso){var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0];}
@@ -1119,7 +1120,7 @@ function rlTela(){
   for(i=0;i<LOTE_ATUAL.length;i++){ p=LOTE_ATUAL[i];
     var txt='<div class="rp-txt"'+(RP.preRota&&p.semLocal?' onclick="rlEditar('+i+')" style="cursor:pointer"':'')+'><b>'+esc(p.cliente||p.cod)+(p.semLocal?' <span class="selo-acao" style="margin-left:4px">⚠ ação necessária</span>':'')+(p.remarcadaHoje?' <span class="selo-rem" style="margin-left:4px">🔁 remarcada</span>':'')+rpMesmoSelo(LOTE_ATUAL,i)+'</b><small>'+(numAuto(p.cod)?'':numBadge(p.num||numDe(p.cod)))+esc(p.endereco||'')+(p.bairro?' — '+esc(p.bairro):'')+'</small></div>';
     if(i<PONTEIRO) h+='<div class="rp-cartao feito" data-i="'+i+'"><span class="rp-ok">✓</span><span class="rp-num">'+(i+1)+'</span>'+txt+'<span class="badge b-wt">'+(nomes[p.status]||'Feita')+'</span></div>';
-    else h+='<div class="rp-cartao'+(i===PONTEIRO?' atual':'')+'" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+',rlMover)">⣿</span><input class="rp-pos" type="number" inputmode="numeric" min="'+(PONTEIRO+1)+'" max="'+LOTE_ATUAL.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rlMover('+i+',this.value)">'+txt+(RP.preRota?'<div data-rlc="'+i+'" style="font-size:12px;padding:0 0 0 4px"></div>':'')+(p.semLocal?rpAcoesSem('lote',i,p.cod):'')+(RP.preRota?'<div style="width:100%;padding:6px 0 0"><button class="btn sec" style="padding:6px 12px;font-size:12px" onclick="rlBase('+i+')">⏸ Deixar na base</button></div>':'')+'</div>';
+    else h+='<div class="rp-cartao'+(i===PONTEIRO?' atual':'')+'" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+',rlMover)">⣿</span><input class="rp-pos" type="number" inputmode="numeric" min="'+(PONTEIRO+1)+'" max="'+LOTE_ATUAL.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rlMover('+i+',this.value)">'+txt+(RP.preRota?'<div data-rlc="'+i+'" style="font-size:12px;padding:0 0 0 4px"></div>':'')+(p.semLocal?rpAcoesSem('lote',i,p.cod):'')+(RP.preRota?'<div style="width:100%;padding:6px 0 0"><button class="btn sec" style="padding:6px 12px;font-size:12px" onclick="rlBase('+i+')">⚠ Não localizado</button></div>':'')+'</div>';
   }
   h+='</div><button class="btn pri wide" style="margin-top:14px" onclick="'+(RP.preRota?'rlConcluir':'rlContinuar')+'()">'+(RP.preRota?'Concluir conferência e abrir o mapa':'Continuar rota')+'</button>'+(PONTEIRO===0?'<button class="btn sec wide" style="margin-top:10px" onclick="rlCancelar()">Cancelar esta rota e voltar ao início</button>':'')+'</div>';
   return h+resumo;
@@ -1410,6 +1411,7 @@ function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por b
       return it; });
     var mxN=0, fillN=[]; BP.meus.forEach(function(m){ if(m.num>mxN) mxN=m.num; }); BP.meus.forEach(function(m){ if(!m.num){ m.num=++mxN; fillN.push({cod:m.cod,pos:m.num}); } });
     if(fillN.length) rpApi('/motorista/numeracao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:fillN})}).catch(function(){});
+    if(RP.preRota&&typeof RL!=='undefined'&&RL){ RL.feitos={}; BP.meus.forEach(function(m){ if(m.conf) RL.feitos[String(m.cod).toLowerCase()]=1; }); rotaGuardar(); if(EST==='rp_lista') rlBipAtualizar(); }   /* servidor manda na conferência: vale a contagem mais recente, de qualquer aparelho */
     BP.ok=true; bpAtualizar(); if(EST==='sem_lote') renderInicio();
     if(!PT.sel){ var pn='', k; for(k=0;k<(d.meus||[]).length;k++) if(d.meus[k].ponto){ pn=d.meus[k].ponto; break; } if(pn) ptRestaurar(pn); }
   }).catch(function(){ BP.carregando=false; if(!sil){ BP.ult={t:'err',m:'Sem conexão. Tente de novo.'}; bpAtualizar(); } });
@@ -1429,7 +1431,10 @@ function cpCod(c){
 function numDe(cod){ var k=String(cod||'').toLowerCase(), i; for(i=0;i<BP.meus.length;i++) if(String(BP.meus[i].cod).toLowerCase()===k) return BP.meus[i].num||0; return 0; }
 function numProx(){ var mx=0, i; for(i=0;i<BP.meus.length;i++) if((BP.meus[i].num||0)>mx) mx=BP.meus[i].num; return mx+1; }
 function numBadge(n){ return n?('<span class="nb" title="Número escrito no pacote">'+n+'</span>'):''; }
-function numFalar(n){ try{ if(NUM.voz && window.speechSynthesis){ speechSynthesis.cancel(); var u=new SpeechSynthesisUtterance(String(n)); u.lang='pt-BR'; u.rate=1.1; speechSynthesis.speak(u); } }catch(e){} }
+var _vozU=null, _vozOk=false;
+function vozLiberar(){ if(_vozOk) return; try{ if(window.speechSynthesis){ var u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); _vozOk=true; } }catch(e){} }
+document.addEventListener('pointerdown',vozLiberar,true); document.addEventListener('keydown',vozLiberar,true);
+function numFalar(n){ try{ if(NUM.voz && window.speechSynthesis){ var ss=speechSynthesis; if(ss.speaking||ss.pending) ss.cancel(); if(ss.paused) ss.resume(); _vozU=new SpeechSynthesisUtterance(String(n)); _vozU.lang='pt-BR'; _vozU.rate=1.0; _vozU.volume=1; setTimeout(function(){ try{ ss.speak(_vozU); }catch(e){} },80); } }catch(e){} }
 function bpVoz(){ NUM.voz=!NUM.voz; numGravar(); bpAtualizar(); }
 function bpItemHtml(m){
   var info;
@@ -1546,7 +1551,16 @@ function rlBipar(v){
   var cod=bpNorm(v); if(!cod) return;
   var k=cod.toLowerCase(), i, pos=0, q=null;
   for(i=0;i<LOTE_ATUAL.length;i++){ q=LOTE_ATUAL[i]; if(String(q.cod).toLowerCase()===k||String(q.scan||'').toLowerCase()===k){ pos=i+1; break; } q=null; }
-  if(!pos){ somErroBip(); RL.ult={t:'err',cod:cod}; rlBipAtualizar(); return; }
+  if(!pos){
+    somErroBip(); RL.ult={t:'err',cod:cod,msg:'Verificando este pacote…'}; rlBipAtualizar();
+    rpApi('/motorista/ocorrencia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,tipo:'fora'})}).then(function(d){
+      var m;
+      if(d&&d.ok){ m='Este pacote não é da sua lista. Registrado como FORA DE ROTA. '+(d.motivo==='outro'?'Está com '+esc(d.de||'outro motorista')+'.':(d.motivo==='sem_vinculo'?'Ainda não foi vinculado a nenhum motorista.':'Código não encontrado nas planilhas.'))+' O escritório foi avisado.'; }
+      else m='Pacote fora da sua lista. Não consegui registrar agora: bipe de novo.';
+      RL.ult={t:'err',cod:cod,msg:m}; rlBipAtualizar();
+    }).catch(function(){ RL.ult={t:'err',cod:cod,msg:'Pacote fora da sua lista. Sem conexão: bipe de novo.'}; rlBipAtualizar(); });
+    return;
+  }
   var ja=rlConferido(q), j;
   RL.feitos[String(q.cod).toLowerCase()]=1; for(j=0;j<(BP.meus||[]).length;j++) if(String(BP.meus[j].cod).toLowerCase()===String(q.cod).toLowerCase()) BP.meus[j].conf=true;
   RL.ult={t:ja?'rep':'ok',cod:q.cod,pos:pos,cl:q.cliente||'',end:q.endereco||''};
@@ -1564,7 +1578,7 @@ function rlBipAtualizar(){
   c.textContent=(tot-falta)+' de '+tot+' conferidos';
   var r=RL.ult, h='';
   if(!r) h='<div style="border:2px dashed #E3D9F2;border-radius:18px;padding:22px 12px;text-align:center;color:var(--muted);font-size:13px">Bipe um pacote para conferir e ver a posição dele</div>';
-  else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:18px 12px;text-align:center"><div style="font-size:20px;font-weight:800">Fora da rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+cpCod(r.cod)+'<br>Este pacote não está na sua rota.</div></div>';
+  else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:18px 12px;text-align:center"><div style="font-size:20px;font-weight:800">Fora de rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+cpCod(r.cod)+'<br>'+(r.msg||'Este pacote não está na sua rota.')+'</div></div>';
   else h='<div style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-radius:18px;padding:16px 12px;text-align:center"><div style="font-size:13px;opacity:.9">'+(r.t==='rep'?'Já conferido · escreva no pacote':'✔ Conferido · escreva no pacote')+'</div><div style="font-size:84px;font-weight:800;line-height:1.05">'+r.pos+'</div><div style="font-size:13px;margin-top:4px;font-weight:700">'+esc(r.cl||r.cod)+'</div></div>';
   if(u) u.innerHTML=h;
   var cs=document.querySelectorAll('[data-rlc]'), k; for(k=0;k<cs.length;k++){ var ix=Number(cs[k].getAttribute('data-rlc')), q=LOTE_ATUAL[ix]; if(q) cs[k].innerHTML=rlConferido(q)?'<span style="color:#166534;font-weight:700">✔ conferido</span>':'<span style="color:var(--muted)">falta bipar</span>'; }
@@ -1577,26 +1591,41 @@ function rlCancelar(){
 function rlEditar(i){
   abrirEndereco('lote',i);
 }
-/* pacote que não está com o motorista: fica na base (stand by). Sai da rota de hoje e volta pra lista dele amanhã */
+/* pacote da lista que NÃO chegou: vira "não localizado" no painel e sai da rota de hoje */
+function rlTirar(cods){
+  var q, k={}; cods.forEach(function(c){ k[String(c).toLowerCase()]=1; });
+  for(q=BP.meus.length-1;q>=0;q--) if(k[String(BP.meus[q].cod).toLowerCase()]) BP.meus.splice(q,1);
+  for(q=LOTE_ATUAL.length-1;q>=0;q--) if(k[String(LOTE_ATUAL[q].cod).toLowerCase()]){ delete RL.feitos[String(LOTE_ATUAL[q].cod).toLowerCase()]; LOTE_ATUAL.splice(q,1); }
+  for(q=0;q<LOTE_ATUAL.length;q++) LOTE_ATUAL[q].seq=q+1; RP.reord=true;
+}
 function rlBase(i){
   var p=LOTE_ATUAL[i]; if(!p) return;
-  if(!confirm('Deixar este pacote na base? Ele sai da sua rota de hoje e volta para a sua lista amanhã.')) return;
-  rpApi('/motorista/desbipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:p.cod})}).then(function(d){
+  if(!confirm('Marcar este pacote como NÃO LOCALIZADO? Ele sai da sua rota e o escritório é avisado.')) return;
+  rpApi('/motorista/ocorrencia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:p.cod,tipo:'nl'})}).then(function(d){
     if(!d||!d.ok){ aviso('Não consegui agora. Tente de novo.'); return; }
-    var k=String(p.cod).toLowerCase(), j, q; for(j=BP.meus.length-1;j>=0;j--) if(String(BP.meus[j].cod).toLowerCase()===k) BP.meus.splice(j,1);
-    delete RL.feitos[k]; var at=LOTE_ATUAL.indexOf(p); if(at>=0) LOTE_ATUAL.splice(at,1);
-    for(q=0;q<LOTE_ATUAL.length;q++) LOTE_ATUAL[q].seq=q+1; RP.reord=true;
-    aviso('Pacote deixado na base'); renderInicio();
-  }).catch(function(){ aviso('Sem conexão. Não deixei na base.'); });
+    rlTirar([p.cod]); aviso('Pacote marcado como não localizado'); renderInicio();
+  }).catch(function(){ aviso('Sem conexão. Não marquei.'); });
 }
 function rlConcluir(){
   var f=rlFalta();
-  if(f>0&&!confirm('Faltam '+f+' pacote'+(f===1?'':'s')+' sem bipar. Concluir mesmo assim?')) return;
+  var _fl=[]; LOTE_ATUAL.forEach(function(q){ if(!rlConferido(q)) _fl.push('nº '+q.seq+' …'+String(q.cod).slice(-6)); });
+  if(f>0&&!confirm('Faltam '+f+' pacote'+(f===1?'':'s')+' sem bipar:\n'+_fl.slice(0,8).join('\n')+'\n\nEles serão marcados como NÃO LOCALIZADOS e saem da sua rota. Concluir?')) return;
   bpFecharCamera(); BP.camFn=null;
   var seguir=function(){ RP.preRota=false; rlContinuar(); };
-  if(!bpNovos().length){ seguir(); return; }
-  if(rpCfg().assina==='sim'){ RP.asgVoltaRota=true; asgAbrir(); return; }
-  rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(seguir).catch(seguir);
+  var depois=function(){
+    if(!bpNovos().length){ seguir(); return; }
+    if(rpCfg().assina==='sim'){ RP.asgVoltaRota=true; asgAbrir(); return; }
+    rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(seguir).catch(seguir);
+  };
+  if(f>0){
+    var nl=LOTE_ATUAL.filter(function(x){ return !rlConferido(x); }).map(function(x){ return x.cod; });
+    rpApi('/motorista/ocorrencia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cods:nl,tipo:'nl'})}).then(function(d){
+      if(!d||!d.ok){ aviso('Não consegui marcar os não localizados. Tente de novo.'); return; }
+      rlTirar(nl); depois();
+    }).catch(function(){ aviso('Sem conexão. Tente de novo.'); });
+    return;
+  }
+  depois();
 }
 /* ══ (64) ASSINATURA DO ROMANEIO — opcional (Minha conta → Minhas rotas). Pergunta "Romaneio fechado?"; Sim → assina com o dedo; fica gravada no servidor ══ */
 var ASG={desenhou:false,pts:0,busy:false};
