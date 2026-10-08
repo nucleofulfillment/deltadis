@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-30-0810</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-31-0810</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1403,7 +1403,7 @@ function pedidoAtivo(p){ return p.st==='coletado'||p.st==='em rota'||ehTentativa
 function listaParaServidor(){
   var out=[], nomes={}, i, p; for(i=0;i<MOTORISTAS.length;i++) nomes[MOTORISTAS[i].id]=MOTORISTAS[i].n||'';
   for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(!pedidoAtivo(p)) continue;
-    out.push({cod:p.cod,tr:p.tr,mt:(p.mt==null?null:p.mt),mtn:(p.mt==null?'':(nomes[p.mt]||'')),st:p.st,cliente:p.cliente||'',tel:p.tel||'',rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||'',area:p.area||'',scan:((p.scan&&p.scan!==p.cod)?p.scan:''),dia:p.dia||'',hora:p.hora||'',canal:p.canal||'',inc:incompletoDe(p)}); }
+    out.push({cod:p.cod,tr:p.tr,mt:(p.mt==null?null:p.mt),mtn:(p.mt==null?'':(nomes[p.mt]||'')),st:p.st,cliente:p.cliente||'',tel:p.tel||'',rua:p.rua||'',num:p.num||'',comp:p.comp||'',bai:p.bai||'',cid:p.cid||'',cep:p.cep||'',area:p.area||'',scan:((p.scan&&p.scan!==p.cod)?p.scan:''),dia:p.dia||'',hora:p.hora||'',canal:p.canal||'',inc:incompletoDe(p),na:(String(p.obs||'').indexOf('ainda não chegou')>=0?1:0)}); }
   return out;
 }
 function agendarEnvioPedidos(){ if(!REAL || !PEDIDOS.length) return; if(PED_SYNC.timer) clearTimeout(PED_SYNC.timer); PED_SYNC.timer=setTimeout(function(){ PED_SYNC.timer=null; enviarPedidosServidor(); },4000); }
