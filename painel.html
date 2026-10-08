@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-29-0710</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-30-0810</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1759,7 +1759,8 @@ function lerColunas(cab,amostra){
 function statusAnjun(t){
   var s=normTxt(t);
   if(s.indexOf('entregue')>=0) return {st:'entregue'};
-  if(s.indexOf('cancel')>=0 || s.indexOf('criado')>=0) return {skip:true};
+  if(s.indexOf('cancel')>=0) return {skip:true};
+  if(s.indexOf('criado')>=0) return {st:'coletado', obs:'criado — ainda não chegou na base'};   /* o pedido sobe mesmo antes de chegar na base */
   if(s.indexOf('devolvid')>=0 || s.indexOf('retorna')>=0) return {st:'devolvido', obs:String(t).trim().toLowerCase()};
   if(s.indexOf('rota')>=0) return {st:'em rota'};
   if(s.indexOf('problema')>=0) return {st:'tentativa 1'};
@@ -3389,7 +3390,7 @@ function processarPlanilha(arquivo, ficar){
     pintarIndicadores(); pintarDashboard(); pintarPedidos(); pintarMotoristas(); pintarFinanceiro(); pintarMapeamento();
     if(!ficar) ir('pedidos');
     else if(FIN_LISTA_TIPO && el('sh-fin-lista').classList.contains('on')) abrirListaFin(FIN_LISTA_TIPO);
-    aviso((r.tr==='jt'?'J&T: ':(r.tr==='pic'?'Pichau: ':'Anjun: '))+r.novos+' pacotes novos, '+r.atualizados+' atualizados · '+MOTORISTAS.length+' motoristas'+(r.ignorados?(' · '+r.ignorados+' ainda não chegaram (fora)'):'')+(r.desconhecidos?(' · '+r.desconhecidos+' com status desconhecido'):'')+(r.gravou?'':' · ATENÇÃO: não coube guardar no navegador, ao recarregar precisa importar de novo'));
+    aviso((r.tr==='jt'?'J&T: ':(r.tr==='pic'?'Pichau: ':'Anjun: '))+r.novos+' pacotes novos, '+r.atualizados+' atualizados · '+MOTORISTAS.length+' motoristas'+(r.ignorados?(' · '+r.ignorados+' cancelados (fora)'):'')+(r.desconhecidos?(' · '+r.desconhecidos+' com status desconhecido'):'')+(r.gravou?'':' · ATENÇÃO: não coube guardar no navegador, ao recarregar precisa importar de novo'));
     registrarProblemas();
   };
   rd.onerror=function(){ aviso('Não consegui ler o arquivo.'); };
