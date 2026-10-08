@@ -387,7 +387,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-101-0810</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-104-0810</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -977,6 +977,39 @@ function rlContinuar(){
     RP.rota=Object.assign({},RP.rota,{real:false,linha:null,linhaVolta:null}); RP.reord=false; aviso('Trajeto do mapa em linha reta (sem conexão)'); rlVoltarMapa();
   });
 }
+/* pacotes no MESMO local ficam um do lado do outro (o 2º entra logo depois do 1º) */
+/* ══ sem internet: bip conferido fica numa fila no celular e sobe sozinho quando o sinal volta ══ */
+var BIP_ENV=false;
+function bipFila(){ try{ return JSON.parse(localStorage.getItem('dd_fila_bip')||'[]')||[]; }catch(e){ return []; } }
+function bipFilaSalva(f){ try{ localStorage.setItem('dd_fila_bip',JSON.stringify(f.slice(-1000))); }catch(e){} }
+function bipFilaAdd(cod,pos){ var f=bipFila(); f.push({cod:cod,num:pos,ponto:PT.sel?PT.sel.nome:'',mt:String(RP.mt||''),t:Date.now()}); bipFilaSalva(f); try{ rlBipAtualizar(); }catch(e){} }
+function bipFilaEnviar(){
+  if(BIP_ENV||!DD_M_TOKEN) return; var f=bipFila(); if(!f.length) return; BIP_ENV=true;
+  (function prox(){
+    var f2=bipFila(); if(!f2.length){ BIP_ENV=false; try{ rlBipAtualizar(); }catch(e){} return; }
+    var it=f2[0];
+    rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:it.cod,tr:'',ponto:it.ponto||'',num:it.num})}).then(function(d){
+      var g=bipFila(); g.shift(); bipFilaSalva(g); prox();
+    }).catch(function(){ BIP_ENV=false; });
+  })();
+}
+window.addEventListener('online',bipFilaEnviar); setInterval(bipFilaEnviar,30000); setTimeout(bipFilaEnviar,4000);
+try{ if('serviceWorker' in navigator) window.addEventListener('load',function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); }); }catch(e){}
+/* pacote que ganhou endereço depois (estava no fim da fila): entra na posição mais próxima, ao lado do vizinho mais perto */
+function rlEncaixar(q){
+  if(!q||q.lat==null) return; var i=LOTE_ATUAL.indexOf(q); if(i<0) return;
+  var j, best=-1, bd=1e9, d; for(j=0;j<LOTE_ATUAL.length;j++){ var o=LOTE_ATUAL[j]; if(o===q||o.lat==null) continue; d=rpKmEntre(q,o); if(d<bd){ bd=d; best=j; } }
+  if(best<0) return; var alvo=LOTE_ATUAL[best]; LOTE_ATUAL.splice(i,1); LOTE_ATUAL.splice(LOTE_ATUAL.indexOf(alvo)+1,0,q); RP.reord=true;
+  for(j=0;j<LOTE_ATUAL.length;j++) LOTE_ATUAL[j].seq=j+1;
+}
+function rlJuntarTodos(){
+  var o=[], usado={}, i, j, k;
+  for(i=0;i<LOTE_ATUAL.length;i++){ if(usado[i]) continue; usado[i]=1; o.push(LOTE_ATUAL[i]); k=rpChave(LOTE_ATUAL[i]); if(!k) continue;
+    for(j=i+1;j<LOTE_ATUAL.length;j++) if(!usado[j]&&rpChave(LOTE_ATUAL[j])===k){ usado[j]=1; o.push(LOTE_ATUAL[j]); } }
+  var mudou=false; for(i=0;i<o.length;i++) if(o[i]!==LOTE_ATUAL[i]){ mudou=true; break; }
+  if(mudou){ LOTE_ATUAL=o; RP.reord=true; }
+  for(i=0;i<LOTE_ATUAL.length;i++) LOTE_ATUAL[i].seq=i+1;
+}
 function rlMover(de,para){
   var n=LOTE_ATUAL.length; para=parseInt(para,10); if(!isFinite(para)||de<PONTEIRO){ renderInicio(); return; }
   para=Math.max(PONTEIRO+1,Math.min(n,para)); if(para-1===de){ renderInicio(); return; }
@@ -1411,10 +1444,10 @@ function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por b
       return it; });
     var mxN=0, fillN=[]; BP.meus.forEach(function(m){ if(m.num>mxN) mxN=m.num; }); BP.meus.forEach(function(m){ if(!m.num){ m.num=++mxN; fillN.push({cod:m.cod,pos:m.num}); } });
     if(fillN.length) rpApi('/motorista/numeracao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:fillN})}).catch(function(){});
-    if(RP.preRota&&typeof RL!=='undefined'&&RL){ RL.feitos={}; BP.meus.forEach(function(m){ if(m.conf||!m.auto) RL.feitos[String(m.cod).toLowerCase()]=1; });
+    if(RP.preRota&&typeof RL!=='undefined'&&RL){ RL.feitos={}; BP.meus.forEach(function(m){ if(m.conf||!m.auto) RL.feitos[String(m.cod).toLowerCase()]=1; }); bipFila().forEach(function(x){ RL.feitos[String(x.cod).toLowerCase()]=1; });
       /* endereço cadastrado em outro aparelho: aplica aqui e procura no mapa */
       var _sy=[]; LOTE_ATUAL.forEach(function(q){ if(!q.semLocal) return; var m=null, z; for(z=0;z<BP.meus.length;z++) if(String(BP.meus[z].cod).toLowerCase()===String(q.cod).toLowerCase()){ m=BP.meus[z]; break; } if(m&&m.d&&m.d.rua){ q.raw=m.d; q.endereco=m.d.rua+(m.d.num?', '+m.d.num:'')+(m.d.comp?' ('+m.d.comp+')':''); q.bairro=m.d.bai; q.cid=m.d.cid; _sy.push(q); } });
-      if(_sy.length) rpApi('/rota/localizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:_sy.map(function(q){ return {cod:q.cod,rua:q.raw.rua,num:q.raw.num,comp:q.raw.comp,bai:q.raw.bai,cid:q.raw.cid,cep:q.raw.cep}; })})}).then(function(r){ if(!r||!r.ok||!r.itens) return; r.itens.forEach(function(g,ix){ var q=_sy[ix]; if(q&&g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0){ q.lat=g.lat; q.lng=g.lng; q.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); q.semLocal=false; q.motivo=''; RP.reord=true; } }); rotaGuardar(); if(EST==='rp_lista') renderInicio(); }).catch(function(){});
+      if(_sy.length) rpApi('/rota/localizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:_sy.map(function(q){ return {cod:q.cod,rua:q.raw.rua,num:q.raw.num,comp:q.raw.comp,bai:q.raw.bai,cid:q.raw.cid,cep:q.raw.cep}; })})}).then(function(r){ if(!r||!r.ok||!r.itens) return; r.itens.forEach(function(g,ix){ var q=_sy[ix]; if(q&&g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0){ q.lat=g.lat; q.lng=g.lng; q.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); q.semLocal=false; q.motivo=''; RP.reord=true; try{ rlEncaixar(q); }catch(e){} } }); try{ rlJuntarTodos(); }catch(e){} rotaGuardar(); if(EST==='rp_lista') renderInicio(); }).catch(function(){});
       rotaGuardar(); if(EST==='rp_lista') rlBipAtualizar(); }   /* servidor manda na conferência: vale a contagem mais recente, de qualquer aparelho */
     BP.ok=true; bpAtualizar(); if(EST==='sem_lote') renderInicio();
     if(!PT.sel){ var pn='', k; for(k=0;k<(d.meus||[]).length;k++) if(d.meus[k].ponto){ pn=d.meus[k].ponto; break; } if(pn) ptRestaurar(pn); }
@@ -1570,7 +1603,7 @@ function rlBipar(v){
   RL.ult={t:ja?'rep':'ok',cod:q.cod,pos:pos,cl:q.cliente||'',end:q.endereco||''};
   if(ja) somErroBip(); else { somBipeOk(); numFalar(pos); }
   rlBipAtualizar(); rotaGuardar();
-  if(!ja) rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:q.cod,tr:'',ponto:PT.sel?PT.sel.nome:'',num:pos})}).catch(function(){});
+  if(!ja) rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:q.cod,tr:'',ponto:PT.sel?PT.sel.nome:'',num:pos})}).catch(function(){ bipFilaAdd(q.cod,pos); });
 }
 var RL_T=null;
 function rlEntrada(){ clearTimeout(RL_T); var i=el('rl-cod'); if(i&&i.value.length>=8) RL_T=setTimeout(rlDigitado,250); }
@@ -1579,7 +1612,7 @@ function rlCamera(){ BP.camFn=rlBipar; bpCamera(); }
 function rlBipAtualizar(){
   var c=el('rl-cnt'), u=el('rl-ult'); if(!c) return;
   var tot=LOTE_ATUAL.length, falta=rlFalta();
-  c.textContent=(tot-falta)+' de '+tot+' conferidos';
+  c.textContent=(tot-falta)+' de '+tot+' conferidos'+(bipFila().length?' · '+bipFila().length+' aguardando sinal':'');
   var r=RL.ult, h='';
   if(!r) h='<div style="border:2px dashed #E3D9F2;border-radius:18px;padding:22px 12px;text-align:center;color:var(--muted);font-size:13px">Bipe um pacote para conferir e ver a posição dele</div>';
   else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:18px 12px;text-align:center"><div style="font-size:20px;font-weight:800">Fora de rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+cpCod(r.cod)+'<br>'+(r.msg||'Este pacote não está na sua rota.')+'</div></div>';
@@ -2297,7 +2330,7 @@ function salvarEndereco(){
   rpApi('/rota/localizar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:[{cod:p.cod,rua:w.rua,num:w.num,comp:w.comp,bai:w.bai,cid:w.cid,cep:w.cep}]})}).then(function(d){
     var g=d&&d.ok&&d.itens&&d.itens[0], ok=g&&g.lat!=null&&(g.flags||[]).indexOf('cidade_diferente')<0;
     if(!ok){ fecharTudo(); aviso('Endereço salvo, mas não achei no mapa. Tente outro CEP/rua, remarque ou devolva.'); RP.ajustou=false; renderInicio(); return; }
-    if(lote){ p.lat=g.lat; p.lng=g.lng; p.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); p.semLocal=false; p.motivo=''; RP.reord=true; fecharTudo(); aviso('Endereço localizado no mapa'); RP.ajustou=false; renderInicio(); }
+    if(lote){ p.lat=g.lat; p.lng=g.lng; p.aprox=(g.precisao==='rua'||g.precisao==='cep'||(g.flags||[]).indexOf('parcial')>=0); p.semLocal=false; p.motivo=''; RP.reord=true; try{ rlEncaixar(p); rlJuntarTodos(); }catch(e){} fecharTudo(); aviso('Endereço localizado no mapa'); RP.ajustou=false; renderInicio(); }
     else { p.lat=g.lat; p.lng=g.lng; p.precisao=g.precisao; p.flags=g.flags||[]; p.inc=false; p._longe=false; fecharTudo();
       var ei=RP.extra.indexOf(p); if(ei>=0) RP.extra.splice(ei,1);
       RP.pts.push(p); var o=rpInserirNaOrdem(RP.pts.length-1);
@@ -2322,7 +2355,7 @@ function rpComecar2(){
   var vlt=rpCfg().volta==='sim'; ROTA_KM=Math.round((vlt?r.totalKm:r.idaKm)*10)/10; ROTA_MIN=Math.round(vlt?r.totalMin:r.idaMin); RP.rota=r; RP.baseLL=RP.res.base||null; RP.ajustou=false;
   PONTEIRO=0; SAIU_TELA_CHEIA=false;
   if(RP.numFlag){ RP.numFlag=false; numCriar(); return; }
-  if(RP.preRota){ RL.ult=null; RL.feitos={}; EST='rp_lista'; renderInicio(); return; }
+  if(RP.preRota){ RL.ult=null; RL.feitos={}; try{ rlJuntarTodos(); }catch(e){} EST='rp_lista'; renderInicio(); return; }
   EST='em_rota'; renderInicio();
 }
 /* mapa real (OpenFreeMap) da rota em andamento — o elemento fica guardado pra não recarregar a cada parada */
