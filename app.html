@@ -387,7 +387,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-93-0810</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-94-0810</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1105,15 +1105,20 @@ function numTela(){
     '<button class="btn sec wide" onclick="numSair()">Voltar para a rota</button></div>';
 }
 numLer();
+function rlBipHtml(){
+  return '<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 2px">Conferir pacotes</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px"><b id="rl-cnt"></b> · bipe cada pacote: confere e mostra o número (posição) para escrever nele.</p><div id="rl-ult" style="margin-bottom:12px"></div>'+
+    '<div class="bp-campo"><span>'+BP_IC.bar+'</span><input id="rl-cod" placeholder="Aponte e bipe" inputmode="none" oninput="rlEntrada()" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\'){event.preventDefault();rlDigitado();}"></div>'+
+    '<div style="display:flex;gap:10px"><button class="bp-acao" onclick="rlCamera()"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Câmera</button><button class="btn sec" style="flex:1" onclick="rlDigitado()">Conferir digitado</button></div></div>';
+}
 function rlTela(){
-  var h='<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px">📊 Resumo da rota</h3>'+rpResumoHtml()+'</div><div class="card"><h3 style="margin:0 0 2px">Suas paradas</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">'+PONTEIRO+' de '+LOTE_ATUAL.length+' entregues. Para reorganizar as que faltam, arraste pelo ⣿ ou digite a nova posição.</p><div id="rp-lista">', i, p;
+  var h='<div class="card" style="margin-bottom:12px"><h3 style="margin:0 0 8px">📊 Resumo da rota</h3>'+rpResumoHtml()+'</div>'+(RP.preRota?rlBipHtml():'')+'<div class="card"><h3 style="margin:0 0 2px">Suas paradas</h3><p style="margin:0 0 10px;color:var(--muted);font-size:12.5px">'+(RP.preRota?'A posição é o número do pacote. Para reorganizar, arraste pelo ⣿ ou digite a nova posição.':PONTEIRO+' de '+LOTE_ATUAL.length+' entregues. Para reorganizar as que faltam, arraste pelo ⣿ ou digite a nova posição.')+'</p><div id="rp-lista">', i, p;
   var nomes={entregue:'Entregue',remarcada:'Remarcada',ausente:'Ausente',nao_localizado:'Não localizado'};
   for(i=0;i<LOTE_ATUAL.length;i++){ p=LOTE_ATUAL[i];
-    var txt='<div class="rp-txt"><b>'+esc(p.cliente||p.cod)+(p.semLocal?' <span class="selo-acao" style="margin-left:4px">⚠ ação necessária</span>':'')+(p.remarcadaHoje?' <span class="selo-rem" style="margin-left:4px">🔁 remarcada</span>':'')+rpMesmoSelo(LOTE_ATUAL,i)+'</b><small>'+numBadge(p.num||numDe(p.cod))+esc(p.endereco||'')+(p.bairro?' — '+esc(p.bairro):'')+'</small></div>';
+    var txt='<div class="rp-txt"><b>'+esc(p.cliente||p.cod)+(p.semLocal?' <span class="selo-acao" style="margin-left:4px">⚠ ação necessária</span>':'')+(p.remarcadaHoje?' <span class="selo-rem" style="margin-left:4px">🔁 remarcada</span>':'')+rpMesmoSelo(LOTE_ATUAL,i)+'</b><small>'+(numAuto(p.cod)?'':numBadge(p.num||numDe(p.cod)))+esc(p.endereco||'')+(p.bairro?' — '+esc(p.bairro):'')+'</small></div>';
     if(i<PONTEIRO) h+='<div class="rp-cartao feito" data-i="'+i+'"><span class="rp-ok">✓</span><span class="rp-num">'+(i+1)+'</span>'+txt+'<span class="badge b-wt">'+(nomes[p.status]||'Feita')+'</span></div>';
-    else h+='<div class="rp-cartao'+(i===PONTEIRO?' atual':'')+'" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+',rlMover)">⣿</span><input class="rp-pos" type="number" inputmode="numeric" min="'+(PONTEIRO+1)+'" max="'+LOTE_ATUAL.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rlMover('+i+',this.value)">'+txt+(p.semLocal?rpAcoesSem('lote',i,p.cod):'')+'</div>';
+    else h+='<div class="rp-cartao'+(i===PONTEIRO?' atual':'')+'" data-i="'+i+'"><span class="rp-grip" title="Arraste para mover" onpointerdown="rpArrastoIni(event,'+i+',rlMover)">⣿</span><input class="rp-pos" type="number" inputmode="numeric" min="'+(PONTEIRO+1)+'" max="'+LOTE_ATUAL.length+'" value="'+(i+1)+'" onfocus="this.select()" onchange="rlMover('+i+',this.value)">'+txt+(RP.preRota?'<div data-rlc="'+i+'" style="font-size:12px;padding:0 0 0 4px"></div>':'')+(p.semLocal?((RP.preRota&&rlFalta()>0)?'<div style="font-size:12px;color:#BE185D;font-weight:700;padding:4px 0">Bipe todos os pacotes para cadastrar este endereço</div>':rpAcoesSem('lote',i,p.cod)):'')+'</div>';
   }
-  h+='</div><button class="btn pri wide" style="margin-top:14px" onclick="rlContinuar()">Continuar rota</button></div>';
+  h+='</div><button class="btn pri wide" style="margin-top:14px" onclick="'+(RP.preRota?'rlConcluir':'rlContinuar')+'()">'+(RP.preRota?'Concluir conferência e abrir o mapa':'Continuar rota')+'</button></div>';
   return h;
 }
 
@@ -1516,8 +1521,8 @@ function bpFechar(){
   if(!BP.meus.length){ aviso('Bipe ao menos um pacote antes de montar a rota'); return; }
   var sem=BP.meus.filter(function(m){ return !m.e&&!m.auto; }).length;   /* os da planilha sem endereço completo vão pro fim da lista, com aviso */
   if(sem>0){ aviso('Atenção: pacote sem endereço. Cadastre para continuar.'); return; }
-  /* lista vinda da planilha (endereço já completo): monta a rota direto, sem aviso e sem assinatura; a assinatura do romaneio vem quando o mapa abrir */
-  if(BP.meus.some(function(m){ return m.auto; })){ bpFecharCamera(); RP.asgNaRota=true; RP.bipMode=true; rpIniciar(); return; }
+  /* lista vinda da planilha (endereço já completo): monta a rota e abre a tela de conferência (posição + bipe); assinatura só ao concluir ela, e só depois abre o mapa */
+  if(BP.meus.some(function(m){ return m.auto; })){ bpFecharCamera(); RP.preRota=true; RP.asgVoltaRota=false; RP.bipMode=true; rpIniciar(); return; }
   var fm=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length;
   if(fm>0&&!confirm('Faltam '+fm+' pacote'+(fm===1?'':'s')+' do romaneio da Mesa sem bipar. Montar a rota mesmo assim?')) return;
   var fbp2=BP.meus.filter(function(m){ return m.auto&&!m.conf; }).length;
@@ -1529,11 +1534,47 @@ function bpFechar(){
   var seguir=function(){ RP.bipMode=true; rpIniciar(); };
   rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(seguir).catch(seguir);
 }
-/* abriu o mapa da rota (lista da planilha): fecha o romaneio e pede a assinatura, se o motorista usa assinatura */
-function romaneioNaRota(){
-  if(!bpNovos().length) return;
+/* ══ CONFERÊNCIA DA ROTA (lista da planilha): tela de posições + bipe. A POSIÇÃO do pacote é o número dele (sem 2º número). Concluiu → assinatura → mapa ══ */
+var RL={ult:null,feitos:{}};
+function numAuto(cod){ var k=String(cod||'').toLowerCase(), i; for(i=0;i<(BP.meus||[]).length;i++) if(String(BP.meus[i].cod).toLowerCase()===k) return !!BP.meus[i].auto; return false; }
+function rlConferido(p){ var k=String(p.cod).toLowerCase(), i; if(RL.feitos[k]) return true; for(i=0;i<(BP.meus||[]).length;i++) if(String(BP.meus[i].cod).toLowerCase()===k) return !!BP.meus[i].conf; return false; }
+function rlFalta(){ var n=0, i; for(i=0;i<LOTE_ATUAL.length;i++) if(!rlConferido(LOTE_ATUAL[i])) n++; return n; }
+function rlBipar(v){
+  var cod=bpNorm(v); if(!cod) return;
+  var k=cod.toLowerCase(), i, pos=0, q=null;
+  for(i=0;i<LOTE_ATUAL.length;i++){ q=LOTE_ATUAL[i]; if(String(q.cod).toLowerCase()===k||String(q.scan||'').toLowerCase()===k){ pos=i+1; break; } q=null; }
+  if(!pos){ somErroBip(); RL.ult={t:'err',cod:cod}; rlBipAtualizar(); return; }
+  var ja=rlConferido(q), j;
+  RL.feitos[String(q.cod).toLowerCase()]=1; for(j=0;j<(BP.meus||[]).length;j++) if(String(BP.meus[j].cod).toLowerCase()===String(q.cod).toLowerCase()) BP.meus[j].conf=true;
+  RL.ult={t:ja?'rep':'ok',cod:q.cod,pos:pos,cl:q.cliente||'',end:q.endereco||''};
+  if(ja) somErroBip(); else { somBipeOk(); numFalar(pos); }
+  rlBipAtualizar();
+  if(!ja) rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:q.cod,tr:'',ponto:PT.sel?PT.sel.nome:'',num:pos})}).catch(function(){});
+}
+var RL_T=null;
+function rlEntrada(){ clearTimeout(RL_T); var i=el('rl-cod'); if(i&&i.value.length>=8) RL_T=setTimeout(rlDigitado,250); }
+function rlDigitado(){ var i=el('rl-cod'); if(!i) return; var v=i.value; i.value=''; rlBipar(v); try{ i.focus({preventScroll:true}); }catch(e){} }
+function rlCamera(){ BP.camFn=rlBipar; bpCamera(); }
+function rlBipAtualizar(){
+  var c=el('rl-cnt'), u=el('rl-ult'); if(!c) return;
+  var tot=LOTE_ATUAL.length, falta=rlFalta();
+  c.textContent=(tot-falta)+' de '+tot+' conferidos';
+  var r=RL.ult, h='';
+  if(!r) h='<div style="border:2px dashed #E3D9F2;border-radius:18px;padding:22px 12px;text-align:center;color:var(--muted);font-size:13px">Bipe um pacote para conferir e ver a posição dele</div>';
+  else if(r.t==='err') h='<div style="background:#FCEBEB;border:1px solid #F3C9C9;color:#B91C1C;border-radius:18px;padding:18px 12px;text-align:center"><div style="font-size:20px;font-weight:800">Fora da rota</div><div style="font-size:12.5px;margin-top:6px;word-break:break-all">'+cpCod(r.cod)+'<br>Este pacote não está na sua rota.</div></div>';
+  else h='<div style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-radius:18px;padding:16px 12px;text-align:center"><div style="font-size:13px;opacity:.9">'+(r.t==='rep'?'Já conferido · escreva no pacote':'✔ Conferido · escreva no pacote')+'</div><div style="font-size:84px;font-weight:800;line-height:1.05">'+r.pos+'</div><div style="font-size:13px;margin-top:4px;font-weight:700">'+esc(r.cl||r.cod)+'</div></div>';
+  if(u) u.innerHTML=h;
+  var cs=document.querySelectorAll('[data-rlc]'), k; for(k=0;k<cs.length;k++){ var ix=Number(cs[k].getAttribute('data-rlc')), q=LOTE_ATUAL[ix]; if(q) cs[k].innerHTML=rlConferido(q)?'<span style="color:#166534;font-weight:700">✔ conferido</span>':'<span style="color:var(--muted)">falta bipar</span>'; }
+  var inf=el('bp-caminfo'); if(inf&&BP.camFn===rlBipar) inf.innerHTML=(r&&r.t!=='err')?'<span style="font-size:64px;font-weight:800;color:#fff;display:block;line-height:1">'+r.pos+'</span>'+esc(r.cl||r.cod):(r?'Fora da rota':'Aponte para o código de barras');
+}
+function rlConcluir(){
+  var f=rlFalta();
+  if(f>0&&!confirm('Faltam '+f+' pacote'+(f===1?'':'s')+' sem bipar. Concluir mesmo assim?')) return;
+  bpFecharCamera(); BP.camFn=null;
+  var seguir=function(){ RP.preRota=false; rlContinuar(); };
+  if(!bpNovos().length){ seguir(); return; }
   if(rpCfg().assina==='sim'){ RP.asgVoltaRota=true; asgAbrir(); return; }
-  rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(function(){});
+  rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(seguir).catch(seguir);
 }
 /* ══ (64) ASSINATURA DO ROMANEIO — opcional (Minha conta → Minhas rotas). Pergunta "Romaneio fechado?"; Sim → assina com o dedo; fica gravada no servidor ══ */
 var ASG={desenhou:false,pts:0,busy:false};
@@ -1569,7 +1610,7 @@ function asgConfirmar(){
   rpApi('/motorista/romaneio-assinar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assinatura:img,cods:cods})}).then(function(d){
     ASG.busy=false;
     if(!d||!d.ok){ el('asg-ok').textContent='Confirmar'; m.textContent=(d&&d.mensagem)||'Não consegui salvar a assinatura. Tente de novo.'; return; }
-    asgFechar(); aviso('Romaneio assinado'); if(RP.asgVoltaRota){ RP.asgVoltaRota=false; } else { RP.bipMode=true; rpIniciar(); }
+    asgFechar(); aviso('Romaneio assinado'); if(RP.asgVoltaRota){ RP.asgVoltaRota=false; RP.preRota=false; rlContinuar(); } else { RP.bipMode=true; rpIniciar(); }
   }).catch(function(){ ASG.busy=false; el('asg-ok').textContent='Confirmar'; m.textContent='Sem conexão. A assinatura NÃO foi salva. Tente de novo.'; });
 }
 function bpSair(){ bpFecharCamera(); EST='sem_lote'; renderInicio(); }
@@ -2226,8 +2267,8 @@ function rpComecar2(){
   var vlt=rpCfg().volta==='sim'; ROTA_KM=Math.round((vlt?r.totalKm:r.idaKm)*10)/10; ROTA_MIN=Math.round(vlt?r.totalMin:r.idaMin); RP.rota=r; RP.baseLL=RP.res.base||null; RP.ajustou=false;
   PONTEIRO=0; SAIU_TELA_CHEIA=false;
   if(RP.numFlag){ RP.numFlag=false; numCriar(); return; }
+  if(RP.preRota){ RL.ult=null; RL.feitos={}; EST='rp_lista'; renderInicio(); return; }
   EST='em_rota'; renderInicio();
-  if(RP.asgNaRota){ RP.asgNaRota=false; setTimeout(romaneioNaRota,400); }
 }
 /* mapa real (OpenFreeMap) da rota em andamento — o elemento fica guardado pra não recarregar a cada parada */
 function rpCarregarMapa(cb){
@@ -2362,6 +2403,7 @@ function renderInicio(){
   box.innerHTML=h;
   if(EST==='rp_bip') bpAtualizar();
   if(EST==='rp_num') numAtualizar();
+  if(EST==='rp_lista'&&RP.preRota){ rlBipAtualizar(); var rc=el('rl-cod'); if(rc) try{ rc.focus({preventScroll:true}); }catch(e){} }
   if(EST==='em_rota'){ rpAjustaAltura(); rpMapaMontar(); }
   atualizarChromeApp();
 }
@@ -2402,7 +2444,7 @@ function renderEmRota(){
          '<span class="parada-tag">Parada '+(PONTEIRO+1)+' de '+LOTE_ATUAL.length+' · a '+distProx+' km</span>'+
          (atual.semLocal?'<span class="selo-acao">⚠ Ação necessária</span>':'')+(atual.remarcadaHoje?'<span class="selo-rem">🔁 Remarcada hoje</span>':(atual.remarcado?'<span class="selo-rem">🔁 Remarcada ontem</span>':''))+(rpTentDe(atual)?'<span class="selo-rem">Tentativa '+(rpTentDe(atual)+1)+' de 3</span>':'')+
        '</div>'+
-       '<h2 class="end-2l">'+numBadge(atual.num||numDe(atual.cod))+esc(atual.endereco)+'</h2>'+
+       '<h2 class="end-2l">'+(numAuto(atual.cod)?numBadge(PONTEIRO+1):numBadge(atual.num||numDe(atual.cod)))+esc(atual.endereco)+'</h2>'+
        '<p style="margin:0 0 3px;color:var(--muted2);font-size:13.5px;font-weight:700">'+esc(atual.cliente)+'</p>'+
        '<p style="margin:0;color:var(--muted);font-size:11.5px">Pacote '+cpCod(atual.cod)+' · '+esc(atual.bairro)+'</p>'+
        (atual.semLocal?'<div class="aviso-acao"><b>'+esc(atual.motivo||'Sem localização')+'</b><p>Este pacote não foi achado no mapa. Cadastre o endereço certo, ou remarque a entrega.</p><button class="btn pri wide" onclick="abrirEndereco()">✏️ Cadastrar / corrigir endereço</button></div>':'')+
