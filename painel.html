@@ -819,7 +819,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="pghd"><div><h1>Configurações</h1><div class="sub">integrações e estrutura do ponto</div></div></div>
         <div class="cfgcards">
           <div class="cfgcard" style="cursor:pointer" onclick="abrirPonto()"><div class="ic">📍</div><h4>Pontos de coleta</h4><p>Cadastre as bases onde os motoristas coletam e saem para entregar. Pode ter mais de um; o principal é a saída da rota no app e o centro do Mapeamento.</p><span class="badge b-in" id="pt-badge">configurar</span></div>
-          <div class="cfgcard" style="cursor:pointer" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
+          <div class="cfgcard" style="cursor:pointer;display:none" onclick="abrirCiclo()"><div class="ic">🔁</div><h4>Ciclo de repasse</h4><p>Define como o fechamento dos motoristas é feito: automático (semanal, quinzenal ou mensal) ou manual.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirPrecos()"><div class="ic">🏷️</div><h4>Precificação</h4><p>Valor por pacote pago a cada motorista e margem sobre o repasse das transportadoras.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard" style="cursor:pointer" onclick="abrirAreas()"><div class="ic">🗺️</div><h4>Áreas de entrega (regiões)</h4><p>Valor pago ao motorista por região (nome) ou por faixa de CEP. As regiões da planilha aparecem sozinhas.</p><span class="badge b-in">configurar</span></div>
           <div class="cfgcard"><div class="ic">🔌</div><h4>Integrações com transportadoras</h4><p>Conecte a API de cada transportadora para receber a pré-lista de pacotes automaticamente.</p><span class="badge b-nu">em breve</span></div>
@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-41-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-42-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1190,9 +1190,9 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     </div>
     <div class="sh-row" style="margin-top:14px"><span class="k">Saldo em aberto</span><span class="v" style="font-weight:800;font-size:16px" id="rp-saldo">R$ 0,00</span></div>
     <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
-      <input class="inp" type="date" title="Ciclo de" id="rp-ciclo-ini" style="width:150px">
-      <input class="inp" type="date" title="Ciclo até" id="rp-ciclo-fim" style="width:150px">
-      <input class="inp" type="date" title="Data de pagamento" id="rp-data-pg" style="width:150px">
+      <label style="font-size:11.5px;color:var(--muted)">Entregues de<br><input class="inp" type="date" id="rp-ciclo-ini" style="width:150px"></label>
+      <label style="font-size:11.5px;color:var(--muted)">até<br><input class="inp" type="date" id="rp-ciclo-fim" style="width:150px"></label>
+      <label style="font-size:11.5px;color:var(--muted)">Pagar em<br><input class="inp" type="date" id="rp-data-pg" style="width:150px"></label>
       <button class="btn pri" onclick="fecharCicloMotorista()">Fechar ciclo</button>
     </div>
     <p id="rp-ciclo-nota" style="margin:6px 0 0;font-size:11.5px;color:var(--muted)"></p>
@@ -1200,17 +1200,33 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div id="rp-fechamentos"></div>
   </div>
 </div>
+<div class="sheet wide" id="sh-fech-conf">
+  <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirRepasseMotorista(RP_MOT_ATUAL)" title="Voltar ao repasse">←</button><h3>Confirmar fechamento — <span id="fcf-nome"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <div class="sh-row"><span class="k">Período dos pacotes</span><span class="v" id="fcf-per"></span></div>
+    <div class="sh-row"><span class="k">Pacotes entregues</span><span class="v" id="fcf-qtd"></span></div>
+    <div class="sh-row"><span class="k">Valor dos pacotes</span><span class="v" style="font-weight:800" id="fcf-bruto"></span></div>
+    <h4 style="margin:16px 0 4px;font-size:13px">Tem alguma dedução ou crédito?</h4>
+    <p style="margin:0 0 8px;font-size:11.5px;color:var(--muted)">Dedução desconta do motorista (ex.: pacote extraviado, adiantamento). Crédito soma (ex.: bônus, reembolso). Sempre escreva o motivo.</p>
+    <div id="fcf-aj"></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn sec" onclick="fcfAdd('ded')">− Dedução</button><button class="btn sec" onclick="fcfAdd('cred')">+ Crédito</button></div>
+    <div class="sh-row" style="margin-top:14px"><span class="k">Total a pagar</span><span class="v" style="font-weight:800;font-size:17px" id="fcf-liq"></span></div>
+    <button class="btn pri wide" style="margin-top:10px" onclick="confirmarFechamento()">Confirmar fechamento</button>
+  </div>
+</div>
 <div class="sheet wide" id="sh-fechamento">
   <div class="sh-hd"><div style="display:flex;align-items:center;gap:10px"><button onclick="fecharTudo();abrirRepasseMotorista(FC_MOT_ATUAL)" title="Voltar ao repasse">←</button><h3>Fechamento — <span id="fc-per-fech"></span></h3></div><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd">
     <div class="sh-row"><span class="k">Status</span><span class="v" id="fc-status"></span></div>
     <div class="sh-row"><span class="k">Data de pagamento</span><span class="v" style="display:flex;align-items:center;gap:12px"><span id="fc-data"></span><span class="vertodos" id="fc-data-ed" onclick="editarDataFechamento()">✎ Editar</span></span></div>
+    <div id="fc-aj"></div>
     <div class="sh-row"><span class="k">Valor total</span><span class="v" style="font-weight:800" id="fc-valor"></span></div>
     <button class="btn pri wide" style="margin-top:10px;background:#16A34A" id="fc-btn-pix" onclick="pagarFechamentoPix()">💸 Pagar via Pix</button>
     <div id="fc-pix-nota" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
     <div id="fc-comp-box" style="display:none;gap:8px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="abrirComprovante(fechamentoAtual().lancId)">📄 Ver comprovante</button><button class="btn sec" style="flex:1" onclick="enviarComprovanteWhats(fechamentoAtual().lancId)">💬 Enviar no WhatsApp</button></div>
     <button class="btn sec wide" style="margin-top:10px" id="fc-btn-pagar" onclick="marcarFechamentoPago()">Marcar como pago</button>
     <button class="btn pri wide" style="margin-top:8px" onclick="baixarPdfFechamento()">⬇ Baixar PDF</button>
+    <button class="btn sec wide" style="margin-top:8px;color:#B91C1C" id="fc-btn-del" onclick="excluirFechamento()">🗑 Excluir este fechamento</button>
     <h4 style="margin:16px 0 8px;font-size:13px">Pacotes deste fechamento</h4>
     <div class="tb-wrap"><table class="tb"><thead><tr><th>Código</th><th>Cliente</th><th>Valor</th></tr></thead><tbody id="fc-linhas"></tbody></table></div>
   </div>
@@ -2291,10 +2307,10 @@ function abrirRepasseMotorista(id){
   el('rp-rota-qtd').textContent=rs.rotaQtd; el('rp-rota-val').textContent=moeda(rs.rotaVal);
   el('rp-ext-qtd').textContent=rs.extQtd;
   el('rp-saldo').textContent=moeda(saldoAbertoMotorista(id));
-  var rg=cicloDoMotorista(id), auto=!!(rg && rg.modo==='auto'), cc=auto?cicloAtual(rg):{ini:'',fim:'',pag:''};
+  var rg=null, auto=false, cc={ini:'',fim:'',pag:''};   /* (42) por enquanto SÓ fechamento manual */
   el('rp-ciclo-ini').value=cc.ini; el('rp-ciclo-fim').value=cc.fim; el('rp-data-pg').value=cc.pag;
   el('rp-ciclo-ini').disabled=el('rp-ciclo-fim').disabled=auto; el('rp-data-pg').disabled=false;
-  el('rp-ciclo-nota').textContent=auto?('Ciclo automático — regra: '+nomeGrupoCi(rg.grupo)+' ('+textoRegraCi(rg).replace('Automático · ','')+'). Para mudar, vá em Configurações → Ciclo de repasse.'):'Ciclo manual — digite as datas. (Para preencher sozinho, crie uma regra automática em Configurações → Ciclo de repasse.)';
+  el('rp-ciclo-nota').textContent=auto?('Ciclo automático — regra: '+nomeGrupoCi(rg.grupo)+' ('+textoRegraCi(rg).replace('Automático · ','')+'). Para mudar, vá em Configurações → Ciclo de repasse.'):'Fechamento manual — escolha de qual dia até qual dia foram ENTREGUES os pacotes e a data do pagamento. Só entram pacotes entregues nesse período.';
   pintarFechamentosMotorista(id);
   abrir('sh-repasse');
 }
@@ -2308,19 +2324,52 @@ function pintarFechamentosMotorista(id){
   }
   el('rp-fechamentos').innerHTML=h||'<div class="empty">Nenhum fechamento ainda</div>';
 }
+var FC_PEND=null, FC_AJ=[];
+function pedidosDoPeriodo(id,ini,fim){
+  var out=[],i,p,d; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.mt!==id || p.st!=='entregue' || p.fechId) continue;
+    d=String(p.ent||p.dia||'').slice(0,10); if(d>=ini && d<=fim) out.push(p); }
+  return out;
+}
 function fecharCicloMotorista(){
   var id=RP_MOT_ATUAL, m=motorista(id); if(!m) return;
-  var saldo=saldoAbertoMotorista(id);
-  if(saldo<=0){ aviso('Não há saldo em aberto pra fechar'); return; }
-  var i,p,pedidosDoFechamento=[];
-  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.mt===id && p.st==='entregue' && !p.fechId) pedidosDoFechamento.push(p); }
-  var fid='f'+Date.now();
-  var f={id:fid, cicloIni:(el('rp-ciclo-ini').value||'').trim(), cicloFim:(el('rp-ciclo-fim').value||'').trim(),
-    dataPagamento:(el('rp-data-pg').value||'').trim(), valor:saldo, status:'pendente', pedidos:[]};
-  for(i=0;i<pedidosDoFechamento.length;i++){ p=pedidosDoFechamento[i]; p.fechId=fid; f.pedidos.push({cod:p.cod, cliente:p.cliente||'', valor:valorMotorista(m,p)}); }
+  var ini=(el('rp-ciclo-ini').value||'').trim(), fim=(el('rp-ciclo-fim').value||'').trim(), pg=(el('rp-data-pg').value||'').trim();
+  if(!ini||!fim){ aviso('Escolha de qual dia até qual dia foram as entregas'); return; }
+  if(ini>fim){ aviso('A data inicial não pode ser depois da final'); return; }
+  var ps=pedidosDoPeriodo(id,ini,fim), bruto=0, i;
+  if(!ps.length){ aviso('Nenhum pacote entregue sem fechamento nesse período'); return; }
+  for(i=0;i<ps.length;i++) bruto+=valorMotorista(m,ps[i]);
+  FC_PEND={id:id, ini:ini, fim:fim, pg:pg, bruto:bruto, cods:ps.map(function(x){ return x.cod; })}; FC_AJ=[];
+  el('fcf-nome').textContent=m.n; el('fcf-per').textContent=dataBR(ini)+' até '+dataBR(fim);
+  el('fcf-qtd').textContent=ps.length; el('fcf-bruto').textContent=moeda(bruto);
+  fcfPinta(); fecharTudo(); abrir('sh-fech-conf');
+}
+function fcfAdd(tp){ FC_AJ.push({tp:tp,v:'',obs:''}); fcfPinta(); }
+function fcfDel(i){ FC_AJ.splice(i,1); fcfPinta(); }
+function fcfSet(i,k,v){ FC_AJ[i][k]=v; if(k==='v') fcfTotal(); }
+function fcfLiquido(){ var t=FC_PEND?FC_PEND.bruto:0; FC_AJ.forEach(function(a){ var v=Number(String(a.v||'0').replace(',','.'))||0; t+=(a.tp==='cred'?v:-v); }); return Math.round(t*100)/100; }
+function fcfTotal(){ el('fcf-liq').textContent=moeda(fcfLiquido()); }
+function fcfPinta(){
+  var h='',i,a; for(i=0;i<FC_AJ.length;i++){ a=FC_AJ[i];
+    h+='<div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap"><b style="width:76px;font-size:12.5px;color:'+(a.tp==='cred'?'#047857':'#B91C1C')+'">'+(a.tp==='cred'?'+ Crédito':'− Dedução')+'</b><input class="inp" inputmode="decimal" placeholder="Valor R$" value="'+esc(a.v)+'" oninput="fcfSet('+i+',\'v\',this.value)" style="width:110px"><input class="inp" placeholder="Motivo (obrigatório)" value="'+esc(a.obs)+'" oninput="fcfSet('+i+',\'obs\',this.value)" style="flex:1;min-width:160px"><button class="btn sec" onclick="fcfDel('+i+')" title="Remover">✕</button></div>'; }
+  el('fcf-aj').innerHTML=h||'<div style="font-size:12.5px;color:var(--muted)">Nenhuma — fecha só com o valor dos pacotes.</div>'; fcfTotal();
+}
+function confirmarFechamento(){
+  var P=FC_PEND; if(!P) return; var id=P.id, m=motorista(id); if(!m) return;
+  var aj=[],i,a,v;
+  for(i=0;i<FC_AJ.length;i++){ a=FC_AJ[i]; v=Number(String(a.v||'').replace(',','.'));
+    if(!(v>0)){ aviso('Preencha o valor da '+(a.tp==='cred'?'crédito':'dedução')+' ou remova a linha'); return; }
+    if(!String(a.obs||'').trim()){ aviso('Escreva o motivo da '+(a.tp==='cred'?'crédito':'dedução')); return; }
+    aj.push({tp:a.tp, valor:Math.round(v*100)/100, obs:String(a.obs).trim().slice(0,200)}); }
+  var liq=fcfLiquido(); if(liq<0){ aviso('As deduções passam do valor dos pacotes'); return; }
+  var ps=pedidosDoPeriodo(id,P.ini,P.fim), pedidosDoFechamento=ps.filter(function(x){ return P.cods.indexOf(x.cod)>=0; });
+  if(!pedidosDoFechamento.length){ aviso('Os pacotes mudaram — refaça o fechamento'); return; }
+  var fid='f'+Date.now(), saldo=liq;
+  var f={id:fid, cicloIni:P.ini, cicloFim:P.fim, dataPagamento:P.pg, bruto:P.bruto, ajustes:aj, valor:liq, status:'pendente', pedidos:[]};
+  for(i=0;i<pedidosDoFechamento.length;i++){ var p=pedidosDoFechamento[i]; p.fechId=fid; f.pedidos.push({cod:p.cod, cliente:p.cliente||'', valor:valorMotorista(m,p)}); }
   m.fechamentos=m.fechamentos||[]; m.fechamentos.push(f);
   lancDoFechamento(m,f);
   if(REAL) salvarLocal();
+  FC_PEND=null; FC_AJ=[];
   aviso('Ciclo fechado! '+pedidosDoFechamento.length+' pacote(s), '+moeda(saldo)+'.');
   if(REAL){ try{ fetch(DELTADIS_API+'/mesa/whats-fechamento',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mt:String(id)})}).then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
     if(d&&d.ok) aviso('Ciclo fechado e motorista avisado no WhatsApp ✓');
@@ -2338,6 +2387,9 @@ function abrirDetalheFechamento(mid,fid){
   el('fc-status').innerHTML=badgeStatus(f.status==='pago'?'pago':'pendente');
   el('fc-data').textContent=dataBR(f.dataPagamento)||'—';
   el('fc-valor').textContent=moeda(f.valor);
+  var ajH='', ja; if(f.ajustes&&f.ajustes.length){ ajH='<div class="sh-row"><span class="k">Valor dos pacotes</span><span class="v">'+moeda(f.bruto)+'</span></div>'; for(ja=0;ja<f.ajustes.length;ja++){ var x=f.ajustes[ja]; ajH+='<div class="sh-row" style="align-items:flex-start"><span class="k">'+(x.tp==='cred'?'+ Crédito':'− Dedução')+' · '+esc(x.obs)+'</span><span class="v" style="color:'+(x.tp==='cred'?'#047857':'#B91C1C')+'">'+(x.tp==='cred'?'+':'−')+' '+moeda(x.valor)+'</span></div>'; } }
+  el('fc-aj').innerHTML=ajH;
+  el('fc-btn-del').style.display=(f.status==='pago'||trav0(f))?'none':'block'; el('fc-btn-del').textContent='🗑 Excluir este fechamento';
   var lz=f.lancId?achaLanc(f.lancId):null, trav=travadoPix(lz), mp=motorista(mid);
   el('fc-btn-pagar').style.display=(f.status==='pago'||trav)?'none':'block';
   el('fc-data-ed').style.display=(f.status==='pago'||trav)?'none':'inline';
@@ -2349,6 +2401,21 @@ function abrirDetalheFechamento(mid,fid){
   for(j=0;j<(f.pedidos||[]).length;j++){ pd=f.pedidos[j]; h+='<tr><td>'+esc(pd.cod)+cpBtn(pd.cod)+'</td><td>'+esc(pd.cliente||'—')+'</td><td>'+moeda(pd.valor)+'</td></tr>'; }
   el('fc-linhas').innerHTML=h||'<tr><td colspan="3"><div class="empty">Sem pacotes</div></td></tr>';
   abrir('sh-fechamento');
+}
+function trav0(f){ var l=f&&f.lancId?achaLanc(f.lancId):null; return !!(l && travadoPix(l)); }
+var FC_DEL_ARM=false;
+function excluirFechamento(){
+  var m=motorista(FC_MOT_ATUAL), f=fechamentoAtual(); if(!m||!f) return;
+  if(f.status==='pago' || trav0(f)){ aviso('Esse fechamento já foi pago/enviado por Pix — não dá pra excluir'); return; }
+  var b=el('fc-btn-del');
+  if(!FC_DEL_ARM){ FC_DEL_ARM=true; b.textContent='Tem certeza? Toque de novo pra excluir'; setTimeout(function(){ FC_DEL_ARM=false; if(b) b.textContent='🗑 Excluir este fechamento'; },5000); return; }
+  FC_DEL_ARM=false;
+  var i,n=0; for(i=0;i<PEDIDOS.length;i++){ if(PEDIDOS[i].fechId===f.id){ PEDIDOS[i].fechId=null; n++; } }
+  if(f.lancId){ for(i=0;i<EXTRATO.length;i++){ if(EXTRATO[i].id===f.lancId){ EXTRATO.splice(i,1); break; } } }
+  for(i=0;i<m.fechamentos.length;i++){ if(m.fechamentos[i].id===f.id){ m.fechamentos.splice(i,1); break; } }
+  if(REAL) salvarLocal(); try{ pintarFluxoCaixa(); }catch(e){}
+  aviso('Fechamento excluído. '+n+' pacote(s) voltaram pra "a fechar".');
+  fecharTudo(); abrirRepasseMotorista(m.id);
 }
 /* todo fechamento de motorista vira uma saída (pendente) no Fluxo de Caixa; devolve o lançamento */
 function lancDoFechamento(m,f){
@@ -2467,6 +2534,7 @@ function baixarPdfFechamento(){
     '<style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{font-size:18px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:12px;margin-bottom:14px}table{width:100%;border-collapse:collapse;margin-top:14px}td,th{border:1px solid #ccc;padding:6px 8px;font-size:12px;text-align:left}</style></head>'+
     '<body><div class="cab">'+logoPdf+'<div style="text-align:right;font-size:12px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div><h1>Fechamento de repasse — '+esc(m.n)+'</h1>'+
     '<p>Ciclo: '+esc(dataBR(f.cicloIni)||'—')+' até '+esc(dataBR(f.cicloFim)||'—')+' &nbsp;|&nbsp; Pagamento: '+esc(dataBR(f.dataPagamento)||'—')+' &nbsp;|&nbsp; Status: '+(f.status==='pago'?'Pago':'Pendente')+'</p>'+
+    (f.ajustes&&f.ajustes.length?('<p>Valor dos pacotes: '+moeda(f.bruto)+'</p>'+f.ajustes.map(function(x){ return '<p style="margin:2px 0">'+(x.tp==="cred"?'+ Crédito':'− Dedução')+' ('+esc(x.obs)+'): '+(x.tp==="cred"?'+':'−')+' '+moeda(x.valor)+'</p>'; }).join('')):'')+
     '<p><b>Valor total: '+moeda(f.valor)+'</b></p>'+
     '<table><thead><tr><th>Código</th><th>Cliente</th><th>Valor</th></tr></thead><tbody>'+linhas+'</tbody></table>'+
     '<script>window.onload=function(){window.print();}</'+'script></body></html>';
