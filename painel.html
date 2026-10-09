@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-40-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-41-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1606,7 +1606,7 @@ function mesaAbsorver(){
   fetch(DELTADIS_API+'/mesa/entradas?pend=1',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
     if(!d || !d.ok || !d.itens || !d.itens.length){ MESA_ABS.rodando=false; return; }
     var idx={}, i, it, p, novos=0, cods=[], dt, hh;
-    for(i=0;i<PEDIDOS.length;i++) idx[PEDIDOS[i].cod]=1;
+    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=1; if(PEDIDOS[i].scan) idx[PEDIDOS[i].scan]=1; }   /* (v141) código bipado = scan de um pedido que já existe: não cria duplicado */
     for(i=0;i<d.itens.length;i++){
       it=d.itens[i]; cods.push(it.cod);
       if(idx[it.cod]) continue;
@@ -1734,6 +1734,22 @@ function entregasSync(){
 }
 function ymdLocal(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
 setInterval(entregasSync,60000); setTimeout(entregasSync,9000);
+/* ── (v141) DUPLICADOS: pedido criado pela bipagem com o código de ETIQUETA (scan) de um pedido que já existe ── */
+function dedupeScan(){
+  var porScan={}, i, p, q, mud=0, fora={};
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.scan && p.scan!==p.cod) porScan[p.scan]=p; }
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i];
+    q=porScan[p.cod]; if(!q || q===p || p.fechId) continue;
+    if(p.cliente || String(p.obs||'').indexOf('bipagem')<0 && String(p.obs||'').indexOf('bipado pelo motorista')<0 && String(p.obs||'').indexOf('endereço falado')<0) continue;   /* só some o pedido-sombra criado pela bipagem */
+    if(p.st==='entregue' && q.st!=='entregue' && !q.fechId){ q.st='entregue'; if(!q.ent) q.ent=p.ent||''; }
+    if(p.mt!=null && q.mt==null) q.mt=p.mt;
+    fora[i]=1; mud++;
+  }
+  if(!mud) return;
+  PEDIDOS=PEDIDOS.filter(function(x,k){ return !fora[k]; });
+  try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo();
+}
+setInterval(dedupeScan,30000); setTimeout(dedupeScan,7000);
 /* ── (119) nome do ponto de coleta vem do cadastro do cliente (sai nos PDFs) ── */
 function pontoNomeCarregar(){ if(!REAL || !DD_TOKEN) return; fetch(DELTADIS_API+'/mesa/ponto',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){ if(d && d.ok && d.nome) PONTO_NOME=d.nome; }).catch(function(){}); }
 setTimeout(pontoNomeCarregar,3000); setInterval(pontoNomeCarregar,600000);
@@ -4369,7 +4385,7 @@ function mpRender(){
   if(!MP_DIA) MP_DIA=hojeISO();
   el('mp-dia').value=MP_DIA;
   var lista=mpEntregas(), n=lista.length, i, e, p, m, h='', noMapa=0, idx={};
-  for(i=0;i<PEDIDOS.length;i++) idx[PEDIDOS[i].cod]=PEDIDOS[i];
+  for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && !idx[PEDIDOS[i].scan]) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
   for(i=0;i<n;i++){ e=lista[i]; if(e.lat!=null) noMapa++;
     if(i>=MP_LIM) continue;
     p=idx[e.cod]||{}; m=motorista(e.mt)||motorista(Number(e.mt));
