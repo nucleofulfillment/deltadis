@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-44-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-46-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1637,6 +1637,40 @@ function mesaAbsorver(){
   }).catch(function(){ MESA_ABS.rodando=false; });
 }
 setInterval(mesaAbsorver,20000);
+/* ── (v151) EVENTOS DA MESA: devolução (com status), esquecido na base, XML da NF e OS sem NF. XML/OS criam o pedido (número = NF / número digitado) já com motorista, transportadora e endereço. ── */
+var MESA_EV={rodando:false};
+function mesaEventosAbsorver(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || MESA_EV.rodando || document.hidden) return;
+  MESA_EV.rodando=true;
+  fetch(DELTADIS_API+'/mesa/eventos',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if(!d || !d.ok || !d.itens || !d.itens.length){ MESA_EV.rodando=false; return; }
+    var idx={}, i, e, p, dd, mud=0, novos=0, ids=[], dt, hh, mk, mid, mn={ausente:'cliente ausente',devolvido:'devolvido',nao_localizado:'não localizado'};
+    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
+    for(i=0;i<d.itens.length;i++){
+      e=d.itens[i]; ids.push(e.id); dd=e.dados||{}; p=idx[e.cod];
+      dt=new Date(e.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+      mid=null; for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(e.mt)){ mid=MOTORISTAS[mk].id; break; } }
+      if(e.tipo==='devolucao'){
+        var txD='Devolvido à base — '+(mn[e.motivo]||e.motivo)+' · recebido pela Mesa'+(e.mtn?(' (de '+e.mtn+')'):'');
+        if(p){ if(!p.fechId){ p.obs=txD; if(dd.sem_bipagem && p.st!=='entregue'){ p.st='coletado'; } if(p.st==='em rota') p.st='coletado'; mud++; } }
+        else { p={cod:e.cod, tr:e.tr||'anj', mt:mid, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'', scan:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:txD, ent:'', fechId:null}; PEDIDOS.push(p); idx[e.cod]=p; novos++; }
+      } else if(e.tipo==='esquecido'){
+        var txE='Esquecido na base'+(e.mtn?(' pelo motorista '+e.mtn):'')+' — disponível para outro entregador';
+        if(p){ if(!p.fechId && p.st!=='entregue'){ p.st='esquecido'; p.obs=txE; mud++; } }
+        else { p={cod:e.cod, tr:'anj', mt:null, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'esquecido', t1:'', t2:'', tel:'', canal:'', vend:'', scan:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:txE, ent:'', fechId:null}; PEDIDOS.push(p); idx[e.cod]=p; novos++; }
+      } else if(e.tipo==='xml' || e.tipo==='os'){
+        if(p) continue;
+        var cEnd=(dd.rua||''), isXml=(e.tipo==='xml');
+        p={cod:e.cod, tr:e.tr||'anj', mt:mid, cliente:(dd.cliente||''), bairro:(dd.bai||''), rua:cEnd, num:(dd.num||''), comp:(dd.comp||''), bai:(dd.bai||''), cid:(dd.cid||''), endOrig:'', vl:null, cep:(dd.cep||''), area:'', st:'coletado', t1:'', t2:'', tel:(dd.tel||''), canal:'', vend:'',
+           scan:(isXml&&dd.chave)?dd.chave:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:(isXml?('entrada pela Mesa — XML da NF '+e.cod):('OS manual (sem NF) criada pela Mesa'+(dd.obs?(' — '+dd.obs):''))), ent:'', fechId:null};
+        PEDIDOS.push(p); idx[e.cod]=p; if(p.scan!==e.cod) idx[p.scan]=p; novos++;
+      }
+    }
+    if(mud||novos){ try{ recalcularReal(); }catch(e2){} salvarLocal(); repintarTudo(); aviso((mud+novos)+' movimento'+((mud+novos)===1?'':'s')+' da Mesa (devolução / esquecido / XML / OS).'); }
+    return fetch(DELTADIS_API+'/mesa/eventos-absorver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ids:ids})}).then(function(r){ return r.json(); }).then(function(){ MESA_EV.rodando=false; });
+  }).catch(function(){ MESA_EV.rodando=false; });
+}
+setInterval(mesaEventosAbsorver,20000); setTimeout(mesaEventosAbsorver,7000);
 /* ── (117) BIPAGEM DO MOTORISTA no app: o pacote bipado passa a ser do motorista ("em rota"). Código que não existe no painel entra "a conferir". ── */
 var BIP_ABS={rodando:false};
 function bipAbsorver(){
@@ -1654,7 +1688,7 @@ function bipAbsorver(){
       if(p && b.end_rua && !p.rua){ p.rua=b.end_rua; p.num=b.end_num||''; p.comp=b.end_comp||''; p.bai=b.end_bai||''; p.cid=b.end_cid||''; p.cep=b.end_cep||''; p.bairro=b.end_bai||p.bairro||''; mud++; }
       if(p){
         if(mid!=null && p.mt!==mid){ p.mt=mid; mud++; }
-        if(p.st==='coletado' || p.st==='nao localizado' || p.st==='fora de rota'){ p.st='em rota'; mud++; }
+        if(p.st==='coletado' || p.st==='nao localizado' || p.st==='fora de rota' || p.st==='esquecido'){ p.st='em rota'; mud++; }
       } else {
         dt=new Date(b.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
         p={cod:b.cod, tr:b.tr||'anj', mt:mid, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'em rota', t1:'', t2:'', tel:'', canal:'', vend:'',
@@ -2115,7 +2149,7 @@ function atualizarRastreioPacote(cod){
     abrirPedido(cod);
   },cod);
 }
-function ordemStatus(st){ if(st==='fora de rota'||st==='nao localizado') return 2.5; if(st==='entregue'||st==='devolvido'||st==='extraviado') return 3; if(ehTentativa(st)) return 2; if(st==='em rota') return 1; return 0; }
+function ordemStatus(st){ if(st==='fora de rota'||st==='nao localizado'||st==='esquecido') return 2.5; if(st==='entregue'||st==='devolvido'||st==='extraviado') return 3; if(ehTentativa(st)) return 2; if(st==='em rota') return 1; return 0; }
 /* pergunta pro Worker o status mais recente dos pacotes em acompanhamento (Anjun em aberto + os que entraram por problema) */
 function sincronizarAnjun(cb,so){
   var codigos=[], i, p;
@@ -2570,7 +2604,7 @@ function iconeTransp(t){
 function badgeStatus(st){
   var map={aguardando:['b-nu','Aguardando'],'em rota':['b-in','Em rota'],entregue:['b-ok','Entregue'],tratativa:['b-no','Tratativa'],
     coletado:['b-nu','Base'],'tentativa 1':['b-no','Tentativa 1'],'tentativa 2':['b-no','Tentativa 2'],'tentativa 3':['b-no','Tentativa 3'],
-    devolvido:['b-no','Devolvido'],extraviado:['b-no','Extraviado'],'fora de rota':['b-wt','Fora de rota'],'nao localizado':['b-no','Não localizado'],
+    devolvido:['b-no','Devolvido'],extraviado:['b-no','Extraviado'],'fora de rota':['b-wt','Fora de rota'],'nao localizado':['b-no','Não localizado'],esquecido:['b-wt','Esquecido na base'],
     ativo:['b-ok','ativo'],pendente:['b-wt','pendente'],'na base':['b-nu','Na base'],inativo:['b-no','Inativo'],
     pago:['b-ok','Pago'],recebido:['b-ok','Recebido'],'a revisar':['b-wt','A revisar'],autorizado:['b-in','Autorizado'],recusado:['b-no','Não pagar']};
   var m=map[st]||['b-nu',st];
@@ -3467,7 +3501,7 @@ function pintarPedidos(){
   var dIni=(el('pd-data-ini')&&el('pd-data-ini').value)||'', dFim=(el('pd-data-fim')&&el('pd-data-fim').value)||'';
   function passaData(p2){ if(!p2.dia) return !dIni && !dFim; if(dIni && p2.dia<dIni) return false; if(dFim && p2.dia>dFim) return false; return true; }
 
-  var stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','fora de rota','nao localizado','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i,j,cont={};
+  var stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','fora de rota','nao localizado','esquecido','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i,j,cont={};
   for(i=0;i<stAll.length;i++) cont[stAll[i]]=0;
   for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var ocSel=el('pd-ocor'), ocAtual=ocSel.value, ocCont={}, ocN=0, ocH='';
@@ -3488,7 +3522,7 @@ function pintarPedidos(){
 
   var busca=(el('pd-busca').value||'').toLowerCase().trim(), h='', n=0, LIM=300;
   for(i=0;i<PEDIDOS.length;i++){var p=PEDIDOS[i];
-    if(FILTRO_PD==='acao'){ if(!(ehTentativa(p.st)||p.st==='devolvido'||p.st==='extraviado'||p.st==='fora de rota'||p.st==='nao localizado')) continue; }
+    if(FILTRO_PD==='acao'){ if(!(ehTentativa(p.st)||p.st==='devolvido'||p.st==='extraviado'||p.st==='fora de rota'||p.st==='nao localizado'||p.st==='esquecido')) continue; }
     else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
@@ -5122,6 +5156,7 @@ function atualizarFluxoCaixa(){
 }
 setInterval(function(){ if(REAL && !document.hidden) pixConferirPendentes(); },15000);
 setTimeout(function(){ if(REAL){ sincronizarFechamentosFC(); pixConferirPendentes(); } },2500);
+setInterval(function(){ try{ if(REAL && sincStatusFech()) salvarLocal(); }catch(e){} },10000);   /* (45) o painel pode terminar de carregar depois dos 2,5s: confere de novo a cada 10s */
 setTimeout(agendarEnvioPedidos,6000);
 /* confere no Asaas como ficou um Pix já enviado */
 function verificarPix(id,silencioso){
