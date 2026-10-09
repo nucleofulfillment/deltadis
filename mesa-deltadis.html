@@ -256,7 +256,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-31-0710</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-32-0910</p>
   </div>
 </div>
 
@@ -507,6 +507,23 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 </div>
 
 <script>
+/* ── (v136) VIGIA DE TRAVADA: se a tela ficar parada mais de 3 s, avisa o servidor (página, memória, o que estava aberto). Só diagnóstico; ver em /diag/travadas?key=deltadis2026 ── */
+(function(){
+  var ult=Date.now(), pulo=true, ultEnvio=0;
+  document.addEventListener('visibilitychange',function(){ pulo=true; });
+  function env(ms,tipo){
+    var a=Date.now(); if(a-ultEnvio<8000) return; ultEnvio=a;
+    try{
+      var m=(performance&&performance.memory)?Math.round(performance.memory.usedJSHeapSize/1048576):null, ov=document.querySelectorAll('[id$="-overlay"].on'), ovs=[], i;
+      for(i=0;i<ov.length&&i<4;i++) ovs.push(ov[i].id);
+      var info={pag:location.pathname, tipo:tipo, ms:Math.round(ms), mem_mb:m, abertos:ovs.join(','), tela:(typeof PAG!=='undefined'?PAG:(typeof ATIVA!=='undefined'&&ATIVA?'bipando':'')), pedidos:(typeof PEDIDOS!=='undefined'?PEDIDOS.length:null), dom:document.getElementsByTagName('*').length, nucleos:navigator.hardwareConcurrency||null, t:a};
+      var h={'Content-Type':'application/json'}; try{ if(typeof DD_TOKEN!=='undefined' && DD_TOKEN) h['Authorization']='Bearer '+DD_TOKEN; }catch(e){}
+      fetch('https://api.deltadis.com.br/diag/travada?key=deltadis2026',{method:'POST',headers:h,body:JSON.stringify(info),keepalive:true}).catch(function(){});
+    }catch(e){}
+  }
+  setInterval(function(){ var a=Date.now(), d=a-ult-1000; ult=a; if(document.hidden){ pulo=true; return; } if(pulo){ pulo=false; return; } if(d>3000) env(d,'parou'); },1000);
+  try{ if(window.PerformanceObserver){ new PerformanceObserver(function(l){ l.getEntries().forEach(function(e){ if(e.duration>2000 && !document.hidden) env(e.duration,'tarefa-longa'); }); }).observe({entryTypes:['longtask']}); } }catch(e){}
+})();
 /* mesma lista de transportadoras do painel principal (mesmos códigos) */
 var DELTADIS_API='https://api.deltadis.com.br';
 var TRANSPORTADORAS=[
