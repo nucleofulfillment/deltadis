@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-36-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-37-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -3045,10 +3045,11 @@ function animarSla(){
   },{threshold:0.35});
   window.__slaObs.observe(alvo);
 }
+function dashDentro(p){ var a=DASH_G_INI||'', b=DASH_G_FIM||''; if(!a && !b) return true; if(!p.dia) return false; if(a && p.dia<a) return false; if(b && p.dia>b) return false; return true; }
 function agregadoDash(){
-  if(!DASH_TR) return DASH_AGG;
+  if(!REAL && !DASH_TR) return DASH_AGG;
   var agg={coletado:0,emrota:0,entregue:0,tentativas:0,devolvido:0,extraviado:0}, i, p;
-  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(p.tr!==DASH_TR) continue;
+  for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; if(DASH_TR && p.tr!==DASH_TR) continue; if(!dashDentro(p)) continue;
     if(p.st==='em rota') agg.emrota++; else if(p.st==='entregue') agg.entregue++; else if(p.st==='devolvido') agg.devolvido++; else if(p.st==='extraviado') agg.extraviado++; else if(ehTentativa(p.st)) agg.tentativas++; else agg.coletado++; }
   return agg;
 }
@@ -3059,10 +3060,10 @@ function pintarDashboard(){
   el('db-kpis').innerHTML=
     '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'coletado\')"><div class="lb">Base</div><div class="vl">'+AG.coletado+'</div><div class="dl">na base, aguardando saída</div></div>'+
     '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'em rota\')"><div class="lb cb">Em rota</div><div class="vl vb">'+AG.emrota+'</div><div class="dl">com motoristas agora</div></div>'+
-    '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'entregue\')"><div class="lb cg">Entregue</div><div class="vl vg">'+AG.entregue+'</div><div class="dl">concluídos hoje</div></div>'+
+    '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'entregue\')"><div class="lb cg">Entregue</div><div class="vl vg">'+AG.entregue+'</div><div class="dl">concluídos no período</div></div>'+
     '<div class="kpi" style="cursor:pointer" onclick="dashParaPedidos(\'acao\')"><div class="lb cr">Precisa de ação</div><div class="vl vr">'+(AG.tentativas+AG.devolvido+AG.extraviado)+'</div><div class="dl">tentativas, devolução ou extravio</div></div>';
 
-  var probs=[]; for(i=0;i<PEDIDOS.length;i++) if((!DASH_TR||PEDIDOS[i].tr===DASH_TR) && (ehTentativa(PEDIDOS[i].st)||PEDIDOS[i].st==='devolvido'||PEDIDOS[i].st==='extraviado')) probs.push(PEDIDOS[i]);
+  var probs=[]; for(i=0;i<PEDIDOS.length;i++) if((!DASH_TR||PEDIDOS[i].tr===DASH_TR) && dashDentro(PEDIDOS[i]) && (ehTentativa(PEDIDOS[i].st)||PEDIDOS[i].st==='devolvido'||PEDIDOS[i].st==='extraviado')) probs.push(PEDIDOS[i]);
   el('pdv-n').textContent=probs.length;
   var h='';
   if(!probs.length) h='<div class="empty"><div class="em">✅</div><div>Nenhuma tratativa em aberto</div></div>';
@@ -3087,8 +3088,8 @@ function pintarDashboard(){
 }
 
 /* ── gráfico de evolução (pacotes por dia — mesmo padrão visual do app Veltro, com a identidade do DELTADIS) ── */
-function mudarGraficoIni(v){DASH_G_INI=v; pintarGraficoEvolucao();}
-function mudarGraficoFim(v){DASH_G_FIM=v; pintarGraficoEvolucao();}
+function mudarGraficoIni(v){DASH_G_INI=v; pintarDashboard();}
+function mudarGraficoFim(v){DASH_G_FIM=v; pintarDashboard();}
 function pintarFiltrosGrafico(){
   el('db-grafico-filtros').innerHTML=
     '<input type="date" value="'+DASH_G_INI+'" onchange="mudarGraficoIni(this.value)" title="Data inicial">'+
@@ -3399,7 +3400,7 @@ function filtrarPedidos(s){FILTRO_PD=s; pintarPedidos();}
 function dashParaPedidos(st){
   FILTRO_TR=DASH_TR||null; FILTRO_PD=st;
   var a=el('pd-data-ini'), b=el('pd-data-fim'), o=el('pd-ocor'), q=el('pd-busca');
-  if(a) a.value=''; if(b) b.value=''; if(o) o.value=''; if(q) q.value='';
+  if(a) a.value=DASH_G_INI||''; if(b) b.value=DASH_G_FIM||''; if(o) o.value=''; if(q) q.value='';
   ir('pedidos'); pintarPedidos();
 }
 
