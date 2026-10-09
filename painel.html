@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-35-0810</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-36-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1687,6 +1687,35 @@ function bipStatusSync(){
   }).catch(function(){ BIP_ST.rodando=false; });
 }
 setInterval(bipStatusSync,30000); setTimeout(bipStatusSync,6000);
+
+/* ── (v136) ENTREGA REGISTRADA PELO APP = pedido ENTREGUE. Confere a lista "Entregas do dia" (a mesma do Mapeamento) de hoje e ontem e acerta o status do pedido que ficou "em rota". ── */
+var ENT_SYNC={rodando:false};
+function entregasSync(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || ENT_SYNC.rodando || document.hidden) return;
+  ENT_SYNC.rodando=true;
+  var dias=[hojeISO(),addDiasISO(hojeISO(),-1),addDiasISO(hojeISO(),-2)], k=0, mud=0;
+  function prox(){
+    if(k>=dias.length){ ENT_SYNC.rodando=false; if(mud){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); } return; }
+    var dia=dias[k++];
+    fetch(DELTADIS_API+'/entregas?dia='+encodeURIComponent(dia)+'&key='+encodeURIComponent(DELTADIS_API_KEY)+'&_='+Date.now(),{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+      if(d && d.ok && d.itens && d.itens.length){
+        var idx={}, i, e, p, dt;
+        for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
+        for(i=0;i<d.itens.length;i++){
+          e=d.itens[i]; p=idx[e.cod]; if(!p || p.fechId) continue;
+          if(p.st==='entregue' || p.st==='devolvido' || p.st==='extraviado') continue;
+          p.st='entregue'; dt=new Date(e.t||Date.now());
+          if(!p.ent) p.ent=ymdLocal(dt)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+          mud++;
+        }
+      }
+      prox();
+    }).catch(function(){ prox(); });
+  }
+  prox();
+}
+function ymdLocal(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+setInterval(entregasSync,60000); setTimeout(entregasSync,9000);
 /* ── (119) nome do ponto de coleta vem do cadastro do cliente (sai nos PDFs) ── */
 function pontoNomeCarregar(){ if(!REAL || !DD_TOKEN) return; fetch(DELTADIS_API+'/mesa/ponto',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){ if(d && d.ok && d.nome) PONTO_NOME=d.nome; }).catch(function(){}); }
 setTimeout(pontoNomeCarregar,3000); setInterval(pontoNomeCarregar,600000);
