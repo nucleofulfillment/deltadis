@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-39-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-40-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1693,6 +1693,7 @@ function bipStatusSync(){
     for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
     for(i=0;i<d.itens.length;i++){
       b=d.itens[i]; p=idx[b.cod]; if(!p || p.fechId) continue;
+      if(b.st==='removido'){ if(p.st==='coletado'||p.st==='em rota'){ p.st='nao localizado'; p.obs='tirado da lista pelo motorista (não localizado)'; mud++; } continue; }   /* (v140) mesma fonte do app: o que o motorista tirou da lista */
       tn=(parseInt(b.tent,10)||0)+1;
       if(b.st==='entregue') ns='entregue';
       else if(b.st==='ausente' || b.st==='nao_localizado') ns='tentativa '+Math.min(3,tn);
