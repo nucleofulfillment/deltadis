@@ -387,7 +387,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-114-0910</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-115-0910</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1307,23 +1307,28 @@ function rpCarregarCfgServidor(){
   }).catch(function(){});
 }
 /* (110) pergunta de primeiro acesso: o motorista usa roteirização? */
-function rotaPerguntar(){
+var ROTA_CB=null;
+function rotaPerguntar(cb){
   if(el('rota-ask')) return;
+  ROTA_CB=(typeof cb==='function')?cb:null;
   var d=document.createElement('div'); d.id='rota-ask'; d.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:28px 22px;overflow:auto';
-  d.innerHTML='<div style="max-width:420px;margin:0 auto;width:100%"><div style="font-size:38px;margin-bottom:10px">🧭</div><h2 style="margin:0 0 8px">Você usa roteirização?</h2>'+
+  d.innerHTML='<div style="max-width:420px;margin:0 auto;width:100%"><div style="font-size:38px;margin-bottom:10px">🧭</div><h2 style="margin:0 0 8px">'+(ROTA_CB?'Este lote usa roteirização?':'Você usa roteirização?')+'</h2>'+
     '<p style="color:var(--muted);font-size:14px;margin:0 0 18px">Roteirização é o app montar a ordem das entregas no mapa pra você.</p>'+
     '<button class="btn pri wide" style="margin-bottom:10px" onclick="rotaResponder(\'sim\')">Sim, uso roteirização</button>'+
     '<p style="color:var(--muted);font-size:12.5px;margin:0 0 16px">Você bipa, informa o endereço, o app monta a rota e você numera os pacotes.</p>'+
     '<button class="btn sec wide" style="margin-bottom:10px" onclick="rotaResponder(\'nao\')">Não uso</button>'+
     '<p style="color:var(--muted);font-size:12.5px;margin:0 0 16px">Você só bipa os pacotes que pegou, sem endereço e sem numeração, e depois marca o que entregou.</p>'+
-    '<p style="color:var(--muted);font-size:12px;margin:0">Dá pra mudar depois em Conta → Minhas rotas.</p></div>';
+    '<p style="color:var(--muted);font-size:12px;margin:0">Dá pra mudar depois em Conta → Minhas rotas.</p>'+(ROTA_CB?'<button class="btn sec wide" style="margin-top:16px" onclick="rotaCancelar()">Voltar</button>':'')+'</div>';
   document.body.appendChild(d);
 }
+function rotaCancelar(){ ROTA_CB=null; var o=el('rota-ask'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
 function rotaResponder(v){
   var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} c.rota=v; try{ localStorage.setItem('dd_cfg',JSON.stringify(c)); }catch(e){}
   var o=el('rota-ask'); if(o&&o.parentNode) o.parentNode.removeChild(o);
   var sr=el('cfg-rota'); if(sr) sr.value=v;
   rpApi('/motorista/cfg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rota:v})}).then(function(d){ if(!d||!d.ok) aviso('Salvei neste aparelho, mas não consegui guardar no servidor.'); }).catch(function(){ aviso('Salvei neste aparelho, mas sem internet não guardei no servidor.'); });
+  var cb=ROTA_CB; ROTA_CB=null;
+  if(cb){ try{ cb(); }catch(e){} return; }
   try{ renderInicio(); }catch(e){}
 }
 setTimeout(rpCarregarCfgServidor,1200); setInterval(rpCarregarCfgServidor,300000);
@@ -1464,10 +1469,17 @@ function ptRestaurar(nome){
     for(i=0;i<L.length;i++) if(String(L[i].nome)===String(nome)){ var x=L[i]; PT.sel={id:x.id,nome:x.nome,endereco:x.endereco,tipo:x.tipo,lat:x.lat==null?null:x.lat,lng:x.lng==null?null:x.lng,dia:numHoje()}; ptGravar(); if(EST==='rp_bip') renderInicio(); return; }
   }).catch(function(){});
 }
-function bpAbrir(){ if(rpCfg().rota==='nao'&&BP.ok&&BP.meus.length&&BP.meus.every(function(m){ return m.rom; })){ RP.bipMode=true; entAbrir(); return; } if(!PT.sel&&!BP.meus.length){ ptAbrir(); return; } EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok); }
+function bpAbrir(jt){
+  /* (115) lista ainda não carregada: carrega antes de decidir se é lote novo */
+  if(!BP.ok&&!jt){ var pr=bpCarregar(true); if(pr&&pr.then){ pr.then(function(){ bpAbrir(1); },function(){ bpAbrir(1); }); return; } }
+  if(rpCfg().rota==='nao'&&BP.ok&&BP.meus.length&&BP.meus.every(function(m){ return m.rom; })){ RP.bipMode=true; entAbrir(); return; }
+  /* (115) LOTE NOVO (nada bipado ainda): sempre pergunta se usa roteirização e qual o ponto de coleta — com ou sem rota */
+  if(!BP.meus.length){ rotaPerguntar(function(){ PT.sel=null; ptGravar(); ptAbrir(); }); return; }
+  EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok);
+}
 function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por baixo, sem aviso de carregando */
   if(!sil){ BP.carregando=true; bpAtualizar(); }
-  rpApi('/motorista/pacotes').then(function(d){
+  return rpApi('/motorista/pacotes').then(function(d){
     BP.carregando=false;
     if(!d||!d.ok){ if(!sil){ BP.ult={t:'err',m:'Não consegui carregar seus pacotes. Confira a internet.'}; bpAtualizar(); } return; }
     var i, x; BP.idx={}; for(i=0;i<d.lista.length;i++){ x=d.lista[i]; BP.idx[x.c.toLowerCase()]=x; if(x.s) BP.idx[x.s.toLowerCase()]=x; }
