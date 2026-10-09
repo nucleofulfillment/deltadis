@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-38-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-39-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1698,7 +1698,7 @@ function bipStatusSync(){
       else if(b.st==='ausente' || b.st==='nao_localizado') ns='tentativa '+Math.min(3,tn);
       else if(b.st==='devolvido' || b.st==='devolvido_ok') ns=(tn>=3?'devolvido':'tentativa '+tn);
       else continue;
-      if(p.st!==ns){ p.st=ns; if(ns==='entregue'&&!p.ent) { var _d=new Date(); p.ent=hojeISO()+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2); } mud++; }
+      if(p.st!==ns){ p.st=ns; if(ns==='entregue'&&!p.ent) { var _d=new Date(Number(b.st_t)||Date.now()); p.ent=ymdLocal(_d)+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2); } mud++; }
     }
     if(mud){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); }
   }).catch(function(){ BIP_ST.rodando=false; });
@@ -1720,10 +1720,10 @@ function entregasSync(){
         for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
         for(i=0;i<d.itens.length;i++){
           e=d.itens[i]; p=idx[e.cod]; if(!p || p.fechId) continue;
-          if(p.st==='entregue' || p.st==='devolvido' || p.st==='extraviado') continue;
-          p.st='entregue'; dt=new Date(e.t||Date.now());
-          if(!p.ent) p.ent=ymdLocal(dt)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
-          mud++;
+          if(p.st==='devolvido' || p.st==='extraviado') continue;
+          dt=new Date(e.t||Date.now()); var ents=ymdLocal(dt)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+          if(p.st!=='entregue'){ p.st='entregue'; p.ent=ents; mud++; }
+          else if(String(p.ent||'').slice(0,10)!==ents.slice(0,10)){ p.ent=ents; mud++; }   /* (v139) a data da entrega é a do app, não a hora em que o painel sincronizou */
         }
       }
       prox();
