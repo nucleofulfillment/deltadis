@@ -387,7 +387,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-108-0910</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-109-0910</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2638,12 +2638,13 @@ function romAbrir(dia){
     var h='<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">'+(dia?'Escolha o romaneio deste dia para gerar o PDF.':'Escolha o lote para gerar o romaneio em PDF. Aparecem só os pontos que não usam o DELTADIS.')+'</p>', i;
     if(!ROM.lotes.length) h+='<div class="empty">'+(dia?'Nenhum romaneio neste dia.':'Nenhum lote de ponto externo nos últimos 30 dias.')+'</div>';
     for(i=0;i<ROM.lotes.length;i++){ var l=ROM.lotes[i], n=l.itens.length, cn=romConta(l);
-      h+='<div class="lote-card" onclick="romGerar('+i+')"><div class="lote-topo"><b>Romaneio '+esc(l.nome)+'</b>'+(l.aberto?'<span class="badge b-wt">Em andamento</span>':'')+'</div>'+(l.ponto?'<div class="lote-transp">📍 '+esc(l.ponto)+'</div>':'')+'<div class="lote-linha"><span>'+dataBR(l.dia)+' · '+romHora(l.t)+'</span><span class="ok">'+n+' pacote'+(n===1?'':'s')+'</span></div><div class="lote-transp">'+cn.e+' entregue'+(cn.e===1?'':'s')+(cn.d?' · <b style="color:#B91C1C">'+cn.d+' divergente'+(cn.d===1?'':'s')+'</b>':'')+'</div><div class="lote-transp">Toque para gerar o PDF</div></div>'; }
+      h+='<div class="lote-card" onclick="romGerar('+i+')"><div class="lote-topo"><b>Romaneio '+esc(l.nome)+'</b>'+(l.aberto?'<span class="badge b-wt">Em andamento</span>':'')+'</div>'+(l.ponto?'<div class="lote-transp">📍 '+esc(l.ponto)+'</div>':'')+'<div class="lote-linha"><span>'+dataBR(l.dia)+' · '+romHora(l.t)+'</span><span class="ok">'+n+' pacote'+(n===1?'':'s')+'</span></div><div class="lote-transp">'+romTxt(cn,true)+'</div><div class="lote-transp">Toque para gerar o PDF</div></div>'; }
     el('sh-rom-corpo').innerHTML=h;
   }).catch(function(){ el('sh-rom-corpo').innerHTML='<div class="empty">Sem conexão. Tente de novo.</div>'; });
 }
 function romSit(st){ return st==='entregue'?'Entregue':(st==='nao_localizado'?'Não localizado':(st==='ausente'?'Ausente':((st==='devolvido'||st==='devolvido_ok')?'Devolvido':(st==='em_rota'||!st?'Em rota':esc(st))))); }
-function romConta(l){ var e=0,d=0,j; for(j=0;j<l.itens.length;j++){ var s=l.itens[j].st; if(s==='entregue') e++; else if(s==='nao_localizado'||s==='ausente'||s==='devolvido'||s==='devolvido_ok') d++; } return {e:e,d:d}; }
+function romConta(l){ var e=0,d=0,n=0,j; for(j=0;j<l.itens.length;j++){ var q=l.itens[j].st; if(q==='entregue') e++; else if(q==='nao_localizado') n++; else if(q==='ausente'||q==='devolvido'||q==='devolvido_ok') d++; } return {e:e,d:d,n:n}; }
+function romTxt(c,html){ var t=c.e+' entregue'+(c.e===1?'':'s'); if(c.d) t+=' · '+c.d+' devolvido'+(c.d===1?'':'s')+'/ausente'+(c.d===1?'':'s'); if(c.n) t+=' · '+(html?'<b style="color:#B91C1C">':'')+c.n+' não localizado'+(c.n===1?'':'s')+(html?'</b>':''); return t; }
 function romGerar(i){
   var l=ROM.lotes[i]; if(!l) return;
   var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups para gerar o romaneio.'); return; }
@@ -2654,7 +2655,7 @@ function romGerar(i){
   var html='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Romaneio '+esc(l.nome)+'</title><style>'+css+'</style></head><body>'+
     '<div class="cab"><b class="lg">DELTADIS</b><div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(l.ponto)+'</div></div>'+
     '<h1>Romaneio '+esc(l.nome)+' — '+esc(mn)+'</h1>'+
-    '<p style="color:#555">Dia '+dataBR(l.dia)+' &nbsp;|&nbsp; Coleta às '+romHora(l.t)+' &nbsp;|&nbsp; '+n+' pacote'+(n===1?'':'s')+' ('+cnp.e+' entregue'+(cnp.e===1?'':'s')+(cnp.d?', '+cnp.d+' divergente'+(cnp.d===1?'':'s'):'')+') &nbsp;|&nbsp; Emitido em '+emit+'</p>'+
+    '<p style="color:#555">Dia '+dataBR(l.dia)+' &nbsp;|&nbsp; Coleta às '+romHora(l.t)+' &nbsp;|&nbsp; '+n+' pacote'+(n===1?'':'s')+' ('+romTxt(cnp,false)+') &nbsp;|&nbsp; Emitido em '+emit+'</p>'+
     '<table><thead><tr><th style="width:26px">#</th><th>Código de rastreio</th><th>Endereço</th><th>Hora</th><th>Situação</th></tr></thead><tbody>'+lin+'</tbody></table>'+
     '<div class="ass"><p>Declaro ter recebido os <b>'+n+'</b> pacote'+(n===1?'':'s')+' relacionados acima, conferidos pelo código de rastreio, para entrega.</p>'+
     '<div class="lin"><div><span></span>Assinatura do motorista — '+esc(mn)+'</div><div><span></span>Responsável pelo ponto — '+esc(l.ponto)+'</div><div><span></span>Data e hora</div></div></div>'+

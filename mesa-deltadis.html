@@ -256,7 +256,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-33-0910</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-34-0910</p>
   </div>
 </div>
 
@@ -808,8 +808,8 @@ function carregarRomaneio(){
       var tn=(achaTr(it[i].tr)||{n:it[i].tr}).n; (g[k][tn]=g[k][tn]||[]).push(it[i]); }
     ordem.sort(romOrdena);
     ordem.forEach(function(mk){ var mn=mk.split('\u0001')[0], rm=mk.split('\u0001')[1];
-      var tot=0, nE=0, nD=0, trs=Object.keys(g[mk]); trs.forEach(function(t){ tot+=g[mk][t].length; g[mk][t].forEach(function(q){ if(q.st==='entregue') nE++; else if(q.st==='nao_localizado'||q.st==='ausente'||q.st==='devolvido'||q.st==='devolvido_ok'||q.nl) nD++; }); });
-      h+='<div style="font-weight:800;margin:14px 0 6px;font-size:14px">'+esc(mn)+' <span style="color:#8A7FA3;font-weight:600">— '+esc(romRot(rm))+' · '+tot+' pacote'+(tot===1?'':'s')+(nE?' · '+nE+' entregue'+(nE===1?'':'s'):'')+(nD?' · <b style="color:#B91C1C">'+nD+' divergente'+(nD===1?'':'s')+'</b>':'')+'</span></div>';
+      var tot=0, nE=0, nD=0, nN=0, trs=Object.keys(g[mk]); trs.forEach(function(t){ tot+=g[mk][t].length; g[mk][t].forEach(function(q){ if(q.st==='entregue') nE++; else if(q.st==='nao_localizado') nN++; else if(q.st==='ausente'||q.st==='devolvido'||q.st==='devolvido_ok') nD++; }); });
+      h+='<div style="font-weight:800;margin:14px 0 6px;font-size:14px">'+esc(mn)+' <span style="color:#8A7FA3;font-weight:600">— '+esc(romRot(rm))+' · '+tot+' pacote'+(tot===1?'':'s')+(nE?' · '+nE+' entregue'+(nE===1?'':'s'):'')+(nD?' · '+nD+' devolvido'+(nD===1?'':'s')+'/ausente'+(nD===1?'':'s'):'')+(nN?' · <b style="color:#B91C1C">'+nN+' não localizado'+(nN===1?'':'s')+'</b>':'')+'</span></div>';
       trs.forEach(function(t){
         h+='<div class="rm-end" style="margin:6px 0 4px;font-weight:700">'+esc(t)+' — '+g[mk][t].length+'</div>';
         g[mk][t].forEach(function(p,n){ var dt=new Date(p.t), hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
