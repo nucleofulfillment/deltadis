@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-47-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-48-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1661,7 +1661,7 @@ function mesaEventosAbsorver(){
       } else if(e.tipo==='xml' || e.tipo==='os'){
         if(p) continue;
         var cEnd=(dd.rua||''), isXml=(e.tipo==='xml');
-        p={cod:e.cod, tr:e.tr||'anj', mt:mid, cliente:(dd.cliente||''), bairro:(dd.bai||''), rua:cEnd, num:(dd.num||''), comp:(dd.comp||''), bai:(dd.bai||''), cid:(dd.cid||''), endOrig:'', vl:null, cep:(dd.cep||''), area:'', st:'coletado', t1:'', t2:'', tel:(dd.tel||''), canal:'', vend:'',
+        p={cod:e.cod, tr:e.tr||'anj', mt:mid, cliente:(dd.cliente||''), bairro:(dd.bai||''), rua:cEnd, num:(dd.num||''), comp:(dd.comp||''), bai:(dd.bai||''), cid:(dd.cid||''), endOrig:'', vl:null, cep:(dd.cep||''), area:'', st:'coletado', t1:'', t2:'', tel:(dd.tel||''), canal:(dd.rem||''), vend:'',
            scan:(isXml&&dd.chave)?dd.chave:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:(isXml?('entrada pela Mesa — XML da NF '+e.cod):('OS manual (sem NF) criada pela Mesa'+(dd.obs?(' — '+dd.obs):''))), ent:'', fechId:null};
         PEDIDOS.push(p); idx[e.cod]=p; if(p.scan!==e.cod) idx[p.scan]=p; novos++;
       }
