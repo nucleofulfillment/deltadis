@@ -271,14 +271,14 @@ html.dd-ret #splash{display:flex}
 .selo-acao{display:inline-flex;align-items:center;gap:4px;background:#FEE2E2;color:#B91C1C;font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px}
 .selo-rem{display:inline-flex;align-items:center;gap:4px;background:#DBEAFE;color:#1D4ED8;font-size:11px;font-weight:800;padding:4px 9px;border-radius:99px}
 .end-2l{margin:9px 0 2px;font-size:17px;line-height:1.28;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.56em;word-break:break-word}
-.rota-tela .mapa-mock{flex:1 1 auto;min-height:46vh}
+.rota-tela .mapa-mock{flex:1 1 auto;min-height:34vh}
 .rota-tela.com-aviso .mapa-mock{min-height:20vh}
 .rota-tela .info-full{flex:none}
 #fin-pontos::-webkit-scrollbar{display:none;height:0}
 .sheet-handle{display:flex;justify-content:center;align-items:center;height:34px;margin:-12px 0 0;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
 .sheet-arr .parada-tag,.sheet-arr .end-2l{touch-action:none}
 .sheet-handle i{width:56px;height:6px;border-radius:99px;background:rgba(109,40,217,.35)}
-.rota-tela.sheet-baixo .mapa-mock{min-height:62vh}
+.rota-tela.sheet-baixo .mapa-mock{min-height:52vh}
 .rota-tela.sheet-baixo .progresso,.rota-tela.sheet-baixo .info-full .parada-tag,.rota-tela.sheet-baixo .info-full p,.rota-tela.sheet-baixo .aviso-acao,.rota-tela.sheet-baixo .info-full>.acoes-fixas>.btn{display:none}
 .rota-tela.sheet-baixo .end-2l{font-size:14.5px;margin:0 0 2px;min-height:0;-webkit-line-clamp:1}
 .rota-tela.sheet-baixo .grade-acoes{margin-top:8px}
@@ -387,7 +387,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-105-0810</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-107-0910</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2392,7 +2392,7 @@ function sheetAlterna(){ if(RP._arrastou){ RP._arrastou=false; return; } sheetAj
     if(e.pointerType==='mouse'&&e.button!==0) return; if(!alvo(e)) return;
     mp=document.querySelector('.rota-tela .mapa-mock'); if(!mp) return;
     y0=e.clientY; dy=0; mov=false; pid=e.pointerId; h0=mp.getBoundingClientRect().height;
-    var vh=window.innerHeight/100; hMin=46*vh; hMax=62*vh;
+    var vh=window.innerHeight/100; hMin=34*vh; hMax=52*vh;
   }
   function mv(e){
     if(y0==null||e.pointerId!==pid) return; dy=e.clientY-y0;
@@ -2634,10 +2634,11 @@ function romAbrir(dia){
   rpApi('/motorista/romaneio-lotes?dias=30').then(function(d){
     if(!d||!d.ok){ el('sh-rom-corpo').innerHTML='<div class="empty">Não consegui carregar. Confira a internet.</div>'; return; }
     ROM.lotes=(d.lotes||[]).filter(function(l){ return dia?(l.dia===dia):l.externo; });
+    if(dia) ROM.lotes.sort(function(x,y){ var nx=parseInt(String(x.nome).split('-').pop(),10)||0, ny=parseInt(String(y.nome).split('-').pop(),10)||0; return nx-ny || (x.t-y.t); });   /* (107) 1, 2, 3 na ordem */
     var h='<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">'+(dia?'Escolha o romaneio deste dia para gerar o PDF.':'Escolha o lote para gerar o romaneio em PDF. Aparecem só os pontos que não usam o DELTADIS.')+'</p>', i;
     if(!ROM.lotes.length) h+='<div class="empty">'+(dia?'Nenhum romaneio neste dia.':'Nenhum lote de ponto externo nos últimos 30 dias.')+'</div>';
     for(i=0;i<ROM.lotes.length;i++){ var l=ROM.lotes[i], n=l.itens.length;
-      h+='<div class="lote-card" onclick="romGerar('+i+')"><div class="lote-topo"><b>Romaneio '+esc(l.nome)+'</b>'+(l.aberto?'<span class="badge b-wt">Em andamento</span>':'')+'</div><div class="lote-transp">📍 '+esc(l.ponto)+'</div><div class="lote-linha"><span>'+dataBR(l.dia)+' · '+romHora(l.t)+'</span><span class="ok">'+n+' pacote'+(n===1?'':'s')+'</span></div><div class="lote-transp">Toque para gerar o PDF</div></div>'; }
+      h+='<div class="lote-card" onclick="romGerar('+i+')"><div class="lote-topo"><b>Romaneio '+esc(l.nome)+'</b>'+(l.aberto?'<span class="badge b-wt">Em andamento</span>':'')+'</div>'+(l.ponto?'<div class="lote-transp">📍 '+esc(l.ponto)+'</div>':'')+'<div class="lote-linha"><span>'+dataBR(l.dia)+' · '+romHora(l.t)+'</span><span class="ok">'+n+' pacote'+(n===1?'':'s')+'</span></div><div class="lote-transp">Toque para gerar o PDF</div></div>'; }
     el('sh-rom-corpo').innerHTML=h;
   }).catch(function(){ el('sh-rom-corpo').innerHTML='<div class="empty">Sem conexão. Tente de novo.</div>'; });
 }
