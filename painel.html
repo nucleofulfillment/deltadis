@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-42-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-43-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -5146,6 +5146,7 @@ function pintarFluxoCaixa(){
        '<td>'+(aguardandoAsaas(e)?'<span class="badge b-in">Aguardando aprovação</span>':badgeStatus(e.status))+(e.decEm?('<br><span style="font-size:10.5px;color:var(--muted)">'+esc(e.decEm)+'</span>'):'')+(e.pixSt?('<br><span style="font-size:10.5px;color:'+(e.pixSt==='falhou'||e.pixSt==='incerto'?'var(--red)':'var(--muted)')+'">'+(e.pixSt==='falhou'?'Pix falhou'+(e.pixMotivo?': '+esc(e.pixMotivo):'')+' — pode tentar de novo':(e.pixSt==='incerto'?'Pix incerto — confira o extrato do Asaas':'Aprove o Pix no app do Asaas'))+'</span>'):'')+'</td>'+
        '<td><div class="fc-acoes">'+
          (podePagarPix(e)?'<button onclick="abrirPagarPix(['+e.id+'])" title="Pagar via Pix" style="color:var(--green)">💸</button>':'')+
+         ((e.tp==='out'&&e.status!=='pago'&&e.status!=='recusado'&&!travadoPix(e))?'<button onclick="fcPagarFora('+e.id+')" title="Marcar como pago (pagamento feito por fora do Asaas)" style="color:var(--green)">✔</button>':'')+
          ((e.pixId&&e.status!=='pago'&&e.pixSt!=='falhou')?'<button onclick="verificarPix('+e.id+')" title="Conferir com o Asaas">🔄</button>':'')+
          (travadoPix(e)?'<button title="Pix efetivado: não pode mais ser alterado" style="cursor:default">🔒</button>'+(e.status==='pago'?'<button onclick="abrirComprovante('+e.id+')" title="Ver comprovante">📄</button>'+(e.fech?'<button onclick="enviarComprovanteWhats('+e.id+')" title="Enviar comprovante no WhatsApp do motorista">💬</button>':''):''):'<button onclick="abrirEditarLancamento('+e.id+')" title="Editar">✎</button>')+
          '<button onclick="duplicarLancamento('+e.id+')" title="Duplicar">⧉</button>'+
@@ -5161,6 +5162,14 @@ function pintarFluxoCaixa(){
     '<span class="vertodos" onclick="fcLimparSel()">limpar seleção</span></div>'):'';
 }
 
+/* (43) pagamento feito POR FORA do Asaas (dinheiro, outro banco…): sinaliza como pago; se for repasse de motorista, o fechamento também vira Pago */
+function fcPagarFora(id){
+  var e=achaLanc(id); if(!e || e.status==='pago' || travadoPix(e)) return;
+  if(!window.confirm('Marcar como PAGO (pagamento feito por fora do Asaas)?\n\n'+e.tt+'\n'+moeda(e.vl))) return;
+  var ag=new Date(); e.status='pago'; e.decEm=isoDe(ag)+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2);
+  if(e.fech){ var m=motorista(e.fech.m), j; if(m){ for(j=0;j<(m.fechamentos||[]).length;j++){ if(m.fechamentos[j].id===e.fech.f){ m.fechamentos[j].status='pago'; m.fechamentos[j].pagoEm=hojeISO(); } } } }
+  if(REAL) salvarLocal(); pintarFluxoCaixa(); aviso('Marcado como pago');
+}
 function duplicarLancamento(id){
   var e=null,i; for(i=0;i<EXTRATO.length;i++) if(EXTRATO[i].id===id) e=EXTRATO[i];
   if(!e) return;
