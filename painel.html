@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-46-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-47-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -997,8 +997,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <label>Transportadora</label>
       <div class="transp-grid" id="up-transp-grid"></div>
     </div>
-    <div class="field"><label>Planilha (.xlsx ou .csv)</label><input class="inp" type="file" id="up-arquivo" accept=".xlsx,.xls,.csv"></div>
-    <div style="font-size:11.5px;color:var(--muted);margin:-4px 0 14px;line-height:1.5">O painel reconhece sozinho o arquivo: Anjun (Registros de entrada ou Exportar dados de pacotes) e J&T (Motorista de entrega final).</div>
+    <div class="field"><label>Planilha (.xlsx ou .csv) ou PDF da Diálogo</label><input class="inp" type="file" id="up-arquivo" accept=".xlsx,.xls,.csv,.pdf,application/pdf"></div>
+    <div style="font-size:11.5px;color:var(--muted);margin:-4px 0 14px;line-height:1.5">O painel reconhece sozinho o arquivo: Anjun (Registros de entrada ou Exportar dados de pacotes) e J&T (Motorista de entrega final). Diálogo: suba o PDF do Romaneio de Entregas.</div>
     <button class="btn pri wide" onclick="enviarPlanilha()">Enviar</button>
     <button class="btn sec wide" id="up-limpar" style="display:none;margin-top:10px" onclick="limparImportados()">Apagar dados importados</button>
   </div>
@@ -3580,6 +3580,7 @@ function uploadDireto(inp){
   processarPlanilha(arq, true);
 }
 function processarPlanilha(arquivo, ficar){
+  if(/\.pdf$/i.test(String(arquivo&&arquivo.name||'')) || (arquivo&&arquivo.type==='application/pdf')){ processarRomaneioPdf(arquivo, ficar); return; }
   if(typeof XLSX==='undefined'){ aviso('O leitor de planilha não carregou. Confira a internet e recarregue a página.'); return; }
   var rd=new FileReader();
   rd.onload=function(ev){
@@ -3600,6 +3601,117 @@ function processarPlanilha(arquivo, ficar){
     registrarProblemas();
   };
   rd.onerror=function(){ aviso('Não consegui ler o arquivo.'); };
+  rd.readAsArrayBuffer(arquivo);
+}
+/* ══ (47) DIÁLOGO: o romaneio vem em PDF. O painel lê o texto do PDF no próprio navegador (pdf.js) e cria os pedidos "na base"; o motorista bipa depois. ══ */
+var PDFJS_VER='3.11.174', PDFJS_PRONTO=null;
+function carregarPdfJs(){
+  if(PDFJS_PRONTO) return PDFJS_PRONTO;
+  PDFJS_PRONTO=new Promise(function(ok,erro){
+    var base='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/'+PDFJS_VER+'/';
+    function pronto(){
+      /* o "trabalhador" do pdf.js vem de outro endereço; o navegador só aceita se for copiado pra dentro da página */
+      fetch(base+'pdf.worker.min.js').then(function(r){ return r.text(); }).then(function(t){
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([t],{type:'text/javascript'}));
+        ok(window.pdfjsLib);
+      }).catch(erro);
+    }
+    if(window.pdfjsLib){ pronto(); return; }
+    var sc=document.createElement('script'); sc.src=base+'pdf.min.js'; sc.onload=pronto; sc.onerror=function(){ erro(new Error('pdfjs')); };
+    document.head.appendChild(sc);
+  });
+  PDFJS_PRONTO.catch(function(){ PDFJS_PRONTO=null; });
+  return PDFJS_PRONTO;
+}
+/* lê o texto do romaneio: cada pacote ocupa 3 linhas (código/NF/loja · destinatário/telefone/data · rua/bairro/cidade/CEP) */
+function dlgParsear(paginas){
+  var out=[], dia='';
+  paginas.forEach(function(pg){
+    var linhas={}, ys=[];
+    pg.itens.forEach(function(it){ var s=String(it.s); if(!s.trim()) return; var k=Math.round(it.y/2), kk=null, d;
+      for(d=-1;d<=1;d++){ if(linhas[k+d]){ kk=k+d; break; } } if(kk===null){ kk=k; linhas[kk]=[]; ys.push(kk); }
+      linhas[kk].push({x:it.x,s:s.trim()}); });
+    ys.sort(function(a,b){return b-a;});
+    var rows=ys.map(function(k){ return linhas[k].sort(function(a,b){return a.x-b.x;}); });
+    function junta(r,x0,x1){ return r.filter(function(i){return i.x>=x0&&i.x<x1;}).map(function(i){return i.s;}).join(' ').replace(/\s+/g,' ').trim(); }
+    var i;
+    if(!dia && out.length===0){ for(i=0;i<rows.length;i++){ var md=rows[i].filter(function(it){return /^\d{2}\/\d{2}\/\d{2}$/.test(it.s)&&it.x>500;})[0]; if(md){ dia=md.s; break; } } }
+    for(i=0;i<rows.length;i++){
+      var r=rows[i], c0=r[0];
+      if(!c0 || c0.x>30 || !/^[A-Z0-9]{6,14}$/.test(c0.s)) continue;
+      var nf=junta(r,60,115);
+      if(!/^\d{3,}$/.test(nf)) continue;
+      var r2=rows[i+1]||[], r3=rows[i+2]||[];
+      var mc=r3.filter(function(it){return /^\d{8}$/.test(it.s)||/^\d{5}-\d{3}$/.test(it.s);})[0];
+      out.push({cod:c0.s, nf:nf, canal:junta(r,115,330), vol:parseInt(junta(r,330,380),10)||1,
+        nome:junta(r2,60,300), tel:junta(r2,300,520).replace(/\D/g,''), end:junta(r3,60,300), bairro:junta(r3,300,440), cid:junta(r3,440,520), cep:mc?mc.s.replace(/\D/g,''):''});
+    }
+  });
+  return {dia:dia, pacotes:out};
+}
+/* "LOJAS RENNER S.A." → "Lojas Renner" (só as 2 primeiras palavras) */
+function canalDuasPalavras(v){
+  return String(v||'').replace(/\s+/g,' ').trim().split(' ').slice(0,2).map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase(); }).join(' ');
+}
+function importarRomaneioDialogo(res){
+  if(!REAL){ PEDIDOS=[]; MOTORISTAS=[]; EXTRATO=[]; REAL=true; }
+  var idx={}, i, novos=0, atualizados=0, semTel=0, md=String(res.dia||'').match(/^(\d{2})\/(\d{2})\/(\d{2})$/), dia=md?('20'+md[3]+'-'+md[2]+'-'+md[1]):hojeISO();
+  for(i=0;i<PEDIDOS.length;i++) idx[PEDIDOS[i].cod]=PEDIDOS[i];
+  res.pacotes.forEach(function(k){
+    var cod=k.cod, endTxt=String(k.end||'').replace(/\b(RUA|AVENIDA|AV|R)\s+\1\b/i,'$1').replace(/[\s,]+$/,''), sep=separarEndereco(endTxt,''), bai=k.bairro||'', cid=k.cid||'', cep=k.cep||'';
+    var tel=k.tel; if(!/^(\d{2})9?\d{8}$/.test(tel) || parseInt(tel.slice(0,2),10)<11) tel='';   /* telefone sem DDD válido (ex.: 00988...) não serve */
+    if(!tel) semTel++;
+    var canal=canalDuasPalavras(k.canal);
+    var endComCep=[([sep.rua,sep.num].filter(Boolean).join(', ')+(sep.comp?' ('+sep.comp+')':'')), bai, cid].filter(Boolean).join(' — ')+(cep?(' — CEP '+cep):'');
+    if(!sep.rua && !sep.num) endComCep='';
+    var p=idx[cod];
+    if(p){   /* já existe (subiu o PDF de novo ou o motorista já bipou): completa os dados, NÃO mexe no status */
+      if(k.nome && !p.cliente) p.cliente=k.nome;
+      if(tel && !p.tel) p.tel=tel;
+      if(canal && !p.canal) p.canal=canal;
+      if(!p.rua && endTxt){ p.bairro=endComCep; p.rua=sep.rua; p.num=sep.num; p.comp=sep.comp; p.bai=bai; p.cid=cid; p.endOrig=endTxt; }
+      if(!p.cep && cep) p.cep=cep;
+      atualizados++;
+    } else {
+      p={cod:cod, tr:'dia', mt:null, cliente:k.nome||'', bairro:endComCep, rua:sep.rua, num:sep.num, comp:sep.comp, bai:bai, cid:cid, endOrig:endTxt, vl:null, cep:cep, area:'', st:'coletado', t1:'', t2:'', tel:tel, canal:canal, vend:'',
+         scan:cod, dia:dia, hora:'', obs:'na base', ent:'', fechId:null};
+      PEDIDOS.push(p); idx[cod]=p; novos++;
+    }
+  });
+  sincronizarAreas(); recalcularReal();
+  salvarLocal(function(ok){ if(!ok) aviso('ATENÇÃO: não consegui guardar no navegador, ao recarregar precisa importar de novo'); });
+  return {novos:novos, atualizados:atualizados, semTel:semTel, total:res.pacotes.length};
+}
+function processarRomaneioPdf(arquivo, ficar){
+  aviso('Lendo o PDF da Diálogo...');
+  var rd=new FileReader();
+  rd.onerror=function(){ aviso('Não consegui ler o arquivo.'); };
+  rd.onload=function(ev){
+    carregarPdfJs().then(function(lib){
+      return lib.getDocument({data:new Uint8Array(ev.target.result)}).promise;
+    }).then(function(doc){
+      var pags=[], n=doc.numPages, p=0;
+      function prox(){
+        if(p>=n) return Promise.resolve(pags);
+        p++;
+        return doc.getPage(p).then(function(pg){ return pg.getTextContent(); }).then(function(tc){
+          pags.push({itens:tc.items.map(function(i){ return {x:i.transform[4], y:i.transform[5], s:i.str}; })});
+          return prox();
+        });
+      }
+      return prox();
+    }).then(function(pags){
+      var todo=pags.map(function(pg){ return pg.itens.map(function(i){return i.s;}).join(' '); }).join(' ');
+      if(!/DIALOGO LOGISTICA/i.test(todo) || !/ROMANEIO DE ENTREGAS/i.test(todo)){ aviso('Esse PDF não parece o Romaneio de Entregas da Diálogo. Nada foi importado.'); return; }
+      var res=dlgParsear(pags);
+      if(!res.pacotes.length){ aviso('Não achei pacotes nesse PDF. Nada foi importado.'); return; }
+      var r=importarRomaneioDialogo(res);
+      if(!ficar) fecharTudo();
+      pintarIndicadores(); pintarDashboard(); pintarPedidos(); pintarMotoristas(); pintarFinanceiro(); pintarMapeamento();
+      if(!ficar) ir('pedidos');
+      aviso('Diálogo: '+r.novos+' pacotes novos, '+r.atualizados+' já existiam · '+r.total+' no romaneio'+(r.semTel?(' · '+r.semTel+' sem telefone'):''));
+    }).catch(function(){ aviso('Não consegui abrir o PDF. Confira a internet e tente de novo.'); });
+  };
   rd.readAsArrayBuffer(arquivo);
 }
 function fmtNumBR(v){ return (v===undefined||v===null||v==='')?'':String(v).replace('.',','); }
