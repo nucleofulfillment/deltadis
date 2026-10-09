@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-34-0810</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-35-0810</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -3491,10 +3491,19 @@ function manterSoMotorista(){
   q=q.trim().toLowerCase(); var mot=null, i, k;
   for(i=0;i<MOTORISTAS.length&&!mot;i++){ var m=MOTORISTAS[i], nomes=[String(m.n||'')]; if(m.logins) for(k in m.logins) nomes.push(String(m.logins[k]||'')); if(nomes.some(function(x){ return x.trim().toLowerCase()===q; })) mot=m; }
   if(!mot){ aviso('Não achei esse motorista. Confira o login.'); return; }
-  var fica=PEDIDOS.filter(function(p){ return String(p.mt)===String(mot.id); }), sai=PEDIDOS.length-fica.length;
-  if(!fica.length){ aviso('Esse motorista não tem pedidos. Nada foi apagado.'); return; }
+  var dele=PEDIDOS.filter(function(p){ return String(p.mt)===String(mot.id); });
+  if(!dele.length){ aviso('Esse motorista não tem pedidos. Nada foi apagado.'); return; }
+  /* entregas dele por dia, pra você escolher a data da rota */
+  var porDia={}; dele.forEach(function(p){ if(p.st==='entregue'){ var d=String(p.ent||p.dia||'sem data').slice(0,10); porDia[d]=(porDia[d]||0)+1; } });
+  var dias=Object.keys(porDia).sort().reverse().slice(0,8).map(function(d){ return d+': '+porDia[d]+' entregues'; }).join('\n');
+  var ont=new Date(Date.now()-86400000), ontISO=ont.getFullYear()+'-'+('0'+(ont.getMonth()+1)).slice(-2)+'-'+('0'+ont.getDate()).slice(-2);
+  var data=window.prompt('Entregas de '+(mot.n||q)+' por dia:\n'+(dias||'(nenhuma)')+'\n\nDigite a DATA da rota que FICA (AAAA-MM-DD).\nFicam as entregas dessa data em diante e os pedidos ainda abertos dele.',ontISO); if(!data) return;
+  data=data.trim(); if(!/^\d{4}-\d{2}-\d{2}$/.test(data)){ aviso('Data inválida. Use AAAA-MM-DD.'); return; }
+  var fica=dele.filter(function(p){ return p.st!=='entregue' || String(p.ent||p.dia||'').slice(0,10)>=data; });
+  var ent=fica.filter(function(p){ return p.st==='entregue'; }).length, aberto=fica.length-ent, sai=PEDIDOS.length-fica.length;
+  if(!fica.length){ aviso('Nenhum pedido dele nessa data. Nada foi apagado.'); return; }
   var st={}; fica.forEach(function(p){ st[p.st]=(st[p.st]||0)+1; }); var rs=Object.keys(st).map(function(x){ return x+': '+st[x]; }).join('\n');
-  if(!window.confirm('FICAM '+fica.length+' pedidos de '+(mot.n||q)+':\n'+rs+'\n\nSERÃO APAGADOS '+sai+' pedidos dos outros.\n\nFeche o painel em outros computadores antes. Continuar?')) return;
+  if(!window.confirm('FICAM '+fica.length+' pedidos de '+(mot.n||q)+' (rota de '+data+' em diante):\n'+rs+'\n\nSERÃO APAGADOS '+sai+' pedidos.\n\nFeche o painel em outros computadores antes. Continuar?')) return;
   PEDIDOS=fica; try{ recalcularReal(); }catch(e){} salvarLocal(function(){ aviso('Pronto: ficaram '+fica.length+' pedidos.'); });
   try{ repintarTudo(); }catch(e){ pintarPedidos(); }
 }
