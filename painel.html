@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-43-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-44-0910</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1460,7 +1460,7 @@ function enviarPedidosServidor(forcar){
 }
 function packPed(){ var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null,p.tel||'',p.canal||'',p.vend||'',p.rua||'',p.num||'',p.comp||'',p.bai||'',p.cid||'',p.endOrig||'']); } return pc; }
 function salvarLocal(cb){
-  var o;
+  var o; try{ sincStatusFech(); }catch(eSf){}
   if(REAL){
     var pc=packPed();
     o={real:true, v:2, cli:cliAtual(), pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
@@ -2426,8 +2426,17 @@ function lancDoFechamento(m,f){
      data:/^\d{4}-\d{2}-\d{2}$/.test(String(f.dataPagamento||''))?f.dataPagamento:hojeISO(),vl:f.valor,status:(f.status==='pago'?'pago':'pendente'),pix:m.pix||'',fech:{m:m.id,f:f.id}};
   EXTRATO.push(l); f.lancId=l.id; return l;
 }
+/* (44) FONTE ÚNICA do "pago": o lançamento do Fluxo de Caixa. O status do fechamento (que o app do motorista lê) sempre acompanha o lançamento, não importa por onde ele foi marcado (✔, editar, Pix). Devolve quantos mudaram. */
+function sincStatusFech(){
+  var i,j,m,f,l,n=0,novo;
+  for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; for(j=0;j<(m.fechamentos||[]).length;j++){ f=m.fechamentos[j]; l=f.lancId?achaLanc(f.lancId):null; if(!l) continue;
+    novo=(l.status==='pago')?'pago':'pendente';
+    if(f.status!==novo){ f.status=novo; if(novo==='pago'){ if(!f.pagoEm) f.pagoEm=hojeISO(); } else f.pagoEm=null; n++; } } }
+  return n;
+}
 function sincronizarFechamentosFC(){
   var i,j,m,f,n=0;
+  if(sincStatusFech()){ if(REAL) salvarLocal(); }
   for(i=0;i<MOTORISTAS.length;i++){ m=MOTORISTAS[i]; for(j=0;j<(m.fechamentos||[]).length;j++){ f=m.fechamentos[j]; if(f.status!=='pago' && !(f.lancId && achaLanc(f.lancId))){ lancDoFechamento(m,f); n++; } } }
   if(n){ if(REAL) salvarLocal(); pintarFluxoCaixa(); }
 }
