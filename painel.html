@@ -687,7 +687,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- PEDIDOS -->
       <section class="page" id="pg-pedidos">
-        <div class="pghd"><div><h1>Pedidos</h1><div class="sub">todos os pacotes recebidos hoje, por status</div></div><span class="vertodos" onclick="abrirUploadPlanilha()">+ Upload planilha</span> <span class="vertodos" onclick="sincronizarAnjunClique()">🔄 Sincronizar rastreio</span></div>
+        <div class="pghd"><div><h1>Pedidos</h1><div class="sub">todos os pacotes recebidos hoje, por status</div></div><span class="vertodos" onclick="manterSoMotorista()" title="Apaga os pedidos de todos, menos de 1 motorista">🧹 Manter só 1 motorista</span> <span class="vertodos" onclick="abrirUploadPlanilha()">+ Upload planilha</span> <span class="vertodos" onclick="sincronizarAnjunClique()">🔄 Sincronizar rastreio</span></div>
         <div id="pd-chip"></div>
         <div class="card">
           <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:18px">
@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-32-0810</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-34-0810</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1615,12 +1615,13 @@ function bipAbsorver(){
     for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
     for(i=0;i<d.itens.length;i++){
       b=d.itens[i]; feitos.push({cod:b.cod,dia:b.dia});
+      if(b.lote==='removido') continue;   /* tirado da lista pelo motorista (não localizado): não mexe */
       mid=null; for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(b.mt)){ mid=MOTORISTAS[mk].id; break; } }
       p=idx[b.cod];
       if(p && b.end_rua && !p.rua){ p.rua=b.end_rua; p.num=b.end_num||''; p.comp=b.end_comp||''; p.bai=b.end_bai||''; p.cid=b.end_cid||''; p.cep=b.end_cep||''; p.bairro=b.end_bai||p.bairro||''; mud++; }
       if(p){
         if(mid!=null && p.mt!==mid){ p.mt=mid; mud++; }
-        if(p.st==='coletado'){ p.st='em rota'; mud++; }
+        if(p.st==='coletado' || p.st==='nao localizado' || p.st==='fora de rota'){ p.st='em rota'; mud++; }
       } else {
         dt=new Date(b.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
         p={cod:b.cod, tr:b.tr||'anj', mt:mid, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'em rota', t1:'', t2:'', tel:'', canal:'', vend:'',
@@ -1634,6 +1635,35 @@ function bipAbsorver(){
   }).catch(function(){ BIP_ABS.rodando=false; });
 }
 setInterval(bipAbsorver,20000);
+/* ── (v133) OCORRÊNCIAS DO MOTORISTA: "fora de rota" (bipou pacote que não era da lista dele) e "não localizado" (estava na lista e não chegou). Muda o status do pedido; planilha e rastreio não desfazem. ── */
+var OC_ABS={rodando:false};
+function ocorrAbsorver(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || OC_ABS.rodando || document.hidden) return;
+  OC_ABS.rodando=true;
+  fetch(DELTADIS_API+'/mesa/ocorrencias',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if(!d || !d.ok || !d.itens || !d.itens.length){ OC_ABS.rodando=false; return; }
+    var idx={}, i, o, p, mud=0, novos=0, feitos=[], dt, hh, fin={entregue:1,devolvido:1,extraviado:1};
+    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan && PEDIDOS[i].scan!==PEDIDOS[i].cod) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
+    for(i=0;i<d.itens.length;i++){
+      o=d.itens[i]; feitos.push({cod:o.cod,dia:o.dia,tipo:o.tipo}); p=idx[o.cod];
+      if(o.tipo==='nl'){
+        if(p && !fin[p.st] && !p.fechId && p.st!=='nao localizado'){ p.st='nao localizado'; p.obs='não localizado pelo motorista'+(o.mtn?(' ('+o.mtn+')'):''); mud++; }
+      } else {
+        var txtF='bipado fora da lista por '+(o.mtn||'motorista')+(o.motivo==='outro'?(' — está com '+(o.de_nome||'outro motorista')):(o.motivo==='sem_vinculo'?' — ainda sem motorista':' — código sem cadastro'));
+        if(p){ if(!fin[p.st] && !p.fechId && p.st!=='fora de rota'){ p.st='fora de rota'; p.obs=txtF; mud++; } }
+        else {
+          dt=new Date(o.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
+          p={cod:o.cod, tr:'anj', mt:null, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'fora de rota', t1:'', t2:'', tel:'', canal:'', vend:'',
+             scan:o.cod, dia:(o.dia||hojeISO()), hora:hh, obs:txtF, ent:'', fechId:null};
+          PEDIDOS.push(p); idx[o.cod]=p; novos++;
+        }
+      }
+    }
+    if(mud||novos){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); aviso((mud+novos)+' ocorrência'+((mud+novos)===1?'':'s')+' do motorista (fora de rota / não localizado).'); }
+    return fetch(DELTADIS_API+'/mesa/ocorrencias-absorver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:feitos})}).then(function(r){ return r.json(); }).then(function(){ OC_ABS.rodando=false; });
+  }).catch(function(){ OC_ABS.rodando=false; });
+}
+setInterval(ocorrAbsorver,20000);
 /* ── (118) STATUS vindo do app: entregue / ausente / devolvido feito pelo motorista atualiza o pacote no painel ── */
 var BIP_ST={rodando:false};
 function bipStatusSync(){
@@ -1926,7 +1956,7 @@ function importarPlanilha(linhas,c){
     var endComCep=[([sep.rua,sep.num].filter(Boolean).join(', ')+(sep.comp?' ('+sep.comp+')':'')), bairroNv, cidNv].filter(Boolean).join(' — ')+(cepNv?(' — CEP '+cepNv):'');
     if(!sep.rua && !sep.num) endComCep='';
     p=idx[cod];
-    if(p){ var soCriado=(String(s.obs||'').indexOf('ainda não chegou')>=0); if(!soCriado){ p.st=s.st; p.obs=s.obs||''; } if(mot) p.mt=mot.id; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv){ p.bairro=endComCep; p.rua=sep.rua; p.num=sep.num; p.comp=sep.comp; p.bai=bairroNv; p.cid=cidNv; p.endOrig=endOrig; } if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; if(telNv) p.tel=telNv; if(canalNv) p.canal=canalNv; if(vendNv) p.vend=vendNv; atualizados++; }
+    if(p){ var soCriado=(String(s.obs||'').indexOf('ainda não chegou')>=0)||((p.st==='fora de rota'||p.st==='nao localizado')&&['entregue','devolvido','extraviado'].indexOf(s.st)<0); if(!soCriado){ p.st=s.st; p.obs=s.obs||''; } if(mot) p.mt=mot.id; if(en) p.ent=en; if(clienteNv) p.cliente=clienteNv; if(endNv){ p.bairro=endComCep; p.rua=sep.rua; p.num=sep.num; p.comp=sep.comp; p.bai=bairroNv; p.cid=cidNv; p.endOrig=endOrig; } if(valorNv!=null) p.vl=valorNv; if(cepNv) p.cep=cepNv; if(areaNv) p.area=areaNv; if(telNv) p.tel=telNv; if(canalNv) p.canal=canalNv; if(vendNv) p.vend=vendNv; atualizados++; }
     else{
       p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, rua:sep.rua, num:sep.num, comp:sep.comp, bai:bairroNv, cid:cidNv, endOrig:endOrig, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'', tel:telNv, canal:canalNv, vend:vendNv,
          scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en, fechId:null};
@@ -2006,7 +2036,7 @@ function atualizarRastreioPacote(cod){
     abrirPedido(cod);
   },cod);
 }
-function ordemStatus(st){ if(st==='entregue'||st==='devolvido'||st==='extraviado') return 3; if(ehTentativa(st)) return 2; if(st==='em rota') return 1; return 0; }
+function ordemStatus(st){ if(st==='fora de rota'||st==='nao localizado') return 2.5; if(st==='entregue'||st==='devolvido'||st==='extraviado') return 3; if(ehTentativa(st)) return 2; if(st==='em rota') return 1; return 0; }
 /* pergunta pro Worker o status mais recente dos pacotes em acompanhamento (Anjun em aberto + os que entraram por problema) */
 function sincronizarAnjun(cb,so){
   var codigos=[], i, p;
@@ -2058,6 +2088,7 @@ function recalcularReal(){
     else if(p.st==='devolvido') agg.devolvido++;
     else if(p.st==='extraviado') agg.extraviado++;
     else if(ehTentativa(p.st)) agg.tentativas++;
+    else if(p.st==='fora de rota'||p.st==='nao localizado'){}
     else agg.coletado++;
     t=transp(p.tr); if(t){ t.hoje++; if(p.st==='entregue') t.ent++; }
     m=p.mt?mp[p.mt]:null;
@@ -2399,7 +2430,7 @@ function iconeTransp(t){
 function badgeStatus(st){
   var map={aguardando:['b-nu','Aguardando'],'em rota':['b-in','Em rota'],entregue:['b-ok','Entregue'],tratativa:['b-no','Tratativa'],
     coletado:['b-nu','Base'],'tentativa 1':['b-no','Tentativa 1'],'tentativa 2':['b-no','Tentativa 2'],'tentativa 3':['b-no','Tentativa 3'],
-    devolvido:['b-no','Devolvido'],extraviado:['b-no','Extraviado'],
+    devolvido:['b-no','Devolvido'],extraviado:['b-no','Extraviado'],'fora de rota':['b-wt','Fora de rota'],'nao localizado':['b-no','Não localizado'],
     ativo:['b-ok','ativo'],pendente:['b-wt','pendente'],'na base':['b-nu','Na base'],inativo:['b-no','Inativo'],
     pago:['b-ok','Pago'],recebido:['b-ok','Recebido'],'a revisar':['b-wt','A revisar'],autorizado:['b-in','Autorizado'],recusado:['b-no','Não pagar']};
   var m=map[st]||['b-nu',st];
@@ -3295,7 +3326,7 @@ function pintarPedidos(){
   var dIni=(el('pd-data-ini')&&el('pd-data-ini').value)||'', dFim=(el('pd-data-fim')&&el('pd-data-fim').value)||'';
   function passaData(p2){ if(!p2.dia) return !dIni && !dFim; if(dIni && p2.dia<dIni) return false; if(dFim && p2.dia>dFim) return false; return true; }
 
-  var stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i,j,cont={};
+  var stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','fora de rota','nao localizado','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i,j,cont={};
   for(i=0;i<stAll.length;i++) cont[stAll[i]]=0;
   for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var ocSel=el('pd-ocor'), ocAtual=ocSel.value, ocCont={}, ocN=0, ocH='';
@@ -3310,13 +3341,13 @@ function pintarPedidos(){
   var ocFiltro=ocSel.value;
   var pills='';
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
-    pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
+    pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i]==='nao localizado'?'Não localizado':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
   }
   el('pd-pills').innerHTML=pills;
 
   var busca=(el('pd-busca').value||'').toLowerCase().trim(), h='', n=0, LIM=300;
   for(i=0;i<PEDIDOS.length;i++){var p=PEDIDOS[i];
-    if(FILTRO_PD==='acao'){ if(!(ehTentativa(p.st)||p.st==='devolvido'||p.st==='extraviado')) continue; }
+    if(FILTRO_PD==='acao'){ if(!(ehTentativa(p.st)||p.st==='devolvido'||p.st==='extraviado'||p.st==='fora de rota'||p.st==='nao localizado')) continue; }
     else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
@@ -3452,6 +3483,20 @@ function salvarPrecos(){
   }
   salvarLocal(); fecharTudo(); pintarFinanceiro(); pintarMotoristas(); pintarIndicadores(); pintarDashboard(); pintarPedidos();
   aviso('Valores salvos!');
+}
+/* ── (34) LIMPEZA: mantém só os pedidos de UM motorista (os demais pedidos saem do painel e do servidor). Os motoristas continuam cadastrados. ── */
+function manterSoMotorista(){
+  if(!REAL){ aviso('Só funciona com dados reais.'); return; }
+  var q=window.prompt('Digite o login do motorista que FICA (ex: ClaudioKaiser007).\nOs pedidos de todos os outros motoristas serão apagados do painel.'); if(!q) return;
+  q=q.trim().toLowerCase(); var mot=null, i, k;
+  for(i=0;i<MOTORISTAS.length&&!mot;i++){ var m=MOTORISTAS[i], nomes=[String(m.n||'')]; if(m.logins) for(k in m.logins) nomes.push(String(m.logins[k]||'')); if(nomes.some(function(x){ return x.trim().toLowerCase()===q; })) mot=m; }
+  if(!mot){ aviso('Não achei esse motorista. Confira o login.'); return; }
+  var fica=PEDIDOS.filter(function(p){ return String(p.mt)===String(mot.id); }), sai=PEDIDOS.length-fica.length;
+  if(!fica.length){ aviso('Esse motorista não tem pedidos. Nada foi apagado.'); return; }
+  var st={}; fica.forEach(function(p){ st[p.st]=(st[p.st]||0)+1; }); var rs=Object.keys(st).map(function(x){ return x+': '+st[x]; }).join('\n');
+  if(!window.confirm('FICAM '+fica.length+' pedidos de '+(mot.n||q)+':\n'+rs+'\n\nSERÃO APAGADOS '+sai+' pedidos dos outros.\n\nFeche o painel em outros computadores antes. Continuar?')) return;
+  PEDIDOS=fica; try{ recalcularReal(); }catch(e){} salvarLocal(function(){ aviso('Pronto: ficaram '+fica.length+' pedidos.'); });
+  try{ repintarTudo(); }catch(e){ pintarPedidos(); }
 }
 function limparImportados(){
   if(!window.confirm('Apagar todos os pacotes e motoristas importados?')) return;
