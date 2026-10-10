@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-135-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-136-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -527,6 +527,9 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-bd" id="sh-remarcar-corpo"></div>
 </div>
 
+<!-- ══ TELA CHEIA: completar o cadastro (primeiro acesso) ══ -->
+<div id="cad-tela" style="display:none;position:fixed;inset:0;z-index:9000;background:var(--bg,#F6F1FB);overflow:auto;padding:18px 16px 40px"></div>
+
 <!-- ══ MODAL: ir para outra parada ══ -->
 <div class="sheet" id="sh-pular">
   <div class="sh-hd"><h3>Ir para outra parada</h3><button onclick="fecharTudo()">✕</button></div>
@@ -646,6 +649,41 @@ var REGIAO_POS={'Centro':{l:50,t:50},'Fazenda':{l:68,t:40},'São Vicente':{l:30,
 var LOTES=[];            /* lotes reais por dia (vêm de /motorista/resumo, lidos do painel) */
 var LOTES_HOJE=[];       /* lotes fechados nesta sessão (só pra meta do dia e tela "Rota finalizada") */
 var ENTREGAS=[], PERFIL={}, RESUMO={recebido:0,aReceber:0,km:0}, RESUMO_ESTADO='novo';   /* novo | ok | desligado | erro */
+/* (136) PRIMEIRO ACESSO: se faltar dado no cadastro do motorista, abre uma tela cheia (sem fechar) pedindo só o que falta. Os campos que já têm dado vêm preenchidos. */
+var CAD={campos:{},faltam:[],nome:'',tel:''};
+var CAD_LISTA=[['pix','Chave PIX',1,'CPF, e-mail, telefone...'],['enderecoCep','CEP',1,'00000-000'],['enderecoRua','Rua',1,''],['enderecoNumero','Número',1,''],['enderecoComplemento','Complemento',0,''],['enderecoBairro','Bairro',1,''],['enderecoCidade','Cidade',1,''],['modelo','Veículo (modelo)',1,'Ex: Fiorino'],['veicCor','Cor do veículo',1,'Ex: Branca'],['ano','Ano do veículo',1,'2022'],['placa','Placa',1,'ABC1D23'],['apelido','Apelido',0,'Como te chamam'],['email','E-mail',0,'email@exemplo.com']];
+function cadVerificar(){
+  rpApi('/motorista/cadastro').then(function(d){
+    if(!d||!d.ok||!d.achou) return;
+    CAD.campos=d.campos||{}; CAD.faltam=d.faltam||[]; CAD.nome=d.nome||''; CAD.tel=d.tel||'';
+    if(CAD.faltam.length) cadAbrir(); else cadFechar();
+  }).catch(function(){});
+}
+function cadFechar(){ var t=el('cad-tela'); if(t){ t.style.display='none'; t.innerHTML=''; } }
+function cadAbrir(){
+  var t=el('cad-tela'); if(!t) return; var h='<div style="max-width:520px;margin:0 auto"><h2 style="margin:6px 0 4px">Complete seu cadastro</h2><p style="margin:0 0 4px;color:var(--muted);font-size:13px">Olá'+(CAD.nome?', <b>'+esc(CAD.nome)+'</b>':'')+'! Para usar o app, falta preencher os campos marcados em vermelho. O que já estava cadastrado já aparece preenchido.</p>';
+  if(CAD.tel) h+='<p style="margin:0 0 14px;color:var(--muted);font-size:12.5px">WhatsApp: '+esc(CAD.tel)+'</p>';
+  var i, c, ob, falta, v, selo;
+  for(i=0;i<CAD_LISTA.length;i++){ c=CAD_LISTA[i]; v=CAD.campos[c[0]]||''; ob=c[2]; falta=(CAD.faltam.indexOf(c[0])>=0); selo=(v&&!falta)?' <span style="color:#16A34A;font-weight:700">✔ já cadastrado</span>':'';
+    h+='<div class="field"><label>'+c[1]+(ob?' <span style="color:#c0392b">*</span>':' <span style="color:var(--muted);font-weight:500">(opcional)</span>')+selo+'</label><input class="inp" id="cd-'+c[0]+'" value="'+esc(v)+'" placeholder="'+esc(c[3])+'" autocomplete="off"'+(c[0]==='enderecoCep'?' inputmode="numeric" maxlength="9" oninput="cadCep()"':'')+(c[0]==='ano'?' inputmode="numeric" maxlength="4"':'')+(c[0]==='placa'?' maxlength="8" autocapitalize="characters"':'')+(falta?' style="border-color:#c0392b"':'')+'></div>'; }
+  h+='<p id="cd-msg" style="color:#B91C1C;font-size:13px;font-weight:700;margin:4px 0 10px"></p><button class="btn pri wide" id="cd-ok" onclick="cadSalvar()">Salvar e continuar</button><button class="btn sec wide" style="margin-top:10px" onclick="cadFechar();sair()">Sair</button></div>';
+  t.innerHTML=h; t.style.display='block'; t.scrollTop=0;
+}
+function cadCep(){
+  var i=el('cd-enderecoCep'); if(!i) return; var n=i.value.replace(/\D/g,''); if(n.length!==8) return;
+  rpApi('/motorista/cep?cep='+n).then(function(d){ if(d&&d.ok&&d.achou){ var m={enderecoRua:d.rua,enderecoBairro:d.bai,enderecoCidade:d.cid}, k; for(k in m){ var x=el('cd-'+k); if(x&&!x.value&&m[k]) x.value=m[k]; } } }).catch(function(){});
+}
+function cadSalvar(){
+  var campos={}, i, c, x, falta=[]; for(i=0;i<CAD_LISTA.length;i++){ c=CAD_LISTA[i]; x=el('cd-'+c[0]); campos[c[0]]=x?x.value.trim():''; if(c[2]&&!campos[c[0]]) falta.push(c[0]); if(x) x.style.borderColor=''; }
+  var m=el('cd-msg'); 
+  if(falta.length){ falta.forEach(function(k){ var x=el('cd-'+k); if(x) x.style.borderColor='#c0392b'; }); if(m) m.textContent='Preencha os campos marcados em vermelho.'; return; }
+  var b=el('cd-ok'); if(b){ b.disabled=true; b.textContent='Salvando…'; } if(m) m.textContent='';
+  rpApi('/motorista/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({campos:campos})}).then(function(d){
+    if(b){ b.disabled=false; b.textContent='Salvar e continuar'; }
+    if(!d||!d.ok){ (d&&d.faltam||[]).forEach(function(k){ var x=el('cd-'+k); if(x) x.style.borderColor='#c0392b'; }); if(m) m.textContent=(d&&d.mensagem)||'Não consegui salvar. Tente de novo.'; return; }
+    cadFechar(); aviso('Cadastro completo. Obrigado!');
+  }).catch(function(){ if(b){ b.disabled=false; b.textContent='Salvar e continuar'; } if(m) m.textContent='Sem conexão. Tente de novo.'; });
+}
 function carregarResumo(cb){
   rpApi('/motorista/resumo').then(function(d){
     if(d&&d.ok){ LOTES=d.lotes||[]; ENTREGAS=d.entregas||[]; PERFIL=d.perfil||{}; RESUMO=d.resumo||{recebido:0,aReceber:0,km:0}; RESUMO_ESTADO=(d.vinculado===false)?'desligado':'ok'; }
@@ -849,6 +887,7 @@ function montarApp(){
   renderInicio();
   ir('inicio');
   carregarResumo(function(){ rpPintarIdentidade(); });
+  setTimeout(cadVerificar,600);
   rpAtualizar(); if(!window._rpT) window._rpT=setInterval(rpAtualizar,60000);
 }
 
