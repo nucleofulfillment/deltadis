@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-144-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-145-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1634,6 +1634,7 @@ function bpAbrir(jt){
 }
 function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por baixo, sem aviso de carregando */
   if(!sil){ BP.carregando=true; bpAtualizar(); }
+  var _t0=Date.now();
   return rpApi('/motorista/pacotes').then(function(d){
     BP.carregando=false;
     if(!d||!d.ok){ if(!sil){ BP.ult={t:'err',m:'Não consegui carregar seus pacotes. Confira a internet.'}; bpAtualizar(); } return; }
@@ -1643,6 +1644,7 @@ function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por b
     BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:(m.cli||(e?e.cl:'')),r:e?e.r:'',e:e?e.e:0,novo:!e,rom:m.rom||'',v:(m.valor>0?Number(m.valor):0),num:(m.pos>0?Number(m.pos):0),auto:String(m.auto)==='1',conf:String(m.conf)==='1'};
       if(m.end_rua){ it.e=1; it.novo=false; it.r=m.end_rua+(m.end_num?', '+m.end_num:''); it.d={cep:m.end_cep||'',num:m.end_num||'',comp:m.end_comp||'',rua:m.end_rua,bai:m.end_bai||'',cid:m.end_cid||''}; }
       return it; });
+    BP.remT=BP.remT||{}; BP.meus=BP.meus.filter(function(m){ var r=BP.remT[String(m.cod).toLowerCase()]; return !(r&&r>=_t0-1500); });   /* (145) tirou depois que esta consulta saiu: não deixa voltar */
     var mxN=0, fillN=[]; BP.meus.forEach(function(m){ if(m.num>mxN) mxN=m.num; }); 
     if(fillN.length) rpApi('/motorista/numeracao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:fillN})}).catch(function(){});
     if(RP.preRota&&typeof RL!=='undefined'&&RL){ RL.feitos={}; BP.meus.forEach(function(m){ if(m.conf||m.rom) RL.feitos[String(m.cod).toLowerCase()]=1; }); bipFila().forEach(function(x){ RL.feitos[String(x.cod).toLowerCase()]=1; });
@@ -1741,6 +1743,7 @@ function bpBipar(v){
   /* otimista: mostra o pacote na hora e confirma com o servidor em segundo plano; se o servidor recusar, tira da lista e avisa */
   var NAO=(rpCfg().rota==='nao'), item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};
   if(e&&e.a&&e.a[0]&&e.a[1]&&e.a[4]){ item.d={cep:e.a[5]||'',num:e.a[1],comp:e.a[2]||'',rua:e.a[0],bai:e.a[3]||'',cid:e.a[4]}; item.r=e.a[0]+', '+e.a[1]; item.e=1; item.novo=false; }   /* (128) o endereço já veio na lista: aparece NA HORA, sem esperar o servidor */   /* (111) o número só aparece na 2ª bipagem (conferência da rota) */
+  try{ if(BP.remT) delete BP.remT[String(item.cod).toLowerCase()]; }catch(e){}
   BP.meus.push(item); bpMarcaMesa(canon); somBipeOk();
   if(NAO) BP.ult={t:'ok',m:'✔ Registrado'+(e&&e.cl?' — '+esc(e.cl):''),cod:canon};
   else if(!e) BP.ult={t:'novo',m:'Pacote novo, sem dados ainda. Depois você cadastra o endereço.',cod:canon};
@@ -1786,10 +1789,11 @@ function bpRemover(cod){
   /* (144) 1 toque só: tira da lista na hora e avisa o servidor; se falhar, devolve o pacote */
   var i, it=null, pos=-1; for(i=BP.meus.length-1;i>=0;i--) if(BP.meus[i].cod===cod){ it=BP.meus[i]; pos=i; BP.meus.splice(i,1); }
   if(!it) return;
+  BP.remT=BP.remT||{}; BP.remT[String(cod).toLowerCase()]=Date.now();
   bpMarcaMesa(cod,true); BP.ult={t:'rep',m:'Removido da sua lista.',cod:cod}; bpAtualizar();
   rpApi('/motorista/desbipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod})}).then(function(d){
-    if(!d||!d.ok){ BP.meus.splice(Math.min(pos,BP.meus.length),0,it); bpMarcaMesa(cod,false); bpAtualizar(); aviso('Não consegui remover agora.'); }
-  }).catch(function(){ BP.meus.splice(Math.min(pos,BP.meus.length),0,it); bpMarcaMesa(cod,false); bpAtualizar(); aviso('Sem conexão. Não removi.'); });
+    if(!d||!d.ok){ delete BP.remT[String(cod).toLowerCase()]; BP.meus.splice(Math.min(pos,BP.meus.length),0,it); bpMarcaMesa(cod,false); bpAtualizar(); aviso('Não consegui remover agora.'); }
+  }).catch(function(){ delete BP.remT[String(cod).toLowerCase()]; BP.meus.splice(Math.min(pos,BP.meus.length),0,it); bpMarcaMesa(cod,false); bpAtualizar(); aviso('Sem conexão. Não removi.'); });
 }
 /* (141) assinatura do romaneio: ponto DELTADIS = obrigatória; ponto de outra empresa = só se ele ativou naquele ponto */
 function asgObrigatoria(){ if(window.APP_PLANO&&APP_PLANO.bloqueio) return false; if(PT.sel){ if(PT.sel.tipo==='deltadis') return true; return !!PT.sel.assina; } return rpCfg().assina==='sim'; }
