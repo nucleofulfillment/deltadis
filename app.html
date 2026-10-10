@@ -402,7 +402,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-157-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-158-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -692,7 +692,7 @@ function cadAbrir(){
 }
 function cadCep(){
   var i=el('cd-enderecoCep'); if(!i) return; var n=i.value.replace(/\D/g,''); if(n.length!==8) return;
-  rpApi('/motorista/cep?cep='+n).then(function(d){ if(d&&d.ok&&d.achou){ var m={enderecoRua:d.rua,enderecoBairro:d.bai,enderecoCidade:d.cid}, k; for(k in m){ var x=el('cd-'+k); if(x&&!x.value&&m[k]) x.value=m[k]; } } }).catch(function(){});
+  rpApi('/motorista/cep?cep='+n).then(function(d){ if(d&&d.ok&&d.achou){ var m={enderecoRua:d.rua,enderecoBairro:d.bai,enderecoCidade:d.cid}, k; for(k in m){ var x=el('cd-'+k); if(x&&m[k]) x.value=m[k]; } } }).catch(function(){});
 }
 function cadSalvar(){
   var campos={}, i, c, x, falta=[]; for(i=0;i<CAD_LISTA.length;i++){ c=CAD_LISTA[i]; x=el('cd-'+c[0]); campos[c[0]]=x?x.value.trim():''; if(c[2]&&!campos[c[0]]) falta.push(c[0]); if(x) x.style.borderColor=''; }
@@ -2618,9 +2618,10 @@ function edCep(){
   fetch('https://viacep.com.br/ws/'+c+'/json/').then(function(r){ return r.json(); }).then(function(d){
     if(!d||d.erro){ st.textContent='CEP não encontrado. Confira os números ou digite o endereço.'; st.style.color='#B45309'; return; }
     st.style.color='#15803D'; st.textContent='✔ '+(d.logradouro||'CEP geral')+(d.bairro?' — '+d.bairro:'')+' — '+d.localidade+'/'+d.uf;
-    if(d.logradouro && !el('ed-rua').value.trim()) el('ed-rua').value=d.logradouro;
-    if(d.bairro && !el('ed-bai').value.trim()) el('ed-bai').value=d.bairro;
-    if(d.localidade && !el('ed-cid').value.trim()) el('ed-cid').value=d.localidade;
+    /* (158) o CEP manda: troca rua, bairro e cidade pelos do CEP (antes só preenchia campo vazio e ficava o endereço antigo) */
+    if(d.logradouro) el('ed-rua').value=d.logradouro;
+    if(d.bairro) el('ed-bai').value=d.bairro;
+    if(d.localidade) el('ed-cid').value=d.localidade;
   }).catch(function(){ st.textContent=''; });
 }
 function salvarEndereco(){
