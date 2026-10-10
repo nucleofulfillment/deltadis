@@ -388,7 +388,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-126-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-128-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1089,7 +1089,7 @@ function rpDescarregarEnt(){
     if(d && d.ok){ var atual=rpFilaEnt(); atual.splice(0,lote.length); rpSalvaFilaEnt(atual); if(atual.length) rpDescarregarEnt(); }
   }).catch(function(){ ENT_ENVIANDO=false; });
 }
-setInterval(rpDescarregarEnt,60000); window.addEventListener('online',rpDescarregarEnt); setTimeout(rpDescarregarEnt,3000);
+setInterval(rpDescarregarEnt,60000); setInterval(function(){ try{ if(!document.hidden&&BIP_ROTA&&BP.ok&&!BP.carregando&&!BP.ocupado&&RP.mt) bpCarregar(true); }catch(e){} },30000);   /* (128) lista de pacotes (com os pedidos novos da Mesa) atualiza a cada 30 s com o app aberto */ window.addEventListener('online',rpDescarregarEnt); setTimeout(rpDescarregarEnt,3000);
 
 /* ══ mesmo endereço: dois pedidos no mesmo ponto do mapa ficam num pino só e ganham o aviso ══ */
 function rpChave(p){ return (p&&p.lat!=null&&p.lng!=null)?(p.lat.toFixed(5)+','+p.lng.toFixed(5)):null; }
@@ -1614,7 +1614,8 @@ function bpBipar(v){
   if(BP.outros[canon.toLowerCase()]){ somErroBip(); BP.ult={t:'err',m:'Este pacote já foi bipado por '+esc(BP.outros[canon.toLowerCase()])+'.',cod:canon}; bpAtualizar(); return; }
   if(e && e.m && String(e.m)!==String(RP.mt)){ somErroBip(); BP.ult={t:'err',m:'Este pacote está registrado para '+esc(e.d||'outro motorista')+'. Fale com a Mesa.',cod:canon}; bpAtualizar(); return; }
   /* otimista: mostra o pacote na hora e confirma com o servidor em segundo plano; se o servidor recusar, tira da lista e avisa */
-  var NAO=(rpCfg().rota==='nao'), item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};   /* (111) o número só aparece na 2ª bipagem (conferência da rota) */
+  var NAO=(rpCfg().rota==='nao'), item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};
+  if(e&&e.a&&e.a[0]&&e.a[1]&&e.a[4]){ item.d={cep:e.a[5]||'',num:e.a[1],comp:e.a[2]||'',rua:e.a[0],bai:e.a[3]||'',cid:e.a[4]}; item.r=e.a[0]+', '+e.a[1]; item.e=1; item.novo=false; }   /* (128) o endereço já veio na lista: aparece NA HORA, sem esperar o servidor */   /* (111) o número só aparece na 2ª bipagem (conferência da rota) */
   BP.meus.push(item); bpMarcaMesa(canon); somBipeOk();
   if(NAO) BP.ult={t:'ok',m:'✔ Registrado'+(e&&e.cl?' — '+esc(e.cl):''),cod:canon};
   else if(!e) BP.ult={t:'novo',m:'Pacote novo, sem dados ainda. Depois você cadastra o endereço.',cod:canon};
@@ -2966,6 +2967,17 @@ document.addEventListener('DOMContentLoaded',function(){
   var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
   retomarSessao();
 });
+</script>
+<script>
+/* (127) BOTÃO VOLTAR DO NAVEGADOR: não deixa o motorista sair do app (ia parar no /painel). Cada "voltar" é desfeito e ele continua na tela em que está (login, se não entrou). */
+(function(){
+  try{
+    history.replaceState({dd:'base'},'',location.href);
+    history.pushState({dd:'app'},'',location.href);
+    window.addEventListener('popstate',function(){ try{ history.pushState({dd:'app'},'',location.href); }catch(e){} });
+    window.addEventListener('pageshow',function(ev){ if(ev.persisted){ try{ history.pushState({dd:'app'},'',location.href); }catch(e){} } });
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

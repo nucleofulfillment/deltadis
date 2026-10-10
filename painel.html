@@ -831,7 +831,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-59-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-60-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1769,6 +1769,35 @@ function bipStatusSync(){
   }).catch(function(){ BIP_ST.rodando=false; });
 }
 setInterval(bipStatusSync,30000); setTimeout(bipStatusSync,6000);
+/* ── (60) TEMPO QUASE REAL: a cada 4 s pergunta ao servidor só "mudou alguma coisa?" (resposta minúscula). Se mudou, busca na hora tudo o que precisa: pacotes da Mesa, bipagens do app, status e entregas. Os relógios lentos acima continuam como garantia. ── */
+var MUD={v:'',rodando:false};
+function pdAtualizarAberto(){
+  try{
+    if(!PD_ABERTO || !el('sh-pedido') || !el('sh-pedido').classList.contains('on')) return;
+    var p=null,i; for(i=0;i<PEDIDOS.length;i++) if(PEDIDOS[i].cod===PD_ABERTO) p=PEDIDOS[i];
+    if(!p) return;
+    var sv=el('pd-st-v'); if(sv) sv.innerHTML=badgeStatus(p.st)+(REAL?' <button class="btn sec" style="padding:3px 10px;font-size:12px;margin-left:8px;min-width:0" onclick="pdStatusEditar(\''+esc(p.cod)+'\')">Alterar</button>':'');
+    pdCarregarHist(p);
+  }catch(e){}
+}
+function mudancasTick(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || MUD.rodando || document.hidden) return;
+  MUD.rodando=true;
+  fetch(DELTADIS_API+'/mesa/mudancas',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    MUD.rodando=false;
+    if(!d || !d.ok || typeof d.v!=='string') return;
+    if(MUD.v===d.v) return;
+    var primeira=(MUD.v===''); MUD.v=d.v;
+    if(primeira) return;
+    try{ mesaAbsorver(); }catch(e1){}
+    try{ mesaEventosAbsorver(); }catch(e2){}
+    try{ bipAbsorver(); }catch(e3){}
+    try{ bipStatusSync(); }catch(e4){}
+    try{ entregasSync(); }catch(e5){}
+    setTimeout(pdAtualizarAberto,1800);
+  }).catch(function(){ MUD.rodando=false; });
+}
+setInterval(mudancasTick,4000);
 
 /* ── (v136) ENTREGA REGISTRADA PELO APP = pedido ENTREGUE. Confere a lista "Entregas do dia" (a mesma do Mapeamento) de hoje e ontem e acerta o status do pedido que ficou "em rota". ── */
 var ENT_SYNC={rodando:false};
@@ -2882,6 +2911,7 @@ function ir(p){
 }
 function abrir(id){el('ovl').classList.add('on'); el(id).classList.add('on');}
 function fecharTudo(){
+  PD_ABERTO='';
   el('ovl').classList.remove('on');
   var s=document.querySelectorAll('.sheet'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');
 }
@@ -3465,7 +3495,9 @@ function pdMotSalvar(cod){
   pdRegistrar(p,'motorista','Motorista alterado de '+(ant?ant.n:'sem motorista')+' para '+(novo?novo.n:'sem motorista')+(voltouBase?' · status voltou para Base':'')+' · manual no painel',true).then(function(){ abrirPedido(cod); });
   abrirPedido(cod); aviso(novo?('Motorista: '+novo.n):'Pedido sem motorista');
 }
+var PD_ABERTO='';
 function abrirPedido(cod){
+  PD_ABERTO=cod;
   var p=null,i; for(i=0;i<PEDIDOS.length;i++) if(PEDIDOS[i].cod===cod) p=PEDIDOS[i];
   if(!p) return;
   var t=transp(p.tr), m=motorista(p.mt);
