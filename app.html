@@ -388,7 +388,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-121-0910</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-122-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -454,6 +454,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="field"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
         <div class="field"><label>Roteirização</label><select class="inp" id="cfg-rota"><option value="sim">Sim</option><option value="nao">Não</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: você bipa e informa o endereço, o app monta a rota e você numera os pacotes. Não: você só bipa os pacotes pra registrar que pegou — sem endereço, sem rota e sem numeração — e depois marca o que entregou.</p></div>
         <div class="field"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
+        <div class="field"><label>Meu veículo (ícone no mapa da base)</label><select class="inp" id="cfg-veic" onchange="trkSetVeic(this.value)"><option value="carro">🚗 Carro</option><option value="moto">🏍️ Moto</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Enquanto a sua rota estiver rodando, a base vê onde você está no mapa. Ao finalizar a rota, o rastreio para. Pra funcionar, deixe o app aberto na tela e permita a localização.</p></div>
         <div class="field"><label>Assinar o romaneio ao montar a rota</label><select class="inp" id="cfg-assina"><option value="nao">Não</option><option value="sim">Sim</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: ao montar a rota o app pergunta se o romaneio está fechado e pede a sua assinatura. Use quando o ponto exige o romaneio assinado.</p></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
@@ -947,6 +948,35 @@ function finalizarRota(){
   EST='finalizado'; SAIDAS=[];
   renderInicio();
 }
+/* ══ (122) RASTREIO AO VIVO — só enquanto a rota está rodando (EST='em_rota'): manda a posição a cada ~20 s pra base ver no mapa; ao finalizar/cancelar manda "fim". Se der qualquer erro, não atrapalha o app. ══ */
+var TRK={ativo:false,busy:false,lat:null,lng:null,t:0,avisou:false};
+function trkVeic(){ try{ return localStorage.getItem('dd_veic')==='moto'?'moto':'carro'; }catch(e){ return 'carro'; } }
+function trkSetVeic(v){ try{ localStorage.setItem('dd_veic',v==='moto'?'moto':'carro'); }catch(e){} TRK.t=0; aviso(v==='moto'?'Veículo: moto':'Veículo: carro'); trkTick(); }
+function trkDist(a,b,c,d){ var R=6371000, r=Math.PI/180, x=(c-a)*r, y=(d-b)*r*Math.cos((a+c)/2*r); return R*Math.sqrt(x*x+y*y); }
+function trkEnviar(corpo){ try{ return rpApi('/motorista/posicao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo)}).catch(function(){}); }catch(e){} }
+function trkTick(){
+  try{
+    var rodando=(EST==='em_rota')&&!!DD_M_TOKEN;
+    if(!rodando){ if(TRK.ativo){ TRK.ativo=false; TRK.lat=null; TRK.t=0; trkEnviar({fim:true}); } return; }
+    if(document.hidden||TRK.busy||!navigator.geolocation) return;
+    TRK.busy=true;
+    navigator.geolocation.getCurrentPosition(function(p){
+      TRK.busy=false;
+      try{
+        var la=p.coords.latitude, lo=p.coords.longitude, agora=Date.now();
+        var andou=(TRK.lat==null)?9999:trkDist(TRK.lat,TRK.lng,la,lo);
+        if(TRK.lat!=null&&andou<25&&(agora-TRK.t)<60000){ TRK.ativo=true; return; }   /* parado: só avisa a cada 60 s */
+        TRK.ativo=true; TRK.lat=la; TRK.lng=lo; TRK.t=agora;
+        trkEnviar({lat:la,lng:lo,acc:p.coords.accuracy,vel:p.coords.speed,rumo:p.coords.heading,veic:trkVeic()});
+      }catch(e){}
+    },function(e){
+      TRK.busy=false;
+      if(e&&e.code===1&&!TRK.avisou){ TRK.avisou=true; aviso('Localização bloqueada: a base não vai ver você no mapa. Libere nas permissões do navegador.'); }
+    },{enableHighAccuracy:true,timeout:15000,maximumAge:10000});
+  }catch(e){ TRK.busy=false; }
+}
+setInterval(trkTick,20000);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) setTimeout(trkTick,600); });
 /* baixa a versão nova do app sem perder a rota nem os bips: limpa só a cópia de cache e recarrega */
 function appAtualizar(){
   aviso('Atualizando o app...');
@@ -2861,7 +2891,7 @@ function pintarConta(){
   mostra('cta-cap',P.cap>0?(P.cap+' pacotes'):''); mostra('cta-valor',P.valorPadrao>0?(moeda(P.valorPadrao)+' por pacote'):'');
   var card=el('cta-regiao')&&el('cta-regiao').parentNode&&el('cta-regiao').parentNode.parentNode;
   if(card){ var alg=P.regiao||veic.trim()||P.cap>0||P.valorPadrao>0; card.style.display=alg?'block':'none'; }
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo; el('cfg-assina').value=cf.assina; el('cfg-rota').value=(cf.rota==='nao'?'nao':'sim');
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo; el('cfg-assina').value=cf.assina; if(el('cfg-veic')) el('cfg-veic').value=trkVeic(); el('cfg-rota').value=(cf.rota==='nao'?'nao':'sim');
   rpPintarIdentidade();
 }
 function salvarSenha(){
