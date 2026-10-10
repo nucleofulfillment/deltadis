@@ -831,7 +831,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-58-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-59-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1664,7 +1664,7 @@ function mesaEventosAbsorver(){
       mid=null; for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(e.mt)){ mid=MOTORISTAS[mk].id; break; } }
       if(e.tipo==='devolucao'){
         var txD='Devolvido à base — '+(mn[e.motivo]||e.motivo)+' · recebido pela Mesa'+(e.mtn?(' (de '+e.mtn+')'):'');
-        if(p){ if(!p.fechId){ p.obs=txD; if(dd.sem_bipagem && p.st!=='entregue'){ p.st='coletado'; } if(p.st==='em rota') p.st='coletado'; mud++; } }
+        if(p){ if(!p.fechId){ p.obs=txD; if(p.st!=='entregue'){ p.st=(dd.paga?'devolvido':'coletado'); } mud++; } }   /* (59) a Mesa recebeu o pacote: volta pra BASE (3ª tentativa paga = devolvido final) */
         else { p={cod:e.cod, tr:e.tr||'anj', mt:mid, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'', scan:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:txD, ent:'', fechId:null}; PEDIDOS.push(p); idx[e.cod]=p; novos++; }
       } else if(e.tipo==='esquecido'){
         var txE='Esquecido na base'+(e.mtn?(' pelo motorista '+e.mtn):'')+' — disponível para outro entregador';
@@ -1760,7 +1760,8 @@ function bipStatusSync(){
       tn=(parseInt(b.tent,10)||0)+1;
       if(b.st==='entregue') ns='entregue';
       else if(b.st==='ausente' || b.st==='nao_localizado') ns='tentativa '+Math.min(3,tn);
-      else if(b.st==='devolvido' || b.st==='devolvido_ok') ns=(tn>=3?'devolvido':'tentativa '+tn);
+      else if(b.st==='devolvido') ns=(tn>=3?'devolvido':'tentativa '+tn);
+      else if(b.st==='devolvido_ok') ns=(tn>=3?'devolvido':'coletado');   /* (59) já recebido pela Mesa: está na Base de novo */
       else continue;
       if(p.st!==ns){ p.st=ns; if(ns==='entregue'&&!p.ent) { var _d=new Date(Number(b.st_t)||Date.now()); p.ent=ymdLocal(_d)+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2); } mud++; }
     }
