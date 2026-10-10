@@ -391,7 +391,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-150-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-151-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2736,15 +2736,15 @@ var TEMPO_COD={0:['☀️','Céu limpo'],1:['🌤️','Poucas nuvens'],2:['⛅',
 function tempoCod(c){ return TEMPO_COD[c]||['🌤️','—']; }
 function iniChipsHtml(){
   var d=TEMPO.d, ic=d?tempoCod(d.current.weather_code)[0]:'🌤️', tx=d?Math.round(d.current.temperature_2m)+'°C':'--°C', now=new Date(), M=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  var st='display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted);background:var(--s3);border:1px solid var(--border);border-radius:12px;padding:7px 11px;white-space:nowrap';
+  var st='display:flex;align-items:center;gap:6px;font-size:14.5px;font-weight:600;color:var(--muted);background:var(--s3);border:1px solid var(--border);border-radius:14px;padding:10px 14px;white-space:nowrap';
   return '<div id="ini-chips" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:2px 0 22px">'+
-    '<button id="chip-tempo" onclick="tempoAbrir()" style="'+st+';cursor:pointer;font-family:inherit"><span style="font-size:15px;line-height:1">'+ic+'</span><span>'+tx+'</span></button>'+
+    '<button id="chip-tempo" onclick="tempoAbrir()" style="'+st+';cursor:pointer;font-family:inherit"><span style="font-size:18px;line-height:1">'+ic+'</span><span>'+tx+'</span></button>'+
     '<div style="'+st+'"><span id="chip-dia">'+now.getDate()+' de '+M[now.getMonth()]+'</span></div>'+
-    '<div style="'+st+'"><span style="width:8px;height:8px;border-radius:50%;background:#22C55E;display:inline-block"></span><span id="chip-hora">'+('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+'</span></div></div>'+
+    '<div style="'+st+'"><span style="width:9px;height:9px;border-radius:50%;background:#22C55E;display:inline-block"></span><span id="chip-hora">'+('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+'</span></div></div>'+
     '<div style="height:6px"></div>';
 }
 function tempoPos(cb){
-  var fb=function(){ var b=RP&&RP.baseLL; cb(b&&b.lat!=null?{lat:b.lat,lng:b.lng}:{lat:-27.5954,lng:-48.548}); };
+  var fb=function(){ var b=RP&&RP.baseLL; cb(b&&b.lat!=null?{lat:b.lat,lng:b.lng}:{lat:-27.5954,lng:-48.548,pad:1}); };
   try{
     if(navigator.geolocation&&navigator.permissions&&navigator.permissions.query){
       navigator.permissions.query({name:'geolocation'}).then(function(r){
@@ -2754,11 +2754,13 @@ function tempoPos(cb){
   }catch(e){ fb(); }
 }
 function tempoCarregar(cb){
-  if(TEMPO.busy) return; if(TEMPO.d&&Date.now()-TEMPO.t<900000){ if(cb) cb(); return; }
+  if(TEMPO.busy){ if(cb) setTimeout(function(){ tempoCarregar(cb); },500); return; } if(TEMPO.d&&Date.now()-TEMPO.t<900000){ if(cb) cb(); return; }
   TEMPO.busy=true;
   tempoPos(function(p){
+    TEMPO.loc=p.pad?'Florianópolis - SC':(TEMPO.loc||'');
+    if(!p.pad) fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+p.lat+'&longitude='+p.lng+'&localityLanguage=pt').then(function(r){ return r.json(); }).then(function(g){ var c=g&&(g.city||g.locality), u=g&&g.principalSubdivisionCode?String(g.principalSubdivisionCode).replace('BR-',''):''; if(c){ TEMPO.loc=c+(u?' - '+u:''); if(el('tempo-loc')) el('tempo-loc').textContent=TEMPO.loc; } }).catch(function(){});
     fetch('https://api.open-meteo.com/v1/forecast?latitude='+p.lat+'&longitude='+p.lng+'&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FSao_Paulo&forecast_days=4')
-    .then(function(r){ return r.json(); }).then(function(d){ TEMPO.busy=false; if(d&&d.current){ TEMPO.d=d; TEMPO.t=Date.now(); var c=el('chip-tempo'); if(c) c.innerHTML='<span style="font-size:15px;line-height:1">'+tempoCod(d.current.weather_code)[0]+'</span><span>'+Math.round(d.current.temperature_2m)+'°C</span>'; } if(cb) cb(); }).catch(function(){ TEMPO.busy=false; if(cb) cb(); });
+    .then(function(r){ return r.json(); }).then(function(d){ TEMPO.busy=false; if(d&&d.current){ TEMPO.d=d; TEMPO.t=Date.now(); var c=el('chip-tempo'); if(c) c.innerHTML='<span style="font-size:18px;line-height:1">'+tempoCod(d.current.weather_code)[0]+'</span><span>'+Math.round(d.current.temperature_2m)+'°C</span>'; } if(cb) cb(); }).catch(function(){ TEMPO.busy=false; if(cb) cb(); });
   });
 }
 function tempoAbrir(){
@@ -2770,7 +2772,7 @@ function tempoAbrir(){
 function tempoPintar(){
   var c=el('sh-pago-corpo'), d=TEMPO.d; if(!c) return;
   if(!d){ c.innerHTML='<p style="color:var(--muted)">Não consegui buscar a previsão agora. Confira a internet.</p>'; return; }
-  var cu=d.current, cd=tempoCod(cu.weather_code), h='<div style="text-align:center;margin-bottom:12px"><div style="font-size:46px;line-height:1">'+cd[0]+'</div><div style="font-size:34px;font-weight:800;color:var(--roxo-esc)">'+Math.round(cu.temperature_2m)+'°C</div><div style="color:var(--muted);font-size:14px">'+cd[1]+' · sensação '+Math.round(cu.apparent_temperature)+'°C</div><div style="color:var(--muted);font-size:12.5px;margin-top:4px">Umidade '+Math.round(cu.relative_humidity_2m)+'% · Vento '+Math.round(cu.wind_speed_10m)+' km/h</div></div>';
+  var cu=d.current, cd=tempoCod(cu.weather_code), h='<div id="tempo-loc" style="text-align:center;color:var(--muted);font-size:14px;font-weight:600;margin:-4px 0 12px">'+esc(TEMPO.loc||'')+'</div><div style="text-align:center;margin-bottom:12px"><div style="font-size:46px;line-height:1">'+cd[0]+'</div><div style="font-size:34px;font-weight:800;color:var(--roxo-esc)">'+Math.round(cu.temperature_2m)+'°C</div><div style="color:var(--muted);font-size:14px">'+cd[1]+' · sensação '+Math.round(cu.apparent_temperature)+'°C</div><div style="color:var(--muted);font-size:12.5px;margin-top:4px">Umidade '+Math.round(cu.relative_humidity_2m)+'% · Vento '+Math.round(cu.wind_speed_10m)+' km/h</div></div>';
   var hr=d.hourly, i, n=0, nowT=Date.now()-3600000, lin='';
   for(i=0;i<hr.time.length&&n<8;i++){ if(new Date(hr.time[i]).getTime()<nowT) continue; n++; lin+='<div style="min-width:58px;text-align:center;font-size:12px"><div style="color:var(--muted)">'+hr.time[i].slice(11,13)+'h</div><div style="font-size:18px">'+tempoCod(hr.weather_code[i])[0]+'</div><b>'+Math.round(hr.temperature_2m[i])+'°</b><div style="color:#2563EB;font-size:11px">'+(hr.precipitation_probability[i]||0)+'%</div></div>'; }
   h+='<div style="font-weight:800;font-size:13px;margin:6px 0">Próximas horas</div><div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">'+lin+'</div>';
