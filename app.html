@@ -388,7 +388,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-128-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-129-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -523,6 +523,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet" id="sh-remarcar">
   <div class="sh-hd"><h3>Remarcar entrega</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd" id="sh-remarcar-corpo"></div>
+</div>
+
+<!-- ══ MODAL: motivo da devolução à base ══ -->
+<div class="sheet" id="sh-devmot">
+  <div class="sh-hd"><h3>Devolver à base</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd" id="sh-devmot-corpo"></div>
 </div>
 
 <!-- ══ MODAL: cadastrar/corrigir endereço ══ -->
@@ -1076,9 +1082,9 @@ function rpAvisarEntrega(p){
   rpSalvaFilaEnt(f); rpDescarregarEnt();
 }
 /* (v70) ausente / devolvido à base também vão pro servidor (o ponto confere na devolução) */
-function rpAvisarStatus(p,status){
+function rpAvisarStatus(p,status,motivo){
   if(!p || !p.cod || !RP.mt) return;
-  var f=rpFilaEnt(); f.push({cod:p.cod,scan:p.scan||'',status:status,mt:String(RP.mt),mtn:RP.mtn||'',t:Date.now()});
+  var f=rpFilaEnt(), it={cod:p.cod,scan:p.scan||'',status:status,mt:String(RP.mt),mtn:RP.mtn||'',t:Date.now()}; if(motivo) it.motivo=motivo; f.push(it);
   rpSalvaFilaEnt(f); rpDescarregarEnt();
 }
 function rpDescarregarEnt(){
@@ -1103,13 +1109,26 @@ function rpAcoesSem(tipo,i,cod){
   var c=String(cod).replace(/[^A-Za-z0-9_-]/g,''), k=tipo+i+c, cf=(RP.conf===k);
   return '<div class="rp-acoes"><button onclick="abrirEndereco(\''+tipo+'\','+i+')">✏️ Endereço</button>'+
     '<button onclick="rpSaida(\''+tipo+'\','+i+',\'remarcada\')">🔁 Amanhã</button>'+
-    '<button class="perigo'+(cf?' conf':'')+'" onclick="'+(cf?'rpSaida(\''+tipo+'\','+i+',\'devolvido\')':'RP.conf=\''+k+'\';renderInicio()')+'">'+(cf?'Confirmar devolução':'↩ Devolver à base')+'</button></div>';
+    '<button class="perigo" onclick="rpDevPedir(\''+tipo+'\','+i+')">↩ Devolver à base</button></div>';
 }
-function rpSaida(tipo,i,status){
+/* (129) devolver à base sempre pergunta o motivo (Ausente / Não localizado) e confirma */
+var DEVMOT={fn:null,m:null};
+function devMotAbrir(fn){
+  DEVMOT.fn=fn; DEVMOT.m=null;
+  el('sh-devmot-corpo').innerHTML='<p style="margin:0 0 8px;color:var(--muted);font-size:12.5px">Qual o motivo?</p><div style="display:flex;gap:8px;margin-bottom:14px"><button class="btn sec wide" id="dm-ausente" onclick="devMotEscolher(\'ausente\')">Ausente</button><button class="btn sec wide" id="dm-nao_localizado" onclick="devMotEscolher(\'nao_localizado\')">Não localizado</button></div><button class="btn pri wide" onclick="devMotOk()">Confirmar devolução</button>';
+  abrir('sh-devmot');
+}
+function devMotEscolher(m){ DEVMOT.m=m; var a=el('dm-ausente'), n=el('dm-nao_localizado'); if(a){ a.classList.toggle('pri',m==='ausente'); a.classList.toggle('sec',m!=='ausente'); } if(n){ n.classList.toggle('pri',m==='nao_localizado'); n.classList.toggle('sec',m!=='nao_localizado'); } }
+function devMotOk(){
+  if(!DEVMOT.m){ aviso('Escolha o motivo: Ausente ou Não localizado'); return; }
+  var fn=DEVMOT.fn, m=DEVMOT.m; DEVMOT.fn=null; fecharTudo(); if(fn) fn(m);
+}
+function rpDevPedir(tipo,i){ devMotAbrir(function(m){ rpSaida(tipo,i,'devolvido',m); }); }
+function rpSaida(tipo,i,status,motivo){
   RP.conf=null; var p=(tipo==='extra')?RP.extra[i]:LOTE_ATUAL[i]; if(!p) return;
   var cod=p.cod, painel=(tipo==='extra')||p.origem==='painel';
   SAIDAS.push({cod:cod,cliente:p.cliente||'',status:status,hora:horaAgora()});
-  if(painel && status==='devolvido') rpAvisarStatus(p,'devolvido');
+  if(painel && status==='devolvido') rpAvisarStatus(p,'devolvido',motivo);
   if(painel){ rpMarcarFeitos([cod]); RP.total=Math.max(0,(RP.total||0)-1); if(status==='remarcada') rpRegistrarRemarcado(cod); }
   aviso(status==='remarcada'?'Remarcada: entra no próximo lote':'Devolvida à base: registre também no app da transportadora');
   if(tipo==='extra'){ RP.fora[cod]=true; RP.extra.splice(i,1); RP.semLoc=Math.max(0,RP.semLoc-1); RP.semNomes=RP.extra.map(function(e){ return e.cliente||e.cod; }); renderInicio(); return; }
@@ -1226,7 +1245,7 @@ function abrirRemarcar(){
   el('sh-remarcar-corpo').innerHTML=h;
   abrir('sh-remarcar');
 }
-function devolverDaRemarcar(){ fecharTudo(); rpSaida('lote',PONTEIRO,'devolvido'); }
+function devolverDaRemarcar(){ fecharTudo(); rpDevPedir('lote',PONTEIRO); }
 function escolherJanela(i){
   REMARCAR_ESCOLHA=REMARCAR_JANELAS[i]; REMARCAR_IDX=i;
   for(var k=0;k<REMARCAR_JANELAS.length;k++){var b=el('jn-'+k); if(b) b.classList.toggle('pri', k===i); if(b) b.classList.toggle('sec', k!==i);}
@@ -1833,14 +1852,14 @@ function entTela(){
   h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button><button class="btn sec" style="flex:1" onclick="EST=\'rp_bip\';BP.ult=null;renderInicio();bpCarregar(true)">+ Bipar mais</button></div></div>';
   return h;
 }
-function entAplicar(status){
+function entAplicar(status,motivo){
   var L=entLista().filter(function(m){ return ENT.sel[m.cod]; });
   if(!L.length){ aviso('Marque ao menos um pacote'); return; }
-  if(status==='devolvido'&&!confirm('Devolver '+L.length+' pacote'+(L.length===1?'':'s')+' à base?')) return;
+  if(status==='devolvido'&&!motivo){ devMotAbrir(function(m){ entAplicar('devolvido',m); }); return; }
   var f=rpFilaEnt(), t=Date.now();
   L.forEach(function(m){
     if(status==='entregue') f.push({cod:m.cod,scan:'',mt:String(RP.mt),mtn:RP.mtn||'',cli:m.cl||'',lat:null,lng:null,t:t});
-    else f.push({cod:m.cod,scan:'',status:'devolvido',mt:String(RP.mt),mtn:RP.mtn||'',t:t});
+    else f.push({cod:m.cod,scan:'',status:'devolvido',motivo:motivo||'',mt:String(RP.mt),mtn:RP.mtn||'',t:t});
     ENT.done[m.cod]=status;
   });
   rpSalvaFilaEnt(f); rpDescarregarEnt(); ENT.sel={};
