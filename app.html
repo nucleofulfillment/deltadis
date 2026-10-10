@@ -388,7 +388,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-131-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-133-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1086,6 +1086,16 @@ function pularLista(){
 function pularPara(i){
   if(i<=PONTEIRO||i>=LOTE_ATUAL.length) return;
   var x=LOTE_ATUAL.splice(i,1)[0]; LOTE_ATUAL.splice(PONTEIRO,0,x); RP.reord=true;
+  /* (133) depois de pular, a PRÓXIMA parada é a mais perto da parada escolhida (o resto da ordem não muda) */
+  try{
+    if(x.lat!=null && x.lng!=null){
+      var rad=Math.PI/180, bi=-1, bd=1e18, j, o, dl, dg, a, dd;
+      for(j=PONTEIRO+1;j<LOTE_ATUAL.length;j++){ o=LOTE_ATUAL[j]; if(o.lat==null||o.lng==null||o.semLocal) continue;
+        dl=(o.lat-x.lat)*rad; dg=(o.lng-x.lng)*rad; a=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(x.lat*rad)*Math.cos(o.lat*rad)*Math.sin(dg/2)*Math.sin(dg/2); dd=6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+        if(dd<bd){ bd=dd; bi=j; } }
+      if(bi>PONTEIRO+1){ var nx=LOTE_ATUAL.splice(bi,1)[0]; LOTE_ATUAL.splice(PONTEIRO+1,0,nx); }
+    }
+  }catch(eP){}
   for(var q=0;q<LOTE_ATUAL.length;q++) LOTE_ATUAL[q].seq=q+1;
   fecharTudo(); aviso('Parada '+(PONTEIRO+1)+' agora é a atual'); renderInicio();
 }
@@ -1800,6 +1810,8 @@ function rlBase(i){
 }
 function rlConcluir(){
   var f=rlFalta();
+  /* (132) nenhum pacote conferido: NÃO deixa concluir (antes marcava todos como não localizados e jogava a rota fora) */
+  if(LOTE_ATUAL.length && f>=LOTE_ATUAL.length){ alert('Você ainda não bipou nenhum pacote.\n\nAntes de abrir o mapa, bipe cada pacote e escreva nele o número (posição) que aparece na tela.'); return; }
   var _fl=[]; LOTE_ATUAL.forEach(function(q){ if(!rlConferido(q)) _fl.push('nº '+q.seq+' …'+String(q.cod).slice(-6)); });
   if(f>0&&!confirm('Faltam '+f+' pacote'+(f===1?'':'s')+' sem bipar:\n'+_fl.slice(0,8).join('\n')+'\n\nEles serão marcados como NÃO LOCALIZADOS e saem da sua rota. Concluir?')) return;
   bpFecharCamera(); BP.camFn=null;
