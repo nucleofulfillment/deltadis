@@ -831,7 +831,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-53-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-54-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1465,7 +1465,7 @@ function salvarLocal(cb){
   var o; try{ sincStatusFech(); }catch(eSf){}
   if(REAL){
     var pc=packPed();
-    o={real:true, v:2, cli:cliAtual(), pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
+    o={real:true, v:2, cli:cliAtual(), pc:pc, motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, transps:packTransp(), areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
   } else o={real:false, precos:PRECOS};
   try{ localStorage.setItem(LS_KEY, JSON.stringify({real:false, precos:PRECOS, idb:true})); }catch(e){}
   idbGravar(o,function(ok){ if(cb) cb(ok); });
@@ -1475,6 +1475,7 @@ function salvarLocal(cb){
 function aplicarSalvo(d){
   if(!d) return;
   if(d.precos) PRECOS=d.precos;
+  if(d.transps) aplicarTransps(d.transps);
   if(d.areas) AREAS=d.areas;
   if(d.grupos) GRUPOS=d.grupos;
   if(d.rast){ RASTREADOS={}; d.rast.forEach(function(c){ RASTREADOS[c]=1; }); }
@@ -1512,12 +1513,20 @@ var LOCAL_OK=false, LOCAL_CBS=[], LOCAL_CLI=null;
 function cliAtual(){ return (DD_USER&&DD_USER.cliente_id)||null; }
 function srvH(t){ var h=0,k; for(k=0;k<t.length;k++){ h=(Math.imul(h,31)+t.charCodeAt(k))|0; } return h+':'+t.length; }
 function srvChunks(arr,max){ var out=[],cur=[],n=0,i,t; for(i=0;i<arr.length;i++){ t=JSON.stringify(arr[i]); if(cur.length&&n+t.length>max){ out.push('['+cur.join(',')+']'); cur=[]; n=0; } cur.push(t); n+=t.length+1; } if(cur.length||!out.length) out.push('['+cur.join(',')+']'); return out; }
+function packTransp(){ return TRANSPORTADORAS.map(function(t){ return {id:t.id,n:t.n,ini:t.ini,cor:t.cor,dominio:t.dominio||null,sla:t.sla||0,logo:t.logo||'',dataPagamento:t.dataPagamento||'',cicloIni:t.cicloIni||'',cicloFim:t.cicloFim||''}; }); }
+function aplicarTransps(lista){
+  if(!lista||!lista.length) return;
+  var nova=[], i, k;
+  for(i=0;i<lista.length;i++){ var sv=lista[i], t=transp(sv.id)||{hoje:0,ent:0}; for(k in sv) t[k]=sv[k]; if(!t.dominio) t.dominio=null; nova.push(t); }
+  TRANSPORTADORAS.length=0; for(i=0;i<nova.length;i++) TRANSPORTADORAS.push(nova[i]);
+}
 function srvBlocos(){
   var est={}, ped={}, g={}, pc=packPed(), i, k, mots;
   function arr(dest,nome,a){ var c=srvChunks(a,700000),j; for(j=0;j<c.length;j++) dest[nome+(j?'~'+j:'')]={t:c[j],h:srvH(c[j])}; }
   mots=MOTORISTAS.map(function(m){ if(m&&typeof m.foto==='string'&&m.foto.length>900000){ var c={},q; for(q in m) c[q]=m[q]; c.foto=null; return c; } return m; });
   arr(est,'motoristas',mots); arr(est,'extrato',EXTRATO); arr(est,'areas',AREAS); arr(est,'grupos',GRUPOS); arr(est,'ciclos',CICLOS); arr(est,'rast',Object.keys(RASTREADOS));
   var tp=JSON.stringify(PRECOS); est.precos={t:tp,h:srvH(tp)};
+  var tq=JSON.stringify(packTransp()); est.transps={t:tq,h:srvH(tq)};   /* (54) transportadoras (nome, logo, site) ficam salvas */
   for(i=0;i<pc.length;i++){ k=String(pc[i][4]||'_').replace(/[^0-9A-Za-z_-]/g,'_').slice(0,40); (g[k]=g[k]||[]).push(pc[i]); }
   for(k in g) arr(ped,k,g[k]);
   return {est:est,ped:ped};
@@ -1608,7 +1617,7 @@ function srvCarregar(){
     Object.keys(bases).sort().forEach(function(b){ pc=pc.concat(srvJuntar(d.ped,b)); });
     var e=d.est, prec=(e.precos&&e.precos.d)||null;
     srvLimparMemoria();
-    aplicarSalvo({real:true,v:2,pc:pc,motoristas:srvJuntar(e,'motoristas'),extrato:srvJuntar(e,'extrato'),precos:prec,areas:srvJuntar(e,'areas'),grupos:srvJuntar(e,'grupos'),ciclos:srvJuntar(e,'ciclos'),rast:srvJuntar(e,'rast')});
+    aplicarSalvo({real:true,v:2,pc:pc,motoristas:srvJuntar(e,'motoristas'),extrato:srvJuntar(e,'extrato'),precos:prec,transps:(e.transps&&e.transps.d)||null,areas:srvJuntar(e,'areas'),grupos:srvJuntar(e,'grupos'),ciclos:srvJuntar(e,'ciclos'),rast:srvJuntar(e,'rast')});
     LOCAL_CLI=cli; SRV.pronto=true; srvPend(false);
     salvarLocal(); repintarTudo(); srvStatus('☁ salvo');
   }).catch(function(){
@@ -1812,7 +1821,7 @@ function srvMigrar(){
 }
 function baixarBackup(){
   try{
-    var o={real:true, v:2, cli:cliAtual(), pc:packPed(), motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
+    var o={real:true, v:2, cli:cliAtual(), pc:packPed(), motoristas:MOTORISTAS, extrato:EXTRATO, precos:PRECOS, transps:packTransp(), areas:AREAS, grupos:GRUPOS, ciclos:CICLOS, rast:Object.keys(RASTREADOS)};
     var blob=new Blob([JSON.stringify(o)],{type:'application/json'}), a=document.createElement('a'), d=new Date();
     a.href=URL.createObjectURL(blob); a.download='deltadis-backup-'+d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)+'.json';
     document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1500);
@@ -2599,6 +2608,7 @@ function motorista(id){for(var i=0;i<MOTORISTAS.length;i++) if(MOTORISTAS[i].id=
 /* favicon real quando o domínio já foi confirmado; senão null (cai pras iniciais) */
 function favicon(dom){return dom ? ('https://www.google.com/s2/favicons?domain='+dom+'&sz=64') : null;}
 function iconeTransp(t){
+  if(t.logo) return '<img src="'+t.logo+'" alt="">';   /* (54) logo enviada pelo usuário vale mais que o favicon */
   var fv=favicon(t.dominio||dominioPorNome(t.n));
   if(fv) return '<img src="'+fv+'" alt="" onerror="this.parentNode.textContent=\''+t.ini+'\';this.parentNode.style.background=\''+t.cor+'\';">';
   return t.ini;
@@ -3093,7 +3103,7 @@ function pintarIndicadores(){
   var h='',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i];
     h+='<div class="ind" onclick="filtrarPorTransportadora(\''+t.id+'\')" title="'+(PAG==='dashboard'?'Filtrar o Dashboard por ':'Filtrar pedidos de ')+esc(t.n)+'"'+((PAG==='dashboard'&&DASH_TR===t.id)?' style="border-color:#6D28D9;box-shadow:0 0 0 2px rgba(109,40,217,.25)"':'')+'>'+
-       '<span class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeTransp(t)+'</span>'+
+       '<span class="ic" style="background:'+((t.dominio||t.logo)?'#fff':t.cor)+'">'+iconeTransp(t)+'</span>'+
        '<div class="gr"><div class="in-row"><span class="in-name">'+esc(t.n)+'</span><span class="in-sla">'+(REAL?(t.hoje?Math.round((t.ent||0)/t.hoje*100)+'% entregue':'sem dados'):'SLA '+t.sla+'%')+'</span></div><div class="iv">'+t.hoje+'</div></div></div>';}
   el('indbar').innerHTML=h;
   ajustarAlturaIndbar();
@@ -3625,7 +3635,7 @@ function pintarGradeTranspUpload(){
   var h='',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i];
     h+='<div class="transp-opt'+(UP_TRANSP===t.id?' sel':'')+'" onclick="selecionarTranspUpload(\''+t.id+'\')">'+
-       '<span class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeTransp(t)+'</span>'+
+       '<span class="ic" style="background:'+((t.dominio||t.logo)?'#fff':t.cor)+'">'+iconeTransp(t)+'</span>'+
        '<span>'+esc(t.n)+'</span></div>';}
   el('up-transp-grid').innerHTML=h;
 }
@@ -3782,24 +3792,42 @@ var PR_GRID='display:grid;grid-template-columns:1.2fr 0.8fr 1fr 0.55fr 0.55fr 0.
 function abrirPrecos(){
   var h='<div style="'+PR_GRID+'font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px"><span>Transportadora</span><span>Recebe (R$)</span><span>Pagamento</span><span>Ciclo de</span><span>até</span><span></span></div>',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i], pr=PRECOS[t.id]||{};
-    h+=linhaPrecoTransp(t.id, t.n, pr.recebe, t.dataPagamento, t.cicloIni, t.cicloFim);}
+    h+=linhaPrecoTransp(t.id, t.n, pr.recebe, t.dataPagamento, t.cicloIni, t.cicloFim, t.dominio, t.logo);}
   h+='<button class="btn sec wide" type="button" style="margin:4px 0 10px" onclick="adicionarLinhaTransp()">+ Adicionar transportadora</button>';
   el('pr-linhas').innerHTML=h;
   abrir('sh-precos');
 }
-function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim){
+function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim,dominio,logo){
   return '<div class="pr-linha" style="'+PR_GRID+'margin-bottom:8px" data-id="'+(id||'')+'">'+
     '<input class="inp" placeholder="Nome" value="'+esc(nome||'')+'">'+
     '<input class="inp" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(recebe)+'">'+
     '<input class="inp" placeholder="ex: toda sexta" value="'+esc(dataPg||'')+'">'+
     '<input class="inp" placeholder="dia" value="'+esc(cicloIni||'')+'">'+
     '<input class="inp" placeholder="dia" value="'+esc(cicloFim||'')+'">'+
-    '<span class="vertodos" style="white-space:nowrap" onclick="'+(id?('removerTransportadora(\''+id+'\')'):'this.closest(\'.pr-linha\').remove()')+'">remover</span></div>';
+    '<span class="vertodos" style="white-space:nowrap" onclick="'+(id?('removerTransportadora(\''+id+'\')'):'this.closest(\'.pr-linha\').remove()')+'">remover</span>'+
+    '<div style="grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:-2px"><input class="inp" style="flex:1;min-width:200px" placeholder="Site pra puxar o ícone (ex: jtexpress.com.br)" value="'+esc(dominio||'')+'">'+
+    '<label class="btn sec" style="padding:7px 12px;font-size:12px;cursor:pointer;margin:0">📷 Enviar logo<input type="file" accept="image/*" style="display:none" onchange="trLogoEscolhida(this)"></label>'+
+    '<img class="pr-logo" alt="" src="'+(logo||'')+'" style="width:34px;height:34px;object-fit:contain;border:1px solid var(--bd,#E3D9F2);border-radius:8px;background:#fff;'+(logo?'':'display:none')+'">'+
+    '<span class="vertodos" style="font-size:11.5px;'+(logo?'':'display:none')+'" onclick="trLogoLimpar(this)">tirar logo</span></div></div>';
 }
+/* (54) logo da transportadora: a imagem é reduzida pra 96x96 e guardada junto do cadastro */
+function trLogoEscolhida(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var row=inp.closest('.pr-linha'), rd=new FileReader();
+  rd.onload=function(){ var im=new Image(); im.onload=function(){
+    try{
+      var c=document.createElement('canvas'); c.width=96; c.height=96; var x=c.getContext('2d'), e=Math.min(96/im.width,96/im.height), w=im.width*e, h=im.height*e;
+      x.drawImage(im,(96-w)/2,(96-h)/2,w,h);
+      var pv=row.querySelector('.pr-logo'); pv.src=c.toDataURL('image/png'); pv.style.display=''; var lk=row.querySelector('[onclick^="trLogoLimpar"]'); if(lk) lk.style.display='';
+    }catch(e2){ aviso('Não consegui ler essa imagem.'); }
+  }; im.onerror=function(){ aviso('Esse arquivo não é uma imagem válida.'); }; im.src=rd.result; };
+  rd.readAsDataURL(f); inp.value='';
+}
+function trLogoLimpar(sp){ var row=sp.closest('.pr-linha'), pv=row.querySelector('.pr-logo'); pv.removeAttribute('src'); pv.style.display='none'; sp.style.display='none'; }
 function adicionarLinhaTransp(){
   var btn=el('pr-linhas').querySelector('button');
   var div=document.createElement('div');
-  div.innerHTML=linhaPrecoTransp('','','','','','');
+  div.innerHTML=linhaPrecoTransp('','','','','','','','');
   el('pr-linhas').insertBefore(div.firstChild, btn);
 }
 /* gera um id curto e único a partir do nome digitado, pra transportadora nova */
@@ -3829,6 +3857,8 @@ function salvarPrecos(){
     var t=id?transp(id):null;
     if(!t){ id=slugTransp(nome); t={id:id, n:nome, ini:nome.slice(0,2).toUpperCase(), cor:cores[TRANSPORTADORAS.length % cores.length], hoje:0, dominio:null, sla:0}; TRANSPORTADORAS.push(t); }
     t.n=nome; t.dataPagamento=dataPg; t.cicloIni=cicloIni; t.cicloFim=cicloFim;
+    var dom=(inputs[5]?inputs[5].value:'').trim().replace(/^https?:\/\//i,'').replace(/^www\./i,'').split('/')[0].toLowerCase(); t.dominio=dom||null;   /* (54) site → favicon */
+    var lgi=row.querySelector('.pr-logo'); t.logo=(lgi&&lgi.getAttribute('src'))||'';
     PRECOS[id]={recebe:recebe};
   }
   salvarLocal(); fecharTudo(); pintarFinanceiro(); pintarMotoristas(); pintarIndicadores(); pintarDashboard(); pintarPedidos();
@@ -4801,7 +4831,7 @@ function mpMarcador(e,animar,atraso,novo){
   var t=pd?TRANSPORTADORAS.filter(function(x){return x.id===pd.tr;})[0]:null;
   var fora=document.createElement('div'), d=document.createElement('div'); fora.appendChild(d); d.className='mp-mk'+(animar?' pop':'')+(novo?' novo':'');   /* o de fora é posicionado pelo mapa; o de dentro é o que anima */
   if(atraso) d.style.animationDelay=atraso+'ms';
-  var fv=t?favicon(t.dominio||dominioPorNome(t.n)):null;
+  var fv=t?(t.logo||favicon(t.dominio||dominioPorNome(t.n))):null;
   if(fv){ var im=document.createElement('img'); im.src=fv; im.alt=''; im.onerror=function(){ d.removeChild(im); d.textContent=t.ini; d.style.background=t.cor; }; d.appendChild(im); }
   else if(t){ d.textContent=t.ini; d.style.background=t.cor; }
   else { d.textContent='✓'; d.style.color='#16A34A'; d.style.fontSize='12px'; }
