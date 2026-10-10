@@ -831,7 +831,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-60-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-61-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1794,7 +1794,8 @@ function mudancasTick(){
     try{ bipAbsorver(); }catch(e3){}
     try{ bipStatusSync(); }catch(e4){}
     try{ entregasSync(); }catch(e5){}
-    setTimeout(pdAtualizarAberto,1800);
+    setTimeout(function(){ try{ mesaEventosAbsorver(); }catch(a){} try{ bipStatusSync(); }catch(b){} try{ entregasSync(); }catch(c){} },2500);   /* (61) segunda passada: se alguma busca ainda estava rodando e foi pulada, repete */
+    setTimeout(pdAtualizarAberto,1800); setTimeout(pdAtualizarAberto,4500);
   }).catch(function(){ MUD.rodando=false; });
 }
 setInterval(mudancasTick,4000);
