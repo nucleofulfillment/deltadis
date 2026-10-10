@@ -167,6 +167,7 @@ html.dd-ret #splash{display:flex}
 .canal-tag{font-size:10px;font-weight:800;padding:3px 10px;border-radius:99px;white-space:nowrap;flex:none}
 
 /* meta do dia + progresso da rota */
+.cfg-ih{display:flex;justify-content:flex-end;margin:4px 0 0}.cfg-ih button{width:20px;height:20px;border-radius:50%;border:1px solid var(--border);background:transparent;color:#9A8FB0;font:italic 700 12px/1 Georgia,serif;padding:0;cursor:pointer}.cfg-it{display:none;margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.45;background:var(--s3);border-radius:10px;padding:8px 10px}.cfg-it.on{display:block}
 .meta-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--sh1)}
 .full-bleed{margin:-16px -16px 14px;border-radius:0 0 18px 18px}
 .info-full{margin:0 -16px;padding:16px 16px 22px;background:linear-gradient(180deg, rgba(243,236,251,0) 0%, rgba(243,236,251,0) 26%, #F3ECFB 48%, #F3ECFB 100%)}
@@ -390,7 +391,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-148-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-150-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -453,14 +454,14 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="card" style="margin-bottom:14px">
         <h4 style="margin:0 0 8px">Minhas rotas</h4>
         <input type="hidden" id="cfg-base">
-        <div class="field"><label>Meus pontos de coleta</label><div id="cfg-pontos"><div class="empty" style="padding:6px 0">Carregando…</div></div><p style="margin:6px 0 0;font-size:12px;color:var(--muted)">O ponto de saída você escolhe sempre que começa uma rota. Aqui só cadastra ou remove pontos.</p></div>
+        <div class="field"><label>Meus pontos de coleta</label><div id="cfg-pontos"><div class="empty" style="padding:6px 0">Carregando…</div></div><div class="cfg-ih"><button type="button" onclick="cfgInfo(this)" aria-label="Explicação">i</button></div><p class="cfg-it">O ponto de saída você escolhe sempre que começa uma rota. Aqui só cadastra ou remove pontos.</p></div>
         <div class="field" id="cfg-max-box" style="display:none"><label>Máximo de paradas por rota (só teste)</label><input class="inp" id="cfg-max" type="number" min="0" max="500" step="1"></div>
-        <div class="field" id="cfg-f-volta"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
-        <div class="field" id="cfg-f-rota"><label>Roteirização</label><select class="inp" id="cfg-rota"><option value="sim">Sim</option><option value="nao">Não</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: você bipa e informa o endereço, o app monta a rota e você numera os pacotes. Não: você só bipa os pacotes pra registrar que pegou — sem endereço, sem rota e sem numeração — e depois marca o que entregou.</p></div>
-        <div class="field" id="cfg-f-modelo"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
-        <div class="field"><label>Meu veículo (ícone no mapa da base)</label><select class="inp" id="cfg-veic" onchange="trkSetVeic(this.value)"><option value="carro">🚗 Carro</option><option value="moto">🏍️ Moto</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Enquanto a sua rota estiver rodando, a base vê onde você está no mapa. Ao finalizar a rota, o rastreio para. Pra funcionar, deixe o app aberto na tela e permita a localização.</p></div>
-        <div class="field" style="display:none"><label>Assinar o romaneio ao montar a rota</label><select class="inp" id="cfg-assina"><option value="nao">Não</option><option value="sim">Sim</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: ao montar a rota o app pergunta se o romaneio está fechado e pede a sua assinatura. Use quando o ponto exige o romaneio assinado.</p></div>
-        <div class="field" id="cfg-f-pm"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
+        <div class="field" id="cfg-f-volta"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select><div class="cfg-ih"><button type="button" onclick="cfgInfo(this)" aria-label="Explicação">i</button></div><p class="cfg-it">Não volto: a rota termina na última entrega. Volto: a rota inclui o retorno ao ponto de saída.</p></div>
+        <div class="field" id="cfg-f-rota"><label>Roteirização</label><select class="inp" id="cfg-rota"><option value="sim">Sim</option><option value="nao">Não</option></select><div class="cfg-ih"><button type="button" onclick="cfgInfo(this)" aria-label="Explicação">i</button></div><p class="cfg-it">Sim: você bipa e informa o endereço, o app monta a rota e você numera os pacotes. Não: você só bipa os pacotes pra registrar que pegou — sem endereço, sem rota e sem numeração — e depois marca o que entregou.</p></div>
+        <div class="field" id="cfg-f-modelo"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><div class="cfg-ih"><button type="button" onclick="cfgInfo(this)" aria-label="Explicação">i</button></div><p class="cfg-it">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
+        <div class="field"><label>Meu veículo (ícone no mapa da base)</label><select class="inp" id="cfg-veic" onchange="trkSetVeic(this.value)"><option value="carro">🚗 Carro</option><option value="moto">🏍️ Moto</option></select><div class="cfg-ih"><button type="button" onclick="cfgInfo(this)" aria-label="Explicação">i</button></div><p class="cfg-it">Enquanto a sua rota estiver rodando, a base vê onde você está no mapa. Ao finalizar a rota, o rastreio para. Pra funcionar, deixe o app aberto na tela e permita a localização.</p></div>
+        <div class="field" style="display:none"><label>Assinar o romaneio ao montar a rota</label><select class="inp" id="cfg-assina"><option value="nao">Não</option><option value="sim">Sim</option></select><div class="cfg-ih"><button type="button" onclick="cfgInfo(this)" aria-label="Explicação">i</button></div><p class="cfg-it">Sim: ao montar a rota o app pergunta se o romaneio está fechado e pede a sua assinatura. Use quando o ponto exige o romaneio assinado.</p></div>
+        <div class="field" id="cfg-f-pm"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"><div class="cfg-ih"><button type="button" onclick="cfgInfo(this)" aria-label="Explicação">i</button></div><p class="cfg-it">Tempo médio que você gasta em cada entrega. O app usa para estimar o tempo total da rota.</p></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p id="cfg-f-nota" style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
       </div>
@@ -1539,7 +1540,7 @@ function rpCardPronta(){
   if(BIP_ROTA){
     return '<div class="card" onclick="bpAbrir()" style="margin:0 0 14px;background:var(--grad-arte);color:#fff;border:none;text-align:center;cursor:pointer;padding:18px 16px">'+
       '<div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-bottom:10px">Minha rota</div>'+
-      '<div style="border:1px solid rgba(255,255,255,.7);border-radius:16px;padding:22px 12px;box-shadow:0 0 0 4px rgba(255,255,255,.12),inset 0 0 14px rgba(255,255,255,.14)"><h3 style="margin:0;font-size:24px;color:#fff;letter-spacing:.01em">Bipe seus pacotes</h3></div></div>';
+      '<div style="border:1px solid rgba(255,255,255,.7);border-radius:16px;padding:22px 12px"><h3 style="margin:0;font-size:24px;color:#fff;letter-spacing:.01em">Bipe seus pacotes</h3></div></div>';
   }
   if(RP.total>0){
     return '<div class="card" style="margin-bottom:14px;background:var(--grad-arte);color:#fff;border:none">'+
@@ -3125,6 +3126,7 @@ function appPrecoHtml(){
   var P=APP_PLANO; if(!P.ok) return '';
   return '<div style="font-size:13px;margin-bottom:10px"><b style="font-size:20px">'+moeda((P.preco_promo_centavos||0)/100)+'</b>/mês nos primeiros '+(P.meses_promo||0)+' meses'+(P.selo?' <span style="background:#FDE68A;color:#78350F;font-weight:800;font-size:11px;padding:2px 8px;border-radius:99px;vertical-align:middle">'+esc(P.selo)+'</span>':'')+'<br><span style="color:var(--muted)">Depois '+moeda((P.preco_normal_centavos||0)/100)+'/mês</span></div>';
 }
+function cfgInfo(b){ var p=b.parentNode.nextElementSibling; if(p) p.classList.toggle('on'); }
 function appCfgVisib(){ var b=!!(APP_PLANO&&APP_PLANO.bloqueio), ids=['cfg-f-volta','cfg-f-rota','cfg-f-modelo','cfg-f-pm','cfg-f-nota'], i, x; for(i=0;i<ids.length;i++){ x=el(ids[i]); if(x) x.style.display=b?'none':''; } }   /* (146) grátis: só o tipo de veículo e os pontos; opções de rota só no plano pago */
 function appBannerPintar(){
   try{ appCfgVisib(); }catch(e){}
