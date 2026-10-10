@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-17-1010</div>
+      <div class="bld">DELTADIS-ADMIN-18-1010</div>
     </div>
   </div>
 </div>
@@ -321,7 +321,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-17-1010</div>
+    <div class="bld">DELTADIS-ADMIN-18-1010</div>
   </main>
 </div>
 
@@ -465,7 +465,7 @@ function dataCurta(ms){if(!ms)return '—';var d=new Date(Number(ms));return isN
 function desenharApp(){
   var c=APPD.config||{},r=APPD.resumo||{total:0,pagos:0,gratis:0,vencidos:0};
   el('app-resumo').textContent=r.total+' motorista'+(r.total===1?'':'s')+' · '+r.pagos+' pago'+(r.pagos===1?'':'s');
-  el('app-cfg-info').innerHTML='Mensalidade: <b>'+reais(c.preco_promo_centavos)+'</b> nos primeiros '+(c.meses_promo||0)+' meses, depois <b>'+reais(c.preco_normal_centavos)+'</b>'+(c.selo?' · selo "'+esc(c.selo)+'"':'')+' · '+(c.ativo?'<span class="tag on">Venda ligada</span>':'<span class="tag off">Venda desligada</span>');
+  el('app-cfg-info').innerHTML='Mensalidade: <b>'+reais(c.preco_promo_centavos)+'</b> nos primeiros '+(c.meses_promo||0)+' meses, depois <b>'+reais(c.preco_normal_centavos)+'</b>'+(c.selo?' · selo "'+esc(c.selo)+'"':'')+' · '+(c.ativo?'<span class="tag on">Venda ligada</span>':'<span class="tag off">Venda desligada</span>')+' '+(c.bloqueio?'<span class="tag on">Bloqueio ligado</span>':'<span class="tag off">Bloqueio desligado</span>');
   var L=APPD.motoristas||[];
   if(!L.length){el('lista-app').innerHTML='<div class="vazio">Nenhum motorista ainda.</div>';return;}
   el('lista-app').innerHTML=L.map(function(m){
@@ -481,11 +481,12 @@ function abrirAppCfg(){
   '<div class="linha2"><div><label>Mensalidade normal (R$)</label><input id="ap-pn" inputmode="decimal" value="'+esc(deCentavos(c.preco_normal_centavos))+'"></div><div><label>Selo (ex: 50% OFF)</label><input id="ap-selo" value="'+esc(c.selo||'')+'"></div></div>'+
   '<div class="linha2"><div><label>Avisar quantos dias antes do vencimento</label><input id="ap-da" inputmode="numeric" value="'+esc(c.dias_aviso==null?4:c.dias_aviso)+'"></div><div></div></div>'+
   '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700"><input type="checkbox" id="ap-at" '+(c.ativo?'checked':'')+' style="width:auto;margin:0"> Venda do app pago ligada</label>'+
+  '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700"><input type="checkbox" id="ap-bl" '+(c.bloqueio?'checked':'')+' style="width:auto;margin:0"> Bloquear roteirização e financeiro para quem é grátis</label><p class="sub" style="margin:4px 0 0">Deixe DESLIGADO até a cobrança estar pronta: ligado, todo motorista que não pagou perde esses recursos.</p>'+
   '<div class="erro" id="ap-erro"></div>'+
   '<div class="acoes" style="margin-top:10px;justify-content:flex-end"><button class="btn" onclick="fechar()">Cancelar</button> <button class="btn pri" id="ap-btn" onclick="salvarAppCfg()">Salvar</button></div>');
 }
 function salvarAppCfg(){
-  var corpo={preco_promo_centavos:paraCentavos(el('ap-pp').value),preco_normal_centavos:paraCentavos(el('ap-pn').value),meses_promo:parseInt(el('ap-mp').value,10)||0,selo:el('ap-selo').value.trim(),dias_aviso:parseInt(el('ap-da').value,10)||0,ativo:el('ap-at').checked?1:0};
+  var corpo={preco_promo_centavos:paraCentavos(el('ap-pp').value),preco_normal_centavos:paraCentavos(el('ap-pn').value),meses_promo:parseInt(el('ap-mp').value,10)||0,selo:el('ap-selo').value.trim(),dias_aviso:parseInt(el('ap-da').value,10)||0,ativo:el('ap-at').checked?1:0,bloqueio:el('ap-bl').checked?1:0};
   if(!corpo.preco_normal_centavos){el('ap-erro').textContent='Informe a mensalidade normal.';return;}
   el('ap-btn').disabled=true;el('ap-btn').textContent='Salvando…';el('ap-erro').style.color='';el('ap-erro').textContent='';
   chamar('POST','/admin/app-config',corpo).then(function(d){
