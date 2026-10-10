@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-134-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-135-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2873,7 +2873,41 @@ function romAbrir(dia){
 function romSit(st){ return st==='entregue'?'Entregue':(st==='nao_localizado'?'Não localizado':(st==='ausente'?'Ausente':((st==='devolvido'||st==='devolvido_ok')?'Devolvido':(st==='em_rota'||!st?'Em rota':esc(st))))); }
 function romConta(l){ var e=0,d=0,n=0,j; for(j=0;j<l.itens.length;j++){ var q=l.itens[j].st; if(q==='entregue') e++; else if(q==='nao_localizado') n++; else if(q==='ausente'||q==='devolvido'||q==='devolvido_ok') d++; } return {e:e,d:d,n:n}; }
 function romTxt(c,html){ var t=c.e+' entregue'+(c.e===1?'':'s'); if(c.d) t+=' · '+c.d+' devolvido'+(c.d===1?'':'s')+'/ausente'+(c.d===1?'':'s'); if(c.n) t+=' · '+(html?'<b style="color:#B91C1C">':'')+c.n+' não localizado'+(c.n===1?'':'s')+(html?'</b>':''); return t; }
+/* (135) ROMANEIO EM PDF: gera o arquivo e baixa direto (o navegador pergunta/salva). Se não conseguir carregar o gerador, cai no jeito antigo (imprimir/salvar como PDF). */
+function romScript(src,cb,erro){ var sc=document.createElement('script'); sc.src=src; sc.onload=cb; sc.onerror=erro; document.head.appendChild(sc); }
+function romPdfLib(cb,erro){
+  if(window.jspdf && window.jspdf.jsPDF && (new window.jspdf.jsPDF()).autoTable){ cb(); return; }
+  romScript('https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js',function(){ romScript('https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js',cb,erro); },erro);
+}
 function romGerar(i){
+  var l=ROM.lotes[i]; if(!l) return;
+  aviso('Gerando o PDF…');
+  romPdfLib(function(){
+    try{
+      var T=function(t){ return String(t==null?'':t).replace(/[—–]/g,'-').replace(/[^\x20-\x7E\u00A0-\u00FF]/g,''); };
+      var mn=(RP.mtn||(DD_M_USER&&DD_M_USER.nome)||PERFIL.nome||'Motorista'), ag=new Date(), emit=dataBR(hojeISO())+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2), n=l.itens.length, cnp=romConta(l), j, body=[];
+      for(j=0;j<n;j++){ var p=l.itens[j]; body.push([String(j+1),T(/^VOZ[0-9A-Z]{6,}$/.test(p.cod)?'Sem rastreio':p.cod),T(p.end||'-'),romHora(p.t),T(romSit(p.st))]); }
+      var doc=new window.jspdf.jsPDF({unit:'mm',format:'a4'}), W=210;
+      doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(109,40,217); doc.text('DELTADIS',10,16);
+      doc.setFontSize(9); doc.setTextColor(17,17,17); doc.text('Ponto de coleta',W-10,12,{align:'right'}); doc.setFont('helvetica','normal'); doc.text(T(l.ponto||'-'),W-10,17,{align:'right'});
+      doc.setDrawColor(109,40,217); doc.setLineWidth(0.6); doc.line(10,20,W-10,20);
+      doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(17,17,17); doc.text(T('Romaneio '+l.nome+' - '+mn),10,29);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(85,85,85);
+      doc.text(doc.splitTextToSize(T('Dia '+dataBR(l.dia)+'  |  Coleta às '+romHora(l.t)+'  |  '+n+' pacote'+(n===1?'':'s')+' ('+romTxt(cnp,false)+')  |  Emitido em '+emit),W-20),10,35);
+      doc.autoTable({startY:41,head:[['#','Código de rastreio','Endereço','Hora','Situação']],body:body,styles:{fontSize:8,cellPadding:1.6,textColor:[17,17,17]},headStyles:{fillColor:[109,40,217],textColor:255},columnStyles:{0:{cellWidth:10},3:{cellWidth:16},4:{cellWidth:28}},margin:{left:10,right:10}});
+      var y=(doc.lastAutoTable&&doc.lastAutoTable.finalY?doc.lastAutoTable.finalY:60)+12;
+      if(y>240){ doc.addPage(); y=20; }
+      doc.setFontSize(9); doc.setTextColor(17,17,17);
+      doc.text(doc.splitTextToSize(T('Declaro ter recebido os '+n+' pacote'+(n===1?'':'s')+' relacionados acima, conferidos pelo código de rastreio, para entrega.'),W-20),10,y);
+      y+=22; doc.setDrawColor(17,17,17); doc.setLineWidth(0.2);
+      var cols=[['Assinatura do motorista - '+mn,10,78],['Responsável pelo ponto - '+(l.ponto||''),92,70],['Data e hora',166,34]];
+      cols.forEach(function(c){ doc.line(c[1],y,c[1]+c[2],y); doc.setFontSize(7.5); doc.setTextColor(85,85,85); doc.text(doc.splitTextToSize(T(c[0]),c[2]),c[1],y+4); });
+      doc.save(T('Romaneio-'+l.nome+'.pdf').replace(/[^A-Za-z0-9._-]+/g,'-'));
+      aviso('PDF do romaneio pronto');
+    }catch(e){ romGerarImpressao(i); }
+  },function(){ romGerarImpressao(i); });
+}
+function romGerarImpressao(i){
   var l=ROM.lotes[i]; if(!l) return;
   var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups para gerar o romaneio.'); return; }
   var mn=(RP.mtn||(DD_M_USER&&DD_M_USER.nome)||PERFIL.nome||'Motorista'), ag=new Date(), emit=dataBR(hojeISO())+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2), n=l.itens.length, cnp=romConta(l), lin='', j;
