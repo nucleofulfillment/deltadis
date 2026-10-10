@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-137-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-138-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -641,7 +641,7 @@ function somEntregaOk(){
 function aviso(t){var e=el('toast'); e.textContent=t; e.classList.add('on');
   clearTimeout(window._tt); window._tt=setTimeout(function(){e.classList.remove('on');},2600);}
 function abrir(id){el('ovl').classList.add('on'); el(id).classList.add('on');}
-function fecharTudo(){el('ovl').classList.remove('on'); var s=document.querySelectorAll('.sheet'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');}
+function fecharTudo(){ try{ appPixParar(); }catch(e){}el('ovl').classList.remove('on'); var s=document.querySelectorAll('.sheet'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');}
 
 /* motorista logado (demonstração — dado viria do login real) */
 var MOTORISTA_LOGADO={id:0,n:'',ini:'',cor:'#6D28D9',tel:'',regiao:'',modelo:'',veicCor:'',ano:'',placa:'',cap:0,valorPct:0};   /* dados reais vêm de /motorista/resumo */
@@ -3065,9 +3065,48 @@ function appBannerPintar(){
     var pv=P.proximo_venc?new Date(Number(P.proximo_venc)).toLocaleDateString('pt-BR'):'';
     e.innerHTML='<div class="card" style="margin-bottom:14px;border:2px solid #A7F3D0"><h4 style="margin:0 0 4px">✔ App pago ativo</h4><p style="margin:0;color:var(--muted);font-size:13px">Roteirização e financeiro liberados.'+(pv?' Próximo vencimento: <b>'+pv+'</b>.':'')+'</p></div>'; return;
   }
-  e.innerHTML='<div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,#F5F3FF,#FCE7F3);border:2px solid #C4B5FD"><h4 style="margin:0">⭐ Assine o app pago</h4>'+appVantagensHtml()+appPrecoHtml()+'<button class="btn pri wide" onclick="appAssinar()">Assinar agora</button></div>';
+  var venc=(P.status==='vencido');
+  e.innerHTML='<div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,#F5F3FF,#FCE7F3);border:2px solid #C4B5FD"><h4 style="margin:0">'+(venc?'⚠️ Sua assinatura venceu':'⭐ Assine o app pago')+'</h4>'+appVantagensHtml()+appPrecoHtml()+'<button class="btn pri wide" onclick="appAssinar()">'+(venc?'Renovar agora':'Assinar agora')+'</button></div>';
 }
-function appAssinar(){ aviso('A assinatura estará disponível em breve.'); }
+var APP_PIX={pay:'',timer:null,busy:false};
+function appPixParar(){ if(APP_PIX.timer){ clearInterval(APP_PIX.timer); APP_PIX.timer=null; } }
+function appAssinar(cpf){
+  var c=el('sh-pago-corpo'); if(!c) return;
+  c.innerHTML='<div class="empty">Gerando seu Pix…</div>'; abrir('sh-pago'); appPixParar();
+  rpApi('/motorista/app-assinar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cpf?{cpf:cpf}:{})}).then(function(d){
+    if(d&&d.erro==='precisa_cpf'){
+      c.innerHTML='<p style="margin:0 0 8px;font-size:14px">Para gerar o Pix o banco pede o seu <b>CPF</b>. Ele é usado só nesta cobrança.</p><input id="ap-cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" style="width:100%;padding:12px;border:1.5px solid #DDD6FE;border-radius:12px;font-size:16px;margin-bottom:10px"><p id="ap-cpf-m" style="color:#B91C1C;font-size:13px;font-weight:700;margin:0 0 8px"></p><button class="btn pri wide" onclick="appAssinarCpf()">Continuar</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Cancelar</button>'; return;
+    }
+    if(!d||!d.ok){ c.innerHTML='<p style="margin:0 0 10px;color:#B91C1C;font-weight:700">'+esc((d&&d.mensagem)||'Não consegui gerar o Pix. Tente de novo.')+'</p><button class="btn sec wide" onclick="fecharTudo()">Fechar</button>'; return; }
+    APP_PIX.pay=d.pay_id; appPixMostrar(d); appPixParar(); APP_PIX.timer=setInterval(appPixChecar,5000);
+  }).catch(function(){ c.innerHTML='<p style="margin:0 0 10px;color:#B91C1C;font-weight:700">Sem conexão. Tente de novo.</p><button class="btn sec wide" onclick="fecharTudo()">Fechar</button>'; });
+}
+function appAssinarCpf(){ var v=(el('ap-cpf').value||'').replace(/\D/g,''); if(v.length!==11){ el('ap-cpf-m').textContent='CPF inválido. Digite os 11 números.'; return; } appAssinar(v); }
+function appPixMostrar(d){
+  var px=d.pix||{}, c=el('sh-pago-corpo');
+  c.innerHTML='<p style="margin:0 0 8px;font-size:15px;text-align:center"><b>Pague '+moeda((d.valor_centavos||0)/100)+' no Pix</b></p>'+
+   (px.imagem?'<div style="text-align:center;margin-bottom:10px"><img alt="QR Pix" style="width:200px;height:200px;max-width:70%" src="data:image/png;base64,'+px.imagem+'"></div>':'')+
+   '<p style="margin:0 0 6px;font-size:13px;color:var(--muted)">Ou copie o código e cole no app do seu banco (Pix copia e cola):</p>'+
+   '<textarea id="ap-copia" readonly style="width:100%;height:70px;padding:8px;border:1.5px solid #DDD6FE;border-radius:12px;font-size:12px">'+esc(px.payload||'')+'</textarea>'+
+   '<button class="btn pri wide" style="margin-top:8px" onclick="appPixCopiar()">Copiar código</button>'+
+   '<p id="ap-status" style="text-align:center;margin:12px 0 4px;font-size:13.5px;font-weight:700;color:#5B21B6">⏳ Aguardando o pagamento…</p>'+
+   '<p style="text-align:center;margin:0;font-size:12px;color:var(--muted)">Assim que o Pix cair, o app libera sozinho. Pode fechar esta tela e voltar depois.</p>'+
+   '<button class="btn sec wide" style="margin-top:10px" onclick="appPixParar();fecharTudo()">Fechar</button>';
+}
+function appPixCopiar(){
+  var t=el('ap-copia'); if(!t) return; var v=t.value;
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(v).then(function(){ aviso('Código copiado!'); },function(){ t.select(); document.execCommand('copy'); aviso('Código copiado!'); }); return; } }catch(e){}
+  try{ t.select(); document.execCommand('copy'); aviso('Código copiado!'); }catch(e2){ aviso('Segure no código para copiar'); }
+}
+function appPixChecar(){
+  var sh=el('sh-pago'); if(!sh||!sh.classList.contains('on')||!APP_PIX.pay){ appPixParar(); return; }
+  if(APP_PIX.busy) return; APP_PIX.busy=true;
+  rpApi('/motorista/app-pix?pay='+encodeURIComponent(APP_PIX.pay)).then(function(d){
+    APP_PIX.busy=false; if(!d||!d.ok) return;
+    if(d.estado==='pago'){ appPixParar(); fecharTudo(); aviso('✔ Pagamento confirmado! App pago ativo.'); appPlanoCarregar(function(){ try{ if(PAG==='conta') pintarConta(); }catch(e){} }); }
+    else if(d.estado==='vencido'){ appPixParar(); var m=el('ap-status'); if(m) m.textContent='Este Pix venceu. Feche e toque em Assinar de novo.'; }
+  }).catch(function(){ APP_PIX.busy=false; });
+}
 function appBloqueado(nome){
   if(!(APP_PLANO&&APP_PLANO.bloqueio)) return false;
   el('sh-pago-corpo').innerHTML='<p style="margin:0 0 6px;font-size:15px"><b>'+esc(nome)+'</b> faz parte do app pago.</p><p style="margin:0;color:var(--muted);font-size:13.5px">No modo grátis você usa a bipagem. Assine para liberar tudo:</p>'+appVantagensHtml()+appPrecoHtml()+'<button class="btn pri wide" onclick="appAssinar()">Assinar agora</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Agora não</button>';
