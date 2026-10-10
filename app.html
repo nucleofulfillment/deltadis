@@ -388,7 +388,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-125-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-126-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1625,6 +1625,7 @@ function bpBipar(v){
   rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:e?'':bpTr(canon),ponto:PT.sel?PT.sel.nome:'',num:item.num||null})}).then(function(d){
     if(!d||!d.ok){ desfaz((d&&d.mensagem)||'Não consegui registrar. Bipe de novo.'); return; }
     if(d.resultado==='outro'){ desfaz('Este pacote já foi bipado por '+esc(d.mtn)+'.'); return; }
+    if(d.resultado==='limite'){ desfaz(d.mensagem||'Este pacote já teve 3 tentativas e não pode mais ser coletado.','err'); return; }   /* (126) 3 tentativas feitas */
     if(d.resultado==='devolvido'){ desfaz(d.mensagem||'Pacote devolvido à base. Só volta para a rota depois que a Mesa der entrada.','err'); return; }   /* (125) devolvido à base: só a Mesa devolve pra rota */
     if(d.cliente&&!item.cl) item.cl=d.cliente;
     if(d.end&&d.end.rua&&d.end.num){ item.d={cep:d.end.cep||'',num:d.end.num,comp:d.end.comp||'',rua:d.end.rua,bai:d.end.bai||'',cid:d.end.cid||''}; item.r=d.end.rua+', '+d.end.num; item.e=1; item.novo=false; bpAtualizar(); }   /* (119) endereço do pedido (ex.: XML da NF) já vem completo na bipagem */
