@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-38-0910</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-39-0910</p>
   </div>
 </div>
 
@@ -761,6 +761,7 @@ function desfazerUltimo(){
 }
 
 function encerrar(){
+  if(MODO==='xml'){ var pend=XML_LOTE.filter(function(x){ return x.estado==='buscando'||x.estado==='enviando'||x.estado==='demorou'||x.estado==='envfalhou'; }).length; if(pend){ aviso(pend+' nota'+(pend===1?'':'s')+' ainda sem registrar — espere terminar, tente de novo ou toque em "tirar".'); return; } XML_LOTE=[]; }
   if(CNT) aviso(CNT+' pacote'+(CNT===1?'':'s')+' registrado'+(CNT===1?'':'s')+' nesta contagem');
   fecharCamera();
   SESS_BIP++; ATIVA=null; CNT=0; PACOTES=[]; VISTOS={}; ULT=null;
@@ -814,7 +815,7 @@ function modoPreparar(){
   else if(MODO==='esquecido') t.textContent='🕘 Esquecido na base';
   if(MODO==='entrada'){ ex.style.display='none'; ex.innerHTML=''; return; }
   ex.style.display='block';
-  if(xm) ex.innerHTML='<div style="color:var(--muted2);margin-bottom:6px">Bipe a chave da NF (o código de barras da nota). O sistema busca destinatário, endereço e remetente sozinho.</div><div id="xml-prev"></div><button class="btn pri" id="xml-btn" style="margin-top:8px" disabled onclick="xmlEnviar()">Registrar notas</button><details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted2)">Ou escolher arquivos XML</summary><input type="file" id="xml-file" accept=".xml,text/xml,application/xml" multiple onchange="xmlLer(this.files)" style="margin-top:6px"></details>'; if(xm) xmlPrev();
+  if(xm) ex.innerHTML='<div style="color:var(--muted2);margin-bottom:6px">Bipe a chave da NF (o código de barras da nota). O sistema busca destinatário, endereço e remetente e já registra a nota sozinho.</div><div id="xml-prev"></div><details style="margin-top:10px"><summary style="cursor:pointer;color:var(--muted2)">Ou escolher arquivos XML</summary><input type="file" id="xml-file" accept=".xml,text/xml,application/xml" multiple onchange="xmlLer(this.files)" style="margin-top:6px"></details>'; if(xm) xmlPrev();
   else if(MODO==='os') ex.innerHTML='<label>Cliente (opcional)</label><input type="text" id="os-cliente" placeholder="Nome do cliente"><div id="os-print" style="margin-top:8px"></div>';
   else if(MODO==='devolucao') ex.innerHTML='<div style="color:var(--muted2)">Bipe os pacotes: todos entram na base com o motivo escolhido acima (você pode trocar o motivo a qualquer momento).</div>';
   else if(MODO==='esquecido') ex.innerHTML='<div style="color:var(--muted2);margin-bottom:6px">Bipe o pacote que ficou na base. Se alguém já tinha bipado, o motorista é preenchido sozinho e o pacote fica livre para outro entregador. Se ninguém bipou, fica só como conferência.</div><div id="esq-lista"></div>';
@@ -906,8 +907,8 @@ function xmlLer(files){
   if(!tot){ xmlPrev(); return; }
   Array.prototype.forEach.call(files,function(f){
     var r=new FileReader();
-    r.onload=function(){ var o=xmlLerUm(String(r.result||'')); o.arq=f.name; XML_LOTE.push(o); if(++feitos===tot) xmlPrev(); };
-    r.onerror=function(){ XML_LOTE.push({arq:f.name,erro:'não consegui ler o arquivo'}); if(++feitos===tot) xmlPrev(); };
+    r.onload=function(){ var o=xmlLerUm(String(r.result||'')); o.arq=f.name; XML_LOTE.push(o); if(++feitos===tot) xmlArqFim(); };
+    r.onerror=function(){ XML_LOTE.push({arq:f.name,erro:'não consegui ler o arquivo'}); if(++feitos===tot) xmlArqFim(); };
     r.readAsText(f);
   });
 }
@@ -925,37 +926,40 @@ function xmlFila(){   /* uma consulta por vez: o Meu Danfe bloqueia a conta se p
   api('/mesa/nf-chave',{method:'POST',body:JSON.stringify({chave:o.chave})}).then(function(d){
     if(d&&d.ok&&d.dados){ var k; for(k in d.dados){ if(k!=='chave') o[k]=d.dados[k]; } o.estado='ok'; }
     else { o.estado='semdados'; o.aviso=(d&&d.mensagem)||'Não consegui buscar os dados.'; if(d&&d.erro==='demorou') o.estado='demorou'; if(d&&d.erro==='sem_saldo') o.estado='semdados'; }
-  }).catch(function(){ o.estado='demorou'; o.aviso='Sem conexão com o servidor.'; }).then(function(){ NF_RODANDO=false; xmlPrev(); xmlFila(); });
+  }).catch(function(){ o.estado='demorou'; o.aviso='Sem conexão com o servidor.'; }).then(function(){ NF_RODANDO=false; if(o.estado==='ok'||o.estado==='semdados') xmlEnviar([o]); xmlPrev(); xmlFila(); });
 }
-function xmlRetry(ch){ for(var i=0;i<XML_LOTE.length;i++){ if(XML_LOTE[i].chave===ch){ XML_LOTE[i].estado='buscando'; XML_LOTE[i].aviso=''; NF_FILA.push(XML_LOTE[i]); } } xmlPrev(); xmlFila(); }
+function xmlRetry(ch){ for(var i=0;i<XML_LOTE.length;i++){ if(XML_LOTE[i].estado==='envfalhou'&&(XML_LOTE[i].chave===ch||XML_LOTE[i].nf===ch)){ xmlEnviar([XML_LOTE[i]]); return; } if(XML_LOTE[i].chave===ch){ XML_LOTE[i].estado='buscando'; XML_LOTE[i].aviso=''; NF_FILA.push(XML_LOTE[i]); } } xmlPrev(); xmlFila(); }
 function xmlRemover(ch){ XML_LOTE=XML_LOTE.filter(function(x){ return x.chave!==ch; }); NF_FILA=NF_FILA.filter(function(x){ return x.chave!==ch; }); xmlPrev(); }
+function xmlArqFim(){ var vs={}, novos=[]; XML_LOTE.forEach(function(x){ if(x.erro||x.estado) return; if(vs[x.nf]){ x.erro='nota repetida na seleção'; return; } vs[x.nf]=1; novos.push(x); }); xmlPrev(); if(novos.length) xmlEnviar(novos); }
 function xmlPrev(){
   var h='', i, x, vistos={}, ok=0, busc=0, ac, end;
   for(i=0;i<XML_LOTE.length;i++){ x=XML_LOTE[i];
     if(x.erro){ h+='<div class="xml-it er"><b>'+esc(x.arq||'')+'</b> — '+esc(x.erro)+'</div>'; continue; }
-    if(vistos[x.nf]){ x.erro='nota repetida na seleção'; h+='<div class="xml-it er"><b>NF '+esc(x.nf)+'</b> — repetida na seleção</div>'; continue; }
-    vistos[x.nf]=1;
-    ac=x.chave?'<a style="color:#B91C1C;cursor:pointer;margin-left:8px" onclick="xmlRemover(\''+x.chave+'\')">tirar</a>':'';
+    if(x.estado!=='reg'&&x.estado!=='rep'){ if(vistos[x.nf]){ x.erro='nota repetida na seleção'; h+='<div class="xml-it er"><b>NF '+esc(x.nf)+'</b> — repetida na seleção</div>'; continue; } vistos[x.nf]=1; }
+    ac=(x.chave&&x.estado!=='reg'&&x.estado!=='rep')?'<a style="color:#B91C1C;cursor:pointer;margin-left:8px" onclick="xmlRemover(\''+x.chave+'\')">tirar</a>':'';
+    if(x.estado==='enviando'){ busc++; h+='<div class="xml-it"><b>NF '+esc(x.nf)+'</b> · '+esc(x.cliente||'')+' · registrando…</div>'; continue; }
+    if(x.estado==='envfalhou'){ h+='<div class="xml-it er"><b>NF '+esc(x.nf)+'</b> — não registrou (sem conexão) <a style="color:#5B21B6;cursor:pointer" onclick="xmlRetry(\''+(x.chave||x.nf)+'\')">tentar de novo</a></div>'; continue; }
     if(x.estado==='buscando'){ busc++; h+='<div class="xml-it"><b>NF '+esc(x.nf)+'</b> · buscando os dados da nota…'+ac+'</div>'; continue; }
-    ok++;
-    if(x.estado==='demorou'){ h+='<div class="xml-it er"><b>NF '+esc(x.nf)+'</b> — '+esc(x.aviso||'a consulta demorou')+' <a style="color:#5B21B6;cursor:pointer" onclick="xmlRetry(\''+x.chave+'\')">tentar de novo</a>'+ac+'</div>'; ok--; continue; }
+    if(x.estado==='demorou'){ h+='<div class="xml-it er"><b>NF '+esc(x.nf)+'</b> — '+esc(x.aviso||'a consulta demorou')+' <a style="color:#5B21B6;cursor:pointer" onclick="xmlRetry(\''+x.chave+'\')">tentar de novo</a>'+ac+'</div>'; continue; }
     if(x.estado==='semdados'){ h+='<div class="xml-it" style="border-color:#F0D9A0;background:#FFF8E6"><b>NF '+esc(x.nf)+'</b> · sem dados do destinatário<div style="color:var(--muted2)">'+esc(x.aviso||'')+' Registra só com o número da nota.</div>'+ac+'</div>'; continue; }
     end=[x.rua,x.num].filter(Boolean).join(', ')+(x.bai?' — '+x.bai:'')+(x.cid?' · '+x.cid:'')+(x.cep?' · CEP '+x.cep:'');
-    h+='<div class="xml-it"><b>NF '+esc(x.nf)+'</b> · '+esc(x.cliente)+(x.rem?' <span style="color:var(--muted2)">· de '+esc(x.rem)+'</span>':'')+ac+'<div style="color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(end)+(x.tel?' · '+esc(x.tel):'')+'</div></div>';
+    h+='<div class="xml-it"><span style="color:#15803D">'+(x.estado==='rep'?'↺ já existia':'✔')+'</span> <b>NF '+esc(x.nf)+'</b> · '+esc(x.cliente)+(x.rem?' <span style="color:var(--muted2)">· de '+esc(x.rem)+'</span>':'')+ac+'<div style="color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(end)+(x.tel?' · '+esc(x.tel):'')+'</div></div>';
   }
   var p=el('xml-prev'); if(p) p.innerHTML=h||'';
-  var b=el('xml-btn'); if(b){ b.disabled=!ok||busc>0; b.textContent=busc?('Buscando… ('+busc+')'):(ok?('Registrar '+ok+' nota'+(ok===1?'':'s')):'Registrar notas'); }
 }
-function xmlEnviar(){
-  var itens=XML_LOTE.filter(function(x){ return !x.erro && x.estado!=='buscando' && x.estado!=='demorou'; }); if(!itens.length) return;
-  var b=el('xml-btn'); b.disabled=true; b.textContent='Registrando…';
-  api('/mesa/xml',{method:'POST',body:JSON.stringify({mt:MOT.id,mtn:MOT.n,tr:ATIVA.id,itens:itens})}).then(function(d){
-    if(!d||!d.ok){ aviso((d&&d.mensagem)||'Não consegui registrar.'); xmlPrev(); return; }
-    var n=d.itens.filter(function(x){ return x.resultado==='novo'; }).length, r=d.itens.filter(function(x){ return x.resultado==='repetido'; }).length;
-    CNT+=n; el('scan-cnt').textContent=CNT; if(n) somBipeOk(); else somErro();
-    mostrarUlt(n?'ok':'rep','✔ '+n+' nota'+(n===1?'':'s')+' registrada'+(n===1?'':'s')+' — '+MOT.n+' · '+ATIVA.n+(r?' · '+r+' já existia'+(r===1?'':'m'):''),'');
-    XML_LOTE=XML_LOTE.filter(function(x){ return x.erro || x.estado==='buscando' || x.estado==='demorou'; }); var f=el('xml-file'); if(f) f.value=''; xmlPrev();
-  }).catch(function(){ aviso('Sem conexão. Nada foi registrado.'); xmlPrev(); });
+function xmlEnviar(itens){
+  if(!itens||!itens.length||!ATIVA||!MOT) return;
+  var mot=MOT, tr=ATIVA, sid=SESS_BIP;
+  itens.forEach(function(x){ x.estado='enviando'; }); xmlPrev();
+  api('/mesa/xml',{method:'POST',body:JSON.stringify({mt:mot.id,mtn:mot.n,tr:tr.id,itens:itens})}).then(function(d){
+    if(!d||!d.ok){ itens.forEach(function(x){ x.estado='envfalhou'; }); aviso((d&&d.mensagem)||'Não consegui registrar.'); somErro(); xmlPrev(); return; }
+    var n=0, r=0;
+    itens.forEach(function(x,k){ var it=d.itens[k]; if(it&&it.resultado==='repetido'){ x.estado='rep'; r++; } else if(it&&it.resultado==='novo'){ x.estado='reg'; n++; } else { x.estado='envfalhou'; } });
+    if(sid===SESS_BIP){ CNT+=n; el('scan-cnt').textContent=CNT; pintarCards();
+      if(n) somBipeOk(); else somErro();
+      mostrarUlt(n?'ok':'rep',n?('✔ '+n+' nota'+(n===1?'':'s')+' registrada'+(n===1?'':'s')+' — '+mot.n+' · '+tr.n):'Essa nota já existia',''); }
+    var f=el('xml-file'); if(f) f.value=''; xmlPrev();
+  }).catch(function(){ itens.forEach(function(x){ x.estado='envfalhou'; }); aviso('Sem conexão. A nota NÃO foi registrada.'); somErro(); xmlPrev(); });
 }
 
 /* ══ Câmera (leitor de código de barras do próprio navegador — funciona no Chrome do Android) ══ */
