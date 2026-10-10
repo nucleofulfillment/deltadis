@@ -402,7 +402,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-161-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-163-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2163,6 +2163,7 @@ function vzAbrir(cod,modo){
     '<div id="vz-stat" onclick="vzOuvir(true)" style="margin:10px 0 6px;padding:14px 12px;border-radius:16px;background:var(--grad-arte);color:#fff;text-align:center;font-weight:800;font-size:15px"></div>'+
     '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:6px;min-height:15px;text-align:center"></div>'+
     '<div id="vz-dbg" style="font-size:10.5px;color:#9A8FB0;margin-bottom:6px;text-align:center"></div>'+
+    '<div id="vz-cand" style="margin-bottom:8px"></div>'+
     (vzExterno()?'<div style="margin:0 0 8px"><label style="font-size:11px;font-weight:700">Valor desta entrega (R$) — ou fale “valor 8 reais”</label><div class="search" style="margin:0"><input id="vz-val" inputmode="decimal" placeholder="Ex.: 8,50" value="'+(it&&it.v>0?esc(String(it.v).replace('.',',')):'')+'"></div></div>':'')+
     '<div id="vz-campos" style="display:'+(ed?'block':'none')+'">'+
     '<div style="display:flex;gap:8px"><div style="flex:1.4"><label style="font-size:11px;font-weight:700">CEP</label><div class="search" style="margin:0"><input id="vz-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="vzCepDig()" value="'+esc(d.cep||'')+'"></div></div>'+
@@ -2173,9 +2174,9 @@ function vzAbrir(cod,modo){
     '<details id="vz-det" style="margin-bottom:10px"><summary style="font-size:12px;font-weight:700;color:var(--roxo-esc)">Sem CEP? Procurar pela rua</summary>'+
     '<div class="search" style="margin:8px 0 6px"><input id="vz-rua0" placeholder="Nome da rua (ex.: Rua das Flores)"></div>'+
     '<div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:2"><input id="vz-cid0" placeholder="Cidade" value="'+esc(vzLer('c'))+'"></div><div class="search" style="margin:0;flex:.6"><input id="vz-uf0" maxlength="2" placeholder="UF" value="'+esc(vzLer('u'))+'" style="text-transform:uppercase"></div><button class="btn sec" style="padding:4px 12px" onclick="vzBuscarRua()">Buscar</button></div></details></div>'+
-    '<div id="vz-cand" style="margin-bottom:8px"></div>'+
     '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="'+(ed?'vzFechar()':'vzConcluir()')+'">'+(ed?'Fechar':'Concluir')+'</button>'+(ed?'<button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar(false)">Salvar</button>':'<button class="btn sec" style="flex:1" id="vz-dig" onclick="vzCampos(true)">⌨ Digitar</button>')+'</div></div>';
   document.body.appendChild(ov);
+  vzPos(function(p){ VZ.pos=p; });   /* (163) já pega a posição ao abrir, pra a lista de ruas sair rápido */
   vzFalt(); bpAtualizar();
   if(ed){ vzStat('Toque aqui para falar de novo','#6D28D9'); if(d.rua&&d.cid&&d.cep&&d.cep.length===8){ VZ.cep=d.cep; VZ.rua=d.rua; VZ.bai=d.bai||''; VZ.cid=d.cid; VZ.achou=true; el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px"><b>'+esc(d.rua)+'</b><br>'+esc((d.bai?d.bai+' · ':'')+d.cid)+'</div>'; }   /* (120) endereço já completo (veio do pedido): mostra e deixa salvar na hora, sem depender da busca do CEP */
       else if(d.cep&&d.cep.length===8) vzCepDig(); else if(it&&it.r) el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px">'+esc(it.r)+'</div>'; }
@@ -2254,7 +2255,7 @@ function vzCiclo(SR){
     VZ.vazio=0; var i, t='', fin=false;
     for(i=ev.resultIndex;i<ev.results.length;i++){ t+=ev.results[i][0].transcript; if(ev.results[i].isFinal) fin=true; }
     var ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
-    if(!fin) return; final=true;
+    if(!fin){ try{ vzPrevia(t); }catch(e){} return; } final=true;
     if(VZ.busy||VZ.trans) return;
     vzProcessar(t);
   };
@@ -2275,13 +2276,6 @@ function vzCiclo(SR){
 }
 function vzProcessar(t){
   var ou=el('vz-ouv'); if(ou) ou.textContent='Ouvi: “'+t+'”';
-  /* (161) "nome do cliente Osvaldo" / "cliente Osvaldo": vai pro campo do cliente e NÃO mexe no endereço */
-  var mcl=String(t).match(/(?:^|\s)(?:o\s+)?(?:nome\s+d[oa]\s+cliente|cliente)\s+(?:é\s+)?(.+)$/i);
-  if(mcl){
-    var nmC=mcl[1].replace(/[.,;]+$/,'').trim().replace(/(^|\s)(\p{L})/gu,function(m0,a,b){ return a+b.toUpperCase(); }), cx=el('vz-cli');
-    if(nmC&&cx){ cx.value=nmC; t=t.slice(0,mcl.index).trim();
-      if(t.replace(/[,.;\s]/g,'').length<3){ vzCampos(true); vzStat('✔ Nome do cliente: '+nmC,'#16A34A'); return; } }
-  }
   if(vzExterno()){
     var vv=vzValor(t);
     if(vv.v!=null){
@@ -2309,37 +2303,57 @@ function vzPos(cb){
   }catch(e){ if(!feito){ feito=true; fb(); } }
 }
 /* (161) rua falada: lista TODAS as ruas com esse nome, a mais perto do motorista primeiro; ele toca na certa */
+function vzPertoDados(rua,cid){
+  rua=String(rua||'').trim(); if(rua.length<3) return Promise.resolve([]);
+  var ch=vzNormT(rua+'|'+(cid||'')); VZ.pvCache=VZ.pvCache||{};
+  if(VZ.pvCache[ch]) return Promise.resolve(VZ.pvCache[ch]);
+  return new Promise(function(ok){ if(VZ.pos) ok(VZ.pos); else vzPos(function(p){ VZ.pos=p; ok(p); }); }).then(function(pos){
+    return rpApi('/motorista/rua-perto?rua='+encodeURIComponent(rua+(cid?' '+cid:''))+(pos?'&lat='+pos.lat+'&lng='+pos.lng:''));
+  }).then(function(d){ var r={its:(d&&d.ok&&d.itens)||[],perto:!!(d&&d.perto)}; if(r.its.length) VZ.pvCache[ch]=r; return r; }).catch(function(){ return {its:[],perto:false}; });
+}
+function vzPertoLista(r){
+  var its=r.its, c=el('vz-cand'); if(!c||!its.length) return 0; VZ.perto=its;
+  var h='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Toque na rua certa'+(r.perto?' (a mais perto primeiro)':'')+':</div>', i, x;
+  for(i=0;i<its.length;i++){ x=its[i]; h+='<button class="btn '+(i===0&&r.perto?'pri':'sec')+' wide" style="text-align:left;margin-bottom:6px;font-size:13px" onclick="vzEscolherPertoToque('+i+')"><b>'+esc(x.rua)+'</b>'+(i===0&&r.perto?' <span style="font-size:11px;font-weight:700">· mais perto</span>':'')+'<br><span style="font-size:11.5px;opacity:.85">'+esc((x.bai?x.bai+' · ':'')+x.cid+(x.uf?'/'+x.uf:'')+(x.km!=null?' · a '+String(x.km).replace('.',',')+' km':''))+'</span></button>'; }
+  c.innerHTML=h; return its.length;
+}
+/* (163) enquanto o motorista ainda está falando, a lista já aparece (como no Circuit) */
+function vzPrevia(t){
+  if(VZ.busy||VZ.trans) return;
+  clearTimeout(VZ.pvT);
+  VZ.pvT=setTimeout(function(){
+    var p; try{ p=vzParse(t); }catch(e){ return; }
+    if(!p||!p.rua||p.cep||String(p.rua).trim().length<6||String(p.rua).trim().indexOf(' ')<0) return;
+    var rua=String(p.rua).trim(), tok=(VZ.pvTok=(VZ.pvTok||0)+1); VZ.faladoRua=rua;
+    vzPertoDados(rua,p.cid).then(function(r){ if(tok!==VZ.pvTok||!r.its.length) return; vzPertoLista(r); });
+  },320);
+}
 function vzPerto(p){
   var rua=String(p.rua||'').trim(); if(rua.length<3) return Promise.resolve(0);
-  return new Promise(function(ok){ vzPos(ok); }).then(function(pos){
-    return rpApi('/motorista/rua-perto?rua='+encodeURIComponent(rua+(p.cid?' '+p.cid:''))+(pos?'&lat='+pos.lat+'&lng='+pos.lng:''));
-  }).then(function(d){
-    var its=(d&&d.ok&&d.itens)||[]; if(!its.length) return 0;
-    VZ.perto=its; if(its.length===1) return vzEscolherPerto(0).then(function(){ return 1; });
-    var c=el('vz-cand'); if(!c) return 0;
-    var h='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Toque na rua certa'+(d.perto?' (a mais perto primeiro)':'')+':</div>', i, x;
-    for(i=0;i<its.length;i++){ x=its[i]; h+='<button class="btn '+(i===0&&d.perto?'pri':'sec')+' wide" style="text-align:left;margin-bottom:6px;font-size:13px" onclick="vzEscolherPertoToque('+i+')"><b>'+esc(x.rua)+'</b>'+(i===0&&d.perto?' <span style="font-size:11px;font-weight:700">· mais perto</span>':'')+'<br><span style="font-size:11.5px;opacity:.85">'+esc((x.bai?x.bai+' · ':'')+x.cid+(x.uf?'/'+x.uf:'')+(x.km!=null?' · a '+String(x.km).replace('.',',')+' km':''))+'</span></button>'; }
-    c.innerHTML=h; return 2;
-  }).catch(function(){ return 0; });
+  VZ.faladoRua=rua; VZ.pvTok=(VZ.pvTok||0)+1; clearTimeout(VZ.pvT);
+  return vzPertoDados(rua,p.cid).then(function(r){ return r.its.length?(vzPertoLista(r)?2:0):0; });
 }
 function vzEscolherPerto(i){
   var x=(VZ.perto||[])[i]; if(!x) return Promise.resolve();
   var c=el('vz-cand'); if(c) c.innerHTML='';
   function usa(cep){ el('vz-cep').value=cep; return vzCepDig(); }
-  if(x.cep) return usa(x.cep);
   vzStat('Buscando o CEP da rua…','#6D28D9');
-  return rpApi('/motorista/rua?uf='+encodeURIComponent(x.uf||vzLer('u'))+'&cid='+encodeURIComponent(x.cid)+'&rua='+encodeURIComponent(x.rua)).then(function(d){
-    var its=(d&&d.ok&&d.itens)||[]; if(!its.length){ vzCampos(true); vzStat('Não achei o CEP dessa rua. Fale o CEP.','#B91C1C'); return; }
-    var bn=vzNormT(x.bai), m=its.filter(function(y){ var yb=vzNormT(y.bai); return bn&&yb&&(yb.indexOf(bn)>=0||bn.indexOf(yb)>=0); });
-    return usa((m[0]||its[0]).cep);
-  }).catch(function(){ vzCampos(true); vzStat('Sem conexão. Fale o CEP.','#B91C1C'); });
+  /* (163) o CEP vem do ViaCEP (cidade + rua + bairro); o CEP do mapa só entra se o ViaCEP não achar */
+  return rpApi('/motorista/rua?uf='+encodeURIComponent(x.uf||vzLer('u'))+'&cid='+encodeURIComponent(x.cid)+'&rua='+encodeURIComponent(VZ.faladoRua||x.rua)).then(function(d){
+    var its=(d&&d.ok&&d.itens)||[], bn=vzNormT(x.bai), m=its.filter(function(y){ var yb=vzNormT(y.bai); return bn&&yb&&(yb.indexOf(bn)>=0||bn.indexOf(yb)>=0); });
+    if(m.length) return usa(m[0].cep);
+    if(its.length===1) return usa(its[0].cep);
+    if(x.cep) return usa(x.cep);
+    if(its.length) return usa(its[0].cep);
+    vzCampos(true); vzStat('Não achei o CEP dessa rua. Fale o CEP.','#B91C1C');
+  }).catch(function(){ if(x.cep) return usa(x.cep); vzCampos(true); vzStat('Sem conexão. Fale o CEP.','#B91C1C'); });
 }
 function vzEscolherPertoToque(i){ vzEscolherPerto(i).then(function(){ vzTentaSalvar(); }); }
 function vzRuaFluxo(p){
   var dt=el('vz-det'); if(dt) dt.open=true;
   el('vz-rua0').value=p.rua; vzStat('Procurando a rua…','#6D28D9');
   return vzPerto(p).then(function(r0){
-    if(r0===2){ vzCampos(true); vzStat('Toque na rua certa','#B45309'); return 2; }
+    if(r0===2){ vzStat('Toque na rua certa','#B45309'); return 2; }
     if(r0===1) return 1;
     return vzRuaFluxoCid(p);
   });
