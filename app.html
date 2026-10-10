@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-140-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-141-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -459,7 +459,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="field"><label>Roteirização</label><select class="inp" id="cfg-rota"><option value="sim">Sim</option><option value="nao">Não</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: você bipa e informa o endereço, o app monta a rota e você numera os pacotes. Não: você só bipa os pacotes pra registrar que pegou — sem endereço, sem rota e sem numeração — e depois marca o que entregou.</p></div>
         <div class="field"><label>Modelo de rota</label><select class="inp" id="cfg-modelo"><option value="linear">Linear</option><option value="circular">Circular</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Linear: entrega mais rápido, sem se preocupar com a volta. Circular: use quando você retorna para a base no fim da rota.</p></div>
         <div class="field"><label>Meu veículo (ícone no mapa da base)</label><select class="inp" id="cfg-veic" onchange="trkSetVeic(this.value)"><option value="carro">🚗 Carro</option><option value="moto">🏍️ Moto</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Enquanto a sua rota estiver rodando, a base vê onde você está no mapa. Ao finalizar a rota, o rastreio para. Pra funcionar, deixe o app aberto na tela e permita a localização.</p></div>
-        <div class="field"><label>Assinar o romaneio ao montar a rota</label><select class="inp" id="cfg-assina"><option value="nao">Não</option><option value="sim">Sim</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: ao montar a rota o app pergunta se o romaneio está fechado e pede a sua assinatura. Use quando o ponto exige o romaneio assinado.</p></div>
+        <div class="field" style="display:none"><label>Assinar o romaneio ao montar a rota</label><select class="inp" id="cfg-assina"><option value="nao">Não</option><option value="sim">Sim</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: ao montar a rota o app pergunta se o romaneio está fechado e pede a sua assinatura. Use quando o ponto exige o romaneio assinado.</p></div>
         <div class="field"><label>Minutos por parada</label><input class="inp" id="cfg-pm" type="number" min="0" max="30" step="0.5"></div>
         <button class="btn pri wide" onclick="rpSalvarCfg()">Salvar</button>
         <p style="margin:10px 0 0;font-size:11.5px;color:var(--muted)">Em breve o app vai usar a sua média real por parada.</p>
@@ -1590,7 +1590,7 @@ function ptTela(){
     h+='<div class="bp-item" style="cursor:pointer" onclick="ptEscolher('+i+')"><span class="bp-seq">📍</span><div class="bp-info" style="flex:1"><b>'+esc(x.nome)+'</b><span>'+esc(x.endereco)+' · '+(x.tipo==='deltadis'?'DELTADIS':'outra empresa')+'</span></div>'+(x.tipo==='externo'?'<button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();ptRemover('+i+')">✕</button>':'')+'</div>';
   }
   if(PT.novo||(PT.lista&&!L.length)){
-    h+='<div style="margin-top:12px"><div class="field"><label>Nome da empresa</label><input class="inp" id="pt-nome" placeholder="ex.: Loja Central" autocomplete="off"></div><div class="field"><label>Endereço do ponto de coleta</label><input class="inp" id="pt-end" placeholder="rua, número, bairro, cidade" autocomplete="off"></div>'+
+    h+='<div style="margin-top:12px"><div class="field"><label>Nome da empresa</label><input class="inp" id="pt-nome" placeholder="ex.: Loja Central" autocomplete="off"></div><div class="field"><label>Endereço do ponto de coleta</label><input class="inp" id="pt-end" placeholder="rua, número, bairro, cidade" autocomplete="off"></div><label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;font-size:13.5px"><input type="checkbox" id="pt-assina" checked style="width:auto;margin:3px 0 0"><span><b>Ativar assinatura no romaneio</b> neste ponto<br><span style="color:var(--muted);font-size:12px">Você assina o romaneio ao fechar a rota. Dá pra desativar depois em Conta → Meus pontos.</span></span></label>'+
        '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="PT.novo=false;renderInicio()">Cancelar</button><button class="btn pri" style="flex:1" id="pt-ok" onclick="ptSalvarNovo()">Salvar e usar</button></div></div>';
   } else h+='<button class="btn sec wide" style="margin-top:12px" onclick="PT.novo=true;renderInicio()">➕ Outra empresa (cadastrar ponto)</button>';
   h+='<button class="btn sec wide" style="margin-top:10px" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button></div>';
@@ -1598,7 +1598,7 @@ function ptTela(){
 }
 function ptEscolher(i){ var x=(PT.lista||[])[i]; if(!x) return; ptUsar(x); }
 function ptUsar(x){
-  PT.sel={id:x.id,nome:x.nome,endereco:x.endereco,tipo:x.tipo,lat:x.lat==null?null:x.lat,lng:x.lng==null?null:x.lng,dia:numHoje()}; ptGravar();
+  PT.sel={id:x.id,nome:x.nome,endereco:x.endereco,tipo:x.tipo,assina:!!x.assina,lat:x.lat==null?null:x.lat,lng:x.lng==null?null:x.lng,dia:numHoje()}; ptGravar();
   if(x.lat!=null&&x.lng!=null) RP.baseGeo[x.endereco]={ok:true,lat:x.lat,lng:x.lng,achado:x.endereco};
   EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar();
 }
@@ -1606,7 +1606,7 @@ function ptSalvarNovo(){
   var n=((el('pt-nome')||{}).value||'').trim(), e=((el('pt-end')||{}).value||'').trim();
   if(n.length<2||e.length<6){ aviso('Informe o nome e o endereço'); return; }
   if(PT.busy) return; PT.busy=true; var b=el('pt-ok'); if(b) b.textContent='Salvando…';
-  rpApi('/motorista/ponto-salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,endereco:e})}).then(function(d){
+  rpApi('/motorista/ponto-salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,endereco:e,assina:!!(el('pt-assina')&&el('pt-assina').checked)})}).then(function(d){
     PT.busy=false;
     if(!d||!d.ok){ if(b) b.textContent='Salvar e usar'; aviso((d&&d.mensagem)||'Não consegui salvar. Tente de novo.'); return; }
     if(!PT.lista) PT.lista=[]; PT.lista.push(d.ponto); ptUsar(d.ponto);
@@ -1620,7 +1620,7 @@ function ptRemover(i){
 function ptRestaurar(nome){
   rpApi('/motorista/pontos').then(function(d){
     if(PT.sel||!d||!d.ok) return; var L=[], i; if(d.deltadis) L.push(d.deltadis); (d.meus||[]).forEach(function(x){ L.push(x); });
-    for(i=0;i<L.length;i++) if(String(L[i].nome)===String(nome)){ var x=L[i]; PT.sel={id:x.id,nome:x.nome,endereco:x.endereco,tipo:x.tipo,lat:x.lat==null?null:x.lat,lng:x.lng==null?null:x.lng,dia:numHoje()}; ptGravar(); if(EST==='rp_bip') renderInicio(); return; }
+    for(i=0;i<L.length;i++) if(String(L[i].nome)===String(nome)){ var x=L[i]; PT.sel={id:x.id,nome:x.nome,endereco:x.endereco,tipo:x.tipo,assina:!!x.assina,lat:x.lat==null?null:x.lat,lng:x.lng==null?null:x.lng,dia:numHoje()}; ptGravar(); if(EST==='rp_bip') renderInicio(); return; }
   }).catch(function(){});
 }
 function bpAbrir(jt){
@@ -1788,6 +1788,8 @@ function bpRemover(cod){
     bpMarcaMesa(cod,true); BP.ult={t:'rep',m:'Removido da sua lista.',cod:cod}; bpAtualizar();
   }).catch(function(){ aviso('Sem conexão. Não removi.'); });
 }
+/* (141) assinatura do romaneio: ponto DELTADIS = obrigatória; ponto de outra empresa = só se ele ativou naquele ponto */
+function asgObrigatoria(){ if(PT.sel){ if(PT.sel.tipo==='deltadis') return true; return !!PT.sel.assina; } return rpCfg().assina==='sim'; }
 /* (75) pacote remarcado/ainda com o motorista JÁ pertence ao 1º romaneio (tem rom): não entra em romaneio novo nem pede nova assinatura */
 function bpNovos(){ return BP.meus.filter(function(m){ return !m.rom; }); }
 /* (110) depois do romaneio fechado: com roteirização segue pra montar a rota; sem roteirização vai pra tela de entregas */
@@ -1804,7 +1806,7 @@ function bpFechar(){
   if(fbp2>0&&!confirm('Faltam '+fbp2+' pacote'+(fbp2===1?'':'s')+' da sua lista sem bipar. Montar a rota mesmo assim?')) return;
   bpFecharCamera();
   if(!bpNovos().length){ bpSeguir(); return; }   /* só pacotes remarcados: segue o romaneio original, sem novo romaneio nem assinatura */
-  if(rpCfg().assina==='sim'){ RP.asgVoltaRota=false; asgAbrir(); return; }
+  if(asgObrigatoria()){ RP.asgVoltaRota=false; asgAbrir(); return; }
   /* (69) fechou = 1 romaneio (numerado no servidor), mesmo sem assinatura */
   var seguir=function(){ bpSeguir(); };
   rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(seguir).catch(seguir);
@@ -1888,7 +1890,7 @@ function rlConcluir(){
   var seguir=function(){ RP.preRota=false; rlContinuar(); };
   var depois=function(){
     if(!bpNovos().length){ seguir(); return; }
-    if(rpCfg().assina==='sim'){ RP.asgVoltaRota=true; asgAbrir(); return; }
+    if(asgObrigatoria()){ RP.asgVoltaRota=true; asgAbrir(); return; }
     rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(seguir).catch(seguir);
   };
   if(f>0){
@@ -3055,7 +3057,7 @@ function appPlanoCarregar(cb){
   rpApi('/motorista/app-plano').then(function(d){ if(d&&d.ok){ APP_PLANO=d; } if(cb) cb(); try{ appBannerPintar(); }catch(e){} }).catch(function(){ if(cb) cb(); });
 }
 function appVantagensHtml(){
-  return '<ul style="margin:8px 0 10px;padding-left:18px;font-size:13.5px;line-height:1.6"><li><b>Roteirização</b> — a melhor ordem de entrega no mapa</li><li><b>Financeiro</b> — quanto você já recebeu e tem a receber</li><li><b>Romaneios e histórico</b> sempre à mão</li></ul>';
+  return '<ul style="margin:8px 0 10px;padding-left:18px;font-size:13.5px;line-height:1.6"><li><b>Roteirização</b> — a melhor ordem de entrega no mapa</li><li><b>Numere seus pacotes automaticamente</b></li><li><b>Financeiro</b> — quanto você já recebeu e tem a receber</li><li><b>Romaneios e histórico</b> sempre à mão</li></ul>';
 }
 function appPrecoHtml(){
   var P=APP_PLANO; if(!P.ok) return '';
@@ -3128,10 +3130,10 @@ function ctpPintar(){
   var e=el('cfg-pontos'); if(!e) return; var L=CTP.lista||[], h='', i, x;
   if(CTP.err&&!L.length) h+='<div style="color:#B91C1C;font-size:13px;margin-bottom:6px">'+esc(CTP.err)+'</div>';
   for(i=0;i<L.length;i++){ x=L[i];
-    h+='<div class="bp-item"><span class="bp-seq">📍</span><div class="bp-info" style="flex:1"><b>'+esc(x.nome)+'</b><span>'+esc(x.endereco)+' · '+(x.tipo==='deltadis'?'DELTADIS':'outra empresa')+'</span></div>'+(x.tipo==='externo'?'<button class="btn sec" style="padding:6px 12px" onclick="ctpRemover(\''+esc(String(x.id))+'\')">✕</button>':'')+'</div>';
+    h+='<div class="bp-item"><span class="bp-seq">📍</span><div class="bp-info" style="flex:1"><b>'+esc(x.nome)+'</b><span>'+esc(x.endereco)+' · '+(x.tipo==='deltadis'?'DELTADIS':'outra empresa')+'</span></div>'+(x.tipo==='externo'?'<button class="btn sec" style="padding:6px 12px" onclick="ctpRemover(\''+esc(String(x.id))+'\')">✕</button>':'')+'</div>'+(x.tipo==='externo'?'<div style="margin:-4px 0 8px 44px;font-size:12.5px">✍ Assinatura no romaneio: <b style="color:'+(x.assina?'#15803D':'#6B7280')+'">'+(x.assina?'Ativa':'Inativa')+'</b> · <a href="#" style="color:var(--roxo);font-weight:800" onclick="ctpAssina(\''+esc(String(x.id))+'\','+(x.assina?0:1)+');return false">'+(x.assina?'Inativar':'Ativar')+'</a></div>':'<div style="margin:-4px 0 8px 44px;font-size:12.5px;color:var(--muted)">✍ Assinatura no romaneio: <b>obrigatória</b> neste ponto</div>');
   }
   if(CTP.novo){
-    h+='<div style="margin-top:10px"><div class="field"><label>Nome da empresa</label><input class="inp" id="ctp-nome" placeholder="ex.: Loja Central" autocomplete="off"></div><div class="field"><label>Endereço do ponto de coleta</label><input class="inp" id="ctp-end" placeholder="Rua, número, bairro, cidade" autocomplete="off"></div>'+
+    h+='<div style="margin-top:10px"><div class="field"><label>Nome da empresa</label><input class="inp" id="ctp-nome" placeholder="ex.: Loja Central" autocomplete="off"></div><div class="field"><label>Endereço do ponto de coleta</label><input class="inp" id="ctp-end" placeholder="Rua, número, bairro, cidade" autocomplete="off"></div><label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;font-size:13.5px"><input type="checkbox" id="ctp-assina" checked style="width:auto;margin:3px 0 0"><span><b>Ativar assinatura no romaneio</b> neste ponto<br><span style="color:var(--muted);font-size:12px">Você assina o romaneio ao fechar a rota.</span></span></label>'+
        '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="CTP.novo=false;ctpPintar()">Cancelar</button><button class="btn pri" style="flex:1" id="ctp-ok" onclick="ctpSalvar()">Salvar ponto</button></div></div>';
   } else h+='<button class="btn sec wide" style="margin-top:8px" onclick="CTP.novo=true;ctpPintar()">➕ Cadastrar ponto de coleta</button>';
   e.innerHTML=h;
@@ -3140,11 +3142,19 @@ function ctpSalvar(){
   var n=((el('ctp-nome')||{}).value||'').trim(), a=((el('ctp-end')||{}).value||'').trim();
   if(n.length<2||a.length<6){ aviso('Informe o nome e o endereço'); return; }
   if(CTP.busy) return; CTP.busy=true; var b=el('ctp-ok'); if(b) b.textContent='Salvando…';
-  rpApi('/motorista/ponto-salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,endereco:a})}).then(function(d){
+  rpApi('/motorista/ponto-salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,endereco:a,assina:!!(el('ctp-assina')&&el('ctp-assina').checked)})}).then(function(d){
     CTP.busy=false;
     if(!d||!d.ok){ if(b) b.textContent='Salvar ponto'; aviso((d&&d.mensagem)||'Não consegui salvar. Tente de novo.'); return; }
     CTP.novo=false; PT.lista=null; aviso('Ponto cadastrado'); ctpCarregar();
   }).catch(function(){ CTP.busy=false; if(b) b.textContent='Salvar ponto'; aviso('Sem conexão. Tente de novo.'); });
+}
+function ctpAssina(id,v){
+  rpApi('/motorista/ponto-assina',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,assina:!!v})}).then(function(d){
+    if(!d||!d.ok){ aviso((d&&d.mensagem)||'Não consegui mudar. Tente de novo.'); return; }
+    var i; for(i=0;i<(CTP.lista||[]).length;i++) if(String(CTP.lista[i].id)===String(id)) CTP.lista[i].assina=!!v;
+    if(PT.sel&&String(PT.sel.id)===String(id)){ PT.sel.assina=!!v; ptGravar(); }
+    PT.lista=null; aviso(v?'Assinatura ativada neste ponto':'Assinatura desativada neste ponto'); ctpPintar();
+  }).catch(function(){ aviso('Sem conexão. Não mudei.'); });
 }
 function ctpRemover(id){
   rpApi('/motorista/ponto-remover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})}).then(function(){ PT.lista=null; if(PT.sel&&String(PT.sel.id)===String(id)){ PT.sel=null; ptGravar(); } aviso('Ponto removido'); ctpCarregar(); }).catch(function(){ aviso('Sem conexão. Não removi.'); });
