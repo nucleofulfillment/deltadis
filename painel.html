@@ -831,7 +831,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-56-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-57-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1610,6 +1610,7 @@ function srvCarregar(){
       SRV.pronto=true; srvStatus('☁ salvo'); return;
     }
     if(srvPendente() && localMesmo && temLocal){   /* alterações feitas aqui que não deu tempo de enviar: valem mais que o servidor */
+      try{ if(d.est.transps&&d.est.transps.d) aplicarTransps(d.est.transps.d); }catch(eT){}   /* (57) a lista de transportadoras do servidor nunca é trocada por uma cópia antiga deste navegador */
       SRV.pronto=true; srvEnviar(); repintarTudo(); return;
     }
     var pc=[], bases={}, p;
