@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-146-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-148-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1469,12 +1469,12 @@ function rotaPerguntar(cb){
   ROTA_CB=(typeof cb==='function')?cb:null;
   var d=document.createElement('div'); d.id='rota-ask'; d.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:28px 22px;overflow:auto';
   d.innerHTML='<div style="max-width:420px;margin:0 auto;width:100%"><div style="font-size:38px;margin-bottom:10px">🧭</div><h2 style="margin:0 0 8px">'+(ROTA_CB?'Este lote usa roteirização?':'Você usa roteirização?')+'</h2>'+
-    '<p style="color:var(--muted);font-size:14px;margin:0 0 18px">Roteirização é o app montar a ordem das entregas no mapa pra você.</p>'+
+    '<p style="color:var(--muted);font-size:14px;margin:0 0 18px">APP monta a ordem e numera as entregas pra você.</p>'+
     '<button class="btn pri wide" style="margin-bottom:10px" onclick="rotaResponder(\'sim\')">Sim, uso roteirização</button>'+
     '<p style="color:var(--muted);font-size:12.5px;margin:0 0 16px">Você bipa, informa o endereço, o app monta a rota e você numera os pacotes.</p>'+
     '<button class="btn sec wide" style="margin-bottom:10px" onclick="rotaResponder(\'nao\')">Não uso</button>'+
     '<p style="color:var(--muted);font-size:12.5px;margin:0 0 16px">Você só bipa os pacotes que pegou, sem endereço e sem numeração, e depois marca o que entregou.</p>'+
-    '<p style="color:var(--muted);font-size:12px;margin:0">Dá pra mudar depois em Conta → Minhas rotas.</p>'+(ROTA_CB?'<button class="btn sec wide" style="margin-top:16px" onclick="rotaCancelar()">Voltar</button>':'')+'</div>';
+    (ROTA_CB?'<button class="btn sec wide" style="margin-top:16px" onclick="rotaCancelar()">Voltar</button>':'')+'</div>';
   document.body.appendChild(d);
 }
 function rotaCancelar(){ ROTA_CB=null; var o=el('rota-ask'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
@@ -1537,11 +1537,9 @@ function rpCardPronta(){
       '<select class="inp" id="rp-mt-sel" style="margin-bottom:10px">'+(o||'<option value="">Nenhum motorista com rota no painel</option>')+'</select><button class="btn pri wide" onclick="rpDefinirMt()">Confirmar</button></div>';
   }
   if(BIP_ROTA){
-    return '<div class="card" style="margin-bottom:14px;background:var(--grad-arte);color:#fff;border:none">'+
-      '<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85">Minha rota</div>'+
-      '<h3 style="margin:4px 0 2px;font-size:20px;color:#fff">Bipe seus pacotes</h3>'+
-      '<p style="margin:0 0 14px;font-size:13px;opacity:.9">Bipe cada pacote que você pegou, '+esc((RP.mtn||'').split(' ')[0])+'. Depois o sistema monta a rota.</p>'+
-      '<button class="btn wide" style="background:#fff;color:var(--roxo)" onclick="bpAbrir()">Bipar meus pacotes</button></div>';
+    return '<div class="card" onclick="bpAbrir()" style="margin:0 0 14px;background:var(--grad-arte);color:#fff;border:none;text-align:center;cursor:pointer;padding:18px 16px">'+
+      '<div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-bottom:10px">Minha rota</div>'+
+      '<div style="border:1px solid rgba(255,255,255,.7);border-radius:16px;padding:22px 12px;box-shadow:0 0 0 4px rgba(255,255,255,.12),inset 0 0 14px rgba(255,255,255,.14)"><h3 style="margin:0;font-size:24px;color:#fff;letter-spacing:.01em">Bipe seus pacotes</h3></div></div>';
   }
   if(RP.total>0){
     return '<div class="card" style="margin-bottom:14px;background:var(--grad-arte);color:#fff;border:none">'+
@@ -1701,7 +1699,7 @@ function bpItemHtml(m){
   var info;
   if(rpCfg().rota==='nao') return '<div class="bp-item"><span class="bp-seq" style="background:#EDE9FE;color:#5B21B6">'+m.n+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<span style="color:#5B5170;font-size:13px">'+esc(m.cl)+'</span>':'')+'</div><button class="btn sec" style="padding:10px 14px;min-width:44px;min-height:44px;margin-left:4px;font-size:16px;background:transparent;color:#9A8FB0" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
   if(m.e) info='<span style="color:#166534;font-weight:700;font-size:13px">'+esc(m.r||((m.cl||'')+'' ))+(vzExterno()?(m.v>0?' · '+vzMoeda(m.v):' · <span style="color:#B45309">sem valor</span>'):'')+'</span>';
-  else info='<span style="color:#BE185D;font-weight:700;font-size:13px">'+(m.novo?'Sem dados':(m.auto?'Falta endereço — vai para o fim da lista':'Endereço incompleto'))+'</span>';
+  else info='<span style="color:#BE185D;font-weight:700;font-size:13px">'+(m.novo?'Clique e insira o endereço':(m.auto?'Falta endereço — vai para o fim da lista':'Endereço incompleto'))+'</span>';
   return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FDF2F8;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq" style="'+(m.e?'background:#DCFCE7;color:#166534':'background:#FCE7F3;color:#BE185D')+'">'+(m.num||m.n)+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+info+((m.auto&&!m.conf)?'<span style="color:#9A8FB0;font-size:11.5px;display:block">falta bipar</span>':'')+'</div><button class="btn sec" style="padding:10px 14px;min-width:44px;min-height:44px;margin-left:4px;font-size:16px;background:transparent;color:#9A8FB0" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
 function metaPintar(){ var m=metaHoje(), t=el('meta-txt'), f=el('meta-fill'); if(t) t.textContent=m.feitos+'/'+m.meta; if(f) f.style.width=Math.min(100,Math.round(m.feitos/Math.max(1,m.meta)*100))+'%'; }
@@ -1746,7 +1744,7 @@ function bpBipar(v){
   try{ if(BP.remT) delete BP.remT[String(item.cod).toLowerCase()]; }catch(e){}
   BP.meus.push(item); bpMarcaMesa(canon); somBipeOk();
   if(NAO) BP.ult={t:'ok',m:'✔ Registrado'+(e&&e.cl?' — '+esc(e.cl):''),cod:canon};
-  else if(!e) BP.ult={t:'novo',m:'Pacote novo, sem dados ainda. Depois você cadastra o endereço.',cod:canon};
+  else if(!e) BP.ult={t:'novo',m:'Clique e insira o endereço.',cod:canon};
   else if(!e.e) BP.ult={t:'novo',m:'Registrado, mas o endereço está incompleto.',cod:canon};
   else BP.ult={t:'ok',m:'✔ Registrado'+(e.cl?' — '+esc(e.cl):''),cod:canon};
   BP.ult.num=item.num; bpAtualizar();
@@ -2036,7 +2034,7 @@ function bpModo(){
 }
 setInterval(function(){
   var i=el('bp-cod'); if(!i||!i.offsetParent) return;
-  if(el('bp-cam')||el('asg-ovl')) return;
+  if(el('bp-cam')||el('asg-ovl')||el('vz-ov')||BP.man) return;   /* (147) no modo digitar, o teclado só sobe quando ele toca no campo */
   var a=document.activeElement; if(a&&a!==document.body&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA')) return;
   try{ i.focus({preventScroll:true}); }catch(e){}
 },800);
@@ -2136,7 +2134,7 @@ function vzAbrir(cod,modo){
     (vzExterno()?'<div style="margin:0 0 8px"><label style="font-size:11px;font-weight:700">Valor desta entrega (R$) — ou fale “valor 8 reais”</label><div class="search" style="margin:0"><input id="vz-val" inputmode="decimal" placeholder="Ex.: 8,50" value="'+(it&&it.v>0?esc(String(it.v).replace('.',',')):'')+'"></div></div>':'')+
     '<div id="vz-campos" style="display:'+(ed?'block':'none')+'">'+
     '<div style="display:flex;gap:8px"><div style="flex:1.4"><label style="font-size:11px;font-weight:700">CEP</label><div class="search" style="margin:0"><input id="vz-cep" inputmode="numeric" maxlength="9" placeholder="00000-000" oninput="vzCepDig()" value="'+esc(d.cep||'')+'"></div></div>'+
-    '<div style="flex:1"><label style="font-size:11px;font-weight:700">Número</label><div class="search" style="margin:0"><input id="vz-num" placeholder="123 ou S/N" value="'+esc(d.num||'')+'"></div></div></div>'+
+    '<div style="flex:1"><label style="font-size:11px;font-weight:700">Número</label><div class="search" style="margin:0"><input id="vz-num" inputmode="numeric" placeholder="123" value="'+esc(d.num||'')+'"></div></div></div>'+
     '<div style="display:flex;gap:8px;margin-top:8px"><div style="flex:1"><label style="font-size:11px;font-weight:700">Complemento</label><div class="search" style="margin:0"><input id="vz-comp" placeholder="apto, bloco" value="'+esc(d.comp||'')+'"></div></div>'+
     '<div style="flex:1.5"><label style="font-size:11px;font-weight:700">Nome do cliente</label><div class="search" style="margin:0"><input id="vz-cli" maxlength="80" placeholder="Nome de quem recebe" value="'+esc((it&&it.cl)||'')+'"></div></div></div>'+
     '<div id="vz-res" style="margin:10px 0"></div>'+
@@ -2730,6 +2728,58 @@ function rpMapaDesenhar(ajustar){
   else if(at && at.lat!=null) m.easeTo({center:[at.lng,at.lat],duration:600});
 }
 
+
+/* (148) chips do início: previsão (toca e abre a previsão real), dia e hora */
+var TEMPO={d:null,t:0,busy:false};
+var TEMPO_COD={0:['☀️','Céu limpo'],1:['🌤️','Poucas nuvens'],2:['⛅','Parcialmente nublado'],3:['☁️','Nublado'],45:['🌫️','Neblina'],48:['🌫️','Neblina'],51:['🌦️','Garoa fraca'],53:['🌦️','Garoa'],55:['🌦️','Garoa forte'],61:['🌧️','Chuva fraca'],63:['🌧️','Chuva'],65:['🌧️','Chuva forte'],66:['🌧️','Chuva gelada'],67:['🌧️','Chuva gelada'],71:['❄️','Neve'],73:['❄️','Neve'],75:['❄️','Neve'],80:['🌦️','Pancadas de chuva'],81:['🌧️','Pancadas de chuva'],82:['⛈️','Pancadas fortes'],95:['⛈️','Trovoada'],96:['⛈️','Trovoada com granizo'],99:['⛈️','Trovoada com granizo']};
+function tempoCod(c){ return TEMPO_COD[c]||['🌤️','—']; }
+function iniChipsHtml(){
+  var d=TEMPO.d, ic=d?tempoCod(d.current.weather_code)[0]:'🌤️', tx=d?Math.round(d.current.temperature_2m)+'°C':'--°C', now=new Date(), M=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  var st='display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--muted);background:var(--s3);border:1px solid var(--border);border-radius:12px;padding:7px 11px;white-space:nowrap';
+  return '<div id="ini-chips" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:2px 0 22px">'+
+    '<button id="chip-tempo" onclick="tempoAbrir()" style="'+st+';cursor:pointer;font-family:inherit"><span style="font-size:15px;line-height:1">'+ic+'</span><span>'+tx+'</span></button>'+
+    '<div style="'+st+'"><span id="chip-dia">'+now.getDate()+' de '+M[now.getMonth()]+'</span></div>'+
+    '<div style="'+st+'"><span style="width:8px;height:8px;border-radius:50%;background:#22C55E;display:inline-block"></span><span id="chip-hora">'+('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+'</span></div></div>'+
+    '<div style="height:6px"></div>';
+}
+function tempoPos(cb){
+  var fb=function(){ var b=RP&&RP.baseLL; cb(b&&b.lat!=null?{lat:b.lat,lng:b.lng}:{lat:-27.5954,lng:-48.548}); };
+  try{
+    if(navigator.geolocation&&navigator.permissions&&navigator.permissions.query){
+      navigator.permissions.query({name:'geolocation'}).then(function(r){
+        if(r.state==='granted') navigator.geolocation.getCurrentPosition(function(p){ cb({lat:p.coords.latitude,lng:p.coords.longitude}); },fb,{maximumAge:600000,timeout:6000}); else fb();
+      }).catch(fb);
+    } else fb();
+  }catch(e){ fb(); }
+}
+function tempoCarregar(cb){
+  if(TEMPO.busy) return; if(TEMPO.d&&Date.now()-TEMPO.t<900000){ if(cb) cb(); return; }
+  TEMPO.busy=true;
+  tempoPos(function(p){
+    fetch('https://api.open-meteo.com/v1/forecast?latitude='+p.lat+'&longitude='+p.lng+'&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FSao_Paulo&forecast_days=4')
+    .then(function(r){ return r.json(); }).then(function(d){ TEMPO.busy=false; if(d&&d.current){ TEMPO.d=d; TEMPO.t=Date.now(); var c=el('chip-tempo'); if(c) c.innerHTML='<span style="font-size:15px;line-height:1">'+tempoCod(d.current.weather_code)[0]+'</span><span>'+Math.round(d.current.temperature_2m)+'°C</span>'; } if(cb) cb(); }).catch(function(){ TEMPO.busy=false; if(cb) cb(); });
+  });
+}
+function tempoAbrir(){
+  var c=el('sh-pago-corpo'); if(!c) return;
+  el('sh-pago').querySelector('h3').textContent='Previsão do tempo';
+  c.innerHTML='<p style="color:var(--muted)">Carregando a previsão…</p>'; abrir('sh-pago');
+  TEMPO.t=0; tempoCarregar(function(){ tempoPintar(); });
+}
+function tempoPintar(){
+  var c=el('sh-pago-corpo'), d=TEMPO.d; if(!c) return;
+  if(!d){ c.innerHTML='<p style="color:var(--muted)">Não consegui buscar a previsão agora. Confira a internet.</p>'; return; }
+  var cu=d.current, cd=tempoCod(cu.weather_code), h='<div style="text-align:center;margin-bottom:12px"><div style="font-size:46px;line-height:1">'+cd[0]+'</div><div style="font-size:34px;font-weight:800;color:var(--roxo-esc)">'+Math.round(cu.temperature_2m)+'°C</div><div style="color:var(--muted);font-size:14px">'+cd[1]+' · sensação '+Math.round(cu.apparent_temperature)+'°C</div><div style="color:var(--muted);font-size:12.5px;margin-top:4px">Umidade '+Math.round(cu.relative_humidity_2m)+'% · Vento '+Math.round(cu.wind_speed_10m)+' km/h</div></div>';
+  var hr=d.hourly, i, n=0, nowT=Date.now()-3600000, lin='';
+  for(i=0;i<hr.time.length&&n<8;i++){ if(new Date(hr.time[i]).getTime()<nowT) continue; n++; lin+='<div style="min-width:58px;text-align:center;font-size:12px"><div style="color:var(--muted)">'+hr.time[i].slice(11,13)+'h</div><div style="font-size:18px">'+tempoCod(hr.weather_code[i])[0]+'</div><b>'+Math.round(hr.temperature_2m[i])+'°</b><div style="color:#2563EB;font-size:11px">'+(hr.precipitation_probability[i]||0)+'%</div></div>'; }
+  h+='<div style="font-weight:800;font-size:13px;margin:6px 0">Próximas horas</div><div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px">'+lin+'</div>';
+  var D=['dom','seg','ter','qua','qui','sex','sáb'], dl='';
+  for(i=0;i<d.daily.time.length;i++){ var dt=new Date(d.daily.time[i]+'T12:00:00'); dl+='<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--border);font-size:13.5px"><span style="width:44px;font-weight:700">'+(i===0?'hoje':D[dt.getDay()])+'</span><span style="font-size:18px">'+tempoCod(d.daily.weather_code[i])[0]+'</span><span style="flex:1;color:#2563EB;font-size:12px">'+(d.daily.precipitation_probability_max[i]||0)+'% chuva</span><span style="color:var(--muted)">'+Math.round(d.daily.temperature_2m_min[i])+'°</span><b>'+Math.round(d.daily.temperature_2m_max[i])+'°</b></div>'; }
+  h+='<div style="font-weight:800;font-size:13px;margin:10px 0 2px">Próximos dias</div>'+dl;
+  c.innerHTML=h;
+}
+setInterval(function(){ var a=el('chip-hora'); if(!a) return; var n=new Date(); a.textContent=('0'+n.getHours()).slice(-2)+':'+('0'+n.getMinutes()).slice(-2); },20000);
+setInterval(function(){ if(el('chip-tempo')&&!document.hidden) tempoCarregar(); },900000);
 function renderInicio(){
   var box=el('inicio-conteudo'); if(!box) return;
   if(EST==='em_rota'||(EST==='rp_lista'&&RP.preRota)) rotaGuardar();
@@ -2739,6 +2789,7 @@ function renderInicio(){
   }
 
   if(EST==='sem_lote'){
+    h+=iniChipsHtml(); setTimeout(function(){ tempoCarregar(); },50);
     h+=rpCardPronta();
     var nAb=(BIP_ROTA&&BP.ok)?BP.meus.length:0, nInc=(BIP_ROTA&&BP.ok)?BP.meus.filter(function(m){ return !m.e; }).length:0;
     if(nAb>0){
@@ -2749,7 +2800,7 @@ function renderInicio(){
     } else {
       h+='<div class="card" style="text-align:center;padding:34px 18px"><div style="font-size:34px;margin-bottom:10px">📦</div>'+
          '<h3 style="margin:0 0 6px">Nenhum lote em aberto</h3>'+
-         '<p style="color:var(--muted);font-size:13px;margin:0">'+(BIP_ROTA&&!BP.ok?'Carregando seus pacotes…':'Bipe os pacotes que você pegou para criar o lote.')+'</p></div>';
+         (BIP_ROTA&&!BP.ok?'<p style="color:var(--muted);font-size:13px;margin:0">Carregando seus pacotes…</p>':'')+'</div>';
     }
   } else if(EST==='bipando'){
     h+='<div class="card"><h3 style="margin:0 0 2px">Bipando pacotes</h3>'+
@@ -3090,7 +3141,7 @@ var APP_PIX={pay:'',timer:null,busy:false};
 function appPixParar(){ if(APP_PIX.timer){ clearInterval(APP_PIX.timer); APP_PIX.timer=null; } }
 function appAssinar(cpf){
   var c=el('sh-pago-corpo'); if(!c) return;
-  c.innerHTML='<div class="empty">Gerando seu Pix…</div>'; abrir('sh-pago'); appPixParar();
+  try{ el('sh-pago').querySelector('h3').textContent='App pago'; }catch(e){} c.innerHTML='<div class="empty">Gerando seu Pix…</div>'; abrir('sh-pago'); appPixParar();
   rpApi('/motorista/app-assinar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(cpf?{cpf:cpf}:{})}).then(function(d){
     if(d&&d.erro==='precisa_cpf'){
       c.innerHTML='<p style="margin:0 0 8px;font-size:14px">Para gerar o Pix o banco pede o seu <b>CPF</b>. Ele é usado só nesta cobrança.</p><input id="ap-cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" style="width:100%;padding:12px;border:1.5px solid #DDD6FE;border-radius:12px;font-size:16px;margin-bottom:10px"><p id="ap-cpf-m" style="color:#B91C1C;font-size:13px;font-weight:700;margin:0 0 8px"></p><button class="btn pri wide" onclick="appAssinarCpf()">Continuar</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Cancelar</button>'; return;
@@ -3127,6 +3178,7 @@ function appPixChecar(){
 }
 function appBloqueado(nome){
   if(!(APP_PLANO&&APP_PLANO.bloqueio)) return false;
+  try{ el('sh-pago').querySelector('h3').textContent='App pago'; }catch(e){}
   el('sh-pago-corpo').innerHTML='<p style="margin:0 0 6px;font-size:15px"><b>'+esc(nome)+'</b> faz parte do app pago.</p><p style="margin:0;color:var(--muted);font-size:13.5px">No modo grátis você usa a bipagem. Assine para liberar tudo:</p>'+appVantagensHtml()+appPrecoHtml()+'<button class="btn pri wide" onclick="appAssinar()">Assinar agora</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Agora não</button>';
   abrir('sh-pago'); return true;
 }
