@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-44-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-45-1010</p>
   </div>
 </div>
 
@@ -583,6 +583,7 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return
 function el(id){return document.getElementById(id);}
 function favicon(dom){return dom ? ('https://www.google.com/s2/favicons?domain='+dom+'&sz=64') : null;}
 function iconeHTML(t){
+  if(t.logo) return '<img src="'+t.logo+'" alt="">';   /* (45) logo enviada no painel */
   var fv=favicon(t.dominio);
   if(fv) return '<img src="'+fv+'" alt="" onerror="this.parentNode.textContent=\''+t.ini+'\';this.parentNode.style.background=\''+t.cor+'\';">';
   return t.ini;
@@ -596,7 +597,7 @@ function pintarCards(){
   var h='',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i];
     var ativaCls=(ATIVA && ATIVA.id===t.id)?' ativa':'';
-    h+='<div class="card'+ativaCls+(t.somente?' livre':'')+'" onclick="'+(t.dev?'abrirDevolucoes()':t.somente?'abrirRomaneio(\'app\')':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+(t.dominio?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="tx"><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+(t.dev?' a conferir':' bipados hoje')+'</div></div></div>';}
+    h+='<div class="card'+ativaCls+(t.somente?' livre':'')+'" onclick="'+(t.dev?'abrirDevolucoes()':t.somente?'abrirRomaneio(\'app\')':'abrirMesa(\''+t.id+'\')')+'"><div class="ic" style="background:'+((t.dominio||t.logo)?'#fff':t.cor)+'">'+iconeHTML(t)+'</div><div class="tx"><div class="cn">'+esc(t.n)+'</div><div class="cd">'+t.hoje+(t.dev?' a conferir':' bipados hoje')+'</div></div></div>';}
   el('mesa-cards').innerHTML=h;
 }
 
@@ -1358,13 +1359,25 @@ function mostrarApp(){
   el('app').style.display='block';
   initCurves(); fundoSegueCursor(); pintarCards();
   ajustarAlturaScan();
-  carregarContagemDia(); carregarMotoristas();
+  carregarContagemDia(); carregarMotoristas(); carregarTransportadoras(); setInterval(function(){ if(!document.hidden) carregarTransportadoras(true); },120000);
   carregarRespostas(); setInterval(carregarRespostas,60000);
 }
 function sairLogin(msg){
   DD_TOKEN=''; DD_USER=null; try{ localStorage.removeItem('dd_jwt'); localStorage.removeItem('dd_user'); }catch(e){}
   fecharCamera(); el('app').style.display='none'; el('login').style.display='flex';
   var m=el('lg-msg'); if(m) m.textContent=msg||'';
+}
+/* (45) a lista de transportadoras vem do painel (Configurações → Precificação): nome, site/logo e as novas que forem cadastradas */
+function carregarTransportadoras(quieto){
+  api('/mesa/transportadoras').then(function(d){
+    if(!d||!d.ok||!d.itens||!d.itens.length) return;
+    var esp=TRANSPORTADORAS.filter(function(t){ return t.somente; }), ant={}, i;
+    for(i=0;i<TRANSPORTADORAS.length;i++) ant[TRANSPORTADORAS[i].id]=TRANSPORTADORAS[i];
+    var nova=d.itens.filter(function(s){ return s&&s.id&&s.n&&!ant[s.id]||(s&&s.id&&s.n&&!ant[s.id].somente); }).map(function(s){ var o=ant[s.id]||{}; return {id:s.id,n:s.n,ini:s.ini||String(s.n).slice(0,2).toUpperCase(),cor:s.cor||'#6D28D9',hoje:o.hoje||0,dominio:s.dominio||null,logo:s.logo||''}; });
+    if(!nova.length) return;
+    TRANSPORTADORAS.length=0; nova.concat(esp).forEach(function(t){ TRANSPORTADORAS.push(t); });
+    pintarCards(); if(!quieto) carregarContagemDia();
+  }).catch(function(){});
 }
 /* "bipados hoje" de cada transportadora, vindo do servidor */
 function carregarContagemDia(){
