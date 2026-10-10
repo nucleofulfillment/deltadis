@@ -388,7 +388,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-120-0910</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-121-0910</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1512,9 +1512,12 @@ function copiarCod(c){
   function velho(){ try{ var t=document.createElement('textarea'); t.value=c; t.style.cssText='position:fixed;left:-9999px;top:0'; document.body.appendChild(t); t.select(); t.setSelectionRange(0,t.value.length); var r=document.execCommand('copy'); document.body.removeChild(t); if(r) ok(); else aviso('Não consegui copiar. Segure no número para copiar.'); }catch(e){ aviso('Não consegui copiar. Segure no número para copiar.'); } }
   try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(c).then(ok).catch(velho); } else velho(); }catch(e){ velho(); }
 }
+/* (121) pedido que veio de NF: o código do pacote é a CHAVE de 44 números — mostra encurtado (4226…47535624) e copia a chave inteira */
+function codChave(c){ var k=String(c==null?'':c).toLowerCase(), x=(typeof BP!=='undefined'&&BP.idx)?BP.idx[k]:null; return (x&&x.s&&/^\d{44}$/.test(x.s))?x.s:String(c==null?'':c); }
+function codCurto(c){ var f=codChave(c); return /^\d{44}$/.test(f)?(f.slice(0,4)+'…'+f.slice(-8)):f; }
 function cpCod(c){
-  var e=esc(c);
-  return '<span data-c="'+e+'" onclick="event.stopPropagation();copiarCod(this.getAttribute(\'data-c\'))" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;-webkit-tap-highlight-color:transparent">'+e+'<svg viewBox="0 0 24 24" style="width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.75"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></span>';
+  var e=esc(codChave(c)), t=esc(codCurto(c));
+  return '<span data-c="'+e+'" onclick="event.stopPropagation();copiarCod(this.getAttribute(\'data-c\'))" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px;-webkit-tap-highlight-color:transparent">'+t+'<svg viewBox="0 0 24 24" style="width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.75"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></span>';
 }
 /* NÚMERO DO PACOTE: nasce na PRIMEIRA bipagem e acompanha o pacote até a entrega */
 function numDe(cod){ var k=String(cod||'').toLowerCase(), i; for(i=0;i<BP.meus.length;i++) if(String(BP.meus[i].cod).toLowerCase()===k) return BP.meus[i].num||0; return 0; }
@@ -1956,7 +1959,7 @@ function vzAbrir(cod,modo){
   ov.style.cssText=ed?'position:fixed;inset:0;background:rgba(15,5,30,.6);z-index:9998;display:flex;align-items:flex-end;justify-content:center':'position:fixed;left:0;right:0;bottom:0;z-index:9998;display:flex;justify-content:center;pointer-events:none';
   ov.innerHTML='<div style="background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:14px 16px 16px;max-height:92vh;overflow:auto;pointer-events:auto;box-shadow:0 -6px 24px rgba(60,20,110,.28)">'+
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="min-width:0"><div style="font-size:15px;font-weight:800;color:var(--roxo-esc)">'+(ed?'✔ Endereço do pacote':(cod?'Falando o endereço de:':'Parada sem rastreio'))+'</div>'+
-    '<div style="font-size:12px;color:var(--muted);word-break:break-all">'+(cod?esc(cod):'sem etiqueta')+'</div></div><div id="vz-falt" style="font-size:11.5px;font-weight:800;color:var(--roxo-esc);background:var(--s3);border-radius:10px;padding:4px 9px;white-space:nowrap"></div></div>'+
+    '<div style="font-size:12px;color:var(--muted);word-break:break-all">'+(cod?esc(codCurto(cod)):'sem etiqueta')+'</div></div><div id="vz-falt" style="font-size:11.5px;font-weight:800;color:var(--roxo-esc);background:var(--s3);border-radius:10px;padding:4px 9px;white-space:nowrap"></div></div>'+
     '<div id="vz-stat" onclick="vzOuvir(true)" style="margin:10px 0 6px;padding:14px 12px;border-radius:16px;background:var(--grad-arte);color:#fff;text-align:center;font-weight:800;font-size:15px"></div>'+
     '<div id="vz-ouv" style="font-size:12px;color:var(--muted);margin-bottom:6px;min-height:15px;text-align:center"></div>'+
     '<div id="vz-dbg" style="font-size:10.5px;color:#9A8FB0;margin-bottom:6px;text-align:center"></div>'+
