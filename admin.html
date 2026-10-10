@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-15-0610</div>
+      <div class="bld">DELTADIS-ADMIN-16-1010</div>
     </div>
   </div>
 </div>
@@ -306,6 +306,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div id="lista-planos"><div class="vazio">Carregando...</div></div>
     </div>
     <div class="card">
+      <h3><span>App</span><span class="sub2" id="app-resumo"></span><span class="dir"><span class="lnk" onclick="abrirAppCfg()">Preços e promoção</span><span class="mais" id="app-mais" onclick="alternaApp()" title="Mostrar / esconder os motoristas">+</span></span></h3>
+      <div id="app-cfg-info" class="sub2" style="padding:0 2px 8px"></div>
+      <div id="app-corpo" style="display:none"><div id="lista-app"><div class="vazio">Carregando...</div></div></div>
+    </div>
+    <div class="card">
       <h3><span>Fluxo de caixa</span><span class="dir"><span class="lnk" onclick="carregarFluxo();carregarSaldo()">↻ Atualizar</span><span class="lnk" onclick="abrirLanc()">+ Novo lançamento</span></span></h3>
       <div class="filtros" id="fc-filtros"></div>
       <div id="fc-aviso"></div>
@@ -316,7 +321,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-15-0610</div>
+    <div class="bld">DELTADIS-ADMIN-16-1010</div>
   </main>
 </div>
 
@@ -399,7 +404,7 @@ function iniciar(){
   if(!FC.ini){var h=hojeIso();FC.ini=h.slice(0,7)+'-01';FC.fim=ultDia(h.slice(0,7));}
   recarregar();
 }
-function recarregar(){carregarClientes();carregarPlanos();carregarFluxo();carregarSaldo();}
+function recarregar(){carregarClientes();carregarPlanos();carregarApp();carregarFluxo();carregarSaldo();}
 /* ── Planos de assinatura (fixo mensal + valor por pacote) — o site mostra os ativos no botão "Assinar" ── */
 var PLANOS=[];
 function carregarPlanos(){
@@ -447,6 +452,47 @@ function planoAtivo(id,ativo){
 }
 
 
+/* ── (v16) App do motorista: pago x grátis — preços/promoção e lista de quem usa ── */
+var APPD={config:null,motoristas:[],resumo:null};
+function carregarApp(){
+  chamar('GET','/admin/app').then(function(d){
+    if(!d.ok){el('lista-app').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</div>';return;}
+    APPD=d; desenharApp();
+  }).catch(function(){});
+}
+function appStatusTxt(st){return st==='pago'?'Pago':(st==='vencido'?'Vencido':'Grátis');}
+function dataCurta(ms){if(!ms)return '—';var d=new Date(Number(ms));return isNaN(d)?'—':d.toLocaleDateString('pt-BR');}
+function desenharApp(){
+  var c=APPD.config||{},r=APPD.resumo||{total:0,pagos:0,gratis:0,vencidos:0};
+  el('app-resumo').textContent=r.total+' motorista'+(r.total===1?'':'s')+' · '+r.pagos+' pago'+(r.pagos===1?'':'s');
+  el('app-cfg-info').innerHTML='Mensalidade: <b>'+reais(c.preco_promo_centavos)+'</b> nos primeiros '+(c.meses_promo||0)+' meses, depois <b>'+reais(c.preco_normal_centavos)+'</b>'+(c.selo?' · selo "'+esc(c.selo)+'"':'')+' · '+(c.ativo?'<span class="tag on">Venda ligada</span>':'<span class="tag off">Venda desligada</span>');
+  var L=APPD.motoristas||[];
+  if(!L.length){el('lista-app').innerHTML='<div class="vazio">Nenhum motorista ainda.</div>';return;}
+  el('lista-app').innerHTML=L.map(function(m){
+    return '<div class="cli"><div class="av">'+esc((m.nome||'?').charAt(0).toUpperCase())+'</div><div style="min-width:160px"><div class="nome">'+esc(m.nome||'(sem nome)')+'</div><div class="id">'+esc(m.cliente||'')+' · '+esc(m.telefone||'sem whats')+'</div></div>'+
+      '<div class="dados"><div><b>'+appStatusTxt(m.status)+'</b>situação</div><div><b>'+dataCurta(m.inicio)+'</b>assinou em</div><div><b>'+dataCurta(m.proximo_venc)+'</b>próx. vencimento</div></div></div>';
+  }).join('');
+}
+function alternaApp(){var b=el('app-corpo'),o=b.style.display==='none';b.style.display=o?'block':'none';el('app-mais').textContent=o?'−':'+';}
+function abrirAppCfg(){
+  var c=APPD.config||{};
+  abrirModal('<h3>App do motorista — preços</h3><p class="sub">Vale para quem assinar o app pago (roteirização e financeiro). Os meses promocionais contam a partir do dia da primeira assinatura.</p>'+
+  '<div class="linha2"><div><label>Mensalidade promocional (R$)</label><input id="ap-pp" inputmode="decimal" value="'+esc(deCentavos(c.preco_promo_centavos))+'"></div><div><label>Meses de promoção</label><input id="ap-mp" inputmode="numeric" value="'+esc(c.meses_promo==null?3:c.meses_promo)+'"></div></div>'+
+  '<div class="linha2"><div><label>Mensalidade normal (R$)</label><input id="ap-pn" inputmode="decimal" value="'+esc(deCentavos(c.preco_normal_centavos))+'"></div><div><label>Selo (ex: 50% OFF)</label><input id="ap-selo" value="'+esc(c.selo||'')+'"></div></div>'+
+  '<div class="linha2"><div><label>Avisar quantos dias antes do vencimento</label><input id="ap-da" inputmode="numeric" value="'+esc(c.dias_aviso==null?4:c.dias_aviso)+'"></div><div></div></div>'+
+  '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700"><input type="checkbox" id="ap-at" '+(c.ativo?'checked':'')+' style="width:auto;margin:0"> Venda do app pago ligada</label>'+
+  '<div class="erro" id="ap-erro"></div>'+
+  '<div class="acoes" style="margin-top:10px;justify-content:flex-end"><button class="btn" onclick="fechar()">Cancelar</button> <button class="btn pri" id="ap-btn" onclick="salvarAppCfg()">Salvar</button></div>');
+}
+function salvarAppCfg(){
+  var corpo={preco_promo_centavos:paraCentavos(el('ap-pp').value),preco_normal_centavos:paraCentavos(el('ap-pn').value),meses_promo:parseInt(el('ap-mp').value,10)||0,selo:el('ap-selo').value.trim(),dias_aviso:parseInt(el('ap-da').value,10)||0,ativo:el('ap-at').checked?1:0};
+  if(!corpo.preco_normal_centavos){el('ap-erro').textContent='Informe a mensalidade normal.';return;}
+  el('ap-btn').disabled=true;el('ap-erro').textContent='';
+  chamar('POST','/admin/app-config',corpo).then(function(d){
+    if(!d.ok){el('ap-erro').textContent=d.mensagem||'Erro ao salvar.';el('ap-btn').disabled=false;return;}
+    fechar();toast('Preços do app salvos!');carregarApp();
+  }).catch(function(){el('ap-btn').disabled=false;});
+}
 function carregarClientes(){
   chamar('GET','/admin/clientes').then(function(d){
     if(!d.ok){el('lista-clientes').innerHTML='<div class="vazio">'+esc(d.mensagem||'Erro ao carregar.')+'</div>';return;}
