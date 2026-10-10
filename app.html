@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-139-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-140-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -452,7 +452,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       </div>
       <div class="card" style="margin-bottom:14px">
         <h4 style="margin:0 0 8px">Minhas rotas</h4>
-        <div class="field"><label>Endereço de saída (base)</label><input class="inp" id="cfg-base" placeholder="Rua, número, cidade"></div>
+        <input type="hidden" id="cfg-base">
+        <div class="field"><label>Meus pontos de coleta</label><div id="cfg-pontos"><div class="empty" style="padding:6px 0">Carregando…</div></div><p style="margin:6px 0 0;font-size:12px;color:var(--muted)">O ponto de saída você escolhe sempre que começa uma rota. Aqui só cadastra ou remove pontos.</p></div>
         <div class="field" id="cfg-max-box" style="display:none"><label>Máximo de paradas por rota (só teste)</label><input class="inp" id="cfg-max" type="number" min="0" max="500" step="1"></div>
         <div class="field"><label>Depois da última entrega</label><select class="inp" id="cfg-volta"><option value="nao">Não volto para a base</option><option value="sim">Volto para a base</option></select></div>
         <div class="field"><label>Roteirização</label><select class="inp" id="cfg-rota"><option value="sim">Sim</option><option value="nao">Não</option></select><p style="margin:6px 0 0;font-size:11.5px;color:var(--muted)">Sim: você bipa e informa o endereço, o app monta a rota e você numera os pacotes. Não: você só bipa os pacotes pra registrar que pegou — sem endereço, sem rota e sem numeração — e depois marca o que entregou.</p></div>
@@ -1443,7 +1444,7 @@ function rpCarregarPonto(){
   }).catch(function(){});
 }
 setTimeout(rpCarregarPonto,1500); setInterval(rpCarregarPonto,600000);
-function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(PT.sel&&PT.sel.endereco)?PT.sel.endereco:((c.base&&c.base!==RP_BASE_PADRAO)?c.base:rpBasePonto()), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), assina:(c.assina==='sim'?'sim':'nao'), rota:((window.APP_PLANO&&APP_PLANO.bloqueio)?'nao':(c.rota==='nao'?'nao':(c.rota==='sim'?'sim':''))), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
+function rpCfg(){ var c={}; try{ c=JSON.parse(localStorage.getItem('dd_cfg')||'{}'); }catch(e){} return {base:(PT.sel&&PT.sel.endereco)?PT.sel.endereco:rpBasePonto(), pm:(c.pm==null||c.pm==='')?2:Number(c.pm), volta:(c.volta==='sim'?'sim':'nao'), modelo:(c.modelo==='circular'?'circular':'linear'), assina:(c.assina==='sim'?'sim':'nao'), rota:((window.APP_PLANO&&APP_PLANO.bloqueio)?'nao':(c.rota==='nao'?'nao':(c.rota==='sim'?'sim':''))), max:RP_TESTE?((c.max==null||c.max==='')?30:Number(c.max)):0}; }
 /* (65) "assinar o romaneio" fica guardado no servidor: salva uma vez e vale em qualquer aparelho, e se o aparelho esquecer, o app busca de novo */
 function rpCarregarCfgServidor(){
   if(!DD_M_TOKEN) return;
@@ -1489,7 +1490,7 @@ function rpSalvarCfg(){
   var b=(el('cfg-base').value||'').trim(), pm=parseFloat(String(el('cfg-pm').value).replace(',','.'));
   if(!isFinite(pm)||pm<0||pm>30) pm=2;
   var mx=parseInt(el('cfg-max').value,10); if(!isFinite(mx)||mx<0) mx=30; if(!RP_TESTE){ try{ mx=(JSON.parse(localStorage.getItem('dd_cfg')||'{}').max); }catch(e){} if(mx==null) mx=30; }
-  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:(b&&b!==rpBasePonto())?b:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear',assina:el('cfg-assina').value==='sim'?'sim':'nao',rota:el('cfg-rota').value==='nao'?'nao':'sim'})); }catch(e){}
+  try{ localStorage.setItem('dd_cfg',JSON.stringify({base:'',pm:pm,max:mx,volta:el('cfg-volta').value==='sim'?'sim':'nao',modelo:el('cfg-modelo').value==='circular'?'circular':'linear',assina:el('cfg-assina').value==='sim'?'sim':'nao',rota:el('cfg-rota').value==='nao'?'nao':'sim'})); }catch(e){}
   rpAtualizar();
   if(DD_M_TOKEN){ rpApi('/motorista/cfg',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({assina:el('cfg-assina').value==='sim',rota:el('cfg-rota').value==='nao'?'nao':'sim'})}).then(function(d){ if(!d||!d.ok) aviso('Salvei neste aparelho, mas não consegui guardar no servidor. Tente de novo.'); }).catch(function(){ aviso('Salvei neste aparelho, mas sem internet não guardei no servidor.'); }); }
   aviso('Configurações salvas');
@@ -3114,6 +3115,40 @@ function appBloqueado(nome){
   el('sh-pago-corpo').innerHTML='<p style="margin:0 0 6px;font-size:15px"><b>'+esc(nome)+'</b> faz parte do app pago.</p><p style="margin:0;color:var(--muted);font-size:13.5px">No modo grátis você usa a bipagem. Assine para liberar tudo:</p>'+appVantagensHtml()+appPrecoHtml()+'<button class="btn pri wide" onclick="appAssinar()">Assinar agora</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Agora não</button>';
   abrir('sh-pago'); return true;
 }
+/* ══ (140) Conta → Meus pontos de coleta: só cadastra/remove; a saída da rota é sempre o ponto escolhido ao começar ══ */
+var CTP={lista:null,novo:false,busy:false,err:''};
+function ctpCarregar(){
+  rpApi('/motorista/pontos').then(function(d){
+    if(d&&d.ok){ CTP.lista=[]; if(d.deltadis) CTP.lista.push(d.deltadis); (d.meus||[]).forEach(function(x){ CTP.lista.push(x); }); CTP.err=''; }
+    else CTP.err='Não consegui carregar os pontos.';
+    ctpPintar();
+  }).catch(function(){ CTP.err='Sem conexão.'; ctpPintar(); });
+}
+function ctpPintar(){
+  var e=el('cfg-pontos'); if(!e) return; var L=CTP.lista||[], h='', i, x;
+  if(CTP.err&&!L.length) h+='<div style="color:#B91C1C;font-size:13px;margin-bottom:6px">'+esc(CTP.err)+'</div>';
+  for(i=0;i<L.length;i++){ x=L[i];
+    h+='<div class="bp-item"><span class="bp-seq">📍</span><div class="bp-info" style="flex:1"><b>'+esc(x.nome)+'</b><span>'+esc(x.endereco)+' · '+(x.tipo==='deltadis'?'DELTADIS':'outra empresa')+'</span></div>'+(x.tipo==='externo'?'<button class="btn sec" style="padding:6px 12px" onclick="ctpRemover(\''+esc(String(x.id))+'\')">✕</button>':'')+'</div>';
+  }
+  if(CTP.novo){
+    h+='<div style="margin-top:10px"><div class="field"><label>Nome da empresa</label><input class="inp" id="ctp-nome" placeholder="ex.: Loja Central" autocomplete="off"></div><div class="field"><label>Endereço do ponto de coleta</label><input class="inp" id="ctp-end" placeholder="Rua, número, bairro, cidade" autocomplete="off"></div>'+
+       '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="CTP.novo=false;ctpPintar()">Cancelar</button><button class="btn pri" style="flex:1" id="ctp-ok" onclick="ctpSalvar()">Salvar ponto</button></div></div>';
+  } else h+='<button class="btn sec wide" style="margin-top:8px" onclick="CTP.novo=true;ctpPintar()">➕ Cadastrar ponto de coleta</button>';
+  e.innerHTML=h;
+}
+function ctpSalvar(){
+  var n=((el('ctp-nome')||{}).value||'').trim(), a=((el('ctp-end')||{}).value||'').trim();
+  if(n.length<2||a.length<6){ aviso('Informe o nome e o endereço'); return; }
+  if(CTP.busy) return; CTP.busy=true; var b=el('ctp-ok'); if(b) b.textContent='Salvando…';
+  rpApi('/motorista/ponto-salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,endereco:a})}).then(function(d){
+    CTP.busy=false;
+    if(!d||!d.ok){ if(b) b.textContent='Salvar ponto'; aviso((d&&d.mensagem)||'Não consegui salvar. Tente de novo.'); return; }
+    CTP.novo=false; PT.lista=null; aviso('Ponto cadastrado'); ctpCarregar();
+  }).catch(function(){ CTP.busy=false; if(b) b.textContent='Salvar ponto'; aviso('Sem conexão. Tente de novo.'); });
+}
+function ctpRemover(id){
+  rpApi('/motorista/ponto-remover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})}).then(function(){ PT.lista=null; if(PT.sel&&String(PT.sel.id)===String(id)){ PT.sel=null; ptGravar(); } aviso('Ponto removido'); ctpCarregar(); }).catch(function(){ aviso('Sem conexão. Não removi.'); });
+}
 /* ══ conta / dados / segurança ══ */
 function pintarConta(){
   var P=PERFIL||{}, u=DD_M_USER||{};
@@ -3127,7 +3162,7 @@ function pintarConta(){
   var card=el('cta-regiao')&&el('cta-regiao').parentNode&&el('cta-regiao').parentNode.parentNode;
   if(card){ var alg=P.regiao||veic.trim()||P.cap>0||P.valorPadrao>0; card.style.display=alg?'block':'none'; }
   var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo; el('cfg-assina').value=cf.assina; if(el('cfg-veic')) el('cfg-veic').value=trkVeic(); el('cfg-rota').value=(cf.rota==='nao'?'nao':'sim'); el('cfg-rota').disabled=!!(window.APP_PLANO&&APP_PLANO.bloqueio);
-  rpPintarIdentidade(); appBannerPintar();
+  rpPintarIdentidade(); appBannerPintar(); ctpCarregar();
 }
 function salvarSenha(){
   var atual=(el('sn-atual').value||'').trim(), nova=(el('sn-nova').value||'').trim(), conf=(el('sn-conf').value||'').trim();
