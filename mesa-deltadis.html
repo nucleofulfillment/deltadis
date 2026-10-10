@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-43-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-44-1010</p>
   </div>
 </div>
 
@@ -340,8 +340,8 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="col-esq">
       <div class="modo-bar" id="modo-bar"></div>
       <div class="modo-bar" id="modo-sub" style="display:none"></div>
-      <div class="mot-box" id="mot-box"><label>1 · Quem é o motorista desta carga?</label><input id="mot-sel" list="mot-lista" autocomplete="off" placeholder="Carregando motoristas…" onchange="escolherMotorista()"><span id="mot-chip" style="flex:none"></span><datalist id="mot-lista"></datalist></div>
-      <div class="cards bloq" id="mesa-cards"></div>
+      <div class="mot-box" id="mot-box" style="display:none"><label>1 · Quem é o motorista desta carga?</label><input id="mot-sel" list="mot-lista" autocomplete="off" placeholder="Carregando motoristas…" onchange="escolherMotorista()"><span id="mot-chip" style="flex:none"></span><datalist id="mot-lista"></datalist></div>
+      <div class="cards" id="mesa-cards"></div>
     </div>
 
     <div class="col-dir">
@@ -352,7 +352,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div class="scan-vazio" id="scan-vazio">
           <div class="ic0">📦</div>
           <b>Nenhuma contagem em andamento</b>
-          <span>Escolha o motorista e depois a transportadora ao lado para começar a bipar.</span>
+          <span>Escolha a transportadora ao lado para começar a bipar.</span>
         </div>
 
         <div id="scan-conteudo" style="display:none">
@@ -602,7 +602,7 @@ function pintarCards(){
 
 /* ══ estado da bipagem ══
    A sessão (contagem) é única: dá pra trocar de transportadora no meio e cada pacote guarda a sua. */
-var ATIVA=null, CNT=0, PACOTES=[], VISTOS={}, ULT=null, OCUPADO=false, MOT=null, MOTS=[];
+var ATIVA=null, CNT=0, PACOTES=[], VISTOS={}, ULT=null, OCUPADO=false, MOT={id:'',n:''}, MOTS=[];   /* (44) a Mesa não escolhe motorista: só dá entrada. O dono do pacote vira o motorista que bipar no app. */
 
 function achaTr(id){ var i; for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].id===id) return TRANSPORTADORAS[i]; return null; }
 
@@ -619,20 +619,19 @@ function salvarSessao(){
 function restaurarSessao(){
   try{
     var raw=localStorage.getItem(SESS_KEY); if(!raw) return;
-    var d=JSON.parse(raw), m=null, i;
+    var d=JSON.parse(raw), m=MOT, i;
     if(!d || d.dia!==hojeChave()){ localStorage.removeItem(SESS_KEY); return; }
-    for(i=0;i<MOTS.length;i++) if(String(MOTS[i].id)===String(d.mot)) m=MOTS[i];
     var t=achaTr(d.tr); if(!m || !t) return;
-    MODO='entrada'; ajustarModoTela(); MOT=m; motChip(); el('mot-sel').value=m.n; el('mesa-cards').classList.remove('bloq');
+    MODO='entrada'; ajustarModoTela(); pintarModos();
     PACOTES=(d.pac||[]).map(function(p){ p.pend=0; return p; }); VISTOS=d.vistos||{}; CNT=Number(d.cnt)||PACOTES.length;
     ULT=PACOTES.length?PACOTES[PACOTES.length-1]:null;
     abrirMesa(t.id);
     el('btn-desfazer').disabled=!ULT;
     if(ULT) mostrarUlt('ok','↻ Contagem retomada — último pacote',ULT.cod);
-    aviso('Contagem retomada: '+CNT+' pacote'+(CNT===1?'':'s')+' de '+m.n);
+    aviso('Contagem retomada: '+CNT+' pacote'+(CNT===1?'':'s'));
   }catch(e){}
 }
-function tituloScan(){ return (MOT?MOT.n+' · ':'')+(ATIVA?ATIVA.n:''); }
+function tituloScan(){ return (ATIVA?ATIVA.n:''); }
 /* (09) o campo do motorista aceita DIGITAR (e filtra) ou escolher na lista */
 function normNome(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
 function achaMot(t){
@@ -648,7 +647,7 @@ function carregarMotoristas(){
     for(i=0;i<MOTS.length;i++) h+='<option value="'+esc(MOTS[i].n)+'"></option>';
     el('mot-lista').innerHTML=h;
     s.placeholder=MOTS.length?'digite ou escolha o motorista':'Nenhum motorista cadastrado no painel';
-    if(!MOT && !ATIVA) restaurarSessao();
+    if(!ATIVA) restaurarSessao();
   }).catch(function(){ el('mot-sel').placeholder='Não consegui carregar os motoristas'; });
 }
 function escolherMotorista(){
@@ -717,7 +716,7 @@ function registrarPacote(cod){
   CNT++; tr.hoje++;
   var p={seq:CNT, cod:cod, tr:tr.id, tn:tr.n, hora:hora, pend:1}; PACOTES.push(p); VISTOS[cod]={tn:tr.n,hora:hora}; ULT=p;
   el('scan-cnt').textContent=CNT; el('btn-desfazer').disabled=false;
-  mostrarUlt('ok','✔ Entrou — '+mot.n+' · '+tr.n,cod);
+  mostrarUlt('ok','✔ Entrou na base — '+tr.n,cod);
   pintarCards(); somBipeOk(); salvarSessao();
   api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,trn:tr.n,mt:mot.id,mtn:mot.n})}).then(function(d){
     if(!d||!d.ok){ bipReverter(p,tr,cod,sid); somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
@@ -798,10 +797,10 @@ function trocarModo(m){
 }
 function ajustarModoTela(){
   var nada=(MODO===''), esq=(MODO==='esquecido');
-  el('mot-box').style.display=nada?'none':''; el('mesa-cards').style.display=(nada||esq||MODO==='devolucao')?'none':'';
+  el('mot-box').style.display='none'; el('mesa-cards').style.display=(nada||esq||MODO==='devolucao')?'none':'';
   el('mot-sel').readOnly=esq;   /* esquecido: o motorista é preenchido sozinho */
   var v=el('scan-vazio').querySelector('span');
-  if(v) v.textContent=(MODO===''?'Escolha uma operação acima para começar: Entregas, XML, OS, Devolução ou Esquecido.':MODO==='devolucao'?'Escolha o motorista que está devolvendo para começar a bipar. A transportadora o sistema já sabe.':(MODO==='xml'?'Escolha o motorista e a transportadora; depois bipe a chave da NF.':(MODO==='os'?'Escolha o motorista e a transportadora; depois digite o número da OS.':'Escolha o motorista e depois a transportadora ao lado para começar a bipar.')));
+  if(v) v.textContent=(MODO===''?'Escolha uma operação acima para começar: Entregas, XML, OS, Devolução ou Esquecido.':MODO==='devolucao'?'Escolha o motivo e bipe os pacotes. A transportadora e o motorista o sistema já sabe.':(MODO==='xml'?'Escolha a transportadora; depois bipe a chave da NF.':(MODO==='os'?'Escolha a transportadora; depois digite o número da OS.':'Escolha a transportadora ao lado para começar a bipar.')));
 }
 function modoPreparar(){
   var ex=el('mo-extra'), xm=(MODO==='xml');
@@ -810,7 +809,7 @@ function modoPreparar(){
   el('scan-manual').placeholder=(MODO==='os')?'Digite o número da OS (mín. 5 caracteres)':(xm?'Bipe a chave da NF (código de barras da nota, 44 números)':'Bipe ou digite o código');
   el('btn-desfazer').style.display=(MODO==='entrada')?'':'none';
   var t=el('scan-nome');
-  if(MODO==='devolucao') t.textContent='↩ Devolução · '+(MOT?MOT.n:'');
+  if(MODO==='devolucao') t.textContent='↩ Devolução';
   else if(MODO==='xml') t.textContent='🧾 XML da NF · '+tituloScan();
   else if(MODO==='os') t.textContent='📝 OS · '+tituloScan();
   else if(MODO==='esquecido') t.textContent='🕘 Esquecido na base';
@@ -833,7 +832,7 @@ function devolverEnviar(cod,m){
     if(!d||!d.ok){ somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
     if(d.resultado==='repetido'){ somErro(); mostrarUlt('rep','Esse pacote já foi recebido de volta antes',d.cod||cod); return; }
     CNT++; el('scan-cnt').textContent=CNT; somBipeOk();
-    mostrarUlt('ok','✔ Na base — '+nome+' · '+MOT.n+(d.paga?' · 💰 3ª tentativa (vai pro financeiro)':''),d.cod||cod);
+    mostrarUlt('ok','✔ Na base — '+nome+(d.paga?' · 💰 3ª tentativa (vai pro financeiro)':''),d.cod||cod);
   }).catch(function(){ somErro(); mostrarUlt('err','Sem conexão. Esse pacote NÃO foi registrado — bipe de novo.',cod); });
   var i1=el('scan-manual'); if(i1) i1.focus();
 }
@@ -866,7 +865,7 @@ function esquecerPacote(cod){
 }
 function esqPreencher(mt,mtn){
   var i, m=null; for(i=0;i<MOTS.length;i++) if(String(MOTS[i].id)===String(mt)){ m=MOTS[i]; break; }
-  if(m){ MOT=m; el('mot-sel').value=m.n; motChip(); } else if(mtn){ el('mot-sel').value=mtn; }
+  /* (44) a Mesa não guarda motorista */
 }
 function carregarEsquecidos(){
   api('/mesa/esquecidos').then(function(d){
@@ -886,7 +885,7 @@ function osRegistrar(cod){
     if(r.resultado==='repetido'){ somErro(); mostrarUlt('rep','Já existe um pedido com esse número',cod); return; }
     if(r.resultado!=='novo'){ somErro(); mostrarUlt('err',r.mensagem||'Número inválido',cod); return; }
     CNT++; el('scan-cnt').textContent=CNT; somBipeOk();
-    mostrarUlt(r.cep==='nao_achou'||r.cep==='invalido'?'rep':'ok','✔ OS criada — '+MOT.n+' · '+ATIVA.n+(r.cep==='ok'?' · endereço pelo CEP':'')+(r.cep==='nao_achou'?' · CEP não encontrado (sem endereço)':'')+(r.cep==='invalido'?' · CEP incompleto (sem endereço)':''),cod);
+    mostrarUlt(r.cep==='nao_achou'||r.cep==='invalido'?'rep':'ok','✔ OS criada na base — '+ATIVA.n+(r.cep==='ok'?' · endereço pelo CEP':'')+(r.cep==='nao_achou'?' · CEP não encontrado (sem endereço)':'')+(r.cep==='invalido'?' · CEP incompleto (sem endereço)':''),cod);
     OS_ULT={cod:cod,cliente:cl,mot:MOT.n,tr:ATIVA.n,t:Date.now()};
     var pr=el('os-print'); if(pr) pr.innerHTML='<button class="btn sec" onclick="osImprimir()">🖨 Imprimir a OS '+esc(cod)+'</button>';
     if(el('os-cliente')) el('os-cliente').value=''; if(el('os-cep')) el('os-cep').value=''; if(el('os-num')) el('os-num').value='';
@@ -1017,7 +1016,7 @@ var RMF='';
 function abrirRomaneio(f){
   RMF=(f==='app')?'app':'';
   el('rm-transp-ic').innerHTML=RMF?'📱':'📦'; el('rm-transp-ic').style.background='#F4EEFB';
-  el('rm-transp-nome').textContent=(RMF?'Bipados no app — ':'')+(MOT?MOT.n:'Todos os motoristas');
+  el('rm-transp-nome').textContent=(RMF?'Bipados no app — ':'')+'Todos os motoristas';
   el('rm-resumo').innerHTML='Dia: <input type="date" id="rm-dia" value="'+hojeLocal()+'" onchange="carregarRomaneio()" style="border:1px solid #E3D9F2;border-radius:8px;padding:4px 8px;font-family:inherit"> <span id="rm-tot"></span>'+(MOT?'':'<div style="font-size:11.5px;color:#8A7FA3;margin-top:4px">Escolha um motorista na tela para ver só os pacotes dele.</div>');
   el('rm-lista').innerHTML='<div class="rm-vazio">Carregando…</div>';
   el('rm-overlay').classList.add('on');
@@ -1027,7 +1026,7 @@ function carregarRomaneio(){
   var dia=el('rm-dia').value||hojeLocal();
   api('/mesa/entradas?dia='+encodeURIComponent(dia)).then(function(d){
     if(!d||!d.ok){ el('rm-lista').innerHTML='<div class="rm-vazio">Não consegui carregar.</div>'; return; }
-    var it=(d.itens||[]).filter(function(x){ return (!MOT || String(x.mt||'')===String(MOT.id)) && (!RMF || x.tr==='Bipado no app'); });
+    var it=(d.itens||[]).filter(function(x){ return (true) && (!RMF || x.tr==='Bipado no app'); });
     /* romaneio só existe depois do FECHAMENTO: pacote sem número de romaneio (ou rota ainda em andamento) NÃO entra aqui nem no PDF */
     var abertos=it.filter(function(x){ return (!x.rom || x.rom==='Em andamento') && x.st!=='removido'; });
     it=it.filter(function(x){ return x.rom && x.rom!=='Em andamento'; });
@@ -1036,7 +1035,7 @@ function carregarRomaneio(){
     api('/mesa/assinaturas?dia='+encodeURIComponent(dia)).then(function(a){ if(a&&a.ok&&RM.dia===dia) RM.ass=a.assinaturas||[]; }).catch(function(){});
     var g={}, ordem=[], i, k, h='';
     var nNl=it.filter(function(x){ return x.nl; }).length; el('rm-tot').innerHTML='· '+it.length+' pacote'+(it.length===1?'':'s')+' em romaneio fechado'+(abertos.length?'<div style="font-size:12px;color:#8A7FA3;margin-top:4px">'+abertos.length+' pacote'+(abertos.length===1?'':'s')+' bipado'+(abertos.length===1?'':'s')+' ainda sem fechamento — o romaneio só é gerado quando a contagem é finalizada.</div>':'')+(nNl?' · <b style="color:#B91C1C">⚠ '+nNl+' não localizado'+(nNl===1?'':'s')+'</b>':'');
-    if(!it.length){ el('rm-lista').innerHTML='<div class="rm-vazio">Nenhum romaneio fechado neste dia'+(MOT?' para '+esc(MOT.n):'')+'.</div>'; return; }
+    if(!it.length){ el('rm-lista').innerHTML='<div class="rm-vazio">Nenhum romaneio fechado neste dia'+''+'.</div>'; return; }
     for(i=it.length-1;i>=0;i--){ k=(it[i].mtn||'Sem motorista')+'\u0001'+(it[i].rom||''); if(!g[k]){ g[k]={}; ordem.push(k); }
       var tn=(achaTr(it[i].tr)||{n:it[i].tr}).n; (g[k][tn]=g[k][tn]||[]).push(it[i]); }
     ordem.sort(romOrdena);
@@ -1154,7 +1153,7 @@ function avConsolidado(){
   function lin(t,cls,l){ return l.length?'<div style="margin-top:6px"><span class="av-pill '+cls+'">'+t+' ('+l.length+')</span> <span style="font-size:13px">'+l.map(function(x){ return '<b>'+esc(x.n)+'</b>'+(x.r.respondeu?' <span style="color:#6b5f85">“'+esc(x.r.texto)+'”</span>':''); }).join(' · ')+'</span></div>':''; }
   c.innerHTML='<div style="border:1px solid #E3D9F2;border-radius:12px;padding:10px 12px;background:#FBF9FF"><div style="font-size:11.5px;font-weight:800;color:#6b5f85;letter-spacing:.4px">SITUAÇÃO DOS AVISOS (ciclo atual)</div>'+lin('🚫 Recusaram','rec',rec)+lin('💬 Responderam','resp',resp)+lin('✔ Avisados, sem resposta','env',env)+'</div>';
 }
-function motChip(){ var c=el('mot-chip'); if(!c) return; c.innerHTML=MOT?respHtml(RESP[String(MOT.id)],false):''; c.title=(MOT&&RESP[String(MOT.id)]&&RESP[String(MOT.id)].texto)||''; }
+function motChip(){ var c=el('mot-chip'); if(!c) return; c.innerHTML=''; c.title=''; }
 
 function abrirAvisar(){
   AV.mots=[]; el('av-lista').innerHTML=''; el('av-res').innerHTML=''; el('av-resumo').textContent='Carregando…'; el('av-overlay').classList.add('on'); avTipo();
