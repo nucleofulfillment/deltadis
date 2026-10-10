@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-142-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-143-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1788,7 +1788,7 @@ function bpRemover(cod){
   }).catch(function(){ aviso('Sem conexão. Não removi.'); });
 }
 /* (141) assinatura do romaneio: ponto DELTADIS = obrigatória; ponto de outra empresa = só se ele ativou naquele ponto */
-function asgObrigatoria(){ if(PT.sel){ if(PT.sel.tipo==='deltadis') return true; return !!PT.sel.assina; } return rpCfg().assina==='sim'; }
+function asgObrigatoria(){ if(window.APP_PLANO&&APP_PLANO.bloqueio) return false; if(PT.sel){ if(PT.sel.tipo==='deltadis') return true; return !!PT.sel.assina; } return rpCfg().assina==='sim'; }
 /* (75) pacote remarcado/ainda com o motorista JÁ pertence ao 1º romaneio (tem rom): não entra em romaneio novo nem pede nova assinatura */
 function bpNovos(){ return BP.meus.filter(function(m){ return !m.rom; }); }
 /* (110) depois do romaneio fechado: com roteirização segue pra montar a rota; sem roteirização vai pra tela de entregas */
@@ -1958,7 +1958,7 @@ function entTela(){
   for(i=0;i<n;i++){ var m=L[i], on=!!ENT.sel[m.cod];
     h+='<label style="display:flex;gap:12px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--border);'+(on?'background:#F3E8FF;':'')+'"><input type="checkbox" '+(on?'checked ':'')+'onchange="entMarca(\''+esc(m.cod)+'\',this.checked)" style="width:22px;height:22px"><span style="min-width:0;flex:1;overflow:hidden"><b style="word-break:break-all">'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<span style="display:block;color:#5B5170;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.cl)+'</span>':'')+'<span style="display:block;color:#7A7090;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.r?esc(m.r+((m.d&&m.d.bai)?' — '+m.d.bai:'')):'<i>sem endereço cadastrado</i>')+'</span>'+'</span></label>'; }
   h+='<div style="display:flex;gap:10px;margin-top:14px"><button class="btn sec" style="flex:1" onclick="entAplicar(\'devolvido\')">↩ Devolver à base'+(ns?' ('+ns+')':'')+'</button><button class="btn pri" style="flex:1" onclick="entAplicar(\'entregue\')">✔ Entregue'+(ns?' ('+ns+')':'')+'</button></div>';
-  h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button><button class="btn sec" style="flex:1" onclick="EST=\'rp_bip\';BP.ult=null;renderInicio();bpCarregar(true)">+ Bipar mais</button></div></div>';
+  h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'rp_bip\';BP.ult=null;renderInicio();bpCarregar(true)">Voltar</button></div></div>';
   return h;
 }
 function entAplicar(status,motivo){
@@ -3124,7 +3124,7 @@ function ptFormHtml(p){
    '<div class="field"><label>Bairro</label><input class="inp" id="'+p+'-bai" autocomplete="off"></div>'+
    '<div style="display:flex;gap:10px"><div class="field" style="flex:3"><label>Cidade</label><input class="inp" id="'+p+'-cid" autocomplete="off"></div><div class="field" style="flex:1"><label>UF</label><input class="inp" id="'+p+'-uf" maxlength="2" autocomplete="off"></div></div>'+
    '<div class="field"><label>Nome da empresa</label><input class="inp" id="'+p+'-nome" placeholder="ex.: Loja Central" autocomplete="off"></div>'+
-   '<label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 12px;font-size:13.5px"><input type="checkbox" id="'+p+'-assina" checked style="width:auto;margin:3px 0 0"><span><b>Ativar assinatura no romaneio</b> neste ponto<br><span style="color:var(--muted);font-size:12px">Você assina o romaneio ao fechar a rota. Dá pra desativar depois em Conta → Meus pontos.</span></span></label>'+
+   '<label style="display:'+((window.APP_PLANO&&APP_PLANO.bloqueio)?'none':'flex')+';align-items:flex-start;gap:8px;margin:0 0 12px;font-size:13.5px"><input type="checkbox" id="'+p+'-assina" checked style="width:auto;margin:3px 0 0"><span><b>Ativar assinatura no romaneio</b> neste ponto<br><span style="color:var(--muted);font-size:12px">Você assina o romaneio ao fechar a rota. Dá pra desativar depois em Conta → Meus pontos.</span></span></label>'+
    '<p id="'+p+'-msg" style="color:#B91C1C;font-size:13px;font-weight:700;margin:0 0 8px"></p>';
 }
 function ptFormCep(p){
@@ -3157,7 +3157,7 @@ function ctpPintar(){
   var e=el('cfg-pontos'); if(!e) return; var L=CTP.lista||[], h='', i, x;
   if(CTP.err&&!L.length) h+='<div style="color:#B91C1C;font-size:13px;margin-bottom:6px">'+esc(CTP.err)+'</div>';
   for(i=0;i<L.length;i++){ x=L[i];
-    h+='<div class="bp-item"><span class="bp-seq">📍</span><div class="bp-info" style="flex:1"><b>'+esc(x.nome)+'</b><span>'+esc(x.endereco)+' · '+(x.tipo==='deltadis'?'DELTADIS':'outra empresa')+'</span></div>'+(x.tipo==='externo'?'<button class="btn sec" style="padding:6px 12px" onclick="ctpRemover(\''+esc(String(x.id))+'\')">✕</button>':'')+'</div>'+(x.tipo==='externo'?'<div style="margin:-4px 0 8px 44px;font-size:12.5px">✍ Assinatura no romaneio: <b style="color:'+(x.assina?'#15803D':'#6B7280')+'">'+(x.assina?'Ativa':'Inativa')+'</b> · <a href="#" style="color:var(--roxo);font-weight:800" onclick="ctpAssina(\''+esc(String(x.id))+'\','+(x.assina?0:1)+');return false">'+(x.assina?'Inativar':'Ativar')+'</a></div>':'<div style="margin:-4px 0 8px 44px;font-size:12.5px;color:var(--muted)">✍ Assinatura no romaneio: <b>obrigatória</b> neste ponto</div>');
+    h+='<div class="bp-item"><span class="bp-seq">📍</span><div class="bp-info" style="flex:1"><b>'+esc(x.nome)+'</b><span>'+esc(x.endereco)+' · '+(x.tipo==='deltadis'?'DELTADIS':'outra empresa')+'</span></div>'+(x.tipo==='externo'?'<button class="btn sec" style="padding:6px 12px" onclick="ctpRemover(\''+esc(String(x.id))+'\')">✕</button>':'')+'</div>'+((window.APP_PLANO&&APP_PLANO.bloqueio)?'':(x.tipo==='externo'?'<div style="margin:-4px 0 8px 44px;font-size:12.5px">✍ Assinatura no romaneio: <b style="color:'+(x.assina?'#15803D':'#6B7280')+'">'+(x.assina?'Ativa':'Inativa')+'</b> · <a href="#" style="color:var(--roxo);font-weight:800" onclick="ctpAssina(\''+esc(String(x.id))+'\','+(x.assina?0:1)+');return false">'+(x.assina?'Inativar':'Ativar')+'</a></div>':'<div style="margin:-4px 0 8px 44px;font-size:12.5px;color:var(--muted)">✍ Assinatura no romaneio: <b>obrigatória</b> neste ponto</div>'));
   }
   if(CTP.novo){
     h+='<div style="margin-top:10px">'+ptFormHtml('ctp')+
