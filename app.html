@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-138-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-139-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1460,6 +1460,8 @@ function rpCarregarCfgServidor(){
 /* (110) pergunta de primeiro acesso: o motorista usa roteirização? */
 var ROTA_CB=null;
 function rotaPerguntar(cb){
+  /* (139) app grátis (bloqueio ligado): não tem roteirização, então nem pergunta — segue direto pra bipagem */
+  if(window.APP_PLANO&&APP_PLANO.bloqueio){ if(typeof cb==='function'){ try{ cb(); }catch(e){} } return; }
   if(el('rota-ask')) return;
   ROTA_CB=(typeof cb==='function')?cb:null;
   var d=document.createElement('div'); d.id='rota-ask'; d.style.cssText='position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:28px 22px;overflow:auto';
@@ -3124,7 +3126,7 @@ function pintarConta(){
   mostra('cta-cap',P.cap>0?(P.cap+' pacotes'):''); mostra('cta-valor',P.valorPadrao>0?(moeda(P.valorPadrao)+' por pacote'):'');
   var card=el('cta-regiao')&&el('cta-regiao').parentNode&&el('cta-regiao').parentNode.parentNode;
   if(card){ var alg=P.regiao||veic.trim()||P.cap>0||P.valorPadrao>0; card.style.display=alg?'block':'none'; }
-  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo; el('cfg-assina').value=cf.assina; if(el('cfg-veic')) el('cfg-veic').value=trkVeic(); el('cfg-rota').value=(cf.rota==='nao'?'nao':'sim');
+  var cf=rpCfg(); el('cfg-base').value=cf.base; el('cfg-pm').value=cf.pm; el('cfg-max').value=cf.max; el('cfg-max-box').style.display=RP_TESTE?'block':'none'; el('cfg-volta').value=cf.volta; el('cfg-modelo').value=cf.modelo; el('cfg-assina').value=cf.assina; if(el('cfg-veic')) el('cfg-veic').value=trkVeic(); el('cfg-rota').value=(cf.rota==='nao'?'nao':'sim'); el('cfg-rota').disabled=!!(window.APP_PLANO&&APP_PLANO.bloqueio);
   rpPintarIdentidade(); appBannerPintar();
 }
 function salvarSenha(){
