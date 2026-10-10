@@ -388,7 +388,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-119-0910</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-120-0910</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1973,7 +1973,8 @@ function vzAbrir(cod,modo){
     '<div style="display:flex;gap:10px"><button class="btn sec" style="flex:1" onclick="'+(ed?'vzFechar()':'vzConcluir()')+'">'+(ed?'Fechar':'Concluir')+'</button>'+(ed?'<button class="btn pri" style="flex:1" id="vz-ok" onclick="vzSalvar(false)">Salvar</button>':'<button class="btn sec" style="flex:1" id="vz-dig" onclick="vzCampos(true)">⌨ Digitar</button>')+'</div></div>';
   document.body.appendChild(ov);
   vzFalt(); bpAtualizar();
-  if(ed){ vzStat('Toque aqui para falar de novo','#6D28D9'); if(d.cep&&d.cep.length===8) vzCepDig(); else if(it&&it.r) el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px">'+esc(it.r)+'</div>'; }
+  if(ed){ vzStat('Toque aqui para falar de novo','#6D28D9'); if(d.rua&&d.cid&&d.cep&&d.cep.length===8){ VZ.cep=d.cep; VZ.rua=d.rua; VZ.bai=d.bai||''; VZ.cid=d.cid; VZ.achou=true; el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px"><b>'+esc(d.rua)+'</b><br>'+esc((d.bai?d.bai+' · ':'')+d.cid)+'</div>'; }   /* (120) endereço já completo (veio do pedido): mostra e deixa salvar na hora, sem depender da busca do CEP */
+      else if(d.cep&&d.cep.length===8) vzCepDig(); else if(it&&it.r) el('vz-res').innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px">'+esc(it.r)+'</div>'; }
   else { vzStat(VZ.ouvindo?'🎤 Pode falar…  (CEP e número, ou rua, número, bairro e cidade)':'Ativando o microfone…','#7C3AED'); if(!VZ.ouvindo) vzOuvir(); }
 }
 function vzCampos(v){ var c=el('vz-campos'); if(c) c.style.display=v?'block':'none'; var b=el('vz-dig'); if(b&&v&&VZ.modo!=='edit'){ b.textContent='Salvar'; b.className='btn pri'; b.onclick=function(){ vzSalvar(false); }; } }
