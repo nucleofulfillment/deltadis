@@ -402,7 +402,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-155-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-157-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -456,11 +456,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       </div>
       <div id="cta-pago"></div>
       <div class="card" style="margin-bottom:14px">
-        <h4 style="margin:0 0 8px">Meus dados</h4>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 8px"><h4 style="margin:0">Meus dados</h4><button id="cdd-btn" onclick="cddAlterna()" aria-label="Ver e editar meus dados" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--s3);color:var(--roxo);font-size:20px;font-weight:700;line-height:1;padding:0;cursor:pointer">+</button></div>
         <div class="sh-row"><span class="k">Região</span><span class="v" id="cta-regiao">—</span></div>
         <div class="sh-row"><span class="k">Veículo</span><span class="v" id="cta-veiculo">—</span></div>
         <div class="sh-row"><span class="k">Capacidade</span><span class="v" id="cta-cap">—</span></div>
         <div class="sh-row"><span class="k">Valor por pacote</span><span class="v" id="cta-valor">—</span></div>
+        <div id="cdd-box" style="display:none"></div>
       </div>
       <div class="card" style="margin-bottom:14px">
         <h4 style="margin:0 0 8px">Minhas rotas</h4>
@@ -2008,7 +2009,7 @@ function bpCamera(){
   var det; try{ det=new BarcodeDetector({formats:['qr_code']}); }catch(e){ aviso('Câmera de leitura indisponível.'); return; }
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(st){
     var ov=document.createElement('div'); ov.id='bp-cam'; ov.style.cssText='position:fixed;inset:0;background:rgba(15,5,30,.94);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px';
-    ov.innerHTML='<div style="position:relative;width:min(92vw,520px);aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#000"><video id="bp-vid" playsinline muted style="width:100%;height:100%;object-fit:cover"></video><div style="position:absolute;left:8%;right:8%;top:50%;height:2px;background:#EC4899;box-shadow:0 0 12px #EC4899"></div></div><div id="bp-caminfo" style="color:#fff;font-size:13px;text-align:center">Aponte para o QR Code da etiqueta</div><button class="btn sec" onclick="bpFecharCamera()">Fechar câmera</button>';
+    ov.innerHTML='<div style="position:relative;width:min(86vw,380px);aspect-ratio:1/1;border-radius:16px;overflow:hidden;background:#000"><video id="bp-vid" playsinline muted style="width:100%;height:100%;object-fit:cover"></video><div style="position:absolute;inset:14%"><i style="position:absolute;width:34px;height:34px;border:4px solid #EC4899;left:0;top:0;border-right:0;border-bottom:0;border-radius:10px 0 0 0"></i><i style="position:absolute;width:34px;height:34px;border:4px solid #EC4899;right:0;top:0;border-left:0;border-bottom:0;border-radius:0 10px 0 0"></i><i style="position:absolute;width:34px;height:34px;border:4px solid #EC4899;left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 10px"></i><i style="position:absolute;width:34px;height:34px;border:4px solid #EC4899;right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 10px 0"></i></div></div><div id="bp-caminfo" style="color:#fff;font-size:13px;text-align:center">Aponte para o QR Code da etiqueta</div><button class="btn sec" onclick="bpFecharCamera()">Fechar câmera</button>';
     document.body.appendChild(ov); var v=el('bp-vid'); v.srcObject=st; v.play().catch(function(){});
     BP.cam={st:st,ult:'',q:0,timer:setInterval(function(){
       if(!v||v.readyState<2||BP.ocupado) return;
@@ -3268,6 +3269,42 @@ function ctpRemover(id){
   rpApi('/motorista/ponto-remover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})}).then(function(){ PT.lista=null; if(PT.sel&&String(PT.sel.id)===String(id)){ PT.sel=null; ptGravar(); } aviso('Ponto removido'); ctpCarregar(); }).catch(function(){ aviso('Sem conexão. Não removi.'); });
 }
 /* ══ conta / dados / segurança ══ */
+
+/* (156) MEUS DADOS: o + abre todos os dados do cadastro, cada campo editável; salva pelo mesmo caminho do primeiro acesso */
+var CDD={aberto:false};
+function cddAlterna(){
+  var b=el('cdd-box'), t=el('cdd-btn'); if(!b) return;
+  CDD.aberto=!CDD.aberto; if(t) t.textContent=CDD.aberto?'−':'+';
+  if(!CDD.aberto){ b.style.display='none'; return; }
+  b.style.display='block'; b.innerHTML='<p style="margin:10px 0 0;color:var(--muted);font-size:13px">Carregando…</p>';
+  rpApi('/motorista/cadastro').then(function(d){
+    if(!d||!d.ok||!d.achou){ b.innerHTML='<p style="margin:10px 0 0;color:var(--muted);font-size:13px">Não consegui carregar seus dados agora.</p>'; return; }
+    CAD.campos=d.campos||{}; cddPintar();
+  }).catch(function(){ b.innerHTML='<p style="margin:10px 0 0;color:var(--muted);font-size:13px">Sem conexão. Tente de novo.</p>'; });
+}
+function cddPintar(){
+  var b=el('cdd-box'); if(!b) return; var h='<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">', i, c, v, ex;
+  for(i=0;i<CAD_LISTA.length;i++){ c=CAD_LISTA[i]; v=CAD.campos[c[0]]||'';
+    ex=(c[0]==='enderecoCep'?' inputmode="numeric" maxlength="9" oninput="cddCep()"':(c[0]==='ano'?' inputmode="numeric" maxlength="4"':(c[0]==='enderecoNumero'?' inputmode="numeric"':(c[0]==='placa'?' maxlength="8" autocapitalize="characters" style="text-transform:uppercase"':''))));
+    h+='<div class="field"><label>'+c[1]+(c[2]?' <span style="color:#c0392b">*</span>':' <span style="color:var(--muted);font-weight:500">(opcional)</span>')+'</label><input class="inp" id="cdd-'+c[0]+'" value="'+esc(v)+'" placeholder="'+esc(c[3])+'" autocomplete="off"'+ex+'></div>'; }
+  h+='<p id="cdd-msg" style="color:#B91C1C;font-size:13px;font-weight:700;margin:4px 0 8px"></p><button class="btn pri wide" id="cdd-ok" onclick="cddSalvar()">Salvar dados</button></div>';
+  b.innerHTML=h;
+}
+function cddCep(){
+  var i=el('cdd-enderecoCep'); if(!i) return; var n=i.value.replace(/\D/g,''); if(n.length!==8) return;
+  rpApi('/motorista/cep?cep='+n).then(function(d){ if(d&&d.ok&&d.achou){ var m={enderecoRua:d.rua,enderecoBairro:d.bai,enderecoCidade:d.cid}, k; for(k in m){ var x=el('cdd-'+k); if(x&&m[k]) x.value=m[k]; } } }).catch(function(){});
+}
+function cddSalvar(){
+  var campos={}, falta=[], i, c, x, m=el('cdd-msg'), b=el('cdd-ok');
+  for(i=0;i<CAD_LISTA.length;i++){ c=CAD_LISTA[i]; x=el('cdd-'+c[0]); campos[c[0]]=x?x.value.trim():''; if(x) x.style.borderColor=''; if(c[2]&&!campos[c[0]]) falta.push(c[0]); }
+  if(falta.length){ falta.forEach(function(k){ var y=el('cdd-'+k); if(y) y.style.borderColor='#c0392b'; }); if(m) m.textContent='Preencha os campos marcados em vermelho.'; return; }
+  if(b){ b.disabled=true; b.textContent='Salvando…'; } if(m) m.textContent='';
+  rpApi('/motorista/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({campos:campos})}).then(function(d){
+    if(b){ b.disabled=false; b.textContent='Salvar dados'; }
+    if(!d||!d.ok){ (d&&d.faltam||[]).forEach(function(k){ var y=el('cdd-'+k); if(y) y.style.borderColor='#c0392b'; }); if(m) m.textContent=(d&&d.mensagem)||'Não consegui salvar. Tente de novo.'; return; }
+    CAD.campos=campos; aviso('Dados salvos ✔'); cddAlterna(); carregarResumo(function(){ try{ pintarConta(); }catch(e){} });
+  }).catch(function(){ if(b){ b.disabled=false; b.textContent='Salvar dados'; } if(m) m.textContent='Sem conexão. Tente de novo.'; });
+}
 function pintarConta(){
   var P=PERFIL||{}, u=DD_M_USER||{};
   function mostra(id,v){ var e=el(id); if(!e) return; e.textContent=v||'—'; var r=e.parentNode; if(r&&r.className&&r.className.indexOf('sh-row')>=0) r.style.display=v?'flex':'none'; }
