@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-40-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-43-1010</p>
   </div>
 </div>
 
@@ -374,7 +374,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           </div>
           <div class="divisor"></div>
           <div class="row">
-            <button class="btn pri" onclick="encerrar()">Encerrar contagem</button>
+            <button class="btn pri" onclick="encerrar();if(MODO==='devolucao'&&MOT)abrirDevolucao()">Encerrar contagem</button>
           </div>
           </div>
           <div class="sg-cnt">
@@ -660,7 +660,7 @@ function escolherMotorista(){
   if(MOT && (!novo || MOT.id!==novo.id)) encerrar();
   MOT=novo; if(novo) campo.value=novo.n;
   el('mesa-cards').classList.toggle('bloq',!MOT);
-  if(MOT) aviso('Motorista: '+MOT.n+' — agora escolha a transportadora');
+  if(MOT&&MODO==='devolucao') abrirDevolucao(); else if(MOT) aviso('Motorista: '+MOT.n+' — agora escolha a transportadora');
   salvarSessao(); motChip();
 }
 function abrirMesa(id){
@@ -719,7 +719,7 @@ function registrarPacote(cod){
   el('scan-cnt').textContent=CNT; el('btn-desfazer').disabled=false;
   mostrarUlt('ok','✔ Entrou — '+mot.n+' · '+tr.n,cod);
   pintarCards(); somBipeOk(); salvarSessao();
-  api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,mt:mot.id,mtn:mot.n})}).then(function(d){
+  api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,trn:tr.n,mt:mot.id,mtn:mot.n})}).then(function(d){
     if(!d||!d.ok){ bipReverter(p,tr,cod,sid); somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
     p.pend=0;
     if(d.resultado==='repetido'){
@@ -794,13 +794,14 @@ function trocarModo(m){
   if(ATIVA) encerrar();
   MODO=m; XML_LOTE=[]; DEV_MOT=''; ajustarModoTela(); pintarCards();
   if(m==='esquecido') abrirEsquecido();
+  if(m==='devolucao'&&MOT) abrirDevolucao();
 }
 function ajustarModoTela(){
   var nada=(MODO===''), esq=(MODO==='esquecido');
-  el('mot-box').style.display=nada?'none':''; el('mesa-cards').style.display=(nada||esq)?'none':'';
+  el('mot-box').style.display=nada?'none':''; el('mesa-cards').style.display=(nada||esq||MODO==='devolucao')?'none':'';
   el('mot-sel').readOnly=esq;   /* esquecido: o motorista é preenchido sozinho */
   var v=el('scan-vazio').querySelector('span');
-  if(v) v.textContent=(MODO===''?'Escolha uma operação acima para começar: Entregas, XML, OS, Devolução ou Esquecido.':MODO==='devolucao'?'Escolha o motorista que está devolvendo e a transportadora para começar a bipar.':(MODO==='xml'?'Escolha o motorista e a transportadora; depois bipe a chave da NF.':(MODO==='os'?'Escolha o motorista e a transportadora; depois digite o número da OS.':'Escolha o motorista e depois a transportadora ao lado para começar a bipar.')));
+  if(v) v.textContent=(MODO===''?'Escolha uma operação acima para começar: Entregas, XML, OS, Devolução ou Esquecido.':MODO==='devolucao'?'Escolha o motorista que está devolvendo para começar a bipar. A transportadora o sistema já sabe.':(MODO==='xml'?'Escolha o motorista e a transportadora; depois bipe a chave da NF.':(MODO==='os'?'Escolha o motorista e a transportadora; depois digite o número da OS.':'Escolha o motorista e depois a transportadora ao lado para começar a bipar.')));
 }
 function modoPreparar(){
   var ex=el('mo-extra'), xm=(MODO==='xml');
@@ -809,7 +810,7 @@ function modoPreparar(){
   el('scan-manual').placeholder=(MODO==='os')?'Digite o número da OS (mín. 5 caracteres)':(xm?'Bipe a chave da NF (código de barras da nota, 44 números)':'Bipe ou digite o código');
   el('btn-desfazer').style.display=(MODO==='entrada')?'':'none';
   var t=el('scan-nome');
-  if(MODO==='devolucao') t.textContent='↩ Devolução · '+tituloScan();
+  if(MODO==='devolucao') t.textContent='↩ Devolução · '+(MOT?MOT.n:'');
   else if(MODO==='xml') t.textContent='🧾 XML da NF · '+tituloScan();
   else if(MODO==='os') t.textContent='📝 OS · '+tituloScan();
   else if(MODO==='esquecido') t.textContent='🕘 Esquecido na base';
@@ -828,13 +829,21 @@ function devolverPacote(cod){
 }
 function devolverEnviar(cod,m){
   var nome={ausente:'Ausente',devolvido:'Devolução',nao_localizado:'Não localizado'}[m];
-  api('/mesa/devolucao',{method:'POST',body:JSON.stringify({cod:cod,motivo:m,mt:MOT.id,mtn:MOT.n,tr:ATIVA.id})}).then(function(d){
+  api('/mesa/devolucao',{method:'POST',body:JSON.stringify({cod:cod,motivo:m,mt:MOT.id,mtn:MOT.n,tr:''})}).then(function(d){
     if(!d||!d.ok){ somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
     if(d.resultado==='repetido'){ somErro(); mostrarUlt('rep','Esse pacote já foi recebido de volta antes',d.cod||cod); return; }
     CNT++; el('scan-cnt').textContent=CNT; somBipeOk();
     mostrarUlt('ok','✔ Na base — '+nome+' · '+MOT.n+(d.paga?' · 💰 3ª tentativa (vai pro financeiro)':''),d.cod||cod);
   }).catch(function(){ somErro(); mostrarUlt('err','Sem conexão. Esse pacote NÃO foi registrado — bipe de novo.',cod); });
   var i1=el('scan-manual'); if(i1) i1.focus();
+}
+/* DEVOLUÇÃO: a transportadora o sistema já sabe pelo pedido — basta o motorista e o motivo */
+function abrirDevolucao(){
+  if(!MOT) return;
+  ATIVA={id:'dev',n:'Devolução',hoje:0};
+  el('scan-cnt').textContent=CNT; el('scan-vazio').style.display='none'; el('scan-conteudo').style.display='block';
+  modoPreparar();
+  setTimeout(function(){ var i=el('scan-manual'); if(i) i.focus(); },50);
 }
 /* ESQUECIDO */
 function abrirEsquecido(){
@@ -847,6 +856,7 @@ function esquecerPacote(cod){
   api('/mesa/esquecido',{method:'POST',body:JSON.stringify({cod:cod})}).then(function(d){
     if(!d||!d.ok){ somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar.',cod); return; }
     if(d.resultado==='conferencia'){ somBipeOk(); CNT++; el('scan-cnt').textContent=CNT; mostrarUlt('ok','✔ Conferido — ninguém tinha bipado este pacote, fica só como conferência',d.cod||cod); return; }
+    if(d.resultado==='base'){ CNT++; el('scan-cnt').textContent=CNT; somBipeOk(); mostrarUlt('ok','✔ Voltou para a Base — estava sem bipagem no app'+(d.mtn?' (era de '+d.mtn+')':''),d.cod||cod); return; }
     esqPreencher(d.mt,d.mtn);
     if(d.resultado==='repetido'){ somErro(); mostrarUlt('rep','Já está como esquecido na base'+(d.mtn?' (era de '+d.mtn+')':''),d.cod||cod); return; }
     CNT++; el('scan-cnt').textContent=CNT; somBipeOk();
@@ -870,7 +880,7 @@ function esqDesfazer(cod){ api('/mesa/esquecido-desfazer',{method:'POST',body:JS
 var OS_ULT=null;
 function osRegistrar(cod){
   var cl=(el('os-cliente')&&el('os-cliente').value)||'', cep=(el('os-cep')&&el('os-cep').value)||'', nu=(el('os-num')&&el('os-num').value)||'';
-  api('/mesa/os',{method:'POST',body:JSON.stringify({cod:cod,cliente:cl,cep:cep,num:nu,mt:MOT.id,mtn:MOT.n,tr:ATIVA.id})}).then(function(d){
+  api('/mesa/os',{method:'POST',body:JSON.stringify({cod:cod,cliente:cl,cep:cep,num:nu,mt:MOT.id,mtn:MOT.n,tr:ATIVA.id,trn:ATIVA.n})}).then(function(d){
     var r=(d&&d.ok&&d.itens&&d.itens[0])||null;
     if(!r){ somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar.',cod); return; }
     if(r.resultado==='repetido'){ somErro(); mostrarUlt('rep','Já existe um pedido com esse número',cod); return; }
@@ -951,7 +961,7 @@ function xmlEnviar(itens){
   if(!itens||!itens.length||!ATIVA||!MOT) return;
   var mot=MOT, tr=ATIVA, sid=SESS_BIP;
   itens.forEach(function(x){ x.estado='enviando'; }); xmlPrev();
-  api('/mesa/xml',{method:'POST',body:JSON.stringify({mt:mot.id,mtn:mot.n,tr:tr.id,itens:itens})}).then(function(d){
+  api('/mesa/xml',{method:'POST',body:JSON.stringify({mt:mot.id,mtn:mot.n,tr:tr.id,trn:tr.n,itens:itens})}).then(function(d){
     if(!d||!d.ok){ itens.forEach(function(x){ x.estado='envfalhou'; }); aviso((d&&d.mensagem)||'Não consegui registrar.'); somErro(); xmlPrev(); return; }
     var n=0, r=0;
     itens.forEach(function(x,k){ var it=d.itens[k]; if(it&&it.resultado==='repetido'){ x.estado='rep'; r++; } else if(it&&it.resultado==='novo'){ x.estado='reg'; n++; } else { x.estado='envfalhou'; } });

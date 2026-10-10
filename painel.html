@@ -829,7 +829,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-49-0910</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-51-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1656,7 +1656,7 @@ function mesaEventosAbsorver(){
         else { p={cod:e.cod, tr:e.tr||'anj', mt:mid, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'', scan:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:txD, ent:'', fechId:null}; PEDIDOS.push(p); idx[e.cod]=p; novos++; }
       } else if(e.tipo==='esquecido'){
         var txE='Esquecido na base'+(e.mtn?(' pelo motorista '+e.mtn):'')+' — disponível para outro entregador';
-        if(p){ if(!p.fechId && p.st!=='entregue'){ p.st='esquecido'; p.obs=txE; mud++; } }
+        if(p){ if(!p.fechId && p.st!=='entregue'){ if(dd.sem_bipagem){ p.st='coletado'; p.mt=null; p.obs='Esquecido na base — voltou para a Base (ninguém estava com ele no app)'; } else { p.st='esquecido'; p.obs=txE; } mud++; } }
         else { p={cod:e.cod, tr:'anj', mt:null, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'esquecido', t1:'', t2:'', tel:'', canal:'', vend:'', scan:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:txE, ent:'', fechId:null}; PEDIDOS.push(p); idx[e.cod]=p; novos++; }
       } else if(e.tipo==='xml' || e.tipo==='os'){
         if(p) continue;
@@ -3390,19 +3390,76 @@ function copiarCod(ev,elx,cod){
   var fb=function(){ try{ var ta=document.createElement('textarea'); ta.value=cod; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok(); }catch(e){ aviso('Não consegui copiar.'); } };
   try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cod).then(ok,fb); else fb(); }catch(e){ fb(); }
 }
+/* ── (51) HISTÓRICO DE MOVIMENTAÇÃO + alterar status / motorista direto no modal do pedido. Cada mudança manual vira uma linha no histórico (quem, quando, de → para). ── */
+var PD_STATUS=[['coletado','Base'],['em rota','Em rota'],['tentativa 1','Tentativa 1'],['tentativa 2','Tentativa 2'],['tentativa 3','Tentativa 3'],['devolvido','Devolvido'],['extraviado','Extraviado'],['fora de rota','Fora de rota'],['nao localizado','Não localizado'],['esquecido','Esquecido na base'],['entregue','Entregue']];
+function pdAchar(cod){ var i; for(i=0;i<PEDIDOS.length;i++) if(PEDIDOS[i].cod===cod) return PEDIDOS[i]; return null; }
+function pdNomeSt(st){ var i; for(i=0;i<PD_STATUS.length;i++) if(PD_STATUS[i][0]===st) return PD_STATUS[i][1]; return st||'—'; }
+function pdQuando(t){ var d=new Date(Number(t)||0); if(!d.getTime()) return ''; return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function pdCarregarHist(p){
+  var q='?cod='+encodeURIComponent(p.cod)+'&scan='+encodeURIComponent(p.scan||p.cod);
+  fetch(DELTADIS_API+'/mesa/pedido-historico'+q,{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    var b=el('hist-mov'); if(!b) return;
+    if(!d||!d.ok){ b.innerHTML='<span style="color:var(--muted)">Histórico indisponível agora.</span>'; return; }
+    if(!d.itens.length){ b.innerHTML='<span style="color:var(--muted)">Nenhuma movimentação registrada ainda. As próximas aparecem aqui.</span>'; return; }
+    var h='', i, e, ult=d.itens.length-1;
+    for(i=0;i<d.itens.length;i++){ e=d.itens[i];
+      h+='<div style="display:flex;gap:10px"><div style="display:flex;flex-direction:column;align-items:center;width:10px"><div style="width:9px;height:9px;border-radius:50%;background:'+(i===0?'var(--roxo)':'var(--s3)')+';flex-shrink:0;margin-top:5px"></div>'+(i<ult?'<div style="flex:1;width:2px;background:var(--s3);margin-top:2px"></div>':'')+'</div>'+
+        '<div style="flex:1;padding-bottom:12px"><div style="font-size:11px;color:var(--muted)">'+esc(pdQuando(e.t))+(e.quem?' · '+esc(e.quem):'')+'</div><div style="font-size:13px;font-weight:600;margin-top:1px">'+esc(e.texto||'')+'</div></div></div>';
+    }
+    b.innerHTML=h;
+  }).catch(function(){ var b=el('hist-mov'); if(b) b.innerHTML='<span style="color:var(--muted)">Histórico indisponível agora.</span>'; });
+}
+function pdRegistrar(p,tipo,texto,soltar){
+  return fetch(DELTADIS_API+'/mesa/pedido-historico-add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:p.cod,scan:p.scan||p.cod,tipo:tipo,texto:texto,soltar:!!soltar})}).then(function(r){ return r.json(); }).catch(function(){ return null; });
+}
+function pdStatusEditar(cod){
+  var p=pdAchar(cod), v=el('pd-st-v'); if(!p||!v) return;
+  var o='', i; for(i=0;i<PD_STATUS.length;i++) o+='<option value="'+PD_STATUS[i][0]+'"'+(PD_STATUS[i][0]===p.st?' selected':'')+'>'+PD_STATUS[i][1]+'</option>';
+  v.innerHTML='<select id="pd-st-sel" style="padding:6px 8px;border-radius:8px;border:1px solid var(--s3);font:inherit;font-size:13px">'+o+'</select> <button class="btn pri" style="padding:5px 12px;font-size:12px;min-width:0" onclick="pdStatusSalvar(\''+esc(cod)+'\')">Salvar</button> <button class="btn sec" style="padding:5px 10px;font-size:12px;min-width:0" onclick="abrirPedido(\''+esc(cod)+'\')">Cancelar</button>';
+}
+function pdStatusSalvar(cod){
+  var p=pdAchar(cod), s=el('pd-st-sel'); if(!p||!s) return;
+  var ns=s.value, old=p.st;
+  if(ns===old){ abrirPedido(cod); return; }
+  if(p.fechId){ aviso('Esse pedido já está fechado no financeiro — não dá para mudar o status.'); abrirPedido(cod); return; }
+  p.st=ns;
+  if(ns==='entregue'){ if(!p.ent){ var d=new Date(); p.ent=ymdLocal(d)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); } } else if(old==='entregue') p.ent='';
+  p.obs='Status alterado manualmente no painel: '+pdNomeSt(ns);
+  var soltar=(['coletado','esquecido','devolvido','extraviado','nao localizado','fora de rota'].indexOf(ns)>=0);
+  try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo();
+  pdRegistrar(p,'status','Status alterado de '+pdNomeSt(old)+' para '+pdNomeSt(ns)+' · manual no painel',soltar).then(function(){ abrirPedido(cod); });
+  abrirPedido(cod); aviso('Status alterado para '+pdNomeSt(ns));
+}
+function pdMotEditar(cod){
+  var p=pdAchar(cod), v=el('pd-mt-v'); if(!p||!v) return;
+  var o='<option value="">Sem motorista</option>', i; for(i=0;i<MOTORISTAS.length;i++) o+='<option value="'+i+'"'+(String(MOTORISTAS[i].id)===String(p.mt)?' selected':'')+'>'+esc(MOTORISTAS[i].n)+'</option>';
+  v.innerHTML='<select id="pd-mt-sel" style="padding:6px 8px;border-radius:8px;border:1px solid var(--s3);font:inherit;font-size:13px;max-width:210px">'+o+'</select> <button class="btn pri" style="padding:5px 12px;font-size:12px;min-width:0" onclick="pdMotSalvar(\''+esc(cod)+'\')">Salvar</button> <button class="btn sec" style="padding:5px 10px;font-size:12px;min-width:0" onclick="abrirPedido(\''+esc(cod)+'\')">Cancelar</button>';
+}
+function pdMotSalvar(cod){
+  var p=pdAchar(cod), s=el('pd-mt-sel'); if(!p||!s) return;
+  var novo=(s.value===''?null:MOTORISTAS[Number(s.value)]), nid=novo?novo.id:null, ant=motorista(p.mt);
+  if(String(nid==null?'':nid)===String(p.mt==null?'':p.mt)){ abrirPedido(cod); return; }
+  if(p.fechId){ aviso('Esse pedido já está fechado no financeiro — não dá para trocar o motorista.'); abrirPedido(cod); return; }
+  var voltouBase=(p.st==='em rota');
+  p.mt=nid; if(voltouBase) p.st='coletado';
+  p.obs='Motorista alterado manualmente no painel'+(novo?(' para '+novo.n):' (sem motorista)');
+  try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo();
+  pdRegistrar(p,'motorista','Motorista alterado de '+(ant?ant.n:'sem motorista')+' para '+(novo?novo.n:'sem motorista')+(voltouBase?' · status voltou para Base':'')+' · manual no painel',true).then(function(){ abrirPedido(cod); });
+  abrirPedido(cod); aviso(novo?('Motorista: '+novo.n):'Pedido sem motorista');
+}
 function abrirPedido(cod){
   var p=null,i; for(i=0;i<PEDIDOS.length;i++) if(PEDIDOS[i].cod===cod) p=PEDIDOS[i];
   if(!p) return;
   var t=transp(p.tr), m=motorista(p.mt);
   el('pd-cod').innerHTML=esc(p.cod)+cpBtn(p.cod);
   var h='';
-  h+='<div class="sh-row"><span class="k">Status</span><span class="v">'+badgeStatus(p.st)+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Status</span><span class="v" id="pd-st-v">'+badgeStatus(p.st)+(REAL?' <button class="btn sec" style="padding:3px 10px;font-size:12px;margin-left:8px;min-width:0" onclick="pdStatusEditar(\''+esc(p.cod)+'\')">Alterar</button>':'')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Cliente</span><span class="v">'+esc(p.cliente||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Telefone</span><span class="v">'+esc(p.tel||'—')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Canal de venda</span><span class="v">'+esc(p.canal||'—')+'</span></div>';
   if(p.vend) h+='<div class="sh-row"><span class="k">Loja / vendedor</span><span class="v">'+esc(p.vend)+'</span></div>';
   h+='<div class="sh-row"><span class="k">Transportadora</span><span class="v">'+esc(t?t.n:'—')+'</span></div>';
-  h+='<div class="sh-row"><span class="k">Motorista</span><span class="v">'+(m?('<span class="vertodos" onclick="fecharTudo();abrirMotorista('+m.id+')">'+esc(m.n)+' ›</span>'):'sem motorista')+'</span></div>';
+  h+='<div class="sh-row"><span class="k">Motorista</span><span class="v" id="pd-mt-v">'+(m?esc(m.n):'sem motorista')+(m?' <button class="btn sec" title="Ver o motorista" style="padding:3px 9px;font-size:13px;margin-left:8px;min-width:0;font-weight:800" onclick="fecharTudo();abrirMotorista('+m.id+')">+</button>':'')+(REAL?' <button class="btn sec" style="padding:3px 10px;font-size:12px;margin-left:6px;min-width:0" onclick="pdMotEditar(\''+esc(p.cod)+'\')">Alterar</button>':'')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc([[p.rua,p.num].filter(Boolean).join(', ')+(p.comp?' - '+p.comp:''),p.bai||p.bairro,p.cid,(String(p.cep||'').replace(/\D/g,'').length===8?'CEP '+String(p.cep).replace(/\D/g,'').replace(/^(\d{5})(\d{3})$/,'$1-$2'):'')].filter(Boolean).join(' · ')||'—')+(((p.bairro||p.rua) && (!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11.5px;font-weight:600">⚠ '+(!p.num?'sem número — não dá pra roteirizar':'sem nome da rua — usar o CEP')+'</span>':'')+'</span></div>';
   h+='<div class="sh-row"><span class="k">Valor da NF</span><span class="v">'+(p.vl==null?'—':moeda(p.vl))+'</span></div>';
   if(p.dia) h+='<div class="sh-row"><span class="k">Entrada no ponto</span><span class="v">'+dataBR(p.dia)+(p.hora?' '+esc(p.hora):'')+'</span></div>';
@@ -3413,6 +3470,7 @@ function abrirPedido(cod){
   if(!REAL){
     h+='<div style="display:flex;gap:12px;margin-top:16px"><button class="btn pri" onclick="aviso(\'Aqui reagenda a entrega\')">Reagendar entrega</button><button class="btn sec" onclick="aviso(\'Aqui troca o motorista\')">Trocar motorista</button></div>';
   } else {
+    h+='<div style="margin-top:18px;font-weight:700;font-size:13px">Histórico de movimentação</div><div id="hist-mov" style="margin-top:6px;font-size:12.5px">Carregando...</div>';
     h+='<div style="margin-top:18px;font-weight:700;font-size:13px">Histórico de rastreio</div>';
     if(p.tr==='pic') h+='<div class="empty" style="padding:8px 0;font-size:12.5px">Pichau: o status vem da planilha.</div>';
     else if(p.tr==='jt') h+='<div class="empty" style="padding:8px 0;font-size:12.5px">J&amp;T: o status vem da planilha. O rastreio automático pede o CPF do cliente, então por enquanto não está ligado.</div>';
@@ -3424,6 +3482,7 @@ function abrirPedido(cod){
   }
   el('pd-corpo-sheet').innerHTML=h;
   abrir('sh-pedido');
+  if(REAL) pdCarregarHist(p);
   if(REAL && p.tr!=='jt' && p.tr!=='pic') carregarHistoricoRastreio(p.cod);
 }
 /* busca no Worker a linha do tempo de eventos do 17TRACK pra esse pacote */
