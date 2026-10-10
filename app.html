@@ -402,7 +402,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-166-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-167-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2187,7 +2187,12 @@ function vzCampos(v){ var c=el('vz-campos'); if(c) c.style.display=v?'block':'no
 /* Concluir: se o endereço digitado está completo, salva antes de fechar (antes só fechava e perdia o que foi digitado) */
 function vzConcluir(){
   var c=el('vz-cep'), n=el('vz-num');
-  if(c&&n&&c.value.replace(/\D/g,'').length===8&&n.value.trim()&&VZ.achou!==null&&!VZ.busy){ vzSalvar(false); return; }
+  if(VZ.busy) return;
+  if(c&&n&&c.value.replace(/\D/g,'').length===8&&VZ.achou!==null){
+    if(n.value.trim()){ vzSalvar(false); return; }
+    /* (167) rua já escolhida mas falta o número: não fecha (perdia tudo) — mostra o campo do número */
+    vzCampos(true); vzStat('Falta o número. Digite ou toque aqui e fale','#B45309'); return;
+  }
   vzFechar();
 }
 function vzFalt(){ var f=el('vz-falt'); if(f){ var n=vzFaltam(); f.textContent=n?('faltam '+n):'todos ✔'; } }
@@ -2297,11 +2302,11 @@ function vzProcessar(t){
 }
 /* rua falada: acha a cidade e o bairro no que foi dito, procura a rua e já carrega o CEP sozinho */
 function vzPos(cb){
-  var fb=function(){ var b=window.RP&&RP.baseLL; cb(b&&b.lat!=null?{lat:b.lat,lng:b.lng}:null); }, feito=false, tm;
+  var fb=function(){ var b=window.RP&&RP.baseLL; if(b&&b.lat!=null){ VZ.posSrc='base'; cb({lat:b.lat,lng:b.lng}); } else { VZ.posSrc=''; cb(null); } }, feito=false, tm;
   try{
     if(!navigator.geolocation){ fb(); return; }
-    tm=setTimeout(function(){ if(!feito){ feito=true; fb(); } },5000);
-    navigator.geolocation.getCurrentPosition(function(p){ if(feito) return; feito=true; clearTimeout(tm); cb({lat:p.coords.latitude,lng:p.coords.longitude}); },function(){ if(feito) return; feito=true; clearTimeout(tm); fb(); },{maximumAge:120000,timeout:5000});
+    tm=setTimeout(function(){ if(!feito){ feito=true; fb(); } },8000);
+    navigator.geolocation.getCurrentPosition(function(p){ if(feito) return; feito=true; clearTimeout(tm); VZ.posSrc='gps'; VZ.posAcc=Math.round(p.coords.accuracy||0); cb({lat:p.coords.latitude,lng:p.coords.longitude}); },function(){ if(feito) return; feito=true; clearTimeout(tm); fb(); },{enableHighAccuracy:true,maximumAge:20000,timeout:8000});
   }catch(e){ if(!feito){ feito=true; fb(); } }
 }
 /* (161) rua falada: lista TODAS as ruas com esse nome, a mais perto do motorista primeiro; ele toca na certa */
@@ -2315,7 +2320,7 @@ function vzPertoDados(rua,cid){
 }
 function vzPertoLista(r){
   var its=r.its, c=el('vz-cand'); if(!c||!its.length) return 0; VZ.perto=its;
-  var h='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Toque na rua certa'+(r.perto?' (mais perto primeiro · distância em linha reta)':'')+':</div>', i, x;
+  var h='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Toque na rua certa'+(r.perto?' (mais perto primeiro · linha reta a partir '+(VZ.posSrc==='gps'?'da sua localização'+(VZ.posAcc?' ±'+VZ.posAcc+' m':''):'da Base')+')':'')+':</div>', i, x;
   for(i=0;i<its.length;i++){ x=its[i]; h+='<button class="btn '+(i===0&&r.perto?'pri':'sec')+' wide" style="text-align:left;margin-bottom:6px;font-size:13px;height:54px;min-height:54px;padding:6px 12px;display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.3" onclick="vzEscolherPertoToque('+i+')"><b style="font-size:13px;display:block;overflow:hidden;text-overflow:ellipsis">'+esc(x.rua)+(i===0&&r.perto?' · mais perto':'')+'</b><span style="font-size:11.5px;font-weight:400;opacity:.85;display:block;overflow:hidden;text-overflow:ellipsis">'+esc((x.bai?x.bai+' · ':'')+x.cid+(x.uf?'/'+x.uf:'')+(x.km!=null?' · a '+String(x.km).replace('.',',')+' km':''))+'</span></button>'; }
   c.innerHTML=h; return its.length;
 }
