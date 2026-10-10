@@ -402,7 +402,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-167-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-168-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2152,7 +2152,7 @@ function vzToque(cod){ var it=vzItem(cod); vzAbrir(cod, it&&it.e?'edit':'voz'); 
 function vzAbrir(cod,modo){
   var mo=modo||'voz';
   if(mo==='edit') vzParar();
-  VZ.travaLista=false; VZ.cod=cod||''; VZ.novo=!cod; VZ.modo=mo; VZ.rua=''; VZ.bai=''; VZ.cid=''; VZ.cep=''; VZ.achou=null; VZ.cand=null; VZ.vivo=true; VZ.trans=false; BP.atual=cod||'';
+  VZ.travaLista=false; VZ.semCep=false; VZ.cod=cod||''; VZ.novo=!cod; VZ.modo=mo; VZ.rua=''; VZ.bai=''; VZ.cid=''; VZ.cep=''; VZ.achou=null; VZ.cand=null; VZ.vivo=true; VZ.trans=false; BP.atual=cod||'';
   var it=cod?vzItem(cod):null, d=(it&&it.d)||{}, ed=(mo==='edit');
   var o=el('vz-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o);
   var ov=document.createElement('div'); ov.id='vz-ov';
@@ -2188,7 +2188,7 @@ function vzCampos(v){ var c=el('vz-campos'); if(c) c.style.display=v?'block':'no
 function vzConcluir(){
   var c=el('vz-cep'), n=el('vz-num');
   if(VZ.busy) return;
-  if(c&&n&&c.value.replace(/\D/g,'').length===8&&VZ.achou!==null){
+  if(c&&n&&(c.value.replace(/\D/g,'').length===8||VZ.semCep)&&VZ.achou!==null){
     if(n.value.trim()){ vzSalvar(false); return; }
     /* (167) rua já escolhida mas falta o número: não fecha (perdia tudo) — mostra o campo do número */
     vzCampos(true); vzStat('Falta o número. Digite ou toque aqui e fale','#B45309'); return;
@@ -2352,8 +2352,8 @@ function vzEscolherPerto(i){
     if(its.length===1) return usa(its[0].cep);
     if(x.cep) return usa(x.cep);
     if(its.length) return usa(its[0].cep);
-    vzCampos(true); vzStat('Não achei o CEP dessa rua. Fale o CEP.','#B91C1C');
-  }).catch(function(){ if(x.cep) return usa(x.cep); vzCampos(true); vzStat('Sem conexão. Fale o CEP.','#B91C1C'); });
+    vzRuaSemCep(x.rua,x.bai,x.cid,x.uf);
+  }).catch(function(){ if(x.cep) return usa(x.cep); vzRuaSemCep(x.rua,x.bai,x.cid,x.uf); });
 }
 function vzEscolherPertoToque(i){ VZ.travaLista=true; vzParar(); VZ.pvTok=(VZ.pvTok||0)+1; clearTimeout(VZ.pvT); vzEscolherPerto(i).then(function(){ vzTentaSalvar(); }); }
 function vzRuaFluxo(p){
@@ -2373,7 +2373,7 @@ function vzRuaFluxoCid(p){
   if(txtC) pre=rpApi('/motorista/cidade?t='+encodeURIComponent(txtC)+'&uf='+encodeURIComponent(vzLer('u'))+(p.cid?'&exato=1':'')).then(function(d){ return (d&&d.ok&&d.achou)?d:null; }).catch(function(){ return null; });
   else pre=Promise.resolve(null);
   return pre.then(function(c){
-    var tent=[], k;
+    var tent=[], k; p._cidUsada=(c&&c.cid)||p.cid||vzLer('c')||''; p._ufUsada=(c&&c.uf)||vzLer('u')||''; p._baiUsada=(c&&(p.bai||c.bai))||p.bai||'';
     if(c) tent.push({cid:c.cid,uf:c.uf,bai:p.bai||c.bai||''});
     /* reserva (se a lista não achou): tenta cada pedaço final como cidade, e por último a cidade usada da última vez */
     if(p.cid) tent.push({cid:p.cid,bai:p.bai});
@@ -2394,7 +2394,9 @@ function vzRuaFluxoCid(p){
     }
     return prox();
   }).then(function(r){
-    if(r===0){ vzCampos(true); vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }
+    if(r===0){
+      if(p._cidUsada&&String(p.rua||'').trim().length>=4){ vzRuaSemCep(p.rua,p._baiUsada,p._cidUsada,p._ufUsada); return 1; }
+      vzCampos(true); vzStat('Não achei a rua. Fale o CEP.','#B91C1C'); }
     else if(r===2){ vzCampos(true); vzStat('Toque na rua certa','#B45309'); }
     return r;
   });
@@ -2460,12 +2462,14 @@ function vzValorSo(v){
 function vzTentaSalvar(){
   if(VZ.modo==='edit'){ vzStat('Confira e toque em Salvar','#6D28D9'); return; }
   var num=(el('vz-num')||{}).value||'';
+  if(VZ.semCep){ vzCampos(true); vzStat(num.trim()?'Sem CEP · confira a rua e toque em Concluir':'Faltou o número. Digite e toque em Concluir','#B45309'); return; }
   if(VZ.achou===true && num.trim()) vzSalvar(true);
   else if(VZ.achou===false){ vzCampos(true); vzStat('CEP sem rua: preencha e toque em Salvar','#B45309'); }
   else if(!num.trim()){ vzCampos(true); vzStat('Faltou o número. Fale “número …” ou digite','#B45309'); }
   else if(VZ.achou===null){ vzCampos(true); vzStat('CEP não encontrado. Fale de novo','#B91C1C'); }
 }
 function vzCepDig(){
+  VZ.semCep=false;
   var i=el('vz-cep'); if(!i) return Promise.resolve(); var d=i.value.replace(/\D/g,'').substring(0,8);
   i.value=d.length>5?d.substring(0,5)+'-'+d.substring(5):d;
   var r=el('vz-res'); VZ.achou=null; VZ.cep=d;
@@ -2480,6 +2484,14 @@ function vzCepDig(){
       r2.innerHTML='<div style="font-size:12px;color:#8A5A00;margin-bottom:6px">CEP geral, sem rua. Preencha o endereço:</div>'+
         '<div class="search" style="margin:0 0 6px"><input id="vz-rua" placeholder="Rua"></div><div style="display:flex;gap:8px"><div class="search" style="margin:0;flex:1"><input id="vz-bai" placeholder="Bairro"></div><div class="search" style="margin:0;flex:1"><input id="vz-cid" placeholder="Cidade"></div></div>'; }
   }).catch(function(){ var r3=el('vz-res'); if(r3) r3.innerHTML='<div style="color:#B91C1C;font-size:13px">Sem conexão.</div>'; });
+}
+/* (168) rua achada pelo nome mas sem CEP na base dos Correios: salva mesmo assim (rua + número + cidade), o motorista confere */
+function vzTitulo(t){ return String(t||'').toLowerCase().replace(/\s+/g,' ').trim().replace(/(^|\s)([a-zà-ú])/g,function(m,a,b){ return a+b.toUpperCase(); }).replace(/\s(De|Da|Do|Das|Dos|E)(?=\s)/g,function(m){ return m.toLowerCase(); }); }
+function vzRuaSemCep(rua,bai,cid,uf){
+  VZ.semCep=true; VZ.achou=true; VZ.cep=''; VZ.rua=vzTitulo(rua); VZ.bai=bai?vzTitulo(bai):''; VZ.cid=cid;
+  var ce=el('vz-cep'); if(ce) ce.value='';
+  var r=el('vz-res'); if(r) r.innerHTML='<div style="border:1px solid #F3D9A4;background:#FFF8E6;color:#7A4B00;border-radius:12px;padding:10px 12px;font-size:13px"><b>'+esc(VZ.rua)+'</b><br>'+esc((VZ.bai?VZ.bai+' · ':'')+cid+(uf?'/'+uf:''))+'<br><span style="font-size:11.5px">Sem CEP na base dos Correios. Vai salvar só com rua e número.</span></div>';
+  var c=el('vz-cand'); if(c) c.innerHTML='';
 }
 function vzNormT(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
 function vzBuscarRua(bai){
@@ -2504,7 +2516,7 @@ function vzEscolherToque(i){ vzEscolher(i).then(function(){ vzTentaSalvar(); });
 function vzSalvar(auto){
   if(VZ.busy) return;
   var cep=(el('vz-cep').value||'').replace(/\D/g,''), num=(el('vz-num').value||'').trim(), comp=(el('vz-comp').value||'').trim(), cli=((el('vz-cli')||{}).value||'').trim();
-  if(cep.length!==8){ aviso('Informe o CEP com 8 números'); return; }
+  if(cep.length!==8&&!VZ.semCep){ aviso('Informe o CEP com 8 números'); return; }
   if(!num){ aviso('Informe o número (ou S/N)'); return; }
   var rua=VZ.rua, bai=VZ.bai, cid=VZ.cid;
   if(VZ.achou===false){ rua=(el('vz-rua')||{}).value||''; bai=(el('vz-bai')||{}).value||''; cid=(el('vz-cid')||{}).value||''; if(!rua||!cid){ aviso('Preencha rua e cidade'); return; } }
