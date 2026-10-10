@@ -390,7 +390,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-143-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-144-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -762,6 +762,7 @@ function abrirApp(){
   /* a rota do motorista vem do cadastro dele (mt_ref) — não há mais "Quem é você?" */
   if(DD_M_USER){ RP.mt=DD_M_USER.mt_ref||null; RP.mtn=DD_M_USER.nome||''; try{ if(RP.mt) localStorage.setItem('dd_mt',RP.mt); else localStorage.removeItem('dd_mt'); }catch(e){} }
   try{ rpCarregarPonto(); }catch(e){}
+  try{ appPlanoLerCache(); }catch(e){}
   try{ rotaRestaurar(); }catch(e){}
   try{ if(BIP_ROTA){ bpCacheLer(); bpCarregar(true); } }catch(e){}
   montarApp();
@@ -1462,6 +1463,7 @@ function rpCarregarCfgServidor(){
 var ROTA_CB=null;
 function rotaPerguntar(cb){
   /* (139) app grátis (bloqueio ligado): não tem roteirização, então nem pergunta — segue direto pra bipagem */
+  if(window.APP_PLANO&&!APP_PLANO.ok&&!APP_PLANO_TENT){ APP_PLANO_TENT=true; appPlanoCarregar(function(){ rotaPerguntar(cb); }); return; }   /* (144) ainda não sei se é grátis: confirma antes de perguntar */
   if(window.APP_PLANO&&APP_PLANO.bloqueio){ if(typeof cb==='function'){ try{ cb(); }catch(e){} } return; }
   if(el('rota-ask')) return;
   ROTA_CB=(typeof cb==='function')?cb:null;
@@ -1695,10 +1697,10 @@ function numFalar(n){
 function bpVoz(){ NUM.voz=!NUM.voz; numGravar(); bpAtualizar(); }
 function bpItemHtml(m){
   var info;
-  if(rpCfg().rota==='nao') return '<div class="bp-item"><span class="bp-seq" style="background:#EDE9FE;color:#5B21B6">'+m.n+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<span style="color:#5B5170;font-size:13px">'+esc(m.cl)+'</span>':'')+'</div><button class="btn sec" style="padding:4px 9px;min-width:0;margin-left:8px;font-size:12px;background:transparent;color:#9A8FB0" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+  if(rpCfg().rota==='nao') return '<div class="bp-item"><span class="bp-seq" style="background:#EDE9FE;color:#5B21B6">'+m.n+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<span style="color:#5B5170;font-size:13px">'+esc(m.cl)+'</span>':'')+'</div><button class="btn sec" style="padding:10px 14px;min-width:44px;min-height:44px;margin-left:4px;font-size:16px;background:transparent;color:#9A8FB0" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
   if(m.e) info='<span style="color:#166534;font-weight:700;font-size:13px">'+esc(m.r||((m.cl||'')+'' ))+(vzExterno()?(m.v>0?' · '+vzMoeda(m.v):' · <span style="color:#B45309">sem valor</span>'):'')+'</span>';
   else info='<span style="color:#BE185D;font-weight:700;font-size:13px">'+(m.novo?'Sem dados':(m.auto?'Falta endereço — vai para o fim da lista':'Endereço incompleto'))+'</span>';
-  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FDF2F8;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq" style="'+(m.e?'background:#DCFCE7;color:#166534':'background:#FCE7F3;color:#BE185D')+'">'+(m.num||m.n)+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+info+((m.auto&&!m.conf)?'<span style="color:#9A8FB0;font-size:11.5px;display:block">falta bipar</span>':'')+'</div><button class="btn sec" style="padding:4px 9px;min-width:0;margin-left:8px;font-size:12px;background:transparent;color:#9A8FB0" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
+  return '<div class="bp-item" style="cursor:pointer;'+(BP.atual===m.cod?'background:#F3E8FF;box-shadow:inset 4px 0 0 #7C3AED;':(m.e?'':'background:#FDF2F8;'))+'" onclick="vzToque(\''+esc(m.cod)+'\')"><span class="bp-seq" style="'+(m.e?'background:#DCFCE7;color:#166534':'background:#FCE7F3;color:#BE185D')+'">'+(m.num||m.n)+'</span><div class="bp-info" style="flex:1"><b>'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+info+((m.auto&&!m.conf)?'<span style="color:#9A8FB0;font-size:11.5px;display:block">falta bipar</span>':'')+'</div><button class="btn sec" style="padding:10px 14px;min-width:44px;min-height:44px;margin-left:4px;font-size:16px;background:transparent;color:#9A8FB0" onclick="event.stopPropagation();bpRemover(\''+esc(m.cod)+'\')">✕</button></div>';
 }
 function metaPintar(){ var m=metaHoje(), t=el('meta-txt'), f=el('meta-fill'); if(t) t.textContent=m.feitos+'/'+m.meta; if(f) f.style.width=Math.min(100,Math.round(m.feitos/Math.max(1,m.meta)*100))+'%'; }
 function bpCacheGravar(){ try{ if(!BP.ok) return; localStorage.setItem('dd_bp',JSON.stringify({dia:hojeISO(),mt:String(RP.mt||''),meus:BP.meus,mesa:BP.mesa||[]})); }catch(e){} }
@@ -1781,11 +1783,13 @@ function bpMesaHtml(){
 }
 function bpDigitado(){ clearTimeout(BP_T); var i=el('bp-cod'); if(!i) return; var v=i.value; i.value=''; if(v) bpBipar(v); try{ i.focus({preventScroll:true}); }catch(e){} }
 function bpRemover(cod){
+  /* (144) 1 toque só: tira da lista na hora e avisa o servidor; se falhar, devolve o pacote */
+  var i, it=null, pos=-1; for(i=BP.meus.length-1;i>=0;i--) if(BP.meus[i].cod===cod){ it=BP.meus[i]; pos=i; BP.meus.splice(i,1); }
+  if(!it) return;
+  bpMarcaMesa(cod,true); BP.ult={t:'rep',m:'Removido da sua lista.',cod:cod}; bpAtualizar();
   rpApi('/motorista/desbipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod})}).then(function(d){
-    if(!d||!d.ok){ aviso('Não consegui remover agora.'); return; }
-    var i; for(i=BP.meus.length-1;i>=0;i--) if(BP.meus[i].cod===cod) BP.meus.splice(i,1);
-    bpMarcaMesa(cod,true); BP.ult={t:'rep',m:'Removido da sua lista.',cod:cod}; bpAtualizar();
-  }).catch(function(){ aviso('Sem conexão. Não removi.'); });
+    if(!d||!d.ok){ BP.meus.splice(Math.min(pos,BP.meus.length),0,it); bpMarcaMesa(cod,false); bpAtualizar(); aviso('Não consegui remover agora.'); }
+  }).catch(function(){ BP.meus.splice(Math.min(pos,BP.meus.length),0,it); bpMarcaMesa(cod,false); bpAtualizar(); aviso('Sem conexão. Não removi.'); });
 }
 /* (141) assinatura do romaneio: ponto DELTADIS = obrigatória; ponto de outra empresa = só se ele ativou naquele ponto */
 function asgObrigatoria(){ if(window.APP_PLANO&&APP_PLANO.bloqueio) return false; if(PT.sel){ if(PT.sel.tipo==='deltadis') return true; return !!PT.sel.assina; } return rpCfg().assina==='sim'; }
@@ -3052,9 +3056,13 @@ function pintarHistorico(){
 
 /* ══ (137) APP PAGO x GRÁTIS: grátis = só bipagem; pago = bipagem + roteirização + financeiro. O bloqueio só vale se o master ligar no admin. ══ */
 var APP_PLANO={ok:false,pago:false,bloqueio:false,venda:false};
+var APP_PLANO_TENT=false;
 function appPlanoCarregar(cb){
-  rpApi('/motorista/app-plano').then(function(d){ if(d&&d.ok){ APP_PLANO=d; } if(cb) cb(); try{ appBannerPintar(); }catch(e){} }).catch(function(){ if(cb) cb(); });
+  rpApi('/motorista/app-plano').then(function(d){ if(d&&d.ok){ APP_PLANO=d; APP_PLANO_TENT=false; try{ localStorage.setItem('dd_app_plano',JSON.stringify({mt:String(RP.mt||''),p:d})); }catch(e){} } if(cb) cb(); try{ appBannerPintar(); }catch(e){} }).catch(function(){ if(cb) cb(); });
 }
+/* (144) o último plano conhecido vale até o servidor responder (não "esquece" e volta a perguntar do nada) */
+function appPlanoLerCache(){ try{ var o=JSON.parse(localStorage.getItem('dd_app_plano')||'null'); if(o&&o.p&&String(o.mt)===String(RP.mt||'')) APP_PLANO=o.p; }catch(e){} }
+setInterval(function(){ if(!document.hidden&&DD_M_TOKEN) appPlanoCarregar(); },300000);
 function appVantagensHtml(){
   return '<ul style="margin:8px 0 10px;padding-left:18px;font-size:13.5px;line-height:1.6"><li><b>Roteirização</b> — a melhor ordem de entrega no mapa</li><li><b>Numere seus pacotes automaticamente</b></li><li><b>Financeiro</b> — quanto você já recebeu e tem a receber</li><li><b>Romaneios e histórico</b> sempre à mão</li></ul>';
 }
