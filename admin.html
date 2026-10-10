@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-16-1010</div>
+      <div class="bld">DELTADIS-ADMIN-17-1010</div>
     </div>
   </div>
 </div>
@@ -321,7 +321,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-16-1010</div>
+    <div class="bld">DELTADIS-ADMIN-17-1010</div>
   </main>
 </div>
 
@@ -487,10 +487,12 @@ function abrirAppCfg(){
 function salvarAppCfg(){
   var corpo={preco_promo_centavos:paraCentavos(el('ap-pp').value),preco_normal_centavos:paraCentavos(el('ap-pn').value),meses_promo:parseInt(el('ap-mp').value,10)||0,selo:el('ap-selo').value.trim(),dias_aviso:parseInt(el('ap-da').value,10)||0,ativo:el('ap-at').checked?1:0};
   if(!corpo.preco_normal_centavos){el('ap-erro').textContent='Informe a mensalidade normal.';return;}
-  el('ap-btn').disabled=true;el('ap-erro').textContent='';
+  el('ap-btn').disabled=true;el('ap-btn').textContent='Salvando…';el('ap-erro').style.color='';el('ap-erro').textContent='';
   chamar('POST','/admin/app-config',corpo).then(function(d){
-    if(!d.ok){el('ap-erro').textContent=d.mensagem||'Erro ao salvar.';el('ap-btn').disabled=false;return;}
-    fechar();toast('Preços do app salvos!');carregarApp();
+    if(!d.ok){el('ap-erro').textContent=d.mensagem||'Erro ao salvar.';el('ap-btn').disabled=false;el('ap-btn').textContent='Salvar';return;}
+    var h=new Date(),hm=('0'+h.getHours()).slice(-2)+':'+('0'+h.getMinutes()).slice(-2);
+    var e=el('ap-erro'); e.style.color='#15803D'; e.textContent='✔ Salvo com sucesso às '+hm+'. Pode fechar esta janela.';
+    el('ap-btn').disabled=false; el('ap-btn').textContent='Salvo ✔'; toast('Preços do app salvos!'); carregarApp();
   }).catch(function(){el('ap-btn').disabled=false;});
 }
 function carregarClientes(){
