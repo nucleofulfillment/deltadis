@@ -722,13 +722,13 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <!-- MAPEAMENTO — mapa com a posição de cada motorista (visual, região aproximada — GPS em tempo real ainda não integrado) -->
       <section class="page" id="pg-mapeamento">
         <div class="pghd"><div><h1>Mapeamento</h1><div class="sub">entregas marcadas no app do motorista, ao vivo</div></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <div style="display:flex;gap:6px;flex-wrap:nowrap;align-items:center">
             <button class="btn sec" style="padding:9px 13px" onclick="mpMudarDia(-1)" title="Dia anterior">‹</button>
-            <input class="inp" type="date" id="mp-dia" style="width:160px" onchange="mpEscolherDia()">
+            <input class="inp" type="date" id="mp-dia" style="width:150px" onchange="mpEscolherDia()">
             <button class="btn sec" style="padding:9px 13px" onclick="mpMudarDia(1)" title="Próximo dia">›</button>
             <button class="btn sec" style="padding:9px 13px" onclick="mpHoje()">Hoje</button>
-            <select class="inp" id="mp-motorista" style="max-width:220px" onchange="mudarMotoristaMapa()"></select>
-            <select class="inp" id="mp-vivo" style="max-width:230px" onchange="mpVivoMudou()"><option value="off">📍 Ao vivo: desligado</option></select>
+            <select class="inp" id="mp-motorista" style="max-width:190px" onchange="mudarMotoristaMapa()"></select>
+            <select class="inp" id="mp-vivo" style="max-width:190px" onchange="mpVivoMudou()"><option value="off">📍 Ao vivo: desligado</option></select>
           </div>
         </div>
         <div class="card">
@@ -831,7 +831,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-55-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-56-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
