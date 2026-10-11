@@ -323,9 +323,11 @@ html.dd-ret #splash{display:flex}
 .bn-sl{position:relative;display:block;flex:none;width:100%;scroll-snap-align:start;border-radius:var(--r);overflow:hidden;color:inherit;text-decoration:none}
 .bn-sl>img:first-child{display:block;width:100%;aspect-ratio:1200/525;object-fit:cover;background:#EDE9FE}
 .bn-sl .anu-card{margin:0;border-radius:var(--r)}
-.bn-tag{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.45);border-radius:99px;padding:2px 8px}
-.bn-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:linear-gradient(90deg,rgba(15,10,40,.78) 0%,rgba(15,10,40,.45) 58%,rgba(15,10,40,0) 100%);color:#fff}
-.bn-tx{min-width:0;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.bn-tag{position:absolute;top:4px;right:8px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.45);border-radius:99px;padding:2px 8px}
+.bn-ov{position:absolute;inset:0;display:flex;align-items:center;gap:10px;padding:12px 14px;background:linear-gradient(90deg,rgba(15,10,40,.78) 0%,rgba(15,10,40,.45) 58%,rgba(15,10,40,0) 100%);color:#fff}
+.bn-tx{width:100%;min-width:0;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.bn-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bn-row>div:first-child{min-width:0;flex:1}
 .bn-top{display:flex;align-items:center;gap:7px}
 .bn-lg{flex:none;width:26px;height:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:14px}
 .bn-lg img{width:17px;height:17px;position:static;aspect-ratio:auto}
@@ -480,7 +482,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-189-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-191-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -3726,13 +3728,17 @@ function anuTxtHtml(a){
     '<span class="anu-go">Ir →</span></a>';
 }
 function anuImgHtml(b){
-  var temTx=!!(b.posto||b.chamada||b.preco_centavos>0||b.texto), pr=(Number(b.preco_centavos)||0)>0, go=(b.lat!=null&&b.lng!=null)||!!b.link;
+  var temTx=!!(b.posto||b.bandeira||b.chamada||b.preco_centavos>0||b.texto), pr=(Number(b.preco_centavos)||0)>0, go=(b.lat!=null&&b.lng!=null)||!!b.link;
   var ov='';
-  if(temTx) ov='<div class="bn-ov"><div class="bn-tx">'+
-    ((b.posto||b.bandeira)?'<div class="bn-top"><span class="bn-lg">'+pstLogo(b.bandeira)+'</span><span class="bn-nm">'+esc(b.posto||b.bandeira)+'</span></div>':'')+
-    (b.chamada?'<div class="bn-ch">'+esc(b.chamada)+'</div>':'')+
-    (pr?'<div class="bn-pr">'+moeda(b.preco_centavos/100)+'<small>/litro</small></div>':'')+
-    (b.texto?'<div class="bn-ex">'+esc(b.texto)+'</div>':'')+'</div>'+(go?'<span class="bn-go">Ir →</span>':'')+'</div>';
+  if(temTx){
+    var botao=go?'<span class="bn-go">Ir →</span>':'', ult=b.texto?'texto':(pr?'pr':(b.chamada?'ch':'top'));   /* (191) o botão "Ir" fica na mesma linha da última linha de texto */
+    var linha=function(k,html){ return (ult===k)?'<div class="bn-row">'+html+botao+'</div>':html; };
+    var top=(b.posto||b.bandeira)?linha('top','<div class="bn-top"><span class="bn-lg">'+pstLogo(b.bandeira)+'</span><span class="bn-nm">'+esc(b.posto||b.bandeira)+'</span></div>'):'';
+    var ch=b.chamada?linha('ch','<div class="bn-ch">'+esc(b.chamada)+'</div>'):'';
+    var pc=pr?linha('pr','<div class="bn-pr">'+moeda(b.preco_centavos/100)+'<small>/litro</small></div>'):'';
+    var tx=b.texto?linha('texto','<div class="bn-ex">'+esc(b.texto)+'</div>'):'';
+    ov='<div class="bn-ov"><div class="bn-tx">'+top+ch+pc+tx+'</div></div>';
+  }
   var img='<img src="'+RP_API+'/banner/'+encodeURIComponent(b.id)+'?v='+(b.v||0)+'" alt="'+esc(b.titulo||'Publicidade')+'" loading="lazy">'+ov+'<span class="bn-tag">Publicidade</span>';
   if(b.lat!=null&&b.lng!=null) return '<a class="bn-sl" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lng+'&travelmode=driving" target="_blank" rel="noopener">'+img+'</a>';
   if(b.link) return '<a class="bn-sl" href="'+esc(b.link)+'" target="_blank" rel="noopener">'+img+'</a>';
