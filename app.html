@@ -317,6 +317,26 @@ html.dd-ret #splash{display:flex}
 .srv-linha{display:flex;gap:2px;overflow-x:auto;padding:2px 0 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-right:-16px;padding-right:16px}
 .srv-linha::-webkit-scrollbar{display:none}
 .srv-grade{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 2px;justify-items:center}
+.pst-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.pst-chips::-webkit-scrollbar{display:none}
+.pst-chip{flex:none;border:1.5px solid #DDD6FE;background:#fff;color:var(--roxo-esc);border-radius:99px;padding:7px 14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer}
+.pst-chip.on{background:var(--roxo);color:#fff;border-color:var(--roxo)}
+#pst-mapa{height:230px;border-radius:14px;overflow:hidden;background:#E5E7EB;margin:0 0 12px}
+.pst-pin{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.pst-pin .lg{width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid var(--roxo);box-shadow:0 1px 5px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:16px}
+.pst-pin .lg img{width:22px;height:22px}
+.pst-pin .pr{margin-top:2px;background:var(--roxo);color:#fff;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 6px;white-space:nowrap}
+.pst-eu{width:16px;height:16px;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 0 0 5px rgba(37,99,235,.25)}
+.pst-card{display:flex;gap:10px;align-items:center;border:1px solid #E5E7EB;border-radius:14px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.pst-card .lg{flex:none;width:38px;height:38px;border-radius:50%;background:#F5F3FF;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:18px}
+.pst-card .lg img{width:24px;height:24px}
+.pst-card .nm{font-weight:800;font-size:14px;line-height:1.2}
+.pst-card .sb{font-size:12px;color:var(--muted);margin-top:2px}
+.pst-card .vl{margin-left:auto;text-align:right;flex:none}
+.pst-card .vl b{font-size:16px;display:block}
+.pst-card .bar{font-size:9.5px;font-weight:800;color:#047857;background:#D1FAE5;border-radius:99px;padding:1px 7px;display:inline-block;margin-top:2px}
+.pst-go{display:flex;gap:6px;margin-top:6px}
+.pst-go a{font-size:12px;font-weight:800;color:var(--roxo);background:#EDE9FE;border-radius:99px;padding:3px 10px;text-decoration:none}
 .srv-item{flex:none;width:82px;background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:0;cursor:pointer;font-family:var(--fbody);scroll-snap-align:start}
 .srv-bw{position:relative;display:block;width:66px;height:66px;margin-bottom:12px}
 .srv-bola{width:66px;height:66px;border-radius:50%;background:#ECEDF1;display:flex;align-items:center;justify-content:center;transition:transform .12s}
@@ -426,7 +446,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-186-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-187-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -3343,7 +3363,7 @@ function srvHtml(){
     srvBola(SRV_IC.recarga,'Recarga de celular',rec,'srvRecarga()',(SRV.ok&&!rec)?'Indisponível':'')+
     srvBola(SRV_IC.multa,'Consultar multa',mul,'srvMulta()',(SRV.ok&&!mul)?'Indisponível':'')+
     srvBola(SRV_IC.relat,'Relatórios',true,'ir(\'financeiro\')','')+
-    srvBola(SRV_IC.comb,'Postos e combustível',false,'srvBreve(\'Postos e combustível\')','Em breve')+
+    srvBola(SRV_IC.comb,'Postos e combustível',true,'srvPostos()','')+
     srvBola(SRV_IC.pag,'Pagamentos',false,'srvBreve(\'Pagamentos\')','Em breve')+
     '</div>';
 }
@@ -3358,7 +3378,7 @@ function recLogo(op){
   if(!d) return '';
   return '<img src="https://www.google.com/s2/favicons?domain='+d+'&sz=64" alt="" onerror="this.style.display=\'none\'">';
 }
-function recParar(){ if(REC.timer){ clearInterval(REC.timer); REC.timer=null; } try{ mulParar(); }catch(e){} }
+function recParar(){ if(REC.timer){ clearInterval(REC.timer); REC.timer=null; } try{ mulParar(); }catch(e){} try{ if(PST.mapa){ PST.mapa.remove(); PST.mapa=null; } }catch(e){} }
 function recCorpo(h,tit){ var c=el('sh-srv-corpo'); if(!c) return; c.innerHTML=h; try{ el('sh-srv-tit').textContent=tit||'Recarga de celular'; }catch(e){} }
 function recFoneTxt(f){ f=String(f||''); return f.length===11?('('+f.slice(0,2)+') '+f.slice(2,7)+'-'+f.slice(7)):f; }
 function recErroHtml(msg,fn,rot){ return '<p style="margin:0 0 12px;color:#B91C1C;font-weight:700;font-size:14px">'+esc(msg)+'</p><button class="btn pri wide" onclick="'+(fn||'recTelaNumero()')+'">'+(rot||'Tentar de novo')+'</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>'; }
@@ -3569,6 +3589,95 @@ function mulResultado(r,antigo){
   }
   h+='<button class="btn pri wide" style="margin-top:6px" onclick="mulTelaInicio()">Nova consulta</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>';
   mulCorpo(h);
+}
+/* ══ (187) POSTOS E COMBUSTÍVEL: os 5 postos mais perto (mapa com a bandeira) + preço por posto e preço médio da cidade (pesquisa semanal da ANP) ══ */
+var PST={d:null,t:0,lat:null,lng:null,k:'gasolina',mapa:null,marc:[]};
+var PST_ROT={gasolina:'Gasolina',aditivada:'Aditivada',etanol:'Etanol',diesel_s10:'Diesel S10',diesel:'Diesel',gnv:'GNV'};
+var PST_ORD=['gasolina','aditivada','etanol','diesel_s10','diesel','gnv'];
+var PST_DOM=[['IPIRANGA','ipiranga.com.br'],['PETROBRAS','petrobras.com.br'],['VIBRA','petrobras.com.br'],['SHELL','shell.com.br'],['RAIZEN','raizen.com.br'],['ALE','ale.com.br'],['TEXACO','texaco.com.br'],['ESSO','esso.com.br'],['CHARRUA','charrua.com.br']];
+function pstLogoUrl(b){ var t=String(b||'').toUpperCase().split(/[^A-Z]+/), i, j; for(i=0;i<PST_DOM.length;i++){ for(j=0;j<t.length;j++){ if(t[j]===PST_DOM[i][0]) return 'https://www.google.com/s2/favicons?domain='+PST_DOM[i][1]+'&sz=64'; } } return ''; }
+function pstLogo(b){ var u=pstLogoUrl(b); return u?'<img src="'+u+'" alt="" onerror="this.parentNode.textContent=\'⛽\'">':'⛽'; }
+function pstTitulo(s){ var peq={de:1,da:1,do:1,das:1,dos:1,e:1}; return String(s||'').toLowerCase().replace(/\s+/g,' ').trim().split(' ').map(function(w,i){ return (i>0&&peq[w])?w:(w.charAt(0).toUpperCase()+w.slice(1)); }).join(' '); }
+function pstNome(n){ n=String(n||'').replace(/\b(LTDA|EIRELI|EPP|S\/A|S\.A\.)\b\.?/gi,'').replace(/\bCOMERCIO( DE)? (COMBUSTIVEIS|DERIVADOS DE PETROLEO|DE COMBUSTIVEIS)\b/gi,'').replace(/[&.,\-\s]+$/,'').replace(/\s+/g,' ').trim(); return pstTitulo(n||'Posto'); }
+function pstDM(iso){ var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||'')); return m?(m[3]+'/'+m[2]):''; }
+function pstKm(k){ return String(k).replace('.',',')+' km'; }
+function srvPostos(){
+  abrir('sh-srv'); recParar();
+  if(PST.d&&Date.now()-PST.t<600000){ pstTela(); return; }
+  pstBuscar();
+}
+function pstCorpo(h){ var c=el('sh-srv-corpo'); if(!c) return; c.innerHTML=h; try{ el('sh-srv-tit').textContent='Postos e combustível'; }catch(e){} }
+function pstErro(msg){ pstCorpo('<p style="margin:0 0 12px;color:#B91C1C;font-weight:700;font-size:14px">'+esc(msg)+'</p><button class="btn pri wide" onclick="pstBuscar()">Tentar de novo</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>'); }
+function pstPos(cb){
+  var fb=function(){ var b=RP&&RP.baseLL; if(b&&b.lat!=null) cb({lat:b.lat,lng:b.lng}); else cb(null); };
+  try{ if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(function(p){ cb({lat:p.coords.latitude,lng:p.coords.longitude}); },fb,{enableHighAccuracy:false,timeout:8000,maximumAge:300000}); return; } }catch(e){}
+  fb();
+}
+function pstBuscar(){
+  pstCorpo('<div class="empty">Buscando os postos perto de você…</div>');
+  pstPos(function(p){
+    if(!p){ pstErro('Não consegui sua localização. Libere o acesso à localização no navegador e tente de novo.'); return; }
+    rpApi('/motorista/postos?lat='+p.lat+'&lng='+p.lng).then(function(d){
+      if(!d||!d.ok){ pstErro((d&&d.mensagem)||'Não consegui buscar os postos agora.'); return; }
+      PST.d=d; PST.t=Date.now(); PST.lat=p.lat; PST.lng=p.lng;
+      var ks=pstChaves(); if(ks.indexOf(PST.k)<0) PST.k=ks[0]||'gasolina';
+      pstTela();
+    }).catch(function(){ pstErro('Sem conexão. Tente de novo.'); });
+  });
+}
+function pstChaves(){
+  var d=PST.d||{}, set={}, r=[];
+  (d.medios||[]).forEach(function(m){ set[m.k]=1; }); (d.postos||[]).forEach(function(p){ for(var k in p.precos) set[k]=1; });
+  PST_ORD.forEach(function(k){ if(set[k]) r.push(k); }); return r;
+}
+function pstChipsHtml(){ return pstChaves().map(function(k){ return '<button class="pst-chip'+(PST.k===k?' on':'')+'" onclick="pstEscolher(\''+k+'\')">'+PST_ROT[k]+'</button>'; }).join(''); }
+function pstListaHtml(){
+  var d=PST.d||{}, L=d.postos||[], k=PST.k, i, menor=null;
+  if(!L.length) return '<div class="empty">Não achamos postos da pesquisa da ANP perto de você.</div>';
+  L.forEach(function(p){ var v=p.precos[k]; if(v>0&&(menor===null||v<menor)) menor=v; });
+  var h='';
+  for(i=0;i<L.length;i++){ var p=L[i], v=p.precos[k], destino=p.lat+','+p.lng;
+    h+='<div class="pst-card"><div class="lg">'+pstLogo(p.bandeira)+'</div><div style="min-width:0"><div class="nm">'+esc(pstNome(p.nome))+'</div><div class="sb">'+esc(pstTitulo(p.bandeira)||'Bandeira branca')+' · '+esc(pstTitulo(p.bairro))+' · '+pstKm(p.dist_km)+'</div>'+
+       '<div class="pst-go"><a href="https://www.google.com/maps/dir/?api=1&destination='+destino+'&travelmode=driving" target="_blank" rel="noopener">Maps</a><a href="https://waze.com/ul?ll='+destino+'&navigate=yes" target="_blank" rel="noopener">Waze</a></div></div>'+
+       '<div class="vl"><b>'+(v>0?moeda(v):'—')+'</b>'+((v>0&&menor!==null&&v===menor&&L.length>1)?'<span class="bar">Mais barato</span>':'')+'</div></div>';
+  }
+  return h;
+}
+function pstMediosHtml(){
+  var d=PST.d||{}, M=d.medios||[], mp={}, h='', ord=PST_ORD.concat(['glp']);
+  if(!M.length) return '';
+  M.forEach(function(m){ mp[m.k]=m; });
+  var cid=d.cidade_nome||pstTitulo(d.cidade), tit=d.escopo==='estado'?('Preço médio em '+(d.uf_nome||pstTitulo(d.uf))+' (estado)'):('Preço médio em '+cid);
+  ord.forEach(function(k){ var m=mp[k]; if(!m) return; var rot=(k==='glp')?'Gás de cozinha (13 kg)':PST_ROT[k];
+    h+='<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid #EEE9FB"><span>'+rot+'</span><span><b>'+moeda(m.preco)+'</b> <span style="font-size:11px;color:var(--muted)">'+(m.n?(m.n+' postos'):'')+'</span></span></div>'; });
+  var sem=d.semana||{};
+  return '<div class="rc-res" style="margin-top:12px"><div style="display:block;font-weight:800;color:var(--roxo-esc);margin-bottom:4px">'+esc(tit)+'</div>'+h+'<div style="display:block;font-size:11.5px;color:var(--muted);margin-top:8px">Pesquisa semanal da ANP'+(sem.ini?(' de '+pstDM(sem.ini)+' a '+pstDM(sem.fim)):'')+'. O preço pode variar no posto.</div></div>';
+}
+function pstTela(){
+  pstCorpo('<div class="pst-chips" id="pst-chips">'+pstChipsHtml()+'</div><div id="pst-mapa"></div><div id="pst-lista">'+pstListaHtml()+'</div>'+pstMediosHtml()+'<button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>');
+  pstMapa();
+}
+function pstEscolher(k){ PST.k=k; var c=el('pst-chips'), l=el('pst-lista'); if(c) c.innerHTML=pstChipsHtml(); if(l) l.innerHTML=pstListaHtml(); try{ pstMarcar(); }catch(e){} }
+function pstMapa(){
+  rpCarregarMapa(function(){
+    var box=el('pst-mapa'); if(!box||!PST.d) return;
+    try{ if(PST.mapa){ PST.mapa.remove(); PST.mapa=null; } }catch(e){}
+    PST.mapa=new maplibregl.Map({container:box,style:'https://tiles.openfreemap.org/styles/liberty',center:[PST.lng,PST.lat],zoom:13,attributionControl:false});
+    try{ PST.mapa.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right'); }catch(e){}
+    PST.mapa.on('load',function(){ pstMarcar(true); });
+  });
+}
+function pstMarcar(ajustar){
+  var m=PST.mapa, d=PST.d; if(!m||!d) return;
+  (PST.marc||[]).forEach(function(x){ try{ x.remove(); }catch(e){} }); PST.marc=[];
+  var b=new maplibregl.LngLatBounds(), e=document.createElement('div'); e.className='pst-eu';
+  PST.marc.push(new maplibregl.Marker({element:e}).setLngLat([PST.lng,PST.lat]).addTo(m)); b.extend([PST.lng,PST.lat]);
+  (d.postos||[]).forEach(function(p){
+    var v=p.precos[PST.k], el2=document.createElement('div'); el2.className='pst-pin';
+    el2.innerHTML='<div class="lg">'+pstLogo(p.bandeira)+'</div>'+(v>0?'<div class="pr">'+moeda(v)+'</div>':'');
+    PST.marc.push(new maplibregl.Marker({element:el2,anchor:'bottom'}).setLngLat([p.lng,p.lat]).addTo(m)); b.extend([p.lng,p.lat]);
+  });
+  if(ajustar&&(d.postos||[]).length){ try{ m.fitBounds(b,{padding:{top:40,bottom:50,left:40,right:40},maxZoom:15,duration:0}); }catch(e){} }
 }
 /* ══ (137) APP PAGO x GRÁTIS: grátis = só bipagem; pago = bipagem + roteirização + financeiro. O bloqueio só vale se o master ligar no admin. ══ */
 var APP_PLANO={ok:false,pago:false,bloqueio:false,venda:false};
