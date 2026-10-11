@@ -311,19 +311,22 @@ html.dd-ret #splash{display:flex}
 .rm-pin.st-ausente::after,.rm-pin.st-nao_localizado::after,.rm-pin.st-devolvido::after{content:'!';position:absolute;top:-7px;right:-7px;width:14px;height:14px;border-radius:50%;background:#fff;color:#B91C1C;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px #B91C1C}
 .rm-pin.base{background:#1F0A3D;color:#fff;border-color:#fff;width:28px;height:28px}
 
-/* (180) SERVIÇOS: bolinhas cinza com ícone roxo, visual limpo */
+/* (181) SERVIÇOS: carrossel de bolinhas cinza, ícones roxos grandes, tag "Em breve" roxa na base do círculo */
 .srv-box{margin-top:16px}
 .srv-tit{font-weight:800;font-size:14px;margin:0 2px 10px;color:var(--roxo-esc)}
-.srv-linha{display:flex;gap:2px;justify-content:space-between;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.srv-linha{display:flex;gap:2px;overflow-x:auto;padding:2px 0 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-right:-16px;padding-right:16px}
 .srv-linha::-webkit-scrollbar{display:none}
-.srv-item{flex:1 1 0;min-width:62px;max-width:80px;background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;font-family:var(--fbody)}
-.srv-bola{width:58px;height:58px;border-radius:50%;background:#ECEDF1;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+.srv-item{flex:none;width:82px;background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:0;cursor:pointer;font-family:var(--fbody);scroll-snap-align:start}
+.srv-bw{position:relative;display:block;width:66px;height:66px;margin-bottom:12px}
+.srv-bola{width:66px;height:66px;border-radius:50%;background:#ECEDF1;display:flex;align-items:center;justify-content:center;transition:transform .12s}
 .srv-item:active .srv-bola{transform:scale(.94)}
-.srv-bola svg{width:26px;height:26px;stroke:var(--roxo);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.srv-nome{font-size:11px;font-weight:700;color:#1F2937;text-align:center;line-height:1.2}
-.srv-tag{font-size:9.5px;font-weight:800;color:#6B7280;background:#F3F4F6;border-radius:99px;padding:1px 7px;margin-top:-3px}
-.srv-off .srv-bola{opacity:.55}
+.srv-bola svg{width:34px;height:34px;stroke:var(--roxo);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.srv-nome{font-size:11.5px;font-weight:700;color:#1F2937;text-align:center;line-height:1.2}
+.srv-tag{position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);white-space:nowrap;font-size:9.5px;font-weight:800;color:var(--roxo);background:#EDE9FE;border:2px solid #F6F1FB;border-radius:99px;padding:1px 8px;line-height:1.35}
+.srv-off .srv-bola{opacity:.6}
 .srv-off .srv-nome{color:#6B7280}
+.rc-op{display:flex;align-items:center;gap:10px;margin:0 0 6px}
+.rc-op img{width:30px;height:30px;border-radius:8px;background:#fff;border:1px solid #E5E7EB;padding:3px;box-sizing:border-box;flex:none}
 .rc-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
 .rc-chip{border:1.5px solid #DDD6FE;background:#fff;border-radius:12px;padding:12px 4px;font-weight:800;font-size:14.5px;color:var(--roxo-esc);cursor:pointer;font-family:var(--fbody)}
 .rc-chip.on{background:var(--roxo);border-color:var(--roxo);color:#fff}
@@ -422,7 +425,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-180-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-181-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -3319,7 +3322,7 @@ var SRV_IC={
   pag:'<svg viewBox="0 0 24 24"><path d="M4 6v12M7.5 6v12M11 6v12M15 6v12M18.5 6v12M21 6v12"/></svg>'
 };
 function srvBola(ic,nome,on,fn,tag){
-  return '<button class="srv-item'+(on?'':' srv-off')+'" onclick="'+fn+'"><span class="srv-bola">'+ic+'</span><span class="srv-nome">'+nome+'</span>'+(tag?'<span class="srv-tag">'+tag+'</span>':'')+'</button>';
+  return '<button class="srv-item'+(on?'':' srv-off')+'" onclick="'+fn+'"><span class="srv-bw"><span class="srv-bola">'+ic+'</span>'+(tag?'<span class="srv-tag">'+tag+'</span>':'')+'</span><span class="srv-nome">'+nome+'</span></button>';
 }
 function srvHtml(){
   if(!SRV.ok) srvCarregar();
@@ -3335,6 +3338,13 @@ function srvHtml(){
 function srvBreve(n){ aviso(n+' chega em breve'); }
 
 var REC={fone:'',op:'',valores:[],livre:null,valor:0,pay:'',timer:null,busy:false,taxa:0,fim:false};
+var REC_DOM={vivo:'vivo.com.br',claro:'claro.com.br',tim:'tim.com.br',oi:'oi.com.br',algar:'algartelecom.com.br',nextel:'claro.com.br',surf:'surfie.com.br'};
+function recLogo(op){
+  var n=String(op||'').toLowerCase().replace(/[^a-z]/g,''), k, d='';
+  for(k in REC_DOM){ if(n===k||n.indexOf(k)===0){ d=REC_DOM[k]; break; } }
+  if(!d) return '';
+  return '<img src="https://www.google.com/s2/favicons?domain='+d+'&sz=64" alt="" onerror="this.style.display=\'none\'">';
+}
 function recParar(){ if(REC.timer){ clearInterval(REC.timer); REC.timer=null; } }
 function recCorpo(h,tit){ var c=el('sh-srv-corpo'); if(!c) return; c.innerHTML=h; try{ el('sh-srv-tit').textContent=tit||'Recarga de celular'; }catch(e){} }
 function recFoneTxt(f){ f=String(f||''); return f.length===11?('('+f.slice(0,2)+') '+f.slice(2,7)+'-'+f.slice(7)):f; }
@@ -3371,7 +3381,7 @@ function recConsultar(){
   }).catch(function(){ recCorpo(recErroHtml('Sem conexão. Tente de novo.','recTelaNumero()','Voltar')); });
 }
 function recTelaValor(){
-  var h='<p style="margin:0 0 2px;font-size:14px"><b>'+esc(REC.op||'Operadora')+'</b> · '+esc(recFoneTxt(REC.fone))+'</p><p style="margin:0 0 4px;font-size:13px;color:var(--muted)">Escolha o valor da recarga:</p>';
+  var h='<div class="rc-op">'+recLogo(REC.op)+'<div><b style="font-size:15px">'+esc(REC.op||'Operadora')+'</b><div style="font-size:13px;color:var(--muted)">'+esc(recFoneTxt(REC.fone))+'</div></div></div><p style="margin:8px 0 0;font-size:13px;color:var(--muted)">Escolha o valor da recarga:</p>';
   if(REC.valores.length){
     h+='<div class="rc-chips">'+REC.valores.map(function(v){ return '<button class="rc-chip'+(REC.valor===v.valor?' on':'')+'" onclick="recEscolher('+v.valor+')">'+moeda(v.valor).replace(',00','')+'</button>'; }).join('')+'</div>';
   }
@@ -3410,7 +3420,7 @@ function recPedirCpf(){ var v=(el('rc-cpf').value||'').replace(/\D/g,''); if(v.l
 function recPixTela(d){
   var px=d.pix||{};
   recCorpo('<p style="margin:0 0 4px;font-size:15px;text-align:center"><b>Pague '+moeda((d.total_centavos||0)/100)+' no Pix</b></p>'+
-   '<p style="margin:0 0 8px;font-size:12.5px;text-align:center;color:var(--muted)">Recarga '+moeda((d.valor_centavos||0)/100)+' + taxa '+moeda((d.taxa_centavos||0)/100)+' · '+esc(d.operadora||'')+' '+esc(recFoneTxt(d.fone))+'</p>'+
+   '<div class="rc-op" style="justify-content:center">'+recLogo(d.operadora)+'<span style="font-size:12.5px;color:var(--muted)">Recarga '+moeda((d.valor_centavos||0)/100)+' + taxa '+moeda((d.taxa_centavos||0)/100)+' · '+esc(d.operadora||'')+' '+esc(recFoneTxt(d.fone))+'</span></div>'+
    (px.imagem?'<div style="text-align:center;margin-bottom:10px"><img alt="QR Pix" style="width:190px;height:190px;max-width:70%" src="data:image/png;base64,'+px.imagem+'"></div>':'')+
    '<p style="margin:0 0 6px;font-size:13px;color:var(--muted)">Ou copie o código e cole no app do seu banco (Pix copia e cola):</p>'+
    '<textarea id="ap-copia" readonly style="width:100%;height:64px;padding:8px;border:1.5px solid #DDD6FE;border-radius:12px;font-size:12px">'+esc(px.payload||'')+'</textarea>'+
