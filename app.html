@@ -402,7 +402,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-169-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-170-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2346,15 +2346,23 @@ function vzPerto(p){
 function vzEscolherPerto(i){
   var x=(VZ.perto||[])[i]; if(!x) return Promise.resolve();
   var c=el('vz-cand'); if(c) c.innerHTML='';
-  function usa(cep){ el('vz-cep').value=cep; return vzCepDig(); }
+  /* (170) a rua já foi escolhida na lista: usa os dados dela (sem checar o CEP de novo, que podia voltar "CEP geral, sem rua") */
+  function usa(cep,y){
+    var d=String(cep||'').replace(/\D/g,'').substring(0,8); y=y||{};
+    VZ.semCep=false; VZ.achou=true; VZ.cep=d; VZ.rua=y.rua||x.rua; VZ.bai=y.bai||x.bai||''; VZ.cid=y.cid||x.cid;
+    var ce=el('vz-cep'); if(ce) ce.value=d.length>5?d.substring(0,5)+'-'+d.substring(5):d;
+    var r=el('vz-res'); if(r) r.innerHTML='<div style="border:1px solid #B7EBC9;background:#ECFDF3;color:#166534;border-radius:12px;padding:10px 12px;font-size:13px"><b>'+esc(VZ.rua)+'</b><br>'+esc((VZ.bai?VZ.bai+' · ':'')+VZ.cid+((y.uf||x.uf)?'/'+(y.uf||x.uf):''))+'</div>';
+    return Promise.resolve();
+  }
   vzStat('Buscando o CEP da rua…','#6D28D9');
   /* (163) o CEP vem do ViaCEP (cidade + rua + bairro); o CEP do mapa só entra se o ViaCEP não achar */
-  return rpApi('/motorista/rua?uf='+encodeURIComponent(x.uf||vzLer('u'))+'&cid='+encodeURIComponent(x.cid)+'&rua='+encodeURIComponent(VZ.faladoRua||x.rua)).then(function(d){
+  function buscaCep(nome){ return rpApi('/motorista/rua?uf='+encodeURIComponent(x.uf||vzLer('u'))+'&cid='+encodeURIComponent(x.cid)+'&rua='+encodeURIComponent(nome)); }
+  return buscaCep(VZ.faladoRua||x.rua).then(function(d0){ var i0=(d0&&d0.ok&&d0.itens)||[]; if(i0.length||!x.rua||vzNormT(x.rua)===vzNormT(VZ.faladoRua||'')) return d0; return buscaCep(x.rua).then(function(d1){ return d1||d0; }); }).then(function(d){
     var its=(d&&d.ok&&d.itens)||[], bn=vzNormT(x.bai), m=its.filter(function(y){ var yb=vzNormT(y.bai); return bn&&yb&&(yb.indexOf(bn)>=0||bn.indexOf(yb)>=0); });
-    if(m.length) return usa(m[0].cep);
-    if(its.length===1) return usa(its[0].cep);
+    if(m.length) return usa(m[0].cep,m[0]);
+    if(its.length===1) return usa(its[0].cep,its[0]);
     if(x.cep) return usa(x.cep);
-    if(its.length) return usa(its[0].cep);
+    if(its.length) return usa(its[0].cep,its[0]);
     vzRuaSemCep(x.rua,x.bai,x.cid,x.uf);
   }).catch(function(){ if(x.cep) return usa(x.cep); vzRuaSemCep(x.rua,x.bai,x.cid,x.uf); });
 }
