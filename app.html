@@ -316,6 +316,7 @@ html.dd-ret #splash{display:flex}
 .srv-tit{font-weight:800;font-size:14px;margin:0 2px 10px;color:var(--roxo-esc)}
 .srv-linha{display:flex;gap:2px;overflow-x:auto;padding:2px 0 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-right:-16px;padding-right:16px}
 .srv-linha::-webkit-scrollbar{display:none}
+.srv-grade{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 2px;justify-items:center}
 .srv-item{flex:none;width:82px;background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:0;cursor:pointer;font-family:var(--fbody);scroll-snap-align:start}
 .srv-bw{position:relative;display:block;width:66px;height:66px;margin-bottom:12px}
 .srv-bola{width:66px;height:66px;border-radius:50%;background:#ECEDF1;display:flex;align-items:center;justify-content:center;transition:transform .12s}
@@ -425,7 +426,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-184-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-185-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -459,6 +460,13 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div id="fin-pontos" style="display:none;gap:6px;overflow-x:auto;margin:0 0 10px;padding-bottom:6px;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch"></div>
       <div class="kpis3" id="fin-resumo"></div>
       <div id="fin-lista"></div>
+    </section>
+
+    <!-- SERVIÇOS (opcionais) -->
+    <section class="pagina" id="pg-servicos">
+      <h2 class="titulo-pg">Serviços</h2>
+      <p style="margin:-4px 2px 14px;font-size:13px;color:var(--muted)">Extras para o seu dia a dia. Use só se precisar.</p>
+      <div id="srv-pagina"></div>
     </section>
 
     <!-- HISTÓRICO -->
@@ -522,6 +530,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <nav class="rodape" id="rodape">
     <button class="on" data-p="inicio" onclick="ir('inicio')"><svg viewBox="0 0 24 24"><path d="M4 11L12 4l8 7"/><path d="M6 10v9h5v-5h2v5h5v-9"/></svg><span>Início</span></button>
     <button data-p="financeiro" onclick="ir('financeiro')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V16.5M9.3 14.3C9.3 15.5 10.4 16.2 12 16.2C13.6 16.2 14.7 15.5 14.7 14.2C14.7 11.6 9.3 12.6 9.3 10C9.3 8.7 10.4 8 12 8C13.6 8 14.7 8.7 14.7 9.9"/></svg><span>Financeiro</span></button>
+    <button data-p="servicos" onclick="ir('servicos')"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg><span>Serviços</span></button>
     <button data-p="conta" onclick="ir('conta')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.5-4 5-6 7.5-6s6 2 7.5 6"/></svg><span>Conta</span></button>
   </nav>
 </div>
@@ -784,6 +793,7 @@ function gerarEntregasDetalhe(l){
 var PAG='inicio';
 function ir(p){
   if((p==='financeiro'||p==='historico')&&appBloqueado('Financeiro e histórico')) return;
+  if(p==='servicos'&&appBloqueado('Serviços')) return;
   PAG=p;
   var ps=document.querySelectorAll('.pagina'),i;
   for(i=0;i<ps.length;i++) ps[i].classList.toggle('on', ps[i].id==='pg-'+p);
@@ -791,6 +801,7 @@ function ir(p){
   for(i=0;i<bs.length;i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-p')===p);
   if(p==='financeiro'){ pintarFinanceiro(); carregarResumo(function(){ if(PAG==='financeiro') pintarFinanceiro(); }); }
   if(p==='historico'){ pintarHistorico(); carregarResumo(function(){ if(PAG==='historico') pintarHistorico(); }); }
+  if(p==='servicos') srvPintar();
   if(p==='conta'){ pintarConta(); carregarResumo(function(){ if(PAG==='conta') pintarConta(); }); }
   atualizarChromeApp();
   window.scrollTo(0,0);
@@ -2916,7 +2927,7 @@ function iniChipsHtml(){
   var d=TEMPO.d, ic=d?tempoCod(d.current.weather_code)[0]:'🌤️', tx=d?Math.round(d.current.temperature_2m)+'°C':'--°C', now=new Date(), M=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   var st='display:flex;align-items:center;gap:6px;font-size:14.5px;font-weight:600;color:var(--muted);background:var(--s3);border:1px solid var(--border);border-radius:14px;padding:10px 14px;white-space:nowrap';
   return '<div id="ini-chips" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:2px 0 10px">'+
-    '<button id="chip-tempo" onclick="tempoAbrir()" style="'+st+';cursor:pointer;font-family:inherit"><span style="font-size:18px;line-height:1">'+ic+'</span><span>'+tx+'</span></button>'+
+    '<button id="chip-tempo" onclick="tempoAbrir()" style="'+st+';cursor:pointer;font-family:inherit'+((APP_PLANO&&APP_PLANO.bloqueio)?';display:none':'')+'"><span style="font-size:18px;line-height:1">'+ic+'</span><span>'+tx+'</span></button>'+
     '<div style="'+st+'"><span id="chip-dia">'+now.getDate()+' de '+M[now.getMonth()]+'</span></div>'+
     '<div style="'+st+'"><span style="width:9px;height:9px;border-radius:50%;background:#22C55E;display:inline-block"></span><span id="chip-hora">'+('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2)+'</span></div></div>'+
     '<div style="height:6px"></div>';
@@ -2942,6 +2953,7 @@ function tempoCarregar(cb){
   });
 }
 function tempoAbrir(){
+  if(appBloqueado('Previsão do tempo')) return;
   var c=el('sh-pago-corpo'); if(!c) return;
   el('sh-pago').querySelector('h3').textContent='Previsão do tempo';
   c.innerHTML='<p style="color:var(--muted)">Carregando a previsão…</p>'; abrir('sh-pago');
@@ -2983,7 +2995,6 @@ function renderInicio(){
          '<h3 style="margin:0">Nenhum lote em aberto</h3>'+
          (BIP_ROTA&&!BP.ok?'<p style="color:var(--muted);font-size:13px;margin:0">Carregando seus pacotes…</p>':'')+'</div>';
     }
-    h+=srvHtml();
   } else if(EST==='bipando'){
     h+='<div class="card"><h3 style="margin:0 0 2px">Bipando pacotes</h3>'+
        '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">'+LOTE_ATUAL.length+' pacotes no lote</p>'+
@@ -3312,13 +3323,14 @@ function pintarHistorico(){
 var SRV={ok:false,tent:false};
 function srvCarregar(){
   if(SRV.tent) return; SRV.tent=true;
-  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ SRV=d; SRV.tent=true; try{ if(EST==='sem_lote') renderInicio(); }catch(e){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
+  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ SRV=d; SRV.tent=true; try{ srvPintar(); }catch(e){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
 }
 var SRV_IC={
   recarga:'<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12.6 8.2 10.4 12h3.2l-2.2 3.8"/></svg>',
   relat:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   multa:'<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14.5 3v4.5H19M12 11v4.2M12 18v.1"/></svg>',
   comb:'<svg viewBox="0 0 24 24"><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3.5 21h13M15 9h2.2a1.8 1.8 0 0 1 1.8 1.8V17a1.5 1.5 0 0 0 3 0V9l-3-3"/><path d="M8 7.5h4"/></svg>',
+  posto:'<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
   pag:'<svg viewBox="0 0 24 24"><path d="M4 6v12M7.5 6v12M11 6v12M15 6v12M18.5 6v12M21 6v12"/></svg>'
 };
 function srvBola(ic,nome,on,fn,tag){
@@ -3327,14 +3339,15 @@ function srvBola(ic,nome,on,fn,tag){
 function srvHtml(){
   if(!SRV.ok) srvCarregar();
   var rec=!!(SRV.ok&&SRV.recarga&&SRV.recarga.ativo), mul=!!(SRV.ok&&SRV.multa&&SRV.multa.ativo);
-  return '<div class="srv-box"><div class="srv-tit">Serviços</div><div class="srv-linha">'+
+  return '<div class="srv-grade">'+
     srvBola(SRV_IC.recarga,'Recarga de celular',rec,'srvRecarga()',(SRV.ok&&!rec)?'Indisponível':'')+
-    srvBola(SRV_IC.relat,'Relatórios',true,'ir(\'financeiro\')','')+
     srvBola(SRV_IC.multa,'Consultar multa',mul,'srvMulta()',(SRV.ok&&!mul)?'Indisponível':'')+
+    srvBola(SRV_IC.posto,'Postos',false,'srvBreve(\'Postos\')','Em breve')+
     srvBola(SRV_IC.comb,'Combustível',false,'srvBreve(\'Combustível\')','Em breve')+
     srvBola(SRV_IC.pag,'Pagamentos',false,'srvBreve(\'Pagamentos\')','Em breve')+
-    '</div></div>';
+    '</div>';
 }
+function srvPintar(){ var b=el('srv-pagina'); if(b) b.innerHTML=srvHtml(); }
 function srvBreve(n){ aviso(n+' chega em breve'); }
 
 var REC={fone:'',op:'',valores:[],livre:null,valor:0,pay:'',timer:null,busy:false,taxa:0,fim:false};
@@ -3567,7 +3580,7 @@ function appPlanoCarregar(cb){
 function appPlanoLerCache(){ try{ var o=JSON.parse(localStorage.getItem('dd_app_plano')||'null'); if(o&&o.p&&String(o.mt)===String(RP.mt||'')) APP_PLANO=o.p; }catch(e){} }
 setInterval(function(){ if(!document.hidden&&DD_M_TOKEN) appPlanoCarregar(); },300000);
 function appVantagensHtml(){
-  return '<ul style="margin:8px 0 10px;padding-left:18px;font-size:13.5px;line-height:1.6"><li><b>Roteirização</b> — a melhor ordem de entrega no mapa</li><li><b>Numere seus pacotes automaticamente</b></li><li><b>Financeiro</b> — quanto você já recebeu e tem a receber</li><li><b>Romaneios e histórico</b> sempre à mão</li></ul>';
+  return '<ul style="margin:8px 0 10px;padding-left:18px;font-size:13.5px;line-height:1.6"><li><b>Roteirização</b> — a melhor ordem de entrega no mapa</li><li><b>Numere seus pacotes automaticamente</b></li><li><b>Financeiro</b> — quanto você já recebeu e tem a receber</li><li><b>Romaneios e histórico</b> sempre à mão</li><li><b>Previsão do tempo</b> em tempo real</li><li><b>Serviços</b> — recargas, consulta de multa, postos e mais</li></ul>';
 }
 function appPrecoHtml(){
   var P=APP_PLANO; if(!P.ok) return '';
@@ -3577,6 +3590,7 @@ function cfgInfo(b){ var p=b.parentNode.nextElementSibling; if(p) p.classList.to
 function appCfgVisib(){ var b=!!(APP_PLANO&&APP_PLANO.bloqueio), ids=['cfg-f-volta','cfg-f-rota','cfg-f-modelo','cfg-f-pm','cfg-f-nota'], i, x; for(i=0;i<ids.length;i++){ x=el(ids[i]); if(x) x.style.display=b?'none':''; } }   /* (146) grátis: só o tipo de veículo e os pontos; opções de rota só no plano pago */
 function appBannerPintar(){
   try{ appCfgVisib(); }catch(e){}
+  try{ var ct=el('chip-tempo'); if(ct) ct.style.display=(APP_PLANO&&APP_PLANO.bloqueio)?'none':'flex'; }catch(e){}   /* (185) previsão do tempo só no app pago */
   var e=el('cta-pago'); if(!e) return; var P=APP_PLANO;
   if(!P.ok||!P.venda&&!P.pago){ e.innerHTML=''; return; }
   if(P.pago){
