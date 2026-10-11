@@ -402,7 +402,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-172-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-174-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -938,7 +938,12 @@ function metaHoje(){
       if(st==='entregue') feitos++; else if(st==='pendente'||st==null) falta++;
       if(LOTE_ATUAL[i].origem==='painel') painel++; }
     if(!BIP_ROTA) falta+=Math.max(0,(RP.total||0)-painel);   /* pacotes do motorista que ficaram fora da rota (limite de paradas) */
-  } else falta=BIP_ROTA?((BP.meus?BP.meus.length:0)+(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length):(RP.total||0);
+  } else{
+    falta=BIP_ROTA?((BP.meus?BP.meus.length:0)+(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length):(RP.total||0);
+    /* (173) lote SEM roteirização: o que já foi marcado entregue conta como feito; o devolvido sai da meta */
+    var eD=0, dD=0, k2; for(k2 in ENT.done){ if(ENT.done[k2]==='entregue') eD++; else dD++; }
+    if(eD||dD){ feitos+=eD; falta=Math.max(0,falta-eD-dD); }
+  }
   return {feitos:feitos, meta:Math.max(feitos+falta,feitos)};
 }
 
@@ -1018,8 +1023,9 @@ function confete(){
     })();
   }catch(e){}
 }
+function bpMarcaFin(){ BP.finT=BP.finT||{}; var t=Date.now(), i; try{ for(i=0;i<BP.meus.length;i++) BP.finT[String(BP.meus[i].cod).toLowerCase()]=t; for(i=0;i<LOTE_ATUAL.length;i++) BP.finT[String(LOTE_ATUAL[i].cod).toLowerCase()]=t; }catch(e){} }
 function finalizarRota(){
-  rotaLimpar();
+  bpMarcaFin(); if(LOTE_ATUAL.length&&BP.meus.length) BP.meus=[]; rotaLimpar();
   var entregues=0,devolvidos=0,naoLoc=0,remarc=0,detalhe=[],i;
   for(i=0;i<LOTE_ATUAL.length;i++){
     var p=LOTE_ATUAL[i];
@@ -1673,7 +1679,7 @@ function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por b
     BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:(m.cli||(e?e.cl:'')),r:e?e.r:'',e:e?e.e:0,novo:!e,rom:m.rom||'',v:(m.valor>0?Number(m.valor):0),num:(m.pos>0?Number(m.pos):0),auto:String(m.auto)==='1',conf:String(m.conf)==='1'};
       if(m.end_rua){ it.e=1; it.novo=false; it.r=m.end_rua+(m.end_num?', '+m.end_num:''); it.d={cep:m.end_cep||'',num:m.end_num||'',comp:m.end_comp||'',rua:m.end_rua,bai:m.end_bai||'',cid:m.end_cid||''}; }
       return it; });
-    BP.remT=BP.remT||{}; BP.meus=BP.meus.filter(function(m){ var r=BP.remT[String(m.cod).toLowerCase()]; return !(r&&r>=_t0-1500); });   /* (145) tirou depois que esta consulta saiu: não deixa voltar */
+    BP.remT=BP.remT||{}; BP.finT=BP.finT||{}; BP.meus=BP.meus.filter(function(m){ var k0=String(m.cod).toLowerCase(), r=BP.remT[k0], f=BP.finT[k0]; return !(r&&r>=_t0-1500) && !(f&&Date.now()-f<25000); });   /* (174) lote recém-finalizado não volta pra lista enquanto o servidor ainda fecha */   /* (145) tirou depois que esta consulta saiu: não deixa voltar */
     var mxN=0, fillN=[]; BP.meus.forEach(function(m){ if(m.num>mxN) mxN=m.num; }); 
     if(fillN.length) rpApi('/motorista/numeracao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itens:fillN})}).catch(function(){});
     if(RP.preRota&&typeof RL!=='undefined'&&RL){ RL.feitos={}; BP.meus.forEach(function(m){ if(m.conf||m.rom) RL.feitos[String(m.cod).toLowerCase()]=1; }); bipFila().forEach(function(x){ RL.feitos[String(x.cod).toLowerCase()]=1; });
@@ -1772,7 +1778,7 @@ function bpBipar(v){
   /* otimista: mostra o pacote na hora e confirma com o servidor em segundo plano; se o servidor recusar, tira da lista e avisa */
   var NAO=(rpCfg().rota==='nao'), item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};
   if(e&&e.a&&e.a[0]&&e.a[1]&&e.a[4]){ item.d={cep:e.a[5]||'',num:e.a[1],comp:e.a[2]||'',rua:e.a[0],bai:e.a[3]||'',cid:e.a[4]}; item.r=e.a[0]+', '+e.a[1]; item.e=1; item.novo=false; }   /* (128) o endereço já veio na lista: aparece NA HORA, sem esperar o servidor */   /* (111) o número só aparece na 2ª bipagem (conferência da rota) */
-  try{ if(BP.remT) delete BP.remT[String(item.cod).toLowerCase()]; }catch(e){}
+  try{ if(BP.remT) delete BP.remT[String(item.cod).toLowerCase()]; if(BP.finT) delete BP.finT[String(item.cod).toLowerCase()]; }catch(e){}
   BP.meus.push(item); bpMarcaMesa(canon); somBipeOk();
   if(NAO) BP.ult={t:'ok',m:'✔ Registrado'+(e&&e.cl?' — '+esc(e.cl):''),cod:canon};
   else if(!e) BP.ult={t:'novo',m:'Clique e insira o endereço.',cod:canon};
@@ -2017,6 +2023,10 @@ function entFinalizar(tent){
   tent=tent||0;
   if(rpFilaEnt().length&&tent<8){ rpDescarregarEnt(); setTimeout(function(){ entFinalizar(tent+1); },1000); aviso('Enviando as entregas…'); return; }
   rpApi('/motorista/bipagens-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lote:'l'+Date.now()})}).catch(function(){});
+  /* (173) o lote sem roteirização também entra na meta do dia (antes sumia e a régua voltava) */
+  bpMarcaFin();
+  var nE=0, nD=0, kD; for(kD in ENT.done){ if(ENT.done[kD]==='entregue') nE++; else nD++; }
+  if(nE||nD) LOTES_HOJE.unshift({id:Date.now(), data:hojeISO(), transportadoras:['Lote misto'], totalPacotes:nE+nD, entregues:nE, devolvidos:nD, naoLocalizados:0, remarcados:0, km:0, tempoMin:0, fechamento:'aberto', pagamento:'a pagar', _detalhe:[]});
   BP.meus=[]; ENT.done={}; ENT.sel={}; RP.bipMode=false; PT.sel=null; try{ ptGravar(); }catch(e){}
   EST='sem_lote'; renderInicio(); aviso('Lote finalizado'); setTimeout(carregarResumo,2500);
 }
