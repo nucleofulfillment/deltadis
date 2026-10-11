@@ -310,6 +310,26 @@ html.dd-ret #splash{display:flex}
 .rm-pin.st-devolvido{background:#7F1D1D;color:#fff;border-color:#7F1D1D}
 .rm-pin.st-ausente::after,.rm-pin.st-nao_localizado::after,.rm-pin.st-devolvido::after{content:'!';position:absolute;top:-7px;right:-7px;width:14px;height:14px;border-radius:50%;background:#fff;color:#B91C1C;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px #B91C1C}
 .rm-pin.base{background:#1F0A3D;color:#fff;border-color:#fff;width:28px;height:28px}
+
+/* (180) SERVIÇOS: bolinhas cinza com ícone roxo, visual limpo */
+.srv-box{margin-top:16px}
+.srv-tit{font-weight:800;font-size:14px;margin:0 2px 10px;color:var(--roxo-esc)}
+.srv-linha{display:flex;gap:2px;justify-content:space-between;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.srv-linha::-webkit-scrollbar{display:none}
+.srv-item{flex:1 1 0;min-width:62px;max-width:80px;background:none;border:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;font-family:var(--fbody)}
+.srv-bola{width:58px;height:58px;border-radius:50%;background:#ECEDF1;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+.srv-item:active .srv-bola{transform:scale(.94)}
+.srv-bola svg{width:26px;height:26px;stroke:var(--roxo);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.srv-nome{font-size:11px;font-weight:700;color:#1F2937;text-align:center;line-height:1.2}
+.srv-tag{font-size:9.5px;font-weight:800;color:#6B7280;background:#F3F4F6;border-radius:99px;padding:1px 7px;margin-top:-3px}
+.srv-off .srv-bola{opacity:.55}
+.srv-off .srv-nome{color:#6B7280}
+.rc-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.rc-chip{border:1.5px solid #DDD6FE;background:#fff;border-radius:12px;padding:12px 4px;font-weight:800;font-size:14.5px;color:var(--roxo-esc);cursor:pointer;font-family:var(--fbody)}
+.rc-chip.on{background:var(--roxo);border-color:var(--roxo);color:#fff}
+.rc-res{background:#F5F3FF;border-radius:12px;padding:12px 14px;margin:6px 0 12px;font-size:13.5px}
+.rc-res div{display:flex;justify-content:space-between;padding:2px 0}
+.rc-res .rc-tot{border-top:1px solid #DDD6FE;margin-top:6px;padding-top:8px;font-size:15.5px;font-weight:800;color:var(--roxo-esc)}
 </style>
 <style>html.dd-ret #login{visibility:hidden}</style><script>try{if(localStorage.getItem('dd_m_jwt'))document.documentElement.classList.add('dd-ret');}catch(e){}</script>
 </head>
@@ -402,7 +422,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-179-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-180-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -545,6 +565,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <!-- ══ TELA CHEIA: completar o cadastro (primeiro acesso) ══ -->
 <div id="cad-tela" style="display:none;position:fixed;inset:0;z-index:9000;background:var(--bg,#F6F1FB);overflow:auto;padding:18px 16px 40px"></div>
 
+<!-- ══ MODAL: serviços (recarga de celular) ══ -->
+<div class="sheet" id="sh-srv">
+  <div class="sh-hd"><h3 id="sh-srv-tit">Recarga de celular</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd" id="sh-srv-corpo"></div>
+</div>
+
 <!-- ══ MODAL: recurso do app pago ══ -->
 <div class="sheet" id="sh-pago">
   <div class="sh-hd"><h3>App pago</h3><button onclick="fecharTudo()">✕</button></div>
@@ -655,7 +681,7 @@ function somEntregaOk(){
 function aviso(t){var e=el('toast'); e.textContent=t; e.classList.add('on');
   clearTimeout(window._tt); window._tt=setTimeout(function(){e.classList.remove('on');},2600);}
 function abrir(id){el('ovl').classList.add('on'); el(id).classList.add('on');}
-function fecharTudo(){ try{ appPixParar(); }catch(e){}el('ovl').classList.remove('on'); var s=document.querySelectorAll('.sheet'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');}
+function fecharTudo(){ try{ appPixParar(); }catch(e){} try{ recParar(); }catch(e){}el('ovl').classList.remove('on'); var s=document.querySelectorAll('.sheet'); for(var i=0;i<s.length;i++) s[i].classList.remove('on');}
 
 /* motorista logado (demonstração — dado viria do login real) */
 var MOTORISTA_LOGADO={id:0,n:'',ini:'',cor:'#6D28D9',tel:'',regiao:'',modelo:'',veicCor:'',ano:'',placa:'',cap:0,valorPct:0};   /* dados reais vêm de /motorista/resumo */
@@ -2954,6 +2980,7 @@ function renderInicio(){
          '<h3 style="margin:0 0 6px">Nenhum lote em aberto</h3>'+
          (BIP_ROTA&&!BP.ok?'<p style="color:var(--muted);font-size:13px;margin:0">Carregando seus pacotes…</p>':'')+'</div>';
     }
+    h+=srvHtml();
   } else if(EST==='bipando'){
     h+='<div class="card"><h3 style="margin:0 0 2px">Bipando pacotes</h3>'+
        '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">'+LOTE_ATUAL.length+' pacotes no lote</p>'+
@@ -3278,6 +3305,147 @@ function pintarHistorico(){
   el('hist-lista').innerHTML = h || '<div class="empty">'+(avisoResumo()||'Nenhum histórico ainda')+'</div>';
 }
 
+/* ══ (180) SERVIÇOS DO MOTORISTA: linha de bolinhas na tela inicial + recarga de celular (Pix → recarga → devolve se falhar) ══ */
+var SRV={ok:false,tent:false};
+function srvCarregar(){
+  if(SRV.tent) return; SRV.tent=true;
+  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ SRV=d; SRV.tent=true; try{ if(EST==='sem_lote') renderInicio(); }catch(e){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
+}
+var SRV_IC={
+  recarga:'<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12.6 8.2 10.4 12h3.2l-2.2 3.8"/></svg>',
+  relat:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  multa:'<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14.5 3v4.5H19M12 11v4.2M12 18v.1"/></svg>',
+  comb:'<svg viewBox="0 0 24 24"><path d="M5 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3.5 21h13M15 9h2.2a1.8 1.8 0 0 1 1.8 1.8V17a1.5 1.5 0 0 0 3 0V9l-3-3"/><path d="M8 7.5h4"/></svg>',
+  pag:'<svg viewBox="0 0 24 24"><path d="M4 6v12M7.5 6v12M11 6v12M15 6v12M18.5 6v12M21 6v12"/></svg>'
+};
+function srvBola(ic,nome,on,fn,tag){
+  return '<button class="srv-item'+(on?'':' srv-off')+'" onclick="'+fn+'"><span class="srv-bola">'+ic+'</span><span class="srv-nome">'+nome+'</span>'+(tag?'<span class="srv-tag">'+tag+'</span>':'')+'</button>';
+}
+function srvHtml(){
+  if(!SRV.ok) srvCarregar();
+  var rec=!!(SRV.ok&&SRV.recarga&&SRV.recarga.ativo);
+  return '<div class="srv-box"><div class="srv-tit">Serviços</div><div class="srv-linha">'+
+    srvBola(SRV_IC.recarga,'Recarga de celular',rec,'srvRecarga()',(SRV.ok&&!rec)?'Indisponível':'')+
+    srvBola(SRV_IC.relat,'Relatórios',true,'ir(\'financeiro\')','')+
+    srvBola(SRV_IC.multa,'Consultar multa',false,'srvBreve(\'Consulta de multa\')','Em breve')+
+    srvBola(SRV_IC.comb,'Combustível',false,'srvBreve(\'Combustível\')','Em breve')+
+    srvBola(SRV_IC.pag,'Pagamentos',false,'srvBreve(\'Pagamentos\')','Em breve')+
+    '</div></div>';
+}
+function srvBreve(n){ aviso(n+' chega em breve'); }
+
+var REC={fone:'',op:'',valores:[],livre:null,valor:0,pay:'',timer:null,busy:false,taxa:0,fim:false};
+function recParar(){ if(REC.timer){ clearInterval(REC.timer); REC.timer=null; } }
+function recCorpo(h,tit){ var c=el('sh-srv-corpo'); if(!c) return; c.innerHTML=h; try{ el('sh-srv-tit').textContent=tit||'Recarga de celular'; }catch(e){} }
+function recFoneTxt(f){ f=String(f||''); return f.length===11?('('+f.slice(0,2)+') '+f.slice(2,7)+'-'+f.slice(7)):f; }
+function recErroHtml(msg,fn,rot){ return '<p style="margin:0 0 12px;color:#B91C1C;font-weight:700;font-size:14px">'+esc(msg)+'</p><button class="btn pri wide" onclick="'+(fn||'recTelaNumero()')+'">'+(rot||'Tentar de novo')+'</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>'; }
+function srvRecarga(){
+  if(!SRV.ok||!SRV.recarga){ aviso('Carregando… toque de novo em instantes'); srvCarregar(); return; }
+  if(!SRV.recarga.ativo){ aviso('Recarga indisponível agora'); return; }
+  REC.taxa=Number(SRV.recarga.taxa_centavos)||0; REC.fim=false;
+  var pend=null; try{ pend=JSON.parse(localStorage.getItem('dd_rec_pend')||'null'); }catch(e){}
+  abrir('sh-srv');
+  if(pend&&pend.pay&&String(pend.mt)===String(RP.mt||'')&&Date.now()-pend.t<86400000){
+    REC.pay=pend.pay; REC.fone=pend.fone||''; REC.valor=pend.valor||0;
+    recCorpo('<div class="empty">Conferindo a sua recarga…</div>');
+    recChecar(true); recParar(); REC.timer=setInterval(function(){ recChecar(false); },5000); return;
+  }
+  recTelaNumero();
+}
+function recTelaNumero(){
+  recParar(); REC.pay=''; REC.valor=0;
+  var P=PERFIL||{}, u=DD_M_USER||{}, f=String(REC.fone||P.telefone||u.telefone||'').replace(/\D/g,''); if(f.indexOf('55')===0&&f.length>=12) f=f.slice(2);
+  recCorpo('<p style="margin:0 0 10px;font-size:14px">Qual celular você quer recarregar?</p>'+
+    '<input id="rc-fone" class="inp" inputmode="numeric" maxlength="15" placeholder="(00) 00000-0000" value="'+esc(f.length===11?recFoneTxt(f):f)+'" style="font-size:17px" onkeydown="if(event.key===\'Enter\')recConsultar()">'+
+    '<p id="rc-msg" style="color:#B91C1C;font-size:13px;font-weight:700;margin:8px 0 0;min-height:18px"></p>'+
+    '<button class="btn pri wide" style="margin-top:6px" onclick="recConsultar()">Continuar</button>'+
+    '<p style="margin:12px 0 0;font-size:12px;color:var(--muted);text-align:center">Aceitamos Vivo, Claro, TIM e outras operadoras. O Pix é pago antes da recarga.</p>');
+}
+function recConsultar(){
+  var f=(el('rc-fone').value||'').replace(/\D/g,''); if(f.indexOf('55')===0&&f.length===13) f=f.slice(2);
+  var m=el('rc-msg'); if(f.length!==11){ m.textContent='Digite o celular com DDD e 9 dígitos.'; return; }
+  recCorpo('<div class="empty">Consultando a operadora…</div>');
+  rpApi('/motorista/recarga-operadora?fone='+f).then(function(d){
+    if(!d||!d.ok){ recCorpo(recErroHtml((d&&d.mensagem)||'Não consegui consultar agora.','recTelaNumero()','Voltar')); return; }
+    REC.fone=d.fone; REC.op=d.operadora||''; REC.valores=d.valores||[]; REC.livre=d.livre||null; REC.valor=0; recTelaValor();
+  }).catch(function(){ recCorpo(recErroHtml('Sem conexão. Tente de novo.','recTelaNumero()','Voltar')); });
+}
+function recTelaValor(){
+  var h='<p style="margin:0 0 2px;font-size:14px"><b>'+esc(REC.op||'Operadora')+'</b> · '+esc(recFoneTxt(REC.fone))+'</p><p style="margin:0 0 4px;font-size:13px;color:var(--muted)">Escolha o valor da recarga:</p>';
+  if(REC.valores.length){
+    h+='<div class="rc-chips">'+REC.valores.map(function(v){ return '<button class="rc-chip'+(REC.valor===v.valor?' on':'')+'" onclick="recEscolher('+v.valor+')">'+moeda(v.valor).replace(',00','')+'</button>'; }).join('')+'</div>';
+  }
+  if(REC.livre){
+    h+='<input id="rc-livre" class="inp" inputmode="decimal" placeholder="Outro valor ('+moeda(REC.livre.min).replace(',00','')+' a '+moeda(REC.livre.max).replace(',00','')+')" oninput="recLivre()" style="margin-bottom:6px">';
+  }
+  h+='<div class="rc-res"><div><span>Recarga</span><b id="rc-v1">'+moeda(REC.valor)+'</b></div><div><span>Taxa de serviço</span><b>'+moeda(REC.taxa/100)+'</b></div><div class="rc-tot"><span>Total no Pix</span><span id="rc-v3">'+moeda(REC.valor+REC.taxa/100)+'</span></div></div>'+
+     '<p id="rc-msg" style="color:#B91C1C;font-size:13px;font-weight:700;margin:0 0 8px;min-height:0"></p>'+
+     '<button class="btn pri wide" id="rc-go" onclick="recPedir()"'+(REC.valor>0?'':' disabled style="opacity:.5"')+'>Gerar Pix</button>'+
+     '<button class="btn sec wide" style="margin-top:10px" onclick="recTelaNumero()">Trocar número</button>';
+  recCorpo(h);
+}
+function recEscolher(v){ REC.valor=v; recTelaValor(); }
+function recLivre(){
+  var t=(el('rc-livre').value||'').replace(',','.'), v=Number(t)||0, L=REC.livre||{min:0,max:0}, ok=v>=L.min&&v<=L.max;
+  REC.valor=ok?v:0;
+  var a=el('rc-v1'), b=el('rc-v3'), g=el('rc-go'); if(a) a.textContent=moeda(REC.valor); if(b) b.textContent=moeda(REC.valor+REC.taxa/100);
+  if(g){ g.disabled=!ok; g.style.opacity=ok?'':'.5'; }
+}
+function recPedir(cpf){
+  if(!(REC.valor>0)) return;
+  recCorpo('<div class="empty">Gerando seu Pix…</div>');
+  var body={fone:REC.fone,valor:REC.valor}; if(cpf) body.cpf=cpf;
+  rpApi('/motorista/recarga-pedir',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(d){
+    if(d&&d.erro==='precisa_cpf'){
+      recCorpo('<p style="margin:0 0 8px;font-size:14px">Para gerar o Pix o banco pede o seu <b>CPF</b>. Ele é usado só nesta cobrança.</p><input id="rc-cpf" class="inp" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" style="font-size:16px"><p id="rc-cpf-m" style="color:#B91C1C;font-size:13px;font-weight:700;margin:8px 0"></p><button class="btn pri wide" onclick="recPedirCpf()">Continuar</button><button class="btn sec wide" style="margin-top:10px" onclick="recTelaValor()">Voltar</button>');
+      return;
+    }
+    if(!d||!d.ok){ recCorpo(recErroHtml((d&&d.mensagem)||'Não consegui gerar o Pix. Tente de novo.','recTelaValor()','Voltar')); return; }
+    REC.pay=d.pay_id; REC.fim=false;
+    try{ localStorage.setItem('dd_rec_pend',JSON.stringify({pay:d.pay_id,fone:d.fone,valor:(d.valor_centavos||0)/100,mt:String(RP.mt||''),t:Date.now()})); }catch(e){}
+    recPixTela(d); recParar(); REC.timer=setInterval(function(){ recChecar(false); },5000);
+  }).catch(function(){ recCorpo(recErroHtml('Sem conexão. Tente de novo.','recTelaValor()','Voltar')); });
+}
+function recPedirCpf(){ var v=(el('rc-cpf').value||'').replace(/\D/g,''); if(v.length!==11){ el('rc-cpf-m').textContent='CPF inválido. Digite os 11 números.'; return; } recPedir(v); }
+function recPixTela(d){
+  var px=d.pix||{};
+  recCorpo('<p style="margin:0 0 4px;font-size:15px;text-align:center"><b>Pague '+moeda((d.total_centavos||0)/100)+' no Pix</b></p>'+
+   '<p style="margin:0 0 8px;font-size:12.5px;text-align:center;color:var(--muted)">Recarga '+moeda((d.valor_centavos||0)/100)+' + taxa '+moeda((d.taxa_centavos||0)/100)+' · '+esc(d.operadora||'')+' '+esc(recFoneTxt(d.fone))+'</p>'+
+   (px.imagem?'<div style="text-align:center;margin-bottom:10px"><img alt="QR Pix" style="width:190px;height:190px;max-width:70%" src="data:image/png;base64,'+px.imagem+'"></div>':'')+
+   '<p style="margin:0 0 6px;font-size:13px;color:var(--muted)">Ou copie o código e cole no app do seu banco (Pix copia e cola):</p>'+
+   '<textarea id="ap-copia" readonly style="width:100%;height:64px;padding:8px;border:1.5px solid #DDD6FE;border-radius:12px;font-size:12px">'+esc(px.payload||'')+'</textarea>'+
+   '<button class="btn pri wide" style="margin-top:8px" onclick="appPixCopiar()">Copiar código</button>'+
+   '<p id="rc-status" style="text-align:center;margin:12px 0 4px;font-size:13.5px;font-weight:700;color:#5B21B6">⏳ Aguardando o pagamento…</p>'+
+   '<p style="text-align:center;margin:0;font-size:12px;color:var(--muted)">Depois do Pix, a recarga pode levar alguns minutos para chegar.</p>'+
+   '<button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>');
+}
+function recLimpaPend(){ try{ localStorage.removeItem('dd_rec_pend'); }catch(e){} }
+function recFimTela(ic,tit,msg,cor,btn){
+  recParar(); REC.fim=true;
+  recCorpo('<div style="text-align:center;padding:10px 0 4px"><div style="font-size:42px;margin-bottom:8px">'+ic+'</div><h3 style="margin:0 0 6px;color:'+(cor||'#1F2937')+'">'+tit+'</h3><p style="margin:0 0 14px;font-size:13.5px;color:var(--muted)">'+msg+'</p></div>'+
+    (btn?'<button class="btn pri wide" onclick="recTelaNumero()">Nova recarga</button>':'')+'<button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>');
+}
+function recChecar(primeira){
+  var sh=el('sh-srv'); if(!sh||!sh.classList.contains('on')||!REC.pay){ recParar(); return; }
+  if(REC.busy||REC.fim) return; REC.busy=true;
+  rpApi('/motorista/recarga-status?pay='+encodeURIComponent(REC.pay)).then(function(d){
+    REC.busy=false; if(!d||!d.ok){ if(d&&d.erro==='nao_achado'){ recLimpaPend(); recTelaNumero(); } return; }
+    var f=recFoneTxt(d.fone||REC.fone), v=moeda((d.valor_centavos||0)/100);
+    if(d.estado==='aguardando_pix'){
+      if(primeira){ recCorpo('<div class="empty">Seu Pix ainda não foi pago.</div><button class="btn sec wide" style="margin-top:10px" onclick="recLimpaPend();recTelaNumero()">Fazer outra recarga</button><button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>'); }
+      return;
+    }
+    if(d.estado==='recarregando'){
+      recCorpo('<div style="text-align:center;padding:10px 0 4px"><div style="font-size:42px;margin-bottom:8px">📲</div><h3 style="margin:0 0 6px;color:#5B21B6">Pix confirmado!</h3><p style="margin:0 0 6px;font-size:13.5px">Recarregando '+v+' em '+esc(f)+'…</p><p style="margin:0 0 14px;font-size:12.5px;color:var(--muted)">Pode levar alguns minutos para chegar. Você pode fechar esta tela, a recarga continua.</p></div><button class="btn sec wide" onclick="fecharTudo()">Fechar</button>');
+      return;
+    }
+    recLimpaPend();
+    if(d.estado==='concluida'){ recFimTela('✅','Recarga concluída!',v+' em '+esc(f)+'. Já deve estar no seu saldo.','#047857',true); aviso('✔ Recarga concluída'); }
+    else if(d.estado==='devolvida'){ recFimTela('↩️','Não foi possível recarregar','Devolvemos o valor do seu Pix. Ele volta para a sua conta em instantes.','#B45309',true); }
+    else if(d.estado==='vencido'){ recFimTela('⌛','Este Pix venceu','Nenhum valor foi cobrado. Gere um novo para recarregar.','#B45309',true); }
+    else { recFimTela('🔎','Estamos conferindo a sua recarga','Seu Pix foi pago. Nossa equipe confere e resolve em breve. Se precisar, fale com o suporte.','#B45309',false); }
+  }).catch(function(){ REC.busy=false; });
+}
 /* ══ (137) APP PAGO x GRÁTIS: grátis = só bipagem; pago = bipagem + roteirização + financeiro. O bloqueio só vale se o master ligar no admin. ══ */
 var APP_PLANO={ok:false,pago:false,bloqueio:false,venda:false};
 var APP_PLANO_TENT=false;
