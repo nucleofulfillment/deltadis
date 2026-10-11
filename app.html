@@ -317,6 +317,19 @@ html.dd-ret #splash{display:flex}
 .srv-linha{display:flex;gap:2px;overflow-x:auto;padding:2px 0 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-right:-16px;padding-right:16px}
 .srv-linha::-webkit-scrollbar{display:none}
 .srv-grade{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 2px;justify-items:center}
+.anu-card{position:relative;display:flex;align-items:center;gap:12px;margin:12px 0 0;padding:14px 14px 12px;border-radius:16px;background:linear-gradient(135deg,#F5F3FF,#FDF2F8);border:1.5px solid #DDD6FE;text-decoration:none;color:inherit}
+.anu-tag{position:absolute;top:6px;right:10px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#6B7280}
+.anu-lg{flex:none;width:48px;height:48px;border-radius:50%;background:#fff;border:2px solid var(--roxo);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:22px}
+.anu-lg img{width:30px;height:30px}
+.anu-tx{min-width:0;flex:1}
+.anu-nm{font-weight:800;font-size:14.5px;line-height:1.2}
+.anu-nm span{font-weight:700;color:var(--muted);font-size:12.5px}
+.anu-of{font-size:14px;margin-top:3px}
+.anu-pr{margin-top:1px;white-space:nowrap}
+.anu-pr b{font-size:21px;color:var(--roxo-esc)}
+.anu-pr small{color:var(--muted);font-size:11.5px;margin-left:2px}
+.anu-ex{font-size:12px;color:var(--muted);margin-top:2px}
+.anu-go{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--roxo);border-radius:99px;padding:8px 14px}
 .pst-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
 .pst-chips::-webkit-scrollbar{display:none}
 .pst-chip{flex:none;border:1.5px solid #DDD6FE;background:#fff;color:var(--roxo-esc);border-radius:99px;padding:7px 14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer}
@@ -446,7 +459,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-187-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-188-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -3015,6 +3028,7 @@ function renderInicio(){
          '<h3 style="margin:0">Nenhum lote em aberto</h3>'+
          (BIP_ROTA&&!BP.ok?'<p style="color:var(--muted);font-size:13px;margin:0">Carregando seus pacotes…</p>':'')+'</div>';
     }
+    srvCarregar(); h+=anuncioHtml();   /* (188) card de publicidade abaixo do card do lote */
   } else if(EST==='bipando'){
     h+='<div class="card"><h3 style="margin:0 0 2px">Bipando pacotes</h3>'+
        '<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">'+LOTE_ATUAL.length+' pacotes no lote</p>'+
@@ -3342,8 +3356,8 @@ function pintarHistorico(){
 /* ══ (180) SERVIÇOS DO MOTORISTA: linha de bolinhas na tela inicial + recarga de celular (Pix → recarga → devolve se falhar) ══ */
 var SRV={ok:false,tent:false};
 function srvCarregar(){
-  if(SRV.tent) return; SRV.tent=true;
-  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ SRV=d; SRV.tent=true; try{ srvPintar(); }catch(e){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
+  if(SRV.tent&&!(SRV.t&&Date.now()-SRV.t>600000)) return; SRV.tent=true;
+  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ var antes=JSON.stringify(SRV.anuncio||null); SRV=d; SRV.tent=true; SRV.t=Date.now(); try{ srvPintar(); }catch(e){} try{ if(antes!==JSON.stringify(d.anuncio||null)&&EST==='sem_lote'&&PAG==='inicio') renderInicio(); }catch(e2){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
 }
 var SRV_IC={
   recarga:'<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12.6 8.2 10.4 12h3.2l-2.2 3.8"/></svg>',
@@ -3678,6 +3692,18 @@ function pstMarcar(ajustar){
     PST.marc.push(new maplibregl.Marker({element:el2,anchor:'bottom'}).setLngLat([p.lng,p.lat]).addTo(m)); b.extend([p.lng,p.lat]);
   });
   if(ajustar&&(d.postos||[]).length){ try{ m.fitBounds(b,{padding:{top:40,bottom:50,left:40,right:40},maxZoom:15,duration:0}); }catch(e){} }
+}
+/* ══ (188) PUBLICIDADE: card do anunciante na tela inicial; ao tocar abre a rota até o posto ══ */
+function anuncioHtml(){
+  var a=SRV&&SRV.ok?SRV.anuncio:null; if(!a||!a.posto||a.lat==null) return '';
+  var dest=a.lat+','+a.lng, pr=(Number(a.preco_centavos)||0)>0;
+  return '<a class="anu-card" href="https://www.google.com/maps/dir/?api=1&destination='+dest+'&travelmode=driving" target="_blank" rel="noopener">'+
+    '<span class="anu-tag">Publicidade</span>'+
+    '<div class="anu-lg">'+pstLogo(a.bandeira)+'</div>'+
+    '<div class="anu-tx"><div class="anu-nm">'+esc(a.posto)+(a.bandeira?' <span>· '+esc(a.bandeira)+'</span>':'')+'</div>'+
+    (a.titulo?'<div class="anu-of">'+esc(a.titulo)+'</div>':'')+(pr?'<div class="anu-pr"><b>'+moeda(a.preco_centavos/100)+'</b><small>/litro</small></div>':'')+
+    (a.texto?'<div class="anu-ex">'+esc(a.texto)+'</div>':'')+'</div>'+
+    '<span class="anu-go">Ir →</span></a>';
 }
 /* ══ (137) APP PAGO x GRÁTIS: grátis = só bipagem; pago = bipagem + roteirização + financeiro. O bloqueio só vale se o master ligar no admin. ══ */
 var APP_PLANO={ok:false,pago:false,bloqueio:false,venda:false};

@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-19-1010</div>
+      <div class="bld">DELTADIS-ADMIN-20-1010</div>
     </div>
   </div>
 </div>
@@ -311,7 +311,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div id="app-corpo" style="display:none"><div id="lista-app"><div class="vazio">Carregando...</div></div></div>
     </div>
     <div class="card">
-      <h3><span>Serviços do motorista</span><span class="dir"><span class="lnk" onclick="abrirSrvCfg()">Taxas e preços</span></span></h3>
+      <h3><span>Serviços do motorista</span><span class="dir"><span class="lnk" onclick="abrirSrvCfg()">Taxas e preços</span><span class="lnk" onclick="abrirAnuCfg()">Publicidade</span></span></h3>
       <div id="srv-cfg-info" class="sub2" style="padding:0 2px 8px">Carregando...</div>
     </div>
     <div class="card">
@@ -325,7 +325,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-19-1010</div>
+    <div class="bld">DELTADIS-ADMIN-20-1010</div>
   </main>
 </div>
 
@@ -534,6 +534,32 @@ function salvarSrvCfg(){
     var e=el('sv-erro'); e.style.color='#15803D'; e.textContent='✔ Salvo com sucesso às '+hm+'. Pode fechar esta janela.';
     el('sv-btn').disabled=false; el('sv-btn').textContent='Salvo ✔'; toast('Serviços salvos!'); carregarSrv();
   }).catch(function(){el('sv-btn').disabled=false;el('sv-btn').textContent='Salvar';});
+}
+/* ── Publicidade do app (card do anunciante na tela inicial do motorista) ── */
+function abrirAnuCfg(){
+  abrirModal('<h3>Publicidade no app</h3><div class="vazio">Carregando...</div>');
+  chamar('GET','/admin/anuncio').then(function(d){
+    if(!d||!d.ok){abrirModal('<h3>Publicidade no app</h3><div class="vazio">Não consegui carregar.</div>');return;}
+    var c=d.config||{};
+    abrirModal('<h3>Publicidade no app</h3><p class="sub">Aparece como um card na tela inicial de todos os motoristas, com a etiqueta "Publicidade". Ao tocar, o app abre a rota até o posto. Use só com anunciante real e combinado: o preço mostrado vale para todos.</p>'+
+    '<div class="linha2"><div><label>Nome do posto</label><input id="an-posto" value="'+esc(c.posto||'')+'"></div><div><label>Bandeira (ex: Ipiranga)</label><input id="an-band" value="'+esc(c.bandeira||'')+'"></div></div>'+
+    '<div class="linha2"><div><label>Chamada (ex: Gasolina comum)</label><input id="an-tit" value="'+esc(c.titulo||'')+'"></div><div><label>Preço por litro (R$)</label><input id="an-preco" inputmode="decimal" value="'+esc(deCentavos(c.preco_centavos))+'"></div></div>'+
+    '<label>Texto extra (opcional)</label><input id="an-txt" value="'+esc(c.texto||'')+'">'+
+    '<label style="margin-top:8px">Endereço do posto (rua, número, cidade e estado)</label><input id="an-end" value="'+esc(c.endereco||'')+'">'+
+    '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700"><input type="checkbox" id="an-at" '+(c.ativo?'checked':'')+' style="width:auto;margin:0"> Publicidade ligada</label>'+
+    '<div class="erro" id="an-erro"></div>'+
+    '<div class="acoes" style="margin-top:10px;justify-content:flex-end"><button class="btn" onclick="fechar()">Cancelar</button> <button class="btn pri" id="an-btn" onclick="salvarAnuCfg()">Salvar</button></div>');
+  }).catch(function(){abrirModal('<h3>Publicidade no app</h3><div class="vazio">Não consegui carregar.</div>');});
+}
+function salvarAnuCfg(){
+  var corpo={posto:el('an-posto').value.trim(),bandeira:el('an-band').value.trim(),titulo:el('an-tit').value.trim(),preco_centavos:paraCentavos(el('an-preco').value),texto:el('an-txt').value.trim(),endereco:el('an-end').value.trim(),ativo:el('an-at').checked?1:0};
+  el('an-btn').disabled=true;el('an-btn').textContent='Salvando…';el('an-erro').style.color='';el('an-erro').textContent='';
+  chamar('POST','/admin/anuncio',corpo).then(function(d){
+    if(!d.ok){el('an-erro').textContent=d.mensagem||'Erro ao salvar.';el('an-btn').disabled=false;el('an-btn').textContent='Salvar';return;}
+    var h=new Date(),hm=('0'+h.getHours()).slice(-2)+':'+('0'+h.getMinutes()).slice(-2);
+    var e=el('an-erro'); e.style.color='#15803D'; e.textContent='✔ Salvo com sucesso às '+hm+'. Pode fechar esta janela.';
+    el('an-btn').disabled=false; el('an-btn').textContent='Salvo ✔'; toast('Publicidade salva!');
+  }).catch(function(){el('an-btn').disabled=false;el('an-btn').textContent='Salvar';});
 }
 function carregarClientes(){
   chamar('GET','/admin/clientes').then(function(d){
