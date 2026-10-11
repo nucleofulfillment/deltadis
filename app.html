@@ -317,7 +317,28 @@ html.dd-ret #splash{display:flex}
 .srv-linha{display:flex;gap:2px;overflow-x:auto;padding:2px 0 8px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-right:-16px;padding-right:16px}
 .srv-linha::-webkit-scrollbar{display:none}
 .srv-grade{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 2px;justify-items:center}
-.anu-card{position:relative;display:flex;align-items:center;gap:12px;margin:12px 0 0;padding:14px 14px 12px;border-radius:16px;background:linear-gradient(135deg,#F5F3FF,#FDF2F8);border:1.5px solid #DDD6FE;text-decoration:none;color:inherit}
+.bn-wrap{margin:12px 0 0}
+.bn-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:var(--r);scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.bn-track::-webkit-scrollbar{display:none}
+.bn-sl{position:relative;display:block;flex:none;width:100%;scroll-snap-align:start;border-radius:var(--r);overflow:hidden;color:inherit;text-decoration:none}
+.bn-sl>img:first-child{display:block;width:100%;aspect-ratio:1200/525;object-fit:cover;background:#EDE9FE}
+.bn-sl .anu-card{margin:0;border-radius:var(--r)}
+.bn-tag{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.45);border-radius:99px;padding:2px 8px}
+.bn-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:linear-gradient(90deg,rgba(15,10,40,.78) 0%,rgba(15,10,40,.45) 58%,rgba(15,10,40,0) 100%);color:#fff}
+.bn-tx{min-width:0;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.bn-top{display:flex;align-items:center;gap:7px}
+.bn-lg{flex:none;width:26px;height:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:14px}
+.bn-lg img{width:17px;height:17px;position:static;aspect-ratio:auto}
+.bn-nm{font-weight:800;font-size:14px;line-height:1.15}
+.bn-ch{font-size:13.5px;margin-top:5px;font-weight:600}
+.bn-pr{font-size:27px;font-weight:800;line-height:1.1;white-space:nowrap}
+.bn-pr small{font-size:12px;font-weight:700;margin-left:2px;opacity:.9}
+.bn-ex{font-size:11.5px;opacity:.95;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bn-go{flex:none;font-weight:800;font-size:13px;color:var(--roxo-esc);background:#fff;border-radius:99px;padding:8px 14px;text-shadow:none}
+.bn-dots{display:flex;justify-content:center;gap:6px;margin-top:9px}
+.bn-dot{width:7px;height:7px;border-radius:50%;background:#D1D5DB;transition:all .2s}
+.bn-dot.on{background:var(--roxo);width:18px;border-radius:99px}
+.anu-card{position:relative;display:flex;align-items:center;gap:12px;margin:0;padding:14px 14px 12px;border-radius:16px;background:linear-gradient(135deg,#F5F3FF,#FDF2F8);border:1.5px solid #DDD6FE;text-decoration:none;color:inherit}
 .anu-tag{position:absolute;top:6px;right:10px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#6B7280}
 .anu-lg{flex:none;width:48px;height:48px;border-radius:50%;background:#fff;border:2px solid var(--roxo);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:22px}
 .anu-lg img{width:30px;height:30px}
@@ -459,7 +480,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-188-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-189-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -3357,7 +3378,7 @@ function pintarHistorico(){
 var SRV={ok:false,tent:false};
 function srvCarregar(){
   if(SRV.tent&&!(SRV.t&&Date.now()-SRV.t>600000)) return; SRV.tent=true;
-  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ var antes=JSON.stringify(SRV.anuncio||null); SRV=d; SRV.tent=true; SRV.t=Date.now(); try{ srvPintar(); }catch(e){} try{ if(antes!==JSON.stringify(d.anuncio||null)&&EST==='sem_lote'&&PAG==='inicio') renderInicio(); }catch(e2){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
+  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ var antes=JSON.stringify([SRV.anuncio||null,SRV.banners||null]); SRV=d; SRV.tent=true; SRV.t=Date.now(); try{ srvPintar(); }catch(e){} try{ if(antes!==JSON.stringify([d.anuncio||null,d.banners||null])&&EST==='sem_lote'&&PAG==='inicio') renderInicio(); }catch(e2){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
 }
 var SRV_IC={
   recarga:'<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12.6 8.2 10.4 12h3.2l-2.2 3.8"/></svg>',
@@ -3693,9 +3714,8 @@ function pstMarcar(ajustar){
   });
   if(ajustar&&(d.postos||[]).length){ try{ m.fitBounds(b,{padding:{top:40,bottom:50,left:40,right:40},maxZoom:15,duration:0}); }catch(e){} }
 }
-/* ══ (188) PUBLICIDADE: card do anunciante na tela inicial; ao tocar abre a rota até o posto ══ */
-function anuncioHtml(){
-  var a=SRV&&SRV.ok?SRV.anuncio:null; if(!a||!a.posto||a.lat==null) return '';
+/* ══ (188/189) PUBLICIDADE: carrossel na tela inicial — card de texto do anunciante + banners de imagem do admin; bolinhas embaixo quando há mais de um ══ */
+function anuTxtHtml(a){
   var dest=a.lat+','+a.lng, pr=(Number(a.preco_centavos)||0)>0;
   return '<a class="anu-card" href="https://www.google.com/maps/dir/?api=1&destination='+dest+'&travelmode=driving" target="_blank" rel="noopener">'+
     '<span class="anu-tag">Publicidade</span>'+
@@ -3705,6 +3725,40 @@ function anuncioHtml(){
     (a.texto?'<div class="anu-ex">'+esc(a.texto)+'</div>':'')+'</div>'+
     '<span class="anu-go">Ir →</span></a>';
 }
+function anuImgHtml(b){
+  var temTx=!!(b.posto||b.chamada||b.preco_centavos>0||b.texto), pr=(Number(b.preco_centavos)||0)>0, go=(b.lat!=null&&b.lng!=null)||!!b.link;
+  var ov='';
+  if(temTx) ov='<div class="bn-ov"><div class="bn-tx">'+
+    ((b.posto||b.bandeira)?'<div class="bn-top"><span class="bn-lg">'+pstLogo(b.bandeira)+'</span><span class="bn-nm">'+esc(b.posto||b.bandeira)+'</span></div>':'')+
+    (b.chamada?'<div class="bn-ch">'+esc(b.chamada)+'</div>':'')+
+    (pr?'<div class="bn-pr">'+moeda(b.preco_centavos/100)+'<small>/litro</small></div>':'')+
+    (b.texto?'<div class="bn-ex">'+esc(b.texto)+'</div>':'')+'</div>'+(go?'<span class="bn-go">Ir →</span>':'')+'</div>';
+  var img='<img src="'+RP_API+'/banner/'+encodeURIComponent(b.id)+'?v='+(b.v||0)+'" alt="'+esc(b.titulo||'Publicidade')+'" loading="lazy">'+ov+'<span class="bn-tag">Publicidade</span>';
+  if(b.lat!=null&&b.lng!=null) return '<a class="bn-sl" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lng+'&travelmode=driving" target="_blank" rel="noopener">'+img+'</a>';
+  if(b.link) return '<a class="bn-sl" href="'+esc(b.link)+'" target="_blank" rel="noopener">'+img+'</a>';
+  return '<div class="bn-sl">'+img+'</div>';
+}
+function anuncioHtml(){
+  if(!(SRV&&SRV.ok)) return '';
+  var sl=[], a=SRV.anuncio, B=SRV.banners||[], i;
+  if(a&&a.posto&&a.lat!=null) sl.push('<div class="bn-sl">'+anuTxtHtml(a)+'</div>');
+  for(i=0;i<B.length;i++) sl.push(anuImgHtml(B[i]));
+  if(!sl.length) return '';
+  var dots=''; if(sl.length>1){ for(i=0;i<sl.length;i++) dots+='<span class="bn-dot'+(i===0?' on':'')+'"></span>'; dots='<div class="bn-dots" id="bn-dots">'+dots+'</div>'; }
+  return '<div class="bn-wrap"><div class="bn-track" id="bn-track" onscroll="bnScroll()" ontouchstart="BN_T=Date.now()">'+sl.join('')+'</div>'+dots+'</div>';
+}
+var BN_T=0;
+function bnScroll(){
+  var t=el('bn-track'), d=el('bn-dots'); if(!t||!d) return;
+  var n=d.children.length, w=t.clientWidth||1, i=Math.max(0,Math.min(n-1,Math.round(t.scrollLeft/w)));
+  for(var k=0;k<n;k++) d.children[k].classList.toggle('on',k===i);
+}
+setInterval(function(){
+  var t=el('bn-track'), d=el('bn-dots'); if(!t||!d||document.hidden||PAG!=='inicio') return;
+  if(Date.now()-BN_T<8000) return;
+  var n=d.children.length, w=t.clientWidth||1, i=Math.round(t.scrollLeft/w)+1; if(i>=n) i=0;
+  try{ t.scrollTo({left:i*w,behavior:'smooth'}); }catch(e){ t.scrollLeft=i*w; }
+},5000);
 /* ══ (137) APP PAGO x GRÁTIS: grátis = só bipagem; pago = bipagem + roteirização + financeiro. O bloqueio só vale se o master ligar no admin. ══ */
 var APP_PLANO={ok:false,pago:false,bloqueio:false,venda:false};
 var APP_PLANO_TENT=false;

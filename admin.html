@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-20-1010</div>
+      <div class="bld">DELTADIS-ADMIN-21-1010</div>
     </div>
   </div>
 </div>
@@ -311,7 +311,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div id="app-corpo" style="display:none"><div id="lista-app"><div class="vazio">Carregando...</div></div></div>
     </div>
     <div class="card">
-      <h3><span>Serviços do motorista</span><span class="dir"><span class="lnk" onclick="abrirSrvCfg()">Taxas e preços</span><span class="lnk" onclick="abrirAnuCfg()">Publicidade</span></span></h3>
+      <h3><span>Serviços do motorista</span><span class="dir"><span class="lnk" onclick="abrirSrvCfg()">Taxas e preços</span><span class="lnk" onclick="abrirBanners()">Publicidade</span></span></h3>
       <div id="srv-cfg-info" class="sub2" style="padding:0 2px 8px">Carregando...</div>
     </div>
     <div class="card">
@@ -325,7 +325,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-20-1010</div>
+    <div class="bld">DELTADIS-ADMIN-21-1010</div>
   </main>
 </div>
 
@@ -560,6 +560,77 @@ function salvarAnuCfg(){
     var e=el('an-erro'); e.style.color='#15803D'; e.textContent='✔ Salvo com sucesso às '+hm+'. Pode fechar esta janela.';
     el('an-btn').disabled=false; el('an-btn').textContent='Salvo ✔'; toast('Publicidade salva!');
   }).catch(function(){el('an-btn').disabled=false;el('an-btn').textContent='Salvar';});
+}
+/* ── Banners de imagem (carrossel de publicidade na tela inicial do app) ── */
+var BNS=[], BN_IMG='';
+function abrirBanners(){
+  abrirModal('<h3>Banners de publicidade</h3><div class="vazio">Carregando...</div>');
+  chamar('GET','/admin/banners').then(function(d){
+    if(!d||!d.ok){abrirModal('<h3>Banners de publicidade</h3><div class="vazio">Não consegui carregar.</div><div class="acoes" style="justify-content:flex-end"><button class="btn" onclick="fechar()">Fechar</button></div>');return;}
+    BNS=d.banners||[]; desenharBanners();
+  }).catch(function(){abrirModal('<h3>Banners de publicidade</h3><div class="vazio">Não consegui carregar.</div>');});
+}
+function desenharBanners(){
+  var h='<h3>Banners de publicidade</h3><p class="sub">Aparecem na tela inicial do motorista, um de cada vez, com bolinhas embaixo quando há mais de um. Tamanho ideal da imagem: 1200 × 525 px.</p>';
+  if(!BNS.length) h+='<div class="vazio">Nenhum banner ainda.</div>';
+  BNS.forEach(function(b,i){
+    h+='<div onclick="abrirBannerForm('+i+')" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #EEE9FB;cursor:pointer"><img src="'+API+'/banner/'+esc(b.id)+'?v='+b.v+'" alt="" style="width:110px;height:48px;object-fit:cover;border-radius:8px;background:#EEE"><div style="flex:1;min-width:0"><b style="font-size:13.5px">'+esc(b.titulo||'(sem título)')+'</b><div class="sub" style="margin:0">'+(b.endereco?'Rota até o endereço':(b.link?'Abre um link':'Sem ação'))+' · ordem '+b.ordem+'</div></div><span style="font-size:12px;font-weight:800;color:'+(b.ativo?'#047857':'#9CA3AF')+'">'+(b.ativo?'Ligado':'Desligado')+'</span></div>';
+  });
+  h+='<div class="acoes" style="margin-top:12px;justify-content:space-between"><button class="btn" onclick="fechar()">Fechar</button> <button class="btn pri" onclick="abrirBannerForm(-1)">+ Novo banner</button></div>';
+  abrirModal(h);
+}
+function abrirBannerForm(i){
+  var b=i>=0?BNS[i]:{id:'',titulo:'',posto:'',bandeira:'',chamada:'',preco_centavos:0,texto:'',link:'',endereco:'',ativo:1,ordem:BNS.length+1}; BN_IMG='';
+  abrirModal('<h3>'+(b.id?'Editar banner':'Novo banner')+'</h3>'+
+  '<label>Imagem'+(b.id?' (deixe em branco para manter a atual)':'')+'</label><input type="file" id="bn-file" accept="image/*" onchange="bannerEscolher(this)">'+
+  '<div id="bn-prev" style="margin:8px 0">'+(b.id?'<img src="'+API+'/banner/'+esc(b.id)+'?v='+b.v+'" alt="" style="width:100%;border-radius:12px">':'')+'</div>'+
+  '<label>Título (só para você se achar)</label><input id="bn-tit" value="'+esc(b.titulo||'')+'">'+
+  '<p class="sub" style="margin:10px 0 2px"><b>Texto sobre a imagem</b> (opcional — deixe em branco para mostrar só a imagem)</p>'+
+  '<div class="linha2"><div><label>Nome do posto/anunciante</label><input id="bn-posto" value="'+esc(b.posto||'')+'"></div><div><label>Bandeira (ex: Ipiranga)</label><input id="bn-band" value="'+esc(b.bandeira||'')+'"></div></div>'+
+  '<div class="linha2"><div><label>Chamada (ex: Gasolina comum)</label><input id="bn-cham" value="'+esc(b.chamada||'')+'"></div><div><label>Preço por litro (R$)</label><input id="bn-preco" inputmode="decimal" value="'+esc(deCentavos(b.preco_centavos))+'"></div></div>'+
+  '<label>Texto extra</label><input id="bn-txt" value="'+esc(b.texto||'')+'">'+
+  '<label style="margin-top:8px">Ao tocar, abrir a rota até este endereço (opcional)</label><input id="bn-end" placeholder="rua, número, cidade e estado" value="'+esc(b.endereco||'')+'">'+
+  '<label style="margin-top:8px">Ou abrir este link (opcional, começa com https://)</label><input id="bn-link" value="'+esc(b.link||'')+'">'+
+  '<div class="linha2" style="margin-top:8px"><div><label>Ordem (1 aparece primeiro)</label><input id="bn-ord" inputmode="numeric" value="'+esc(b.ordem)+'"></div><div></div></div>'+
+  '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700"><input type="checkbox" id="bn-at" '+(b.ativo?'checked':'')+' style="width:auto;margin:0"> Banner ligado</label>'+
+  '<div class="erro" id="bn-erro"></div>'+
+  '<div class="acoes" style="margin-top:10px;justify-content:space-between"><span>'+(b.id?'<button class="btn" onclick="apagarBanner(\''+esc(b.id)+'\')">Apagar</button>':'')+'</span><span><button class="btn" onclick="desenharBanners()">Voltar</button> <button class="btn pri" id="bn-btn" onclick="salvarBanner(\''+esc(b.id)+'\')">Salvar</button></span></div>');
+}
+function bannerEscolher(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    var im=new Image();
+    im.onload=function(){
+      var W=1200,H=525,cv=document.createElement('canvas'); cv.width=W; cv.height=H; var cx=cv.getContext('2d');
+      cx.fillStyle='#fff'; cx.fillRect(0,0,W,H);
+      var k=Math.max(W/im.width,H/im.height), w=im.width*k, h=im.height*k;
+      cx.drawImage(im,(W-w)/2,(H-h)/2,w,h);
+      var q=0.86, u=cv.toDataURL('image/jpeg',q);
+      while(u.length>650000&&q>0.4){ q-=0.08; u=cv.toDataURL('image/jpeg',q); }
+      BN_IMG=u; el('bn-prev').innerHTML='<img src="'+u+'" alt="" style="width:100%;border-radius:12px"><div class="sub" style="margin:4px 0 0">A imagem é cortada no centro para o formato do banner (1200 × 525).</div>';
+    };
+    im.onerror=function(){el('bn-erro').textContent='Não consegui abrir essa imagem.';};
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(f);
+}
+function salvarBanner(id){
+  var corpo={id:id||'',titulo:el('bn-tit').value.trim(),posto:el('bn-posto').value.trim(),bandeira:el('bn-band').value.trim(),chamada:el('bn-cham').value.trim(),preco_centavos:paraCentavos(el('bn-preco').value),texto:el('bn-txt').value.trim(),endereco:el('bn-end').value.trim(),link:el('bn-link').value.trim(),ordem:parseInt(el('bn-ord').value,10)||0,ativo:el('bn-at').checked?1:0};
+  if(BN_IMG) corpo.imagem=BN_IMG;
+  if(!id&&!BN_IMG){el('bn-erro').textContent='Escolha a imagem do banner.';return;}
+  el('bn-btn').disabled=true;el('bn-btn').textContent='Salvando…';el('bn-erro').style.color='';el('bn-erro').textContent='';
+  chamar('POST','/admin/banner',corpo).then(function(d){
+    if(!d.ok){el('bn-erro').textContent=d.mensagem||'Erro ao salvar.';el('bn-btn').disabled=false;el('bn-btn').textContent='Salvar';return;}
+    BNS=d.banners||[]; toast('Banner salvo!'); desenharBanners();
+  }).catch(function(){el('bn-btn').disabled=false;el('bn-btn').textContent='Salvar';el('bn-erro').textContent='Sem conexão. Tente de novo.';});
+}
+function apagarBanner(id){
+  if(!confirm('Apagar este banner?')) return;
+  chamar('POST','/admin/banner-del',{id:id}).then(function(d){
+    if(!d.ok){el('bn-erro').textContent=d.mensagem||'Erro ao apagar.';return;}
+    BNS=d.banners||[]; toast('Banner apagado'); desenharBanners();
+  });
 }
 function carregarClientes(){
   chamar('GET','/admin/clientes').then(function(d){
