@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-18-1010</div>
+      <div class="bld">DELTADIS-ADMIN-19-1010</div>
     </div>
   </div>
 </div>
@@ -311,6 +311,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div id="app-corpo" style="display:none"><div id="lista-app"><div class="vazio">Carregando...</div></div></div>
     </div>
     <div class="card">
+      <h3><span>Serviços do motorista</span><span class="dir"><span class="lnk" onclick="abrirSrvCfg()">Taxas e preços</span></span></h3>
+      <div id="srv-cfg-info" class="sub2" style="padding:0 2px 8px">Carregando...</div>
+    </div>
+    <div class="card">
       <h3><span>Fluxo de caixa</span><span class="dir"><span class="lnk" onclick="carregarFluxo();carregarSaldo()">↻ Atualizar</span><span class="lnk" onclick="abrirLanc()">+ Novo lançamento</span></span></h3>
       <div class="filtros" id="fc-filtros"></div>
       <div id="fc-aviso"></div>
@@ -321,7 +325,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-18-1010</div>
+    <div class="bld">DELTADIS-ADMIN-19-1010</div>
   </main>
 </div>
 
@@ -404,7 +408,7 @@ function iniciar(){
   if(!FC.ini){var h=hojeIso();FC.ini=h.slice(0,7)+'-01';FC.fim=ultDia(h.slice(0,7));}
   recarregar();
 }
-function recarregar(){carregarClientes();carregarPlanos();carregarApp();carregarFluxo();carregarSaldo();}
+function recarregar(){carregarClientes();carregarPlanos();carregarApp();carregarSrv();carregarFluxo();carregarSaldo();}
 /* ── Planos de assinatura (fixo mensal + valor por pacote) — o site mostra os ativos no botão "Assinar" ── */
 var PLANOS=[];
 function carregarPlanos(){
@@ -495,6 +499,41 @@ function salvarAppCfg(){
     var e=el('ap-erro'); e.style.color='#15803D'; e.textContent='✔ Salvo com sucesso às '+hm+'. Pode fechar esta janela.';
     el('ap-btn').disabled=false; el('ap-btn').textContent='Salvo ✔'; toast('Preços do app salvos!'); carregarApp();
   }).catch(function(){el('ap-btn').disabled=false;});
+}
+/* ── Serviços do motorista (recarga de celular e consulta de multa): taxa, preço, limite e liga/desliga ── */
+var SRVD={};
+function srvReais(c){return 'R$ '+((Number(c)||0)/100).toFixed(2).replace('.',',');}
+function srvCent(c){return ((Number(c)||0)/100).toFixed(2).replace('.',',');}
+function carregarSrv(){
+  chamar('GET','/admin/servicos').then(function(d){
+    var e=el('srv-cfg-info'); if(!e) return;
+    if(!d||!d.ok){e.textContent='Não consegui carregar.';return;}
+    SRVD=d.config||{};
+    e.innerHTML='Recarga de celular: <b>'+(SRVD.recarga_ativo?'ligada':'desligada')+'</b> · taxa '+srvReais(SRVD.recarga_taxa_centavos)+' · limite por dia '+srvReais(SRVD.limite_dia_centavos)+'<br>Consulta de multa: <b>'+(SRVD.multa_ativo?'ligada':'desligada')+'</b> · preço '+srvReais(SRVD.multa_preco_centavos);
+  }).catch(function(){var e=el('srv-cfg-info'); if(e) e.textContent='Não consegui carregar.';});
+}
+function abrirSrvCfg(){
+  var c=SRVD||{};
+  abrirModal('<h3>Serviços do motorista</h3><p class="sub">Valores cobrados do motorista no app. O Asaas cobra R$ 1,99 por cobrança Pix emitida; a consulta de multa custa R$ 8,00 para nós.</p>'+
+  '<div class="linha2"><div><label>Taxa da recarga (R$)</label><input id="sv-tx" inputmode="decimal" value="'+esc(srvCent(c.recarga_taxa_centavos))+'"></div><div><label>Limite de recarga por dia (R$)</label><input id="sv-lm" inputmode="decimal" value="'+esc(srvCent(c.limite_dia_centavos))+'"></div></div>'+
+  '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700"><input type="checkbox" id="sv-ra" '+(c.recarga_ativo?'checked':'')+' style="width:auto;margin:0"> Recarga de celular ligada</label>'+
+  '<div class="linha2" style="margin-top:12px"><div><label>Preço da consulta de multa (R$)</label><input id="sv-mp" inputmode="decimal" value="'+esc(srvCent(c.multa_preco_centavos))+'"></div><div></div></div>'+
+  '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-weight:700"><input type="checkbox" id="sv-ma" '+(c.multa_ativo?'checked':'')+' style="width:auto;margin:0"> Consulta de multa ligada</label>'+
+  '<div class="erro" id="sv-erro"></div>'+
+  '<div class="acoes" style="margin-top:10px;justify-content:flex-end"><button class="btn" onclick="fechar()">Cancelar</button> <button class="btn pri" id="sv-btn" onclick="salvarSrvCfg()">Salvar</button></div>');
+}
+function salvarSrvCfg(){
+  var n=function(id){var v=parseFloat(String(el(id).value||'').replace(/\./g,'').replace(',','.'));return isFinite(v)&&v>=0?Math.round(v*100):-1;};
+  var corpo={recarga_taxa_centavos:n('sv-tx'),limite_dia_centavos:n('sv-lm'),multa_preco_centavos:n('sv-mp'),recarga_ativo:el('sv-ra').checked?1:0,multa_ativo:el('sv-ma').checked?1:0};
+  if(corpo.recarga_taxa_centavos<0||corpo.limite_dia_centavos<0||corpo.multa_preco_centavos<0){el('sv-erro').textContent='Confira os valores.';return;}
+  if(corpo.multa_ativo&&corpo.multa_preco_centavos<100){el('sv-erro').textContent='O preço da multa precisa ser de pelo menos R$ 1,00.';return;}
+  el('sv-btn').disabled=true;el('sv-btn').textContent='Salvando…';el('sv-erro').style.color='';el('sv-erro').textContent='';
+  chamar('POST','/admin/servicos',corpo).then(function(d){
+    if(!d.ok){el('sv-erro').textContent=d.mensagem||'Erro ao salvar.';el('sv-btn').disabled=false;el('sv-btn').textContent='Salvar';return;}
+    var h=new Date(),hm=('0'+h.getHours()).slice(-2)+':'+('0'+h.getMinutes()).slice(-2);
+    var e=el('sv-erro'); e.style.color='#15803D'; e.textContent='✔ Salvo com sucesso às '+hm+'. Pode fechar esta janela.';
+    el('sv-btn').disabled=false; el('sv-btn').textContent='Salvo ✔'; toast('Serviços salvos!'); carregarSrv();
+  }).catch(function(){el('sv-btn').disabled=false;el('sv-btn').textContent='Salvar';});
 }
 function carregarClientes(){
   chamar('GET','/admin/clientes').then(function(d){
