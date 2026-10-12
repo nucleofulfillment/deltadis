@@ -480,6 +480,10 @@ html.dd-ret #splash{display:flex}
 .cx-acoes .ok{background:var(--grad-arte);color:#fff}.cx-acoes .ex{flex:none;background:#FFE4E6;color:#BE123C}
 .cx-err{color:#B91C1C;font-size:12.5px;font-weight:700;min-height:16px;margin-top:8px;text-align:center}
 
+/* (205) cabeçalho: logo DELTADIS à esquerda, nome pequeno ao lado da foto; no APK desce abaixo da barra do Android */
+.topo-wm .wm{height:12px;width:auto;color:#6D28D9;display:block}
+.topo-nm{font-size:12px;font-weight:700;color:var(--muted2);max-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.apk .topo{padding-top:max(calc(env(safe-area-inset-top,0px) + 12px),38px)}
 </style>
 <style>html.dd-ret #login{visibility:hidden}</style><script>try{if(localStorage.getItem('dd_m_jwt'))document.documentElement.classList.add('dd-ret');}catch(e){}</script>
 </head>
@@ -572,7 +576,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-204-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-205-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -584,10 +588,11 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <header class="topo" id="topo">
     <div class="topo-logo">
       <svg class="mk" viewBox="0 0 736 566" role="img" aria-label="DELTADIS"><use href="#dd-mark"/></svg>
-      <span>Olá, <span id="topo-nome">—</span></span>
+      <span class="topo-wm" id="topo-wm"></span>
     </div>
     <div class="topo-acoes">
       <button class="fs-btn-inline" onclick="alternarTelaCheia()" title="Tela cheia">⛶</button>
+      <span class="topo-nm" id="topo-nome">—</span>
       <button class="topo-av" id="topo-av" onclick="ir('conta')" title="Minha conta">CM</button>
     </div>
   </header>
@@ -4402,6 +4407,7 @@ function cxLimpar(){ CX.itens=[]; CX.ex=false; CX.banco=null; cxSalvar(); cxPint
 function cxIniciar(){ cxLer(); cxAba('lotes'); }
 
 document.addEventListener('DOMContentLoaded',function(){
+  try{ if(ddEhApk()) document.documentElement.classList.add('apk'); var wm0=document.querySelector('#login .lg-logo svg.wm'), tw=document.getElementById('topo-wm'); if(wm0&&tw) tw.appendChild(wm0.cloneNode(true)); }catch(e){}
   fundoSegueCursor(); curvesLigar();
   var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
   var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
