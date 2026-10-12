@@ -584,7 +584,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-209-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-210-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1754,7 +1754,7 @@ function rpMarcarLonge(lista){
     var bg=null; try{ bg=RP.baseGeo[rpCfg().base]||null; }catch(e){}
     var bi=0, bn=-1, bd=1e9, j, n, dd;
     for(i=0;i<com.length;i++){ n=0; for(j=0;j<com.length;j++) if(rpKmEntre(com[i],com[j])<=40) n++; dd=bg?rpKmEntre(bg,com[i]):0; if(n>bn||(n===bn&&dd<bd)){ bn=n; bd=dd; bi=i; } }
-    com.forEach(function(p){ var k=rpKmEntre(com[bi],p); p._km=k; if(k>40) p._longe=true; });
+    com.forEach(function(p){ var k=rpKmEntre(com[bi],p); p._km=k; /* (210) distância não bloqueia mais: transportadora entrega no Brasil todo; só 'cidade_diferente' (achou a rua em outra cidade) marca */ });
   }
 }
 function rpSinal(p){ return !!p.inc || p.lat==null || rpAprox(p); }
