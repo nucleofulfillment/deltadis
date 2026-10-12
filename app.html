@@ -365,6 +365,8 @@ html.dd-ret #splash{display:flex}
 
 .pst-pin{display:flex;flex-direction:column;align-items:center;cursor:pointer}
 .pst-pin .lg{width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid var(--roxo);box-shadow:0 1px 5px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:16px}
+
+.pst-aviso{font-size:11.5px;color:var(--muted);margin:0 2px 8px;line-height:1.35}
 .pst-pin .lg img{width:22px;height:22px}
 .pst-pin .pr{margin-top:2px;background:var(--roxo);color:#fff;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 6px;white-space:nowrap}
 .pst-eu{width:16px;height:16px;border-radius:50%;background:#2563EB;border:3px solid #fff;box-shadow:0 0 0 5px rgba(37,99,235,.25)}
@@ -490,7 +492,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-197-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-198-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -882,6 +884,7 @@ function abrirApp(){
   try{ appPlanoLerCache(); }catch(e){}
   try{ rotaRestaurar(); }catch(e){}
   try{ if(BIP_ROTA){ bpCacheLer(); bpCarregar(true); } }catch(e){}
+  try{ srvCarregar(); }catch(e){}
   montarApp();
 }
 function entrar(){
@@ -1673,7 +1676,7 @@ function rpAtualizar(){
 function rpDefinirMt(){ var v=el('rp-mt-sel')&&el('rp-mt-sel').value; if(!v) return; RP.mt=v; try{ localStorage.setItem('dd_mt',v); }catch(e){} rpAtualizar(); renderInicio(); }
 function rpTrocarMt(){ if(DD_M_TOKEN) return; RP.mt=null; RP.mtn=''; RP.total=0; rpPintarIdentidade(); try{ localStorage.removeItem('dd_mt'); }catch(e){} renderInicio(); }
 function rpCardPronta(){
-  if(!RP.on) return '';
+  if(!RP.on&&!(BIP_ROTA&&RP.mt)) return '';   /* (198) com a rota já conhecida o card aparece na hora, sem esperar o servidor */
   if(!RP.mt && DD_M_TOKEN) return '<div class="card" style="margin-bottom:14px;text-align:center"><p style="margin:0;color:var(--muted);font-size:13px">Seu cadastro ainda não está ligado a uma rota. Fale com o seu ponto de distribuição.</p></div>';
   if(!RP.mt){
     var o='',i; for(i=0;i<RP.lista.length;i++) o+='<option value="'+esc(RP.lista[i].mt)+'">'+esc(RP.lista[i].mtn||('Motorista '+RP.lista[i].mt))+'</option>';
@@ -3386,9 +3389,10 @@ function pintarHistorico(){
 
 /* ══ (180) SERVIÇOS DO MOTORISTA: linha de bolinhas na tela inicial + recarga de celular (Pix → recarga → devolve se falhar) ══ */
 var SRV={ok:false,tent:false};
+try{ var srvC=JSON.parse(localStorage.getItem('dd_srv')||'null'); if(srvC&&srvC.ok){ SRV=srvC; SRV.tent=false; SRV.t=0; } }catch(e){}   /* (198) banners e serviços do último acesso aparecem na hora; o servidor atualiza por baixo */
 function srvCarregar(){
   if(SRV.tent&&!(SRV.t&&Date.now()-SRV.t>600000)) return; SRV.tent=true;
-  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ var antes=JSON.stringify([SRV.anuncio||null,SRV.banners||null]); SRV=d; SRV.tent=true; SRV.t=Date.now(); try{ srvPintar(); }catch(e){} try{ if(antes!==JSON.stringify([d.anuncio||null,d.banners||null])&&EST==='sem_lote'&&PAG==='inicio') renderInicio(); }catch(e2){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
+  rpApi('/motorista/servicos').then(function(d){ if(d&&d.ok){ var antes=JSON.stringify([SRV.anuncio||null,SRV.banners||null]); SRV=d; SRV.tent=true; SRV.t=Date.now(); try{ localStorage.setItem('dd_srv',JSON.stringify(d)); }catch(e3){} try{ srvPintar(); }catch(e){} try{ if(antes!==JSON.stringify([d.anuncio||null,d.banners||null])&&EST==='sem_lote'&&PAG==='inicio') renderInicio(); }catch(e2){} } else SRV.tent=false; }).catch(function(){ SRV.tent=false; });
 }
 var SRV_IC={
   recarga:'<svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.4"/><path d="M12.6 8.2 10.4 12h3.2l-2.2 3.8"/></svg>',
@@ -3645,10 +3649,10 @@ function pstDom(b,nome){ /* (194) acha a marca pela bandeira e, se não achar, p
   for(f=0;f<fontes.length;f++){ t=fontes[f].toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^A-Z]+/);
     for(i=0;i<PST_DOM.length;i++){ if(f===1&&PST_DOM[i][2]) continue; for(j=0;j<t.length;j++){ if(t[j]===PST_DOM[i][0]) return PST_DOM[i][1]; } } }
   return ''; }
-function pstSrc(d,i){ return i===0?'https://www.google.com/s2/favicons?domain='+d+'&sz=128':(i===1?'https://icons.duckduckgo.com/ip3/'+d+'.ico':(i===2?'https://'+d+'/favicon.ico':'')); }
+function pstSrc(d,i){ return i===0?RP_API+'/logo/'+d:(i===1?'https://www.google.com/s2/favicons?domain='+d+'&sz=128':(i===2?'https://'+d+'/favicon.ico':'')); }
 function pstImgFim(im,ok){ /* o Google devolve um globinho 16px quando não conhece o site: tenta a próxima fonte */
   var i=Number(im.getAttribute('data-i'))||0, d=im.getAttribute('data-d'), ic=im.getAttribute('data-ic')||'⛽';
-  if(ok&&(i>0||im.naturalWidth>=32)) return;
+  if(ok&&(i!==1||im.naturalWidth>=32)) return;
   var n=pstSrc(d,i+1); if(n){ im.setAttribute('data-i',i+1); im.src=n; } else if(im.parentNode) im.parentNode.textContent=ic; }
 function pstLogoUrl(b,nome){ var d=pstDom(b,nome); return d?pstSrc(d,0):''; }
 function pstLogo(b,nome,ic){ var d=pstDom(b,nome); ic=ic||'⛽'; return d?'<img src="'+pstSrc(d,0)+'" data-d="'+d+'" data-i="0" data-ic="'+ic+'" alt="" onload="pstImgFim(this,1)" onerror="pstImgFim(this,0)">':ic; }
@@ -3711,9 +3715,10 @@ function pstMediosHtml(){
 }
 function pstTela(){
   PST.grande=false; PST.sel=null;
-  pstCorpo('<div class="pst-chips" id="pst-chips">'+pstChipsHtml()+'</div><div id="pst-mapa"></div><div class="pst-hd" id="pst-hd" onclick="pstExpandir()"><svg class="sh-up" viewBox="0 0 24 12"><path d="M4 9l8-6 8 6"/></svg><svg class="sh-dn" viewBox="0 0 24 12"><path d="M4 3l8 6 8-6"/></svg></div><div id="pst-lista">'+pstListaHtml()+'</div>'+pstMediosHtml()+'<button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>');
+  pstCorpo('<div class="pst-chips" id="pst-chips">'+pstChipsHtml()+'</div><div id="pst-mapa"></div><div class="pst-hd" id="pst-hd" onclick="pstExpandir()"><svg class="sh-up" viewBox="0 0 24 12"><path d="M4 9l8-6 8 6"/></svg><svg class="sh-dn" viewBox="0 0 24 12"><path d="M4 3l8 6 8-6"/></svg></div>'+pstAvisoHtml()+'<div id="pst-lista">'+pstListaHtml()+'</div>'+pstMediosHtml()+'<button class="btn sec wide" style="margin-top:10px" onclick="fecharTudo()">Fechar</button>');
   pstMapa();
 }
+function pstAvisoHtml(){ var d=PST.d||{}; if(!d.ok||d.escopo==='municipio') return ''; return '<div class="pst-aviso">ℹ️ Preço por posto indisponível em '+esc(d.cidade_nome||pstTitulo(d.cidade))+': a pesquisa da ANP não cobre a cidade.</div>'; }
 function pstExpandir(){ /* (195) setinha: aumenta/recolhe o mapa, como na rota */
   PST.grande=!PST.grande; var m=el('pst-mapa'), h=el('pst-hd'); if(m) m.classList.toggle('grande',PST.grande); if(h) h.classList.toggle('grande',PST.grande);
   try{ if(PST.mapa){ PST.mapa.resize(); pstMarcar(true); } }catch(e){}
@@ -3771,7 +3776,7 @@ function anuImgHtml(b){
     var tx=b.texto?linha('texto','<div class="bn-ex">'+esc(b.texto)+'</div>'):'';
     ov='<div class="bn-ov"><div class="bn-tx">'+top+ch+pc+tx+'</div></div>';
   }
-  var img='<img src="'+RP_API+'/banner/'+encodeURIComponent(b.id)+'?v='+(b.v||0)+'" alt="'+esc(b.titulo||'Publicidade')+'" loading="lazy">'+ov+'<span class="bn-tag">Publicidade</span>';
+  var img='<img src="'+RP_API+'/banner/'+encodeURIComponent(b.id)+'?v='+(b.v||0)+'" alt="'+esc(b.titulo||'Publicidade')+'">'+ov+'<span class="bn-tag">Publicidade</span>';
   if(b.lat!=null&&b.lng!=null) return '<a class="bn-sl" href="https://www.google.com/maps/dir/?api=1&destination='+b.lat+','+b.lng+'&travelmode=driving" target="_blank" rel="noopener">'+img+'</a>';
   if(b.link) return '<a class="bn-sl" href="'+esc(b.link)+'" target="_blank" rel="noopener">'+img+'</a>';
   return '<div class="bn-sl">'+img+'</div>';
