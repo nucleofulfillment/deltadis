@@ -576,7 +576,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-205-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-206-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2455,7 +2455,22 @@ function vzTxtGo(){ if(VZ.txtT){ clearTimeout(VZ.txtT); VZ.txtT=null; } var t=el
 function vzDbg(t){ var d=el('vz-dbg'); if(d) d.textContent=t; }
 /* (204) voz no APK: o WebView do Android não tem reconhecimento de voz do navegador; no app instalado usa o reconhecimento nativo do Android (plugin) com a mesma interface */
 function ddEhApk(){ try{ return !!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()); }catch(e){ return false; } }
-function ddPlug(){ try{ return (Capacitor.Plugins&&Capacitor.Plugins.SpeechRecognition)||(Capacitor.registerPlugin&&Capacitor.registerPlugin('SpeechRecognition'))||null; }catch(e){ return null; } }
+function ddPlug(){
+  try{
+    var C=window.Capacitor; if(!C) return null;
+    if(C.Plugins&&C.Plugins.SpeechRecognition) return C.Plugins.SpeechRecognition;
+    if(!C.nativePromise||!C.addListener) return null;
+    /* página carregada do site (server.url): só existem as chamadas nativas diretas */
+    var N=function(m,o){ return C.nativePromise('SpeechRecognition',m,o); };
+    return {
+      checkPermissions:function(){ return N('checkPermissions'); },
+      requestPermissions:function(){ return N('requestPermissions'); },
+      start:function(o){ return N('start',o||{}); },
+      stop:function(){ return N('stop'); },
+      addListener:function(n,f){ return Promise.resolve(C.addListener('SpeechRecognition',n,f)); }
+    };
+  }catch(e){ return null; }
+}
 function ddPermMic(cb){
   var P=ddPlug(); if(!P){ VZ.micErr='sem-plugin'; return cb(false); }
   P.checkPermissions().then(function(r){
