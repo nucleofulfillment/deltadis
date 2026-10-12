@@ -483,7 +483,14 @@ html.dd-ret #splash{display:flex}
 /* (205) cabeçalho: logo DELTADIS à esquerda, nome pequeno ao lado da foto; no APK desce abaixo da barra do Android */
 .topo-wm .wm{height:12px;width:auto;color:#6D28D9;display:block}
 .topo-nm{font-size:12px;font-weight:700;color:var(--muted2);max-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.apk .topo{padding-top:max(calc(env(safe-area-inset-top,0px) + 12px),38px)}
+/* (207) APK: o app ocupa a tela toda (por baixo da barra de cima e dos botões do Android); --sat/--sab são as alturas dessas barras, medidas no aparelho */
+html.apk #app{box-sizing:border-box;padding-top:var(--sat,0px);padding-bottom:var(--sab,0px)}
+html.apk .rodape{padding-bottom:6px}
+html.apk .sheet{bottom:var(--sab,0px)}
+html.apk .toast{bottom:calc(26px + var(--sab,0px))}
+html.apk .cx-ov{top:var(--sat,0px);bottom:var(--sab,0px)}
+html.apk div[style*="position:fixed"][style*="inset:0"]{top:var(--sat,0px)!important;bottom:var(--sab,0px)!important}
+html.apk div[style*="position:fixed"][style*="left:0"][style*="bottom:0"]{bottom:var(--sab,0px)!important}
 </style>
 <style>html.dd-ret #login{visibility:hidden}</style><script>try{if(localStorage.getItem('dd_m_jwt'))document.documentElement.classList.add('dd-ret');}catch(e){}</script>
 </head>
@@ -576,7 +583,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-206-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-207-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -3418,6 +3425,24 @@ function romAss(l,cb){
 }
 /* (179) data/hora da entrega (o romaneio pertence sempre ao dia da coleta; a entrega pode ser em outro dia) */
 function romEnt(p){ if(!p||!p.et) return '-'; var d=new Date(Number(p.et)); return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+romHora(p.et); }
+/* (207) PDF: no navegador baixa direto; no APK o Android não baixa arquivo gerado no app, então grava o PDF e abre o menu "Compartilhar/Salvar" do Android */
+function ddSalvarPdf(doc,nome){
+  var C=window.Capacitor;
+  if(ddEhApk()&&C&&C.nativePromise){
+    try{
+      var b64=String(doc.output('datauristring')).split(',')[1]||'';
+      C.nativePromise('Filesystem','writeFile',{path:nome,data:b64,directory:'CACHE',recursive:true}).then(function(r){
+        return C.nativePromise('Share','share',{title:nome,dialogTitle:'Romaneio em PDF',url:r.uri});
+      }).then(function(){ aviso('PDF do romaneio pronto'); }).catch(function(e){
+        var m=String((e&&e.message)||e||'');
+        if(/cancel/i.test(m)) return;
+        aviso('Não consegui abrir o PDF aqui ('+m.slice(0,60)+')');
+      });
+      return;
+    }catch(e0){}
+  }
+  doc.save(nome); aviso('PDF do romaneio pronto');
+}
 function romGerar(i){
   var l=ROM.lotes[i]; if(!l) return;
   aviso('Gerando o PDF…');
@@ -3448,8 +3473,7 @@ function romGerar(i){
         var dA=new Date(ASS.em||Date.now()); doc.setFontSize(6.5); doc.setTextColor(120,120,120);
         doc.text(T('Assinado no app em '+('0'+dA.getDate()).slice(-2)+'/'+('0'+(dA.getMonth()+1)).slice(-2)+'/'+dA.getFullYear()+' '+('0'+dA.getHours()).slice(-2)+':'+('0'+dA.getMinutes()).slice(-2)),10,y+12);
       }catch(eA){} }
-      doc.save(T('Romaneio-'+l.nome+'.pdf').replace(/[^A-Za-z0-9._-]+/g,'-'));
-      aviso('PDF do romaneio pronto');
+      ddSalvarPdf(doc,T('Romaneio-'+l.nome+'.pdf').replace(/[^A-Za-z0-9._-]+/g,'-'));
     }catch(e){ romGerarImpressao(i,ASS); }
   },function(){ romGerarImpressao(i,ASS); });
   });
@@ -4421,8 +4445,24 @@ function cxExemplo(){
 function cxLimpar(){ CX.itens=[]; CX.ex=false; CX.banco=null; cxSalvar(); cxPintar(); }
 function cxIniciar(){ cxLer(); cxAba('lotes'); }
 
+/* (207) mede as barras do Android (só no APK): se o app está por baixo delas, usa a altura delas; se o Android já empurrou o app, não faz nada */
+var DDI=null;
+function ddInsets(){
+  try{
+    var R=document.documentElement; if(!R.classList.contains('apk')) return;
+    var cs=getComputedStyle(R), t=parseFloat(cs.getPropertyValue('--safe-area-inset-top'))||0, b=parseFloat(cs.getPropertyValue('--safe-area-inset-bottom'))||0;
+    var pr=document.createElement('div'); pr.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+    document.body.appendChild(pr); var pc=getComputedStyle(pr), et=parseFloat(pc.paddingTop)||0, eb=parseFloat(pc.paddingBottom)||0; document.body.removeChild(pr);
+    var cheio=(window.innerHeight>=screen.height-2)||et>0||eb>0;
+    if(DDI&&!cheio) return;   /* teclado aberto encolhe a tela: mantém o que já foi medido */
+    if(!cheio){ R.style.setProperty('--sat','0px'); R.style.setProperty('--sab','0px'); return; }
+    DDI=true;
+    var st=et||t||28, sb=eb||b||(window.innerHeight>=screen.height-2?24:0);
+    R.style.setProperty('--sat',st+'px'); R.style.setProperty('--sab',sb+'px');
+  }catch(e){}
+}
 document.addEventListener('DOMContentLoaded',function(){
-  try{ if(ddEhApk()) document.documentElement.classList.add('apk'); var wm0=document.querySelector('#login .lg-logo svg.wm'), tw=document.getElementById('topo-wm'); if(wm0&&tw) tw.appendChild(wm0.cloneNode(true)); }catch(e){}
+  try{ if(ddEhApk()) document.documentElement.classList.add('apk'); ddInsets(); setTimeout(ddInsets,400); setTimeout(ddInsets,1500); var wm0=document.querySelector('#login .lg-logo svg.wm'), tw=document.getElementById('topo-wm'); if(wm0&&tw) tw.appendChild(wm0.cloneNode(true)); }catch(e){}
   fundoSegueCursor(); curvesLigar();
   var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
   var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
