@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-21-1010</div>
+      <div class="bld">DELTADIS-ADMIN-22-1010</div>
     </div>
   </div>
 </div>
@@ -325,7 +325,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-21-1010</div>
+    <div class="bld">DELTADIS-ADMIN-22-1010</div>
   </main>
 </div>
 
@@ -574,20 +574,22 @@ function desenharBanners(){
   var h='<h3>Banners de publicidade</h3><p class="sub">Aparecem na tela inicial do motorista, um de cada vez, com bolinhas embaixo quando há mais de um. Tamanho ideal da imagem: 1200 × 525 px.</p>';
   if(!BNS.length) h+='<div class="vazio">Nenhum banner ainda.</div>';
   BNS.forEach(function(b,i){
-    h+='<div onclick="abrirBannerForm('+i+')" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #EEE9FB;cursor:pointer"><img src="'+API+'/banner/'+esc(b.id)+'?v='+b.v+'" alt="" style="width:110px;height:48px;object-fit:cover;border-radius:8px;background:#EEE"><div style="flex:1;min-width:0"><b style="font-size:13.5px">'+esc(b.titulo||'(sem título)')+'</b><div class="sub" style="margin:0">'+(b.endereco?'Rota até o endereço':(b.link?'Abre um link':'Sem ação'))+' · ordem '+b.ordem+'</div></div><span style="font-size:12px;font-weight:800;color:'+(b.ativo?'#047857':'#9CA3AF')+'">'+(b.ativo?'Ligado':'Desligado')+'</span></div>';
+    h+='<div onclick="abrirBannerForm('+i+')" style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #EEE9FB;cursor:pointer"><img src="'+API+'/banner/'+esc(b.id)+'?v='+b.v+'" alt="" style="width:110px;height:48px;object-fit:cover;border-radius:8px;background:#EEE"><div style="flex:1;min-width:0"><b style="font-size:13.5px">'+esc(b.titulo||'(sem título)')+'</b><div class="sub" style="margin:0">'+(b.endereco?'Rota até o endereço':(b.link?'Abre um link':'Sem ação'))+' · '+({posto:'Posto',loja:'Loja',servico:'Serviço',alimentacao:'Alimentação',outros:'Outros'}[b.categoria]||'Outros')+' · ordem '+b.ordem+'</div></div><span style="font-size:12px;font-weight:800;color:'+(b.ativo?'#047857':'#9CA3AF')+'">'+(b.ativo?'Ligado':'Desligado')+'</span></div>';
   });
   h+='<div class="acoes" style="margin-top:12px;justify-content:space-between"><button class="btn" onclick="fechar()">Fechar</button> <button class="btn pri" onclick="abrirBannerForm(-1)">+ Novo banner</button></div>';
   abrirModal(h);
 }
 function abrirBannerForm(i){
-  var b=i>=0?BNS[i]:{id:'',titulo:'',posto:'',bandeira:'',chamada:'',preco_centavos:0,texto:'',link:'',endereco:'',ativo:1,ordem:BNS.length+1}; BN_IMG='';
+  var b=i>=0?BNS[i]:{id:'',titulo:'',posto:'',bandeira:'',chamada:'',preco_centavos:0,texto:'',categoria:'loja',unidade:'',link:'',endereco:'',ativo:1,ordem:BNS.length+1}; BN_IMG='';
   abrirModal('<h3>'+(b.id?'Editar banner':'Novo banner')+'</h3>'+
   '<label>Imagem'+(b.id?' (deixe em branco para manter a atual)':'')+'</label><input type="file" id="bn-file" accept="image/*" onchange="bannerEscolher(this)">'+
   '<div id="bn-prev" style="margin:8px 0">'+(b.id?'<img src="'+API+'/banner/'+esc(b.id)+'?v='+b.v+'" alt="" style="width:100%;border-radius:12px">':'')+'</div>'+
   '<label>Título (só para você se achar)</label><input id="bn-tit" value="'+esc(b.titulo||'')+'">'+
+  '<label style="margin-top:8px">Categoria do anúncio</label><select id="bn-cat">'+[['posto','Posto de combustível'],['loja','Loja'],['servico','Serviço'],['alimentacao','Alimentação'],['outros','Outros']].map(function(o){return '<option value="'+o[0]+'"'+((b.categoria||'outros')===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>'+
   '<p class="sub" style="margin:10px 0 2px"><b>Texto sobre a imagem</b> (opcional — deixe em branco para mostrar só a imagem)</p>'+
-  '<div class="linha2"><div><label>Nome do posto/anunciante</label><input id="bn-posto" value="'+esc(b.posto||'')+'"></div><div><label>Bandeira (ex: Ipiranga)</label><input id="bn-band" value="'+esc(b.bandeira||'')+'"></div></div>'+
-  '<div class="linha2"><div><label>Chamada (ex: Gasolina comum)</label><input id="bn-cham" value="'+esc(b.chamada||'')+'"></div><div><label>Preço por litro (R$)</label><input id="bn-preco" inputmode="decimal" value="'+esc(deCentavos(b.preco_centavos))+'"></div></div>'+
+  '<div class="linha2"><div><label>Nome do anunciante (ex: Pneus Store)</label><input id="bn-posto" value="'+esc(b.posto||'')+'"></div><div><label>Logo da marca (opcional, ex: Ipiranga)</label><input id="bn-band" value="'+esc(b.bandeira||'')+'"></div></div>'+
+  '<div class="linha2"><div><label>Chamada / produto (ex: Pneu Aro 17)</label><input id="bn-cham" value="'+esc(b.chamada||'')+'"></div><div><label>Preço (R$)</label><input id="bn-preco" inputmode="decimal" value="'+esc(deCentavos(b.preco_centavos))+'"></div></div>'+
+  '<label>Complemento do preço (opcional)</label><input id="bn-uni" list="bn-unis" maxlength="20" placeholder="ex: /litro, /unidade, /mês, a partir de" value="'+esc(b.unidade||'')+'"><datalist id="bn-unis"><option value="/litro"><option value="/unidade"><option value="/kg"><option value="/hora"><option value="/dia"><option value="/mês"><option value="/par"><option value="/pneu"></datalist>'+
   '<label>Texto extra</label><input id="bn-txt" value="'+esc(b.texto||'')+'">'+
   '<label style="margin-top:8px">Ao tocar, abrir a rota até este endereço (opcional)</label><input id="bn-end" placeholder="rua, número, cidade e estado" value="'+esc(b.endereco||'')+'">'+
   '<label style="margin-top:8px">Ou abrir este link (opcional, começa com https://)</label><input id="bn-link" value="'+esc(b.link||'')+'">'+
@@ -616,7 +618,7 @@ function bannerEscolher(inp){
   rd.readAsDataURL(f);
 }
 function salvarBanner(id){
-  var corpo={id:id||'',titulo:el('bn-tit').value.trim(),posto:el('bn-posto').value.trim(),bandeira:el('bn-band').value.trim(),chamada:el('bn-cham').value.trim(),preco_centavos:paraCentavos(el('bn-preco').value),texto:el('bn-txt').value.trim(),endereco:el('bn-end').value.trim(),link:el('bn-link').value.trim(),ordem:parseInt(el('bn-ord').value,10)||0,ativo:el('bn-at').checked?1:0};
+  var corpo={id:id||'',titulo:el('bn-tit').value.trim(),posto:el('bn-posto').value.trim(),bandeira:el('bn-band').value.trim(),chamada:el('bn-cham').value.trim(),preco_centavos:paraCentavos(el('bn-preco').value),texto:el('bn-txt').value.trim(),categoria:el('bn-cat').value,unidade:el('bn-uni').value.trim(),endereco:el('bn-end').value.trim(),link:el('bn-link').value.trim(),ordem:parseInt(el('bn-ord').value,10)||0,ativo:el('bn-at').checked?1:0};
   if(BN_IMG) corpo.imagem=BN_IMG;
   if(!id&&!BN_IMG){el('bn-erro').textContent='Escolha a imagem do banner.';return;}
   el('bn-btn').disabled=true;el('bn-btn').textContent='Salvando…';el('bn-erro').style.color='';el('bn-erro').textContent='';

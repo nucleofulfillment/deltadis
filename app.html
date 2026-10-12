@@ -482,7 +482,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
       <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-192-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-194-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -3631,9 +3631,19 @@ function mulResultado(r,antigo){
 var PST={d:null,t:0,lat:null,lng:null,k:'gasolina',mapa:null,marc:[]};
 var PST_ROT={gasolina:'Gasolina',aditivada:'Aditivada',etanol:'Etanol',diesel_s10:'Diesel S10',diesel:'Diesel',gnv:'GNV'};
 var PST_ORD=['gasolina','aditivada','etanol','diesel_s10','diesel','gnv'];
-var PST_DOM=[['IPIRANGA','ipiranga.com.br'],['PETROBRAS','petrobras.com.br'],['VIBRA','petrobras.com.br'],['SHELL','shell.com.br'],['RAIZEN','raizen.com.br'],['ALE','ale.com.br'],['TEXACO','texaco.com.br'],['ESSO','esso.com.br'],['CHARRUA','charrua.com.br']];
-function pstLogoUrl(b){ var t=String(b||'').toUpperCase().split(/[^A-Z]+/), i, j; for(i=0;i<PST_DOM.length;i++){ for(j=0;j<t.length;j++){ if(t[j]===PST_DOM[i][0]) return 'https://www.google.com/s2/favicons?domain='+PST_DOM[i][1]+'&sz=64'; } } return ''; }
-function pstLogo(b){ var u=pstLogoUrl(b); return u?'<img src="'+u+'" alt="" onerror="this.parentNode.textContent=\'⛽\'">':'⛽'; }
+var PST_DOM=[['IPIRANGA','ipiranga.com.br'],['PETROBRAS','petrobras.com.br'],['VIBRA','petrobras.com.br'],['BR','petrobras.com.br',1],['ATEM','atem.com.br'],['DISLUB','dislub.com.br'],['SHELL','shell.com.br'],['RAIZEN','raizen.com.br'],['ALE','ale.com.br',1],['TEXACO','texaco.com.br'],['ESSO','esso.com.br'],['CHARRUA','charrua.com.br']];
+function pstDom(b,nome){ /* (194) acha a marca pela bandeira e, se não achar, por uma palavra do nome do posto */
+  var fontes=[String(b||''),String(nome||'')], f, t, i, j;
+  for(f=0;f<fontes.length;f++){ t=fontes[f].toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^A-Z]+/);
+    for(i=0;i<PST_DOM.length;i++){ if(f===1&&PST_DOM[i][2]) continue; for(j=0;j<t.length;j++){ if(t[j]===PST_DOM[i][0]) return PST_DOM[i][1]; } } }
+  return ''; }
+function pstSrc(d,i){ return i===0?'https://www.google.com/s2/favicons?domain='+d+'&sz=128':(i===1?'https://icons.duckduckgo.com/ip3/'+d+'.ico':(i===2?'https://'+d+'/favicon.ico':'')); }
+function pstImgFim(im,ok){ /* o Google devolve um globinho 16px quando não conhece o site: tenta a próxima fonte */
+  var i=Number(im.getAttribute('data-i'))||0, d=im.getAttribute('data-d'), ic=im.getAttribute('data-ic')||'⛽';
+  if(ok&&(i>0||im.naturalWidth>=32)) return;
+  var n=pstSrc(d,i+1); if(n){ im.setAttribute('data-i',i+1); im.src=n; } else if(im.parentNode) im.parentNode.textContent=ic; }
+function pstLogoUrl(b,nome){ var d=pstDom(b,nome); return d?pstSrc(d,0):''; }
+function pstLogo(b,nome,ic){ var d=pstDom(b,nome); ic=ic||'⛽'; return d?'<img src="'+pstSrc(d,0)+'" data-d="'+d+'" data-i="0" data-ic="'+ic+'" alt="" onload="pstImgFim(this,1)" onerror="pstImgFim(this,0)">':ic; }
 function pstTitulo(s){ var peq={de:1,da:1,do:1,das:1,dos:1,e:1}; return String(s||'').toLowerCase().replace(/\s+/g,' ').trim().split(' ').map(function(w,i){ return (i>0&&peq[w])?w:(w.charAt(0).toUpperCase()+w.slice(1)); }).join(' '); }
 function pstNome(n){ n=String(n||'').replace(/\b(LTDA|EIRELI|EPP|S\/A|S\.A\.)\b\.?/gi,'').replace(/\bCOMERCIO( DE)? (COMBUSTIVEIS|DERIVADOS DE PETROLEO|DE COMBUSTIVEIS)\b/gi,'').replace(/[&.,\-\s]+$/,'').replace(/\s+/g,' ').trim(); return pstTitulo(n||'Posto'); }
 function pstDM(iso){ var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||'')); return m?(m[3]+'/'+m[2]):''; }
@@ -3674,7 +3684,7 @@ function pstListaHtml(){
   L.forEach(function(p){ var v=p.precos[k]; if(v>0&&(menor===null||v<menor)) menor=v; });
   var h='';
   for(i=0;i<L.length;i++){ var p=L[i], v=p.precos[k], destino=p.lat+','+p.lng;
-    h+='<div class="pst-card"><div class="lg">'+pstLogo(p.bandeira)+'</div><div style="min-width:0"><div class="nm">'+esc(pstNome(p.nome))+'</div><div class="sb">'+esc(pstTitulo(p.bandeira)||'Bandeira branca')+' · '+esc(pstTitulo(p.bairro))+((p.cidade&&p.cidade!==d.cidade)?' ('+esc(pstTitulo(p.cidade))+')':'')+' · '+pstKm(p.dist_km)+'</div>'+
+    h+='<div class="pst-card"><div class="lg">'+pstLogo(p.bandeira,p.nome)+'</div><div style="min-width:0"><div class="nm">'+esc(pstNome(p.nome))+'</div><div class="sb">'+esc(pstTitulo(p.bandeira)||'Bandeira branca')+' · '+esc(pstTitulo(p.bairro))+((p.cidade&&p.cidade!==d.cidade)?' ('+esc(pstTitulo(p.cidade))+')':'')+' · '+pstKm(p.dist_km)+'</div>'+
        '<div class="pst-go"><a href="https://www.google.com/maps/dir/?api=1&destination='+destino+'&travelmode=driving" target="_blank" rel="noopener">Maps</a><a href="https://waze.com/ul?ll='+destino+'&navigate=yes" target="_blank" rel="noopener">Waze</a></div></div>'+
        '<div class="vl"><b>'+(v>0?moeda(v):'—')+'</b>'+((v>0&&menor!==null&&v===menor&&L.length>1)?'<span class="bar">Mais barato</span>':'')+'</div></div>';
   }
@@ -3711,7 +3721,7 @@ function pstMarcar(ajustar){
   PST.marc.push(new maplibregl.Marker({element:e}).setLngLat([PST.lng,PST.lat]).addTo(m)); b.extend([PST.lng,PST.lat]);
   (d.postos||[]).forEach(function(p){
     var v=p.precos[PST.k], el2=document.createElement('div'); el2.className='pst-pin';
-    el2.innerHTML='<div class="lg">'+pstLogo(p.bandeira)+'</div>'+(v>0?'<div class="pr">'+moeda(v)+'</div>':'');
+    el2.innerHTML='<div class="lg">'+pstLogo(p.bandeira,p.nome)+'</div>'+(v>0?'<div class="pr">'+moeda(v)+'</div>':'');
     PST.marc.push(new maplibregl.Marker({element:el2,anchor:'bottom'}).setLngLat([p.lng,p.lat]).addTo(m)); b.extend([p.lng,p.lat]);
   });
   if(ajustar&&(d.postos||[]).length){ try{ m.fitBounds(b,{padding:{top:40,bottom:50,left:40,right:40},maxZoom:15,duration:0}); }catch(e){} }
@@ -3727,15 +3737,17 @@ function anuTxtHtml(a){
     (a.texto?'<div class="anu-ex">'+esc(a.texto)+'</div>':'')+'</div>'+
     '<span class="anu-go">Ir →</span></a>';
 }
+var BN_ICO={posto:'⛽',loja:'🛍️',servico:'🔧',alimentacao:'🍽️',outros:'📣'};
+function bnLogo(b){ var ic=BN_ICO[b.categoria]||BN_ICO.outros; return pstLogo(b.bandeira,'',ic); }
 function anuImgHtml(b){
   var temTx=!!(b.posto||b.bandeira||b.chamada||b.preco_centavos>0||b.texto), pr=(Number(b.preco_centavos)||0)>0, go=(b.lat!=null&&b.lng!=null)||!!b.link;
   var ov='';
   if(temTx){
     var botao=go?'<span class="bn-go">Ir →</span>':'', ult=b.texto?'texto':(pr?'pr':(b.chamada?'ch':'top'));   /* (191) o botão "Ir" fica na mesma linha da última linha de texto */
     var linha=function(k,html){ return (ult===k)?'<div class="bn-row">'+html+botao+'</div>':html; };
-    var top=(b.posto||b.bandeira)?linha('top','<div class="bn-top"><span class="bn-lg">'+pstLogo(b.bandeira)+'</span><span class="bn-nm">'+esc(b.posto||b.bandeira)+'</span></div>'):'';
+    var top=(b.posto||b.bandeira)?linha('top','<div class="bn-top"><span class="bn-lg">'+bnLogo(b)+'</span><span class="bn-nm">'+esc(b.posto||b.bandeira)+'</span></div>'):'';
     var ch=b.chamada?linha('ch','<div class="bn-ch">'+esc(b.chamada)+'</div>'):'';
-    var pc=pr?linha('pr','<div class="bn-pr">'+moeda(b.preco_centavos/100)+'<small>/litro</small></div>'):'';
+    var pc=pr?linha('pr','<div class="bn-pr">'+moeda(b.preco_centavos/100)+(b.unidade?'<small>'+(/^[\/]/.test(b.unidade)?'':' ')+esc(b.unidade)+'</small>':'')+'</div>'):'';
     var tx=b.texto?linha('texto','<div class="bn-ex">'+esc(b.texto)+'</div>'):'';
     ov='<div class="bn-ov"><div class="bn-tx">'+top+ch+pc+tx+'</div></div>';
   }
