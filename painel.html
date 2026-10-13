@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-66-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-67-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -982,14 +982,15 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <div class="sh-bd">
     <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">Quem você cadastra aqui entra no painel com o próprio e-mail e senha. Os motoristas continuam na aba Motoristas.</p>
     <div id="us-lista" style="margin-bottom:14px"><div style="color:var(--muted);font-size:13px">Carregando...</div></div>
-    <div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">NOVO USUÁRIO</div>
+    <div id="us-tit" style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">NOVO USUÁRIO</div>
     <div class="field"><label>Acesso</label><select class="inp" id="us-perfil"><option value="gerente">Operacional — todo o painel, menos Financeiro e Configurações</option><option value="mesa">Mesa — só a Mesa</option></select></div>
     <div class="field"><label>Nome</label><input class="inp" id="us-nome" autocomplete="off"></div>
     <div class="field"><label>E-mail</label><input class="inp" id="us-email" type="email" autocomplete="off"></div>
     <div class="field"><label>Celular com DDD (opcional)</label><input class="inp" id="us-fone" inputmode="tel" autocomplete="off" placeholder="(47) 99999-9999"></div>
-    <div class="field"><label>Senha (mínimo 8 caracteres)</label><input class="inp" id="us-senha" type="password" autocomplete="new-password"></div>
+    <div class="field"><label id="us-senha-lb">Senha (mínimo 8 caracteres)</label><input class="inp" id="us-senha" type="password" autocomplete="new-password"></div>
     <p id="us-msg" style="color:#c0392b;font-weight:700;font-size:13px;min-height:18px;margin:4px 0 10px"></p>
     <button class="btn pri wide" id="us-btn" onclick="usuCriar()">Cadastrar usuário</button>
+    <button class="btn sec wide" id="us-cancel" style="display:none;margin-top:8px" onclick="usuModoNovo()">Cancelar edição</button>
   </div>
 </div>
 <div class="sheet" id="sh-trocar-senha">
@@ -3135,7 +3136,16 @@ function salvarMeusDados(){
   }).catch(function(){ b.disabled=false; b.textContent='Salvar'; m.textContent='Sem conexão com o servidor.'; });
 }
 /* ── (64) USUÁRIOS DO PAINEL: o dono (pai) cadastra os usuários filhos (gerentes) do cliente dele ── */
+var US={lista:[],edit:''};
+function usuModoNovo(){ US.edit=''; ['us-nome','us-email','us-fone','us-senha'].forEach(function(i){ el(i).value=''; }); el('us-perfil').value='gerente'; el('us-msg').textContent=''; el('us-tit').textContent='NOVO USUÁRIO'; el('us-senha-lb').textContent='Senha (mínimo 8 caracteres)'; el('us-btn').textContent='Cadastrar usuário'; el('us-cancel').style.display='none'; }
+function usuEditar(id){
+  var u=null, i; for(i=0;i<US.lista.length;i++) if(US.lista[i].id===id) u=US.lista[i]; if(!u) return;
+  US.edit=id; el('us-perfil').value=(u.perfil==='mesa'?'mesa':'gerente'); el('us-nome').value=u.nome||''; el('us-email').value=u.email||''; el('us-fone').value=u.telefone||''; el('us-senha').value=''; el('us-msg').textContent='';
+  el('us-tit').textContent='EDITAR USUÁRIO'; el('us-senha-lb').textContent='Nova senha (deixe em branco para manter a atual)'; el('us-btn').textContent='Salvar alterações'; el('us-cancel').style.display='';
+  try{ el('us-tit').scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){}
+}
 function usuAbrir(){
+  usuModoNovo();
   ['us-nome','us-email','us-fone','us-senha'].forEach(function(i){ el(i).value=''; }); el('us-msg').textContent='';
   el('us-lista').innerHTML='<div style="color:var(--muted);font-size:13px">Carregando...</div>'; abrir('sh-usuarios'); usuCarregar();
 }
@@ -3143,12 +3153,12 @@ function usuCarregar(){
   fetch(DELTADIS_API+'/usuarios',{cache:'no-store'}).then(function(r){ return r.json().catch(function(){ return null; }); }).then(function(d){
     var box=el('us-lista'); if(!box) return;
     if(!d||!d.ok){ box.innerHTML='<div style="color:#c0392b;font-size:13px">Não consegui carregar a lista.</div>'; return; }
-    var l=(d.usuarios||[]).filter(function(u){ return u.perfil!=='motorista'; }), h='', i, u;
+    var l=(d.usuarios||[]).filter(function(u){ return u.perfil!=='motorista'; }), h='', i, u; US.lista=l;
     for(i=0;i<l.length;i++){ u=l[i]; var dono=u.perfil==='dono';
       h+='<div style="border:1px solid var(--border2);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--s2)">'+
         '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(u.nome)+'</b><span style="font-size:11.5px;font-weight:700;color:'+(u.ativo?'#2e7d32':'#c0392b')+'">'+(dono?'Dono':(u.perfil==='mesa'?'Mesa':'Operacional'))+(u.ativo?'':' · inativo')+'</span></div>'+
         '<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;word-break:break-all">'+esc(u.email)+'</div>'+
-        (dono?'':'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-id="'+esc(u.id)+'" onclick="usuNovaSenha(this.getAttribute(\'data-id\'))">Nova senha</button><button class="btn sec" data-id="'+esc(u.id)+'" data-at="'+(u.ativo?0:1)+'" onclick="usuAtivo(this.getAttribute(\'data-id\'),this.getAttribute(\'data-at\'))">'+(u.ativo?'Desativar':'Ativar')+'</button></div>')+'</div>'; }
+        (dono?'':'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-id="'+esc(u.id)+'" onclick="usuEditar(this.getAttribute(\'data-id\'))">Editar</button><button class="btn sec" data-id="'+esc(u.id)+'" onclick="usuNovaSenha(this.getAttribute(\'data-id\'))">Nova senha</button><button class="btn sec" data-id="'+esc(u.id)+'" data-at="'+(u.ativo?0:1)+'" onclick="usuAtivo(this.getAttribute(\'data-id\'),this.getAttribute(\'data-at\'))">'+(u.ativo?'Desativar':'Ativar')+'</button></div>')+'</div>'; }
     box.innerHTML=h||'<div style="color:var(--muted);font-size:13px">Nenhum usuário.</div>';
   }).catch(function(){ var b=el('us-lista'); if(b) b.innerHTML='<div style="color:#c0392b;font-size:13px">Sem conexão com o servidor.</div>'; });
 }
@@ -3156,6 +3166,18 @@ function usuCriar(){
   var m=el('us-msg'), b=el('us-btn'); m.textContent='';
   var nome=el('us-nome').value.trim(), email=el('us-email').value.trim(), fone=el('us-fone').value.trim(), senha=el('us-senha').value;
   if(!nome){ m.textContent='Informe o nome.'; return; } if(!email){ m.textContent='Informe o e-mail.'; return; }
+  if(US.edit){
+    if(senha&&senha.length<8){ m.textContent='A senha precisa ter pelo menos 8 caracteres.'; return; }
+    var oe={perfil:el('us-perfil').value,nome:nome,email:email,telefone:fone}; if(senha) oe.senha=senha;
+    b.disabled=true; b.textContent='Salvando...';
+    fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(US.edit),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(oe)})
+    .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+      b.disabled=false; b.textContent='Salvar alterações';
+      if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar.'; return; }
+      usuModoNovo(); aviso('Usuário atualizado ✅'); usuCarregar();
+    }).catch(function(){ b.disabled=false; b.textContent='Salvar alterações'; m.textContent='Sem conexão com o servidor.'; });
+    return;
+  }
   if(senha.length<8){ m.textContent='A senha precisa ter pelo menos 8 caracteres.'; return; }
   var o={perfil:el('us-perfil').value,nome:nome,email:email,senha:senha}; if(fone) o.telefone=fone;
   b.disabled=true; b.textContent='Cadastrando...';
@@ -3163,7 +3185,7 @@ function usuCriar(){
   .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
     b.disabled=false; b.textContent='Cadastrar usuário';
     if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível cadastrar.'; return; }
-    ['us-nome','us-email','us-fone','us-senha'].forEach(function(i){ el(i).value=''; }); aviso('Usuário cadastrado ✅'); usuCarregar();
+    usuModoNovo(); aviso('Usuário cadastrado ✅'); usuCarregar();
   }).catch(function(){ b.disabled=false; b.textContent='Cadastrar usuário'; m.textContent='Sem conexão com o servidor.'; });
 }
 function usuNovaSenha(id){
