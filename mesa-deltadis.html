@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-49-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-50-1010</p>
   </div>
 </div>
 
@@ -825,7 +825,7 @@ function modoPreparar(){
   el('scan-cam-row').style.display=(xm||MODO==='os')?'none':'';
   el('scan-manual').placeholder=(MODO==='os')?'Digite o número da OS (mín. 5 caracteres)':(xm?'Bipe a chave da NF (código de barras da nota, 44 números)':'Bipe ou digite o código');
   el('btn-desfazer').style.display=(MODO==='entrada')?'':'none';
-  var be=el('btn-encerrar'); if(be) be.style.display=(MODO==='devolucao')?'none':'';   /* (49) devolução: o aviso sonoro já confirma — cada bipe é registrado na hora, não precisa encerrar */
+  var be=el('btn-encerrar'); if(be) be.style.display=(MODO==='devolucao'||MODO==='entrada')?'none':'';   /* (50) entregas e (49) devolução: o aviso sonoro já confirma — cada bipe é registrado na hora, não precisa encerrar */
   var t=el('scan-nome');
   if(MODO==='devolucao') t.textContent='↩ Devolução';
   else if(MODO==='xml') t.textContent='🧾 XML da NF · '+tituloScan();
