@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-73-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-74-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -4205,7 +4205,7 @@ function pintarMotoristas(){
     if(busca && (m.n+' '+m.regiao).toLowerCase().indexOf(busca)<0) continue;
     if(!passaFiltrosMt(m)) continue;
     visiveis.push(m.id);
-    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b><small style="color:var(--muted);font-weight:600" title="Número do motorista (usado no admin para ligar o login do app)">nº '+m.id+'</small>'+(function(){ var na=notifAtiva(m,saiuMap); return '<span onclick="event.stopPropagation();abrirHistNotif('+m.id+')" title="'+(na?('Avisado hoje às '+na.hora+' — aguardando coleta (clique para ver o histórico)'):'Sem aviso ativo (clique para ver o histórico)')+'" style="margin-left:6px;font-weight:800;color:#16A34A;cursor:pointer;opacity:'+(na?'1':'.22')+'">✔</span>'; })()+'</td>'+
+    h+='<tr onclick="abrirMotorista('+m.id+')"><td onclick="event.stopPropagation()"><input type="checkbox" '+(MT_SEL[m.id]?'checked ':'')+'onchange="selecionarMt('+m.id+',this.checked)"></td><td style="display:flex;align-items:center;gap:9px"><div class="av" style="background:'+m.cor+'">'+m.ini+'</div><b>'+esc(m.n)+'</b><small style="color:var(--muted);font-weight:600" title="Número do motorista (usado no admin para ligar o login do app)">nº '+String(m.id).padStart(4,'0')+'</small>'+(function(){ var na=notifAtiva(m,saiuMap); return '<span onclick="event.stopPropagation();abrirHistNotif('+m.id+')" title="'+(na?('Avisado hoje às '+na.hora+' — aguardando coleta (clique para ver o histórico)'):'Sem aviso ativo (clique para ver o histórico)')+'" style="margin-left:6px;font-weight:800;color:#16A34A;cursor:pointer;opacity:'+(na?'1':'.22')+'">✔</span>'; })()+'</td>'+
        '<td>'+esc(m.regiao)+'</td><td>'+m.pac+'</td>'+
        '<td><span class="veic-hover" onmouseenter="mostrarVeic(event,'+m.id+')" onmouseleave="esconderVeic()">'+veicCompacto(m)+'</span></td>'+
        '<td>'+badgeStatus(m.st)+'</td><td>'+slaMotorista(m)+'%</td></tr>';}
