@@ -574,17 +574,22 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <h2>Entrar</h2>
     <p class="sub">Use o telefone cadastrado no ponto de distribuição.</p>
     <div class="field"><label>Telefone</label><input class="inp" id="lg-tel" type="tel" inputmode="tel" autocomplete="username" placeholder="(47) 9 0000-0000"></div>
-    <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
-    <button class="btn pri wide" id="lg-btn" onclick="entrar()">Entrar</button>
-    <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <button class="btn sec wide" id="lg-prim-btn" onclick="primeiroAcesso()">Primeiro acesso / esqueci o PIN</button>
-    <div id="lg-prim" style="display:none;margin-top:10px">
-      <p class="sub">Enviamos um código de 6 dígitos no seu WhatsApp. Digite o código e escolha o seu PIN.</p>
-      <div class="field"><label>Código do WhatsApp</label><input class="inp" id="lg-cod" inputmode="numeric" maxlength="6" placeholder="000000"></div>
-      <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
-      <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
+    <div id="lg-prim-caixa" style="border:2px solid var(--roxo);background:#F5F3FF;border-radius:14px;padding:12px;margin:6px 0 14px">
+      <div style="font-weight:800;color:var(--roxo);font-size:14.5px;margin-bottom:4px">🆕 É a sua primeira vez aqui?</div>
+      <p class="sub" style="margin:0 0 8px">Digite o telefone acima e toque no botão. Você recebe um código no WhatsApp e cria o seu PIN.</p>
+      <button class="btn pri wide" id="lg-prim-btn" onclick="primeiroAcesso()">Primeiro acesso / esqueci o PIN</button>
+      <div id="lg-prim" style="display:none;margin-top:10px">
+        <p class="sub">Enviamos um código de 6 dígitos no seu WhatsApp. Digite o código e escolha o seu PIN.</p>
+        <div class="field"><label>Código do WhatsApp</label><input class="inp" id="lg-cod" inputmode="numeric" maxlength="6" placeholder="000000"></div>
+        <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
+        <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
+      </div>
     </div>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-213-1010</p>
+    <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
+    <div style="text-align:center;font-size:12px;color:var(--muted2);font-weight:700;margin:2px 0 6px">— já tenho PIN —</div>
+    <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
+    <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-214-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
