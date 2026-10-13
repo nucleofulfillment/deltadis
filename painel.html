@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-72-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-73-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1465,7 +1465,7 @@ function agendarEnvioPedidos(){ if(!REAL || !PEDIDOS.length) return; if(PED_SYNC
 function enviarPedidosServidor(forcar){
   if(!REAL || !PEDIDOS.length) return;
   if(PED_SYNC.enviando){ agendarEnvioPedidos(); return; }
-  var lista=listaParaServidor(), corpo=JSON.stringify({pedidos:lista, limpar:!lista.length}), h=0, k;
+  var lista=listaParaServidor(), corpo=JSON.stringify({v:73, pedidos:lista, limpar:!lista.length}), h=0, k;
   for(k=0;k<corpo.length;k++){ h=(Math.imul(h,31)+corpo.charCodeAt(k))|0; } h=h+':'+corpo.length;
   if(!forcar && h===PED_SYNC.hash) return;
   PED_SYNC.enviando=true;
@@ -1596,7 +1596,7 @@ function srvEnviarDireto(cb){
       if(cb) cb(true); return;
     }
     var lote=lotes[pos];
-    fetch(DELTADIS_API+'/painel/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(lote)})
+    fetch(DELTADIS_API+'/painel/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({v:73},lote))})
     .then(function(r){ return r.json().catch(function(){ return null; }); }).then(function(d){
       if(!d||!d.ok) throw new Error((d&&d.mensagem)||'falhou');
       var t,kk; for(t in {est:1,ped:1}) if(lote[t]) for(kk in lote[t]) SRV.hashes[(t==='est'?'e:':'p:')+kk]=lote[t][kk].h;
@@ -1604,7 +1604,8 @@ function srvEnviarDireto(cb){
       pos++; prox();
     }).catch(function(e){
       SRV.env=false; SRV.tent++; srvStatus('⚠ não salvou no servidor',true);
-      if(SRV.tent===1) aviso('Não consegui salvar no servidor agora. Seus dados estão guardados neste navegador e eu tento de novo.');
+      if(String(e&&e.message).indexOf('Atualize')===0) aviso(e.message);
+      else if(SRV.tent===1) aviso('Não consegui salvar no servidor agora. Seus dados estão guardados neste navegador e eu tento de novo.');
       setTimeout(function(){ srvEnviar(); },Math.min(60000,10000*SRV.tent));
       if(cb) cb(false);
     });
@@ -1650,11 +1651,27 @@ function srvAplicarEst(d,bases){
   return mud;
 }
 var SYNC_P={rodando:false};
+/* (73) "época": quando a base é limpa no servidor, TODA tela do painel joga fora a cópia guardada e recarrega do servidor */
+function epocaVerificar(v){
+  try{
+    if(!v||!v.epoca) return false;
+    var at=localStorage.getItem('dd_epoca');
+    if(at===v.epoca) return false;
+    localStorage.setItem('dd_epoca',v.epoca);
+    if(at===null && !window.__epocaAcao){ /* primeira vez nesta tela: se já tem cópia velha, também limpa */ }
+    window.__epocaAcao=1;
+    localStorage.removeItem(LS_KEY); localStorage.removeItem('dd_pend');
+    idbGravar({real:false}, function(){ location.reload(); });
+    return true;
+  }catch(e){ return false; }
+}
+setTimeout(function(){ fetch(DELTADIS_API+'/painel/versao',{cache:'no-store'}).then(function(r){return r.json();}).then(epocaVerificar).catch(function(){}); },1500);
 function srvPuxar(){
   if(!REAL || !DD_TOKEN || !SRV.pronto || SYNC_P.rodando || SRV.env || SRV.timer || srvPendente() || document.hidden) return;
   SYNC_P.rodando=true;
   fetch(DELTADIS_API+'/painel/versao',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(v){
     if(!v||!v.ok) throw 0;
+    if(epocaVerificar(v)) throw 0;
     var mud=srvMudados(v); if(!mud.length){ SYNC_P.rodando=false; return; }
     return fetch(DELTADIS_API+'/painel/tudo',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
       SYNC_P.rodando=false;
@@ -1674,6 +1691,7 @@ function srvEnviar(cb){
   if(!SRV.pronto){ if(cb) cb(false); return; }
   fetch(DELTADIS_API+'/painel/versao',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(v){
     if(!v||!v.ok) throw 0;
+    if(epocaVerificar(v)) throw 0;
     var mud=srvMudados(v); if(!mud.length) return false;
     return fetch(DELTADIS_API+'/painel/tudo',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
       if(!d||!d.ok||!d.ped) return false;
@@ -1683,7 +1701,7 @@ function srvEnviar(cb){
       var k; for(k in d.ped) SRV.hashes['p:'+k]=d.ped[k].h; for(k in d.est) SRV.hashes['e:'+k]=d.est[k].h;   /* a partir de agora partimos da versão do servidor (já juntada) */
       try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); return true;
     });
-  }).catch(function(){ return false; }).then(function(){ srvEnviarDireto(cb); });
+  }).catch(function(){ return false; }).then(function(){ if(window.__epocaAcao){ if(cb) cb(false); return; } srvEnviarDireto(cb); });
 }
 function srvBarra(titulo,msg,botoes){
   var b=el('srv-bar'), h='<b>'+titulo+'</b>'+msg+'<br>', i;
