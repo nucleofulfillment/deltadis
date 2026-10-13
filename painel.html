@@ -848,7 +848,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-75-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-76-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1559,7 +1559,7 @@ var LOCAL_OK=false, LOCAL_CBS=[], LOCAL_CLI=null;
 function cliAtual(){ return (DD_USER&&DD_USER.cliente_id)||null; }
 function srvH(t){ var h=0,k; for(k=0;k<t.length;k++){ h=(Math.imul(h,31)+t.charCodeAt(k))|0; } return h+':'+t.length; }
 function srvChunks(arr,max){ var out=[],cur=[],n=0,i,t; for(i=0;i<arr.length;i++){ t=JSON.stringify(arr[i]); if(cur.length&&n+t.length>max){ out.push('['+cur.join(',')+']'); cur=[]; n=0; } cur.push(t); n+=t.length+1; } if(cur.length||!out.length) out.push('['+cur.join(',')+']'); return out; }
-function packTransp(){ return TRANSPORTADORAS.map(function(t){ return {id:t.id,n:t.n,ini:t.ini,cor:t.cor,dominio:t.dominio||null,sla:t.sla||0,logo:t.logo||'',dataPagamento:t.dataPagamento||'',cicloIni:t.cicloIni||'',cicloFim:t.cicloFim||'',ctePct:Number(t.ctePct)||0}; }); }
+function packTransp(){ return TRANSPORTADORAS.map(function(t){ return {id:t.id,n:t.n,ini:t.ini,cor:t.cor,dominio:t.dominio||null,sla:t.sla||0,logo:t.logo||'',dataPagamento:t.dataPagamento||'',cicloIni:t.cicloIni||'',cicloFim:t.cicloFim||'',ctePct:Number(t.ctePct)||0,cteFixo:Number(t.cteFixo)||0}; }); }
 function aplicarTransps(lista){
   if(!lista||!lista.length) return;
   var nova=[], i, k;
@@ -3118,18 +3118,18 @@ function cteCarregar(){
 function cteLinhas(){
   var f=(el('cte-tr')||{}).value||'';
   return (CTE_R.itens||[]).filter(function(x){ return !f||String(x.tr)===f; }).map(function(x){
-    var t=transp(x.tr), pct=(Number(x.pct)>0)?Number(x.pct):((t&&Number(t.ctePct))||0), v=Number(x.valor)||0;
-    return {chave:x.chave, nf:String(parseInt(String(x.chave).slice(25,34),10)||''), dia:x.dia||'', tr:(x.trn||(t&&t.n)||x.tr||''), valor:v, pct:pct, ganho:Math.round(v*pct)/100};
+    var t=transp(x.tr), pct=(Number(x.pct)>0)?Number(x.pct):((t&&Number(t.ctePct))||0), v=Number(x.valor)||0, fx=(x.modo==='fixo');
+    return {fx:fx, fixo:Number(x.fixo)||0, chave:x.chave, nf:String(parseInt(String(x.chave).slice(25,34),10)||''), dia:x.dia||'', tr:(x.trn||(t&&t.n)||x.tr||''), valor:v, pct:pct, ganho:fx?(Number(x.fixo)||0):Math.round(v*pct)/100};
   });
 }
 function cteDesenhar(){
   var L=cteLinhas(), i, tv=0, tg=0, h='';
   for(i=0;i<L.length;i++){ var r=L[i]; tv+=r.valor; tg+=r.ganho;
-    h+='<tr><td>'+esc(r.dia.slice(8,10)+'/'+r.dia.slice(5,7)+'/'+r.dia.slice(0,4))+'</td><td>'+esc(r.tr)+'</td><td title="'+esc(r.chave)+'">'+esc(r.nf)+'</td><td style="text-align:right">'+moeda(r.valor)+'</td><td style="text-align:right">'+(r.pct?String(r.pct).replace('.',',')+'%':'<span style="color:#c0392b" title="Cadastre a % da transportadora em Configurações → Precificação">sem %</span>')+'</td><td style="text-align:right"><b>'+moeda(r.ganho)+'</b></td><td><span class="vertodos" onclick="cteRemover(\''+r.chave+'\')">remover</span></td></tr>';
+    h+='<tr><td>'+esc(r.dia.slice(8,10)+'/'+r.dia.slice(5,7)+'/'+r.dia.slice(0,4))+'</td><td>'+esc(r.tr)+'</td><td title="'+esc(r.chave)+'">'+esc(r.nf)+'</td><td style="text-align:right">'+(r.fx?'—':moeda(r.valor))+'</td><td style="text-align:right">'+(r.fx?'<span title="Cobrança por valor fixo">fixo</span>':r.pct?String(r.pct).replace('.',',')+'%':'<span style="color:#c0392b" title="Cadastre a % da transportadora em Configurações → Precificação">sem %</span>')+'</td><td style="text-align:right"><b>'+moeda(r.ganho)+'</b></td><td><span class="vertodos" onclick="cteRemover(\''+r.chave+'\')">remover</span></td></tr>';
   }
   el('cte-corpo').innerHTML=h||'<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:18px">Nenhum CT-e registrado nesse período.</td></tr>';
   el('cte-tot').innerHTML='<div class="kpi"><div class="lb">CT-e REGISTRADOS</div><div class="vl">'+L.length+'</div></div><div class="kpi"><div class="lb">VALOR DECLARADO</div><div class="vl">'+moeda(tv)+'</div></div><div class="kpi"><div class="lb">GANHO DELTA EXPRESS</div><div class="vl">'+moeda(tg)+'</div></div>';
-  var sp=L.filter(function(r){ return !r.pct; }).length;
+  var sp=L.filter(function(r){ return !r.pct&&!r.fx; }).length;
   el('cte-aviso').textContent=sp?(sp+' CT-e sem % cadastrada: o ganho aparece zerado. Cadastre a % em Configurações → Precificação.'):'';
 }
 function cteRemover(ch){
@@ -3137,8 +3137,8 @@ function cteRemover(ch){
   fetch(DELTADIS_API+'/mesa/cte-remover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chave:ch})}).then(function(r){ return r.json(); }).then(function(d){ if(d&&d.ok){ aviso('CT-e removido'); cteCarregar(); } else aviso('Não consegui remover.'); }).catch(function(){ aviso('Sem conexão.'); });
 }
 function cteBaixarCsv(){
-  var L=cteLinhas(), out=['Data;Transportadora;CT-e;Chave;Valor declarado;%;Ganho Delta Express'], i;
-  for(i=0;i<L.length;i++){ var r=L[i]; out.push([r.dia,r.tr,r.nf,r.chave,String(r.valor.toFixed(2)).replace('.',','),String(r.pct).replace('.',','),String(r.ganho.toFixed(2)).replace('.',',')].join(';')); }
+  var L=cteLinhas(), out=['Data;Transportadora;CT-e;Chave;Valor declarado;% ou fixo;Ganho Delta Express'], i;
+  for(i=0;i<L.length;i++){ var r=L[i]; out.push([r.dia,r.tr,r.nf,r.chave,(r.fx?'':String(r.valor.toFixed(2)).replace('.',',')),(r.fx?'fixo':String(r.pct).replace('.',',')),String(r.ganho.toFixed(2)).replace('.',',')].join(';')); }
   var b=new Blob(['﻿'+out.join('\n')],{type:'text/csv;charset=utf-8'}), a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='relatorio-cte.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
 }
 function ir(p){
@@ -4140,12 +4140,12 @@ var PR_GRID='display:grid;grid-template-columns:1.2fr 0.8fr 1fr 0.55fr 0.55fr 0.
 function abrirPrecos(){
   var h='<div style="'+PR_GRID+'font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px"><span>Transportadora</span><span>Recebe (R$)</span><span>Pagamento</span><span>Ciclo de</span><span>até</span><span></span></div>',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i], pr=PRECOS[t.id]||{};
-    h+=linhaPrecoTransp(t.id, t.n, pr.recebe, t.dataPagamento, t.cicloIni, t.cicloFim, t.dominio, t.logo, t.ctePct);}
+    h+=linhaPrecoTransp(t.id, t.n, pr.recebe, t.dataPagamento, t.cicloIni, t.cicloFim, t.dominio, t.logo, t.ctePct, t.cteFixo);}
   h+='<button class="btn sec wide" type="button" style="margin:4px 0 10px" onclick="adicionarLinhaTransp()">+ Adicionar transportadora</button>';
   el('pr-linhas').innerHTML=h;
   abrir('sh-precos');
 }
-function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim,dominio,logo,ctePct){
+function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim,dominio,logo,ctePct,cteFixo){
   return '<div class="pr-linha" style="'+PR_GRID+'margin-bottom:8px" data-id="'+(id||'')+'">'+
     '<input class="inp" placeholder="Nome" value="'+esc(nome||'')+'">'+
     '<input class="inp" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(recebe)+'">'+
@@ -4155,6 +4155,7 @@ function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim,dominio,logo,c
     '<span class="vertodos" style="white-space:nowrap" onclick="'+(id?('removerTransportadora(\''+id+'\')'):'this.closest(\'.pr-linha\').remove()')+'">remover</span>'+
     '<div style="grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:-2px"><input class="inp" style="flex:1;min-width:200px" placeholder="Site pra puxar o ícone (ex: jtexpress.com.br)" value="'+esc(dominio||'')+'">'+
     '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap" title="Porcentagem que a Delta Express ganha sobre o valor do frete declarado no CT-e (DACTE)">CT-e %<input class="inp" data-cte="1" inputmode="decimal" style="width:80px" placeholder="ex: 8" value="'+(ctePct?fmtNumBR(ctePct):'')+'"></label>'+
+    '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap" title="Valor em R$ que a Delta Express ganha por CT-e quando a cobrança é por valor fixo">CT-e R$ fixo<input class="inp" data-ctefixo="1" inputmode="decimal" style="width:80px" placeholder="ex: 5,00" value="'+(cteFixo?fmtNumBR(cteFixo):'')+'"></label>'+
     '<label class="btn sec" style="padding:7px 12px;font-size:12px;cursor:pointer;margin:0">📷 Enviar logo<input type="file" accept="image/*" style="display:none" onchange="trLogoEscolhida(this)"></label>'+
     '<img class="pr-logo" alt="" src="'+(logo||'')+'" style="width:34px;height:34px;object-fit:contain;border:1px solid var(--bd,#E3D9F2);border-radius:8px;background:#fff;'+(logo?'':'display:none')+'">'+
     '<span class="vertodos" style="font-size:11.5px;'+(logo?'':'display:none')+'" onclick="trLogoLimpar(this)">tirar logo</span></div></div>';
@@ -4209,6 +4210,7 @@ function salvarPrecos(){
     var dom=(inputs[5]?inputs[5].value:'').trim().replace(/^https?:\/\//i,'').replace(/^www\./i,'').split('/')[0].toLowerCase(); t.dominio=dom||null;   /* (54) site → favicon */
     var lgi=row.querySelector('.pr-logo'); t.logo=(lgi&&lgi.getAttribute('src'))||'';
     var cti=row.querySelector('[data-cte]'); t.ctePct=cti?(Number(String(cti.value||'0').replace(',','.'))||0):(t.ctePct||0);   /* (75) % do CT-e */
+    var ctf=row.querySelector('[data-ctefixo]'); t.cteFixo=ctf?(Number(String(ctf.value||'0').replace(',','.'))||0):(t.cteFixo||0);   /* (76) valor fixo por CT-e */
     PRECOS[id]={recebe:recebe};
   }
   salvarLocal(); fecharTudo(); pintarFinanceiro(); pintarMotoristas(); pintarIndicadores(); pintarDashboard(); pintarPedidos();
