@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-71-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-72-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1912,6 +1912,27 @@ function motCadAbsorver(){
   }).catch(function(){ MCAD.rodando=false; });
 }
 setInterval(motCadAbsorver,30000); setTimeout(motCadAbsorver,8000);
+/* (72) MOTORISTA COM LOGIN QUE NÃO ESTÁ NA LISTA DO PAINEL: o login (acesso ao app) é guardado na hora no servidor; a linha da lista do painel dependia da cópia desta tela. Se faltar, recria a linha (nome e id) — os outros dados podem ser completados depois. */
+var MREC={rodando:false};
+function motReconciliar(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || MREC.rodando || document.hidden || srvPendente()) return;
+  MREC.rodando=true;
+  fetch(DELTADIS_API+'/usuarios',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    MREC.rodando=false;
+    if(!d||!d.ok||!d.usuarios) return;
+    var cores=['#6D28D9','#1D4ED8','#16A34A','#EC4899','#B08A00','#9333EA','#0F766E','#DC2626'], i, j, u, ja, add=[];
+    for(i=0;i<d.usuarios.length;i++){
+      u=d.usuarios[i]; if(u.perfil!=='motorista' || !u.ativo || u.mt_ref==null || u.mt_ref==='' || !u.nome) continue;
+      ja=false; for(j=0;j<MOTORISTAS.length;j++){ if(String(MOTORISTAS[j].id)===String(u.mt_ref)){ ja=true; break; } }
+      if(ja) continue;
+      var idn=Number(u.mt_ref); if(!isFinite(idn)) idn=u.mt_ref;
+      MOTORISTAS.push({id:idn, n:String(u.nome).trim(), apelido:'', ini:iniciaisNome(u.nome), cor:cores[MOTORISTAS.length%cores.length], regiao:'—', pac:0, pix:'', modelo:'—', veicCor:'—', ano:'—', placa:'', foto:null, cap:0, valorPct:0, documentos:[], email:'', tel:String(u.telefone||'—'), st:'na base', local:'Aguardando primeira rota', doc:'a preencher', contrato:'pendente', entregues:0, devolvidos:0, extraviados:0});
+      add.push(u.nome);
+    }
+    if(add.length){ try{ recalcularReal(); }catch(e){} salvarLocal(); try{ pintarMotoristas(); }catch(e){} aviso('Motorista com acesso ao app voltou para a lista: '+add.join(', ')+'.'); }
+  }).catch(function(){ MREC.rodando=false; });
+}
+setInterval(motReconciliar,60000); setTimeout(motReconciliar,15000);
 var MUD={v:'',rodando:false};
 function pdAtualizarAberto(){
   try{
