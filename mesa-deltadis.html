@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-55-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-56-1010</p>
   </div>
 </div>
 
@@ -357,6 +357,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
         <div id="scan-conteudo" style="display:none">
           <h3 id="scan-nome">—</h3>
+          <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><input id="mot-aqui" list="mot-lista" autocomplete="off" placeholder="digite ou escolha o motorista" onchange="escolherMotoristaAqui()"></div>
           <div class="scan-grid">
           <div class="sg-acoes">
           <div class="manual" id="scan-manual-box">
@@ -677,7 +678,6 @@ function escolherMotorista(){
   salvarSessao(); motChip();
 }
 function abrirMesa(id){
-  if(!MOT){ aviso('Escolha o motorista primeiro'); return; }
   var t=achaTr(id); if(!t) return;
   ATIVA=t;
   el('scan-nome').textContent=tituloScan();
@@ -712,10 +712,51 @@ function bipReverter(p,tr,cod,sid){
   ULT=PACOTES.length?PACOTES[PACOTES.length-1]:null; el('btn-desfazer').disabled=!ULT;
   el('scan-cnt').textContent=CNT; pintarCards(); salvarSessao();
 }
+/* (56) MOTORISTA NA CARGA + TAMANHO DO PACOTE: em Entregas, XML, OS e CT-e escolhe o motorista antes de bipar e, a cada pacote, informa P, M ou G (o motorista recebe base + adicional do tamanho) */
+var TAM_ABERTO=false, TAM_CB=null;
+function modoPedeMot(){ return MODO==='entrada'||MODO==='xml'||MODO==='os'||MODO==='cte'; }
+function motOk(){
+  if(!modoPedeMot()) return true;
+  if(MOT&&MOT.id) return true;
+  somErro(); aviso('Escolha o motorista desta carga antes de bipar.');
+  var f=el('mot-aqui'); if(f) f.focus();
+  return false;
+}
+function escolherMotoristaAqui(){
+  var campo=el('mot-aqui'), t=campo.value, novo=achaMot(t);
+  if(t.trim()&&!novo){ aviso('Motorista não encontrado. Digite o nome completo ou escolha na lista.'); campo.value=(MOT&&MOT.id)?MOT.n:''; return; }
+  MOT=novo||{id:'',n:''}; if(novo){ campo.value=novo.n; aviso('Motorista: '+novo.n); var i=el('scan-manual'); if(i) i.focus(); }
+  salvarSessao();
+}
+function motAquiMostrar(){
+  var b=el('mot-aqui-box'), f=el('mot-aqui'); if(!b) return;
+  b.style.display=modoPedeMot()?'':'none';
+  if(f) f.value=(MOT&&MOT.id)?MOT.n:'';
+}
+function pedirTamanho(rotulo,cb){
+  if(TAM_ABERTO) return false;
+  TAM_ABERTO=true; TAM_CB=cb;
+  var o=document.createElement('div'); o.id='tam-ovl'; o.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(31,10,61,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  var bt=function(t){ return '<button type="button" class="btn pri" style="flex:1;font-size:30px;font-weight:800;padding:22px 0" onclick="tamEscolher(\''+t+'\')">'+t+'</button>'; };
+  o.innerHTML='<div style="background:#fff;border-radius:20px;padding:22px 20px;max-width:360px;width:100%;text-align:center"><h3 style="margin:0 0 4px">Qual o tamanho do pacote?</h3>'+
+    '<p style="margin:0 0 14px;font-size:12.5px;color:var(--muted2);word-break:break-all">'+esc(rotulo||'')+'</p>'+
+    '<div style="display:flex;gap:10px">'+bt('P')+bt('M')+bt('G')+'</div>'+
+    '<button type="button" class="btn sec wide" style="margin-top:12px" onclick="tamEscolher(\'\')">Cancelar</button></div>';
+  document.body.appendChild(o);
+  return true;
+}
+function tamEscolher(t){
+  var o=el('tam-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+  TAM_ABERTO=false; var cb=TAM_CB; TAM_CB=null;
+  var i=el('scan-manual'); if(i){ i.value=''; i.focus(); }
+  if(cb) cb(t);
+}
 function registrarPacote(cod){
   if(!ATIVA) return;
   cod=String(cod||'').replace(/[^A-Za-z0-9_.-]/g,'');
+  if(TAM_ABERTO){ somErro(); return; }   /* (56) está esperando o tamanho do pacote anterior */
   if(cod.length<5){ somErro(); mostrarUlt('err','Código curto demais — confira a etiqueta',cod); return; }
+  if(!motOk()) return;
   if(MODO==='devolucao'){ devolverPacote(cod); return; }
   if(MODO==='esquecido'){ esquecerPacote(cod); return; }
   if(MODO==='os'){ osBipar(cod); return; }
@@ -728,13 +769,20 @@ function registrarPacote(cod){
     if(dt && dt.id!==tr.id){ tr=dt; ATIVA=dt; el('scan-nome').textContent=tituloScan(); pintarCards(); aviso('Transportadora trocada para '+dt.n); salvarSessao(); }
   }
   if(VISTOS[cod]){ somErro(); mostrarUlt('rep','Já bipado nesta contagem ('+VISTOS[cod].tn+', '+VISTOS[cod].hora+')',cod); return; }
+  pedirTamanho('Pacote '+cod+' · '+tr.n,function(tam){
+    if(!tam) return;
+    if(VISTOS[cod]) return;
+    registrarPacoteOk(cod,tr,tam);
+  });
+}
+function registrarPacoteOk(cod,tr,tam){
   var sid=SESS_BIP, mot=MOT, ag=new Date(), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2)+':'+('0'+ag.getSeconds()).slice(-2);
   CNT++; tr.hoje++;
-  var p={seq:CNT, cod:cod, tr:tr.id, tn:tr.n, hora:hora, pend:1}; PACOTES.push(p); VISTOS[cod]={tn:tr.n,hora:hora}; ULT=p;
+  var p={seq:CNT, cod:cod, tr:tr.id, tn:tr.n, hora:hora, pend:1, tam:tam}; PACOTES.push(p); VISTOS[cod]={tn:tr.n,hora:hora}; ULT=p;
   el('scan-cnt').textContent=CNT; el('btn-desfazer').disabled=false;
-  mostrarUlt('ok','✔ Entrou na base — '+tr.n,cod);
+  mostrarUlt('ok','✔ Entrou na base — '+tr.n+' · tamanho '+tam,cod);
   pintarCards(); somBipeOk(); salvarSessao();
-  api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,trn:tr.n,mt:mot.id,mtn:mot.n})}).then(function(d){
+  api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,trn:tr.n,mt:mot.id,mtn:mot.n,tam:tam})}).then(function(d){
     if(!d||!d.ok){ bipReverter(p,tr,cod,sid); somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
     p.pend=0;
     if(d.resultado==='repetido'){
@@ -821,7 +869,7 @@ function ajustarModoTela(){
   if(v) v.textContent=(MODO===''?'Escolha uma operação acima para começar: Entregas, XML, OS, Devolução ou Esquecido.':MODO==='devolucao'?'Escolha o motivo e bipe os pacotes. A transportadora e o motorista o sistema já sabe.':(MODO==='cte'?'Escolha a transportadora; depois bipe a chave do CT-e (DACTE) e informe o valor do frete.':MODO==='xml'?'Escolha a transportadora; depois bipe a chave da NF.':(MODO==='os'?'Escolha a transportadora; depois digite o número da OS.':'Escolha a transportadora ao lado para começar a bipar.')));
 }
 function modoPreparar(){
-  var ex=el('mo-extra'), xm=(MODO==='xml');
+  var ex=el('mo-extra'), xm=(MODO==='xml'); motAquiMostrar();
   el('scan-manual-box').style.display=''; el('scan-auto-box').style.display=(MODO==='entrada')?'':'none';
   el('scan-cam-row').style.display=(xm||MODO==='os')?'none':'';
   el('scan-manual').placeholder=(MODO==='os')?'Digite o número da OS (mín. 5 caracteres)':(xm?'Bipe a chave da NF (código de barras da nota, 44 números)':(MODO==='cte'?'Bipe a chave do CT-e (código de barras da DACTE, 44 números)':'Bipe ou digite o código'));
@@ -898,8 +946,13 @@ function carregarEsquecidos(){
 function esqDesfazer(cod){ api('/mesa/esquecido-desfazer',{method:'POST',body:JSON.stringify({cod:cod})}).then(function(){ carregarEsquecidos(); }).catch(function(){ aviso('Sem conexão.'); }); }
 /* OS sem NF */
 var OS_LOTE=[], OS_PEND='';
+var OS_TAM='';
 function osBipar(cod){
   var i; for(i=0;i<OS_LOTE.length;i++) if(OS_LOTE[i].cod===cod){ somErro(); mostrarUlt('rep','Essa OS já está na lista',cod); return; }
+  if(!motOk()) return;
+  pedirTamanho('OS '+cod,function(tam){ if(!tam) return; OS_TAM=tam; osBiparAbrir(cod); });
+}
+function osBiparAbrir(cod){
   OS_PEND=cod; el('osm-cod').textContent=cod; el('osm-cliente').value=''; el('osm-cep').value=''; el('osm-num').value='';
   el('os-overlay').classList.add('on'); setTimeout(function(){ el('osm-cliente').focus(); },60);
 }
@@ -907,7 +960,7 @@ function osModalCancelar(){ el('os-overlay').classList.remove('on'); OS_PEND='';
 function osModalOk(){
   if(!OS_PEND||!ATIVA) return;
   var cod=OS_PEND; OS_PEND='';
-  OS_LOTE.push({cod:cod,cliente:(el('osm-cliente').value||'').trim(),cep:(el('osm-cep').value||'').trim(),num:(el('osm-num').value||'').trim(),tr:ATIVA.id,trn:ATIVA.n,t:Date.now()});
+  OS_LOTE.push({tam:OS_TAM,cod:cod,cliente:(el('osm-cliente').value||'').trim(),cep:(el('osm-cep').value||'').trim(),num:(el('osm-num').value||'').trim(),tr:ATIVA.id,trn:ATIVA.n,t:Date.now()});
   el('os-overlay').classList.remove('on');
   CNT=OS_LOTE.length; el('scan-cnt').textContent=CNT; somBipeOk();
   mostrarUlt('ok','✔ Na lista — ainda não criada. Toque em Encerrar contagem para criar.',cod);
@@ -942,7 +995,7 @@ function osEncerrar(){
       osRelatorio(res); return;
     }
     var tr=ordem[pos], itens=grupos[tr];
-    api('/mesa/os',{method:'POST',body:JSON.stringify({mt:'',mtn:'',tr:tr,trn:itens[0].trn,itens:itens.map(function(o){ return {cod:o.cod,cliente:o.cliente,cep:o.cep,num:o.num}; })})}).then(function(d){
+    api('/mesa/os',{method:'POST',body:JSON.stringify({mt:(MOT&&MOT.id)||'',mtn:(MOT&&MOT.n)||'',tr:tr,trn:itens[0].trn,itens:itens.map(function(o){ return {cod:o.cod,cliente:o.cliente,cep:o.cep,num:o.num,tam:o.tam}; })})}).then(function(d){
       var sai=(d&&d.ok&&d.itens)||[], j, mp={}; for(j=0;j<sai.length;j++) mp[sai[j].cod]=sai[j];
       for(j=0;j<itens.length;j++){ var r=mp[itens[j].cod]||{resultado:'erro',mensagem:'Sem resposta'}; res.push({cod:itens[j].cod,cliente:itens[j].cliente,cep:itens[j].cep,num:itens[j].num,trn:itens[j].trn,resultado:r.resultado,cepst:r.cep||'',t:itens[j].t}); }
       pos++; prox();
@@ -1033,11 +1086,13 @@ function cteBipar(cod){
   if(ch.slice(20,22)!=='57'){ somErro(); mostrarUlt('err','Essa é a chave de uma NOTA, não de CT-e. Bipe o código de barras da DACTE.',ch); return; }
   for(var i=0;i<CTE_LOTE.length;i++){ if(CTE_LOTE[i].chave===ch){ somErro(); mostrarUlt('rep','Esse CT-e já foi registrado nesta lista',ch); return; } }
   if(CTE_PEND) return;
+  if(!motOk()) return;
   somBipeOk(); cteAbrirValor(ch);
 }
-var CTE_MODO='pct';
+var CTE_MODO='pct', CTE_TAM='';
+function cteTam(t){ CTE_TAM=t; ['P','M','G'].forEach(function(k){ var b=el('cte-t-'+k); if(b) b.className='btn '+(k===t?'pri':'sec'); }); var m=el('cte-msg'); if(m) m.textContent=''; var v=el('cte-valor'); if(v) v.focus(); }
 function cteAbrirValor(ch){
-  CTE_PEND=ch; CTE_MODO='pct'; var o=el('cte-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+  CTE_PEND=ch; CTE_MODO='pct'; CTE_TAM=''; var o=el('cte-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o);
   var tr=ATIVA||{};
   o=document.createElement('div'); o.id='cte-ovl'; o.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(31,10,61,.55);display:flex;align-items:center;justify-content:center;padding:20px';
   o.innerHTML='<div style="background:#fff;border-radius:20px;padding:22px 20px;max-width:380px;width:100%"><h3 style="margin:0 0 4px">📄 Como cobrar este CT-e?</h3>'+
@@ -1045,6 +1100,7 @@ function cteAbrirValor(ch){
     '<div style="display:flex;gap:8px;margin-bottom:10px">'+
       '<button type="button" id="cte-m-pct" class="btn pri" style="flex:1;padding:10px 6px;font-size:13px" onclick="cteModo(\'pct\')">% sobre o declarado</button>'+
       '<button type="button" id="cte-m-fixo" class="btn sec" style="flex:1;padding:10px 6px;font-size:13px" onclick="cteModo(\'fixo\')">Valor fixo por CT-e</button></div>'+
+    '<div style="font-size:12px;color:var(--muted2);margin-bottom:4px">Tamanho do pacote</div><div style="display:flex;gap:8px;margin-bottom:10px">'+['P','M','G'].map(function(k){ return '<button type="button" id="cte-t-'+k+'" class="btn sec" style="flex:1;font-size:20px;font-weight:800;padding:10px 0" onclick="cteTam(\''+k+'\')">'+k+'</button>'; }).join('')+'</div>'+
     '<div id="cte-box-pct"><div id="cte-rot" style="font-size:12px;color:var(--muted2);margin-bottom:4px">Valor do frete declarado</div>'+
     '<input id="cte-valor" class="inp" inputmode="numeric" placeholder="R$ 0,00" autocomplete="off" oninput="cteMascara(this)" style="font-size:22px;font-weight:800;text-align:center" onkeydown="if(event.key===\'Enter\')cteRegistrar()"></div>'+
     '<p id="cte-msg" style="min-height:18px;margin:8px 0 0;font-size:12.5px;color:#c0392b;font-weight:700"></p>'+
@@ -1070,10 +1126,11 @@ function cteCancelar(){ CTE_PEND=null; var o=el('cte-ovl'); if(o&&o.parentNode) 
 function cteRegistrar(){
   if(CTE_BUSY||!CTE_PEND||!ATIVA) return;
   var ch=CTE_PEND, fixo=(CTE_MODO==='fixo'), v=Number(cteCentavos((el('cte-valor')||{}).value))/100, m=el('cte-msg');
+  if(!CTE_TAM){ if(m) m.textContent='Escolha o tamanho do pacote: P, M ou G.'; return; }
   if(!isFinite(v)||v<=0){ if(m) m.textContent=fixo?'Informe o valor que a Delta Express ganha neste CT-e.':'Informe o valor do frete declarado.'; return; }
   CTE_BUSY=true; var b=el('cte-ok'); if(b){ b.disabled=true; b.textContent='Registrando…'; }
   var tr=ATIVA;
-  api('/mesa/cte',{method:'POST',body:JSON.stringify({chave:ch,tr:tr.id,trn:tr.n,valor:v,modo:fixo?'fixo':'pct'})}).then(function(d){
+  api('/mesa/cte',{method:'POST',body:JSON.stringify({chave:ch,tr:tr.id,trn:tr.n,valor:v,modo:fixo?'fixo':'pct',tam:CTE_TAM,mt:(MOT&&MOT.id)||'',mtn:(MOT&&MOT.n)||''})}).then(function(d){
     CTE_BUSY=false;
     if(!d||!d.ok){ if(b){ b.disabled=false; b.textContent='Registrar'; } if(d&&d.erro==='repetido'){ cteCancelar(); somErro(); mostrarUlt('rep','Esse CT-e já estava registrado',ch); return; } if(m) m.textContent=(d&&d.mensagem)||'Não consegui registrar. Tente de novo.'; return; }
     CTE_LOTE.push({chave:ch,valor:v,fixo:fixo,tr:tr.n,hora:new Date().toTimeString().slice(0,5)}); CNT++; el('scan-cnt').textContent=CNT;
@@ -1089,8 +1146,14 @@ function xmlBipar(cod){
   var ch=String(cod||'').replace(/\D/g,'');
   if(ch.length!==44){ somErro(); mostrarUlt('err','Isso não é a chave da NF (precisa de 44 números). Bipe o código de barras da nota.',cod); return; }
   for(var i=0;i<XML_LOTE.length;i++){ if(XML_LOTE[i].chave===ch){ somErro(); mostrarUlt('rep','Essa nota já foi bipada nesta lista',ch); return; } }
-  var o={chave:ch,nf:String(parseInt(ch.slice(25,34),10)||''),estado:'buscando',arq:'chave '+ch.slice(25,34)};
-  XML_LOTE.push(o); somBipeOk(); xmlPrev(); NF_FILA.push(o); xmlFila();
+  if(!motOk()) return;
+  var nfB=String(parseInt(ch.slice(25,34),10)||'');
+  pedirTamanho('NF '+nfB+' · '+tituloScan(),function(tam){
+    if(!tam) return;
+    for(var j=0;j<XML_LOTE.length;j++){ if(XML_LOTE[j].chave===ch) return; }
+    var o={chave:ch,nf:nfB,estado:'buscando',arq:'chave '+ch.slice(25,34),tam:tam};
+    XML_LOTE.push(o); somBipeOk(); xmlPrev(); NF_FILA.push(o); xmlFila();
+  });
 }
 function xmlFila(){   /* uma consulta por vez: o Meu Danfe bloqueia a conta se pedirem rápido demais */
   if(NF_RODANDO||!NF_FILA.length) return; NF_RODANDO=true;
@@ -1102,7 +1165,22 @@ function xmlFila(){   /* uma consulta por vez: o Meu Danfe bloqueia a conta se p
 }
 function xmlRetry(ch){ for(var i=0;i<XML_LOTE.length;i++){ if(XML_LOTE[i].estado==='envfalhou'&&(XML_LOTE[i].chave===ch||XML_LOTE[i].nf===ch)){ xmlEnviar([XML_LOTE[i]]); return; } if(XML_LOTE[i].chave===ch){ XML_LOTE[i].estado='buscando'; XML_LOTE[i].aviso=''; NF_FILA.push(XML_LOTE[i]); } } xmlPrev(); xmlFila(); }
 function xmlRemover(ch){ XML_LOTE=XML_LOTE.filter(function(x){ return x.chave!==ch; }); NF_FILA=NF_FILA.filter(function(x){ return x.chave!==ch; }); xmlPrev(); }
-function xmlArqFim(){ var vs={}, novos=[]; XML_LOTE.forEach(function(x){ if(x.erro||x.estado) return; if(vs[x.nf]){ x.erro='nota repetida na seleção'; return; } vs[x.nf]=1; novos.push(x); }); xmlPrev(); if(novos.length) xmlEnviar(novos); }
+function xmlArqFim(){
+  var vs={}, novos=[]; XML_LOTE.forEach(function(x){ if(x.erro||x.estado) return; if(vs[x.nf]){ x.erro='nota repetida na seleção'; return; } vs[x.nf]=1; novos.push(x); }); xmlPrev();
+  if(!novos.length) return;
+  if(!motOk()){ novos.forEach(function(x){ x.erro='escolha o motorista e selecione de novo'; }); xmlPrev(); return; }
+  var k=0, ok=[];
+  (function prox(){
+    if(k>=novos.length){ if(ok.length) xmlEnviar(ok); return; }
+    var x=novos[k];
+    if(x.tam){ ok.push(x); k++; return prox(); }
+    var abriu=pedirTamanho('NF '+x.nf+' ('+(k+1)+' de '+novos.length+')',function(tam){
+      if(!tam){ x.erro='sem tamanho — não registrada'; } else { x.tam=tam; ok.push(x); }
+      k++; xmlPrev(); setTimeout(prox,30);
+    });
+    if(abriu===false) setTimeout(prox,200);
+  })();
+}
 function xmlPrev(){
   var h='', i, x, vistos={}, ok=0, busc=0, ac, end;
   for(i=0;i<XML_LOTE.length;i++){ x=XML_LOTE[i];

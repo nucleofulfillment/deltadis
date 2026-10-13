@@ -848,7 +848,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-78-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-79-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1496,7 +1496,7 @@ function enviarPedidosServidor(forcar){
     setTimeout(agendarEnvioPedidos,60000);
   });
 }
-function packPed(){ var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null,p.tel||'',p.canal||'',p.vend||'',p.rua||'',p.num||'',p.comp||'',p.bai||'',p.cid||'',p.endOrig||'']); } return pc; }
+function packPed(){ var pc=[],i,p; for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; pc.push([p.cod,p.tr,p.mt,p.st,p.dia||'',p.hora||'',p.obs||'',(p.scan&&p.scan!==p.cod)?p.scan:'',p.ent||'',p.cliente||'',p.bairro||'',(p.vl==null?null:p.vl),p.cep||'',p.area||'',p.fechId||null,p.tel||'',p.canal||'',p.vend||'',p.rua||'',p.num||'',p.comp||'',p.bai||'',p.cid||'',p.endOrig||'',p.tam||'']); } return pc; }
 function salvarLocal(cb){
   var o; try{ sincStatusFech(); }catch(eSf){}
   if(REAL){
@@ -1517,7 +1517,7 @@ function aplicarSalvo(d){
   if(d.rast){ RASTREADOS={}; d.rast.forEach(function(c){ RASTREADOS[c]=1; }); }
   if(d.ciclos) CICLOS=d.ciclos; else if(d.ciclo && d.ciclo.modo) CICLOS=[{id:'c0',grupo:'todos',modo:d.ciclo.modo,tipo:d.ciclo.tipo,dia:d.ciclo.dia,prazo:d.ciclo.prazo}];
   if((d.pedidos||d.pc) && d.motoristas){
-    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', rua:a[18]||'', num:a[19]||'', comp:a[20]||'', bai:a[21]||'', cid:a[22]||'', endOrig:a[23]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
+    if(d.pc){ PEDIDOS=d.pc.map(function(a){ return {cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', rua:a[18]||'', num:a[19]||'', comp:a[20]||'', bai:a[21]||'', cid:a[22]||'', endOrig:a[23]||'', tam:a[24]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; }); }
     else PEDIDOS=d.pedidos;
     PEDIDOS.forEach(garantirEndereco);
     MOTORISTAS=d.motoristas; EXTRATO=d.extrato||[];
@@ -1630,7 +1630,7 @@ function srvEnviarDireto(cb){
 /* ══ (70) VÁRIAS TELAS, MESMO LOGIN: antes cada tela guardava a própria cópia e a última a salvar apagava o que as outras tinham feito. Agora:
    • a cada 15 s (aba visível e nada pendente de envio) a tela pergunta ao servidor se algum bloco de pedidos mudou e traz o que mudou;
    • antes de enviar, se outra tela mexeu no mesmo bloco, junta os pedidos (nenhum some) e só então envia. ══ */
-function srvLinhaPed(a){ var p={cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', rua:a[18]||'', num:a[19]||'', comp:a[20]||'', bai:a[21]||'', cid:a[22]||'', endOrig:a[23]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; try{ garantirEndereco(p); }catch(e){} return p; }
+function srvLinhaPed(a){ var p={cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', rua:a[18]||'', num:a[19]||'', comp:a[20]||'', bai:a[21]||'', cid:a[22]||'', endOrig:a[23]||'', tam:a[24]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; try{ garantirEndereco(p); }catch(e){} return p; }
 function srvChaveDia(p){ return String(p.dia||'_').replace(/[^0-9A-Za-z_-]/g,'_').slice(0,40); }
 var SRV_FINAL={entregue:1,devolvido:1,extraviado:1};
 /* modo 'servidor': o servidor manda (tela sem nada pendente). modo 'juntar': une local + servidor (local vence, exceto status final vindo do servidor). */
@@ -1830,7 +1830,7 @@ function mesaEventosAbsorver(){
         if(p) continue;
         var cEnd=(dd.rua||''), isXml=(e.tipo==='xml');
         p={cod:e.cod, tr:e.tr||'anj', mt:mid, cliente:(dd.cliente||''), bairro:(dd.bai||''), rua:cEnd, num:(dd.num||''), comp:(dd.comp||''), bai:(dd.bai||''), cid:(dd.cid||''), endOrig:'', vl:null, cep:(dd.cep||''), area:'', st:'coletado', t1:'', t2:'', tel:(dd.tel||''), canal:(dd.rem||''), vend:'',
-           scan:(isXml&&dd.chave)?dd.chave:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:(isXml?(dd.cte?('entrada pela Mesa — CT-e (DACTE) nº '+String(e.cod).replace(/^CTE/,'')):('entrada pela Mesa — XML da NF '+e.cod)):('OS manual (sem NF) criada pela Mesa'+(dd.obs?(' — '+dd.obs):''))), ent:'', fechId:null};
+           tam:(dd.tam||''), scan:(isXml&&dd.chave)?dd.chave:e.cod, dia:(e.dia||hojeISO()), hora:hh, obs:(isXml?(dd.cte?('entrada pela Mesa — CT-e (DACTE) nº '+String(e.cod).replace(/^CTE/,'')):('entrada pela Mesa — XML da NF '+e.cod)):('OS manual (sem NF) criada pela Mesa'+(dd.obs?(' — '+dd.obs):''))), ent:'', fechId:null};
         PEDIDOS.push(p); idx[e.cod]=p; if(p.scan!==e.cod) idx[p.scan]=p; novos++;
       }
     }
@@ -2472,11 +2472,12 @@ function precoTransp(id){ return PRECOS[id]||{recebe:0,paga:0}; }
    (valorPct só existe pros motoristas de demonstração, mantido como último recurso) */
 function valorMotorista(m,p){
   if(!m) return 0;
-  if(Number(m.valorPadrao)>0) return Number(m.valorPadrao);   /* preço fixo do motorista (só quando cadastrado) */
+  var ad=(p&&p.tam)?(Number(m['ad'+p.tam])||0):0;   /* (79) adicional do tamanho do pacote (P/M/G): sempre soma ao valor base */
+  if(Number(m.valorPadrao)>0) return Number(m.valorPadrao)+ad;   /* preço fixo do motorista (só quando cadastrado) */
   var a=areaDoPedido(p);
-  if(a && Number(a.valor)>0) return Number(a.valor);
-  if(m.valorPct>0) return m.valorPct;
-  return 0;
+  if(a && Number(a.valor)>0) return Number(a.valor)+ad;
+  if(m.valorPct>0) return m.valorPct+ad;
+  return ad;
 }
 /* acha a área cadastrada do pedido: 1º pelo nome da região, 2º pela faixa de CEP */
 function areaDoPedido(p){
@@ -5316,6 +5317,7 @@ function abrirMotorista(id,volta){
   if(gm.length) h+='<div class="sh-row"><span class="k">Grupos</span><span class="v">'+esc(gm.join(', '))+'</span></div>';
   h+='<div class="sh-row"><span class="k">Contrato</span><span class="v">'+badgeStatus(m.contrato)+'</span></div>';
   h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Preço fixo por pacote<br><span style="font-size:10.5px;font-weight:500">opcional — se preenchido, vale no lugar da área</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 38px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-padrao-'+m.id+'" value="'+(m.valorPadrao?String(m.valorPadrao).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarValorPadraoMotorista('+m.id+')">✓</button></div></span></div>';
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Adicional por tamanho<br><span style="font-size:10.5px;font-weight:500">soma ao valor base de cada pacote P, M ou G</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 1fr 1fr 38px;gap:6px"><input class="inp mt-cfg-valor" placeholder="P R$" title="Adicional do pacote P" id="mt-adp-'+m.id+'" value="'+(m.adP?String(m.adP).replace('.',','):'')+'"><input class="inp mt-cfg-valor" placeholder="M R$" title="Adicional do pacote M" id="mt-adm-'+m.id+'" value="'+(m.adM?String(m.adM).replace('.',','):'')+'"><input class="inp mt-cfg-valor" placeholder="G R$" title="Adicional do pacote G" id="mt-adg-'+m.id+'" value="'+(m.adG?String(m.adG).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarAdicionaisMotorista('+m.id+')">✓</button></div></span></div>';
   if(!REAL) h+='<div class="mapa-mock" style="height:190px;margin-top:16px;margin-bottom:0">'+
      '<iframe class="mapa-iframe" src="https://www.google.com/maps?q=Itaja%C3%AD,SC&z=13&output=embed" loading="lazy" title="Mapa"></iframe>'+
      '<span class="mapa-regiao-label">'+esc(m.regiao)+'</span>'+
@@ -5412,6 +5414,28 @@ function salvarValorPadraoMotorista(id){
   pintarFinanceiro();
   aviso(v>0?'Valor padrão salvo!':'Valor padrão removido');
 }
+function salvarAdicionaisMotorista(id){
+  var m=motorista(id); if(!m) return;
+  function lv(k){ var e=el('mt-ad'+k+'-'+id); var v=Number(String((e&&e.value)||'0').replace(',','.'))||0; return v>0?v:0; }
+  m.adP=lv('p'); m.adM=lv('m'); m.adG=lv('g');
+  if(REAL) salvarLocal();
+  pintarFinanceiro();
+  aviso('Adicionais por tamanho salvos!');
+}
+/* (79) tamanho do pacote (P/M/G) que a Mesa registrou no bipe: o painel puxa o mapa código→tamanho e marca cada pedido */
+var TAM_PUX={rodando:false};
+function mesaTamanhosPuxar(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || TAM_PUX.rodando || document.hidden) return;
+  TAM_PUX.rodando=true;
+  fetch(DELTADIS_API+'/mesa/tamanhos',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    TAM_PUX.rodando=false;
+    if(!d||!d.ok||!d.itens) return;
+    var i, p, t, mud=0;
+    for(i=0;i<PEDIDOS.length;i++){ p=PEDIDOS[i]; t=d.itens[p.cod]||(p.scan&&d.itens[p.scan])||''; if(t && p.tam!==t){ p.tam=t; mud++; } }
+    if(mud){ try{ recalcularReal(); }catch(e2){} salvarLocal(); repintarTudo(); }
+  }).catch(function(){ TAM_PUX.rodando=false; });
+}
+setInterval(mesaTamanhosPuxar,30000); setTimeout(mesaTamanhosPuxar,9000);
 /* ══ financeiro (Receita/A receber/Repasse + Fluxo de caixa) ══ */
 function dataBR(iso){var p=iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0];}
 function hojeISO(){var d=new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
