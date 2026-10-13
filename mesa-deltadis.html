@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-51-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-52-1010</p>
   </div>
 </div>
 
@@ -1040,16 +1040,24 @@ function cteAbrirValor(ch){
   o=document.createElement('div'); o.id='cte-ovl'; o.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(31,10,61,.55);display:flex;align-items:center;justify-content:center;padding:20px';
   o.innerHTML='<div style="background:#fff;border-radius:20px;padding:22px 20px;max-width:380px;width:100%"><h3 style="margin:0 0 4px">📄 Valor do frete declarado</h3>'+
     '<p style="margin:0 0 12px;font-size:12.5px;color:var(--muted2);word-break:break-all">'+esc(tituloScan())+' · CT-e nº '+esc(String(parseInt(ch.slice(25,34),10)||''))+'<br>'+esc(ch)+'</p>'+
-    '<input id="cte-valor" class="inp" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off" style="font-size:22px;font-weight:800;text-align:center" onkeydown="if(event.key===\'Enter\')cteRegistrar()">'+
+    '<input id="cte-valor" class="inp" inputmode="numeric" placeholder="R$ 0,00" autocomplete="off" oninput="cteMascara(this)" style="font-size:22px;font-weight:800;text-align:center" onkeydown="if(event.key===\'Enter\')cteRegistrar()">'+
     '<p id="cte-msg" style="min-height:18px;margin:8px 0 0;font-size:12.5px;color:#c0392b;font-weight:700"></p>'+
     '<button class="btn pri wide" id="cte-ok" style="margin-top:6px" onclick="cteRegistrar()">Registrar</button>'+
     '<button class="btn sec wide" style="margin-top:8px" onclick="cteCancelar()">Cancelar</button></div>';
   document.body.appendChild(o); setTimeout(function(){ var v=el('cte-valor'); if(v) v.focus(); },80);
 }
+/* (52) máscara de dinheiro: só digitar os números — a vírgula e o ponto entram sozinhos (1 2 3 4 5 → R$ 123,45) */
+function cteCentavos(v){ return String(v||'').replace(/\D/g,'').replace(/^0+/,'').slice(0,10); }
+function cteMascara(inp){
+  var d=cteCentavos(inp.value); if(!d){ inp.value=''; return; }
+  while(d.length<3) d='0'+d;
+  var int=d.slice(0,-2).replace(/\B(?=(\d{3})+(?!\d))/g,'.'), cen=d.slice(-2);
+  inp.value='R$ '+int+','+cen;
+}
 function cteCancelar(){ CTE_PEND=null; var o=el('cte-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o); var i=el('scan-manual'); if(i) i.focus(); }
 function cteRegistrar(){
   if(CTE_BUSY||!CTE_PEND||!ATIVA) return;
-  var ch=CTE_PEND, v=Number(String((el('cte-valor')||{}).value||'').replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.')), m=el('cte-msg');
+  var ch=CTE_PEND, v=Number(cteCentavos((el('cte-valor')||{}).value))/100, m=el('cte-msg');
   if(!isFinite(v)||v<=0){ if(m) m.textContent='Informe o valor do frete declarado.'; return; }
   CTE_BUSY=true; var b=el('cte-ok'); if(b){ b.disabled=true; b.textContent='Registrando…'; }
   var tr=ATIVA;
