@@ -204,6 +204,8 @@
   .mo-extra label{display:block;font-size:11.5px;font-weight:700;color:var(--muted2);margin:8px 0 4px}
   .mo-extra input[type=text]{width:100%;box-sizing:border-box;border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13.5px}
   .xml-it{border:1px solid var(--border2);border-radius:10px;padding:7px 10px;margin:5px 0;font-size:12.5px;background:#fff} .xml-it.er{border-color:#F3C9C9;background:#FCEBEB}
+  .mbtns{display:none;gap:10px}
+  @media(max-width:900px) and (pointer:coarse){ .mbtns{display:flex} .mbtns .btn{flex:1;padding:16px 8px;font-size:15px;font-weight:700;line-height:1.5} #scan-cam-row{display:none !important} .sg-cnt .cnt{font-size:44px} .sg-cnt{padding:8px 14px} }
   @media(max-width:900px){ .voltar{display:none !important} }
   @media (orientation:landscape) and (max-height:520px) and (pointer:coarse){ #gire-ovl{display:flex !important} }
 </style>
@@ -270,7 +272,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-59-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-60-1010</p>
   </div>
 </div>
 
@@ -362,6 +364,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="scan-grid">
           <div class="sg-acoes">
           <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><input id="mot-aqui" list="mot-lista" autocomplete="off" placeholder="digite ou escolha o motorista" onchange="escolherMotoristaAqui()"></div>
+          <div class="mbtns" id="mbtns"><button type="button" class="btn pri" id="mbtn-qr" onclick="abrirCamera()">▦<br>QR / Barras</button><button type="button" class="btn pri" onclick="digitarPacote()">⌨<br>Digitar pacote</button></div>
           <div class="manual" id="scan-manual-box">
             <div class="manual-row">
               <input type="text" id="scan-manual" placeholder="Bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter') registrarManual()" oninput="scanAuto()">
@@ -697,6 +700,7 @@ function abrirMesa(id){
   pintarCards(); salvarSessao();
   modoPreparar();
   setTimeout(function(){ var i=el('scan-manual'); if(i) focarScan(i); },50);
+  camAuto();
 }
 
 /* reconhece a transportadora pelo começo do código (só quando a caixinha está marcada) */
@@ -736,7 +740,7 @@ function escolherMotoristaAqui(){
   var campo=el('mot-aqui'), t=campo.value, novo=achaMot(t);
   if(t.trim()&&!novo){ aviso('Motorista não encontrado. Digite o nome completo ou escolha na lista.'); campo.value=(MOT&&MOT.id)?MOT.n:''; return; }
   MOT=novo||{id:'',n:''}; if(novo){ campo.value=novo.n; aviso('Motorista: '+novo.n); var i=el('scan-manual'); if(i) focarScan(i); }
-  salvarSessao();
+  salvarSessao(); if(novo) camAuto();
 }
 function motAquiMostrar(){
   var b=el('mot-aqui-box'), f=el('mot-aqui'); if(!b) return;
@@ -881,7 +885,7 @@ function ajustarModoTela(){
 function modoPreparar(){
   var ex=el('mo-extra'), xm=(MODO==='xml'); motAquiMostrar();
   el('scan-manual-box').style.display=''; el('scan-auto-box').style.display=(MODO==='entrada')?'':'none';
-  el('scan-cam-row').style.display=(MODO==='os')?'none':'';
+  el('scan-cam-row').style.display=(MODO==='os')?'none':''; var mq=el('mbtn-qr'); if(mq) mq.style.display=(MODO==='os')?'none':'';
   el('scan-manual').placeholder=(MODO==='os')?'Digite o número da OS (mín. 5 caracteres)':(xm?'Bipe a chave da NF (código de barras da nota, 44 números)':(MODO==='cte'?'Bipe a chave do CT-e (código de barras da DACTE, 44 números)':'Bipe ou digite o código'));
   el('btn-desfazer').style.display=(MODO==='entrada')?'':'none';
   var be=el('btn-encerrar'); if(be) be.style.display=(MODO==='devolucao'||MODO==='entrada'||MODO==='cte')?'none':'';   /* (50) entregas e (49) devolução: o aviso sonoro já confirma — cada bipe é registrado na hora, não precisa encerrar */
@@ -1260,6 +1264,10 @@ function bpMontaDetector(cb){
 
 /* (57) CÂMERA IGUAL À DO APP DO MOTORISTA: tela cheia, faixa de leitura larga, foco contínuo, zoom e lanterna; leitor do aparelho ou ZXing embutido. Fica aberta pra bipar um atrás do outro; a tela fica em pé (sem girar). */
 var CAM={st:null,tr:null,caps:{},zoomOn:false,luz:false,ult:'',q:0,lendo:false,timer:null};
+/* (60) celular: igual ao app do motorista — escolheu o motorista, a câmera já abre pra bipar; botões grandes QR / Barras e Digitar pacote */
+function ehCelular(){ try{ return window.matchMedia('(pointer:coarse)').matches && window.matchMedia('(max-width:900px)').matches; }catch(e){ return false; } }
+function camAuto(){ if(ehCelular() && ATIVA && MOT && MOT.id && MODO!=='os' && modoPedeMot() && !CAM.st && !TAM_ABERTO && !CTE_PEND) setTimeout(function(){ if(!CAM.st) abrirCamera(); },150); }
+function digitarPacote(){ if(!motOk()) return; var i=el('scan-manual'); if(i){ try{ i.scrollIntoView({block:'center'}); }catch(e){} i.focus(); } }
 function travarEmPe(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(e){} }
 function abrirCamera(){
   if(!ATIVA) return;
