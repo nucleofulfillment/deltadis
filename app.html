@@ -591,7 +591,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div style="text-align:center;font-size:12px;color:var(--muted2);font-weight:700;margin:2px 0 6px">— já tenho PIN —</div>
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-216-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-217-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2151,7 +2151,36 @@ function rlConcluir(){
   /* (153) conferência é opcional: sem leitor o motorista segue direto; nenhum pacote conferido = não marca ninguém como não localizado */
   var nada=(LOTE_ATUAL.length && f>=LOTE_ATUAL.length); if(nada) f=0;
   var _fl=[]; LOTE_ATUAL.forEach(function(q){ if(!rlConferido(q)) _fl.push('nº '+q.seq+' …'+String(q.cod).slice(-6)); });
-  if(f>0&&!confirm('Faltam '+f+' pacote'+(f===1?'':'s')+' sem bipar:\n'+_fl.slice(0,8).join('\n')+'\n\nEles serão marcados como NÃO LOCALIZADOS e saem da sua rota. Concluir?')) return;
+  if(f>0){   /* (v217) aviso dentro do app (o confirm do navegador podia nem aparecer) */
+    rlDialogo('⚠ Faltam '+f+' pacote'+(f===1?'':'s')+' para numerar','Você numerou '+(LOTE_ATUAL.length-f)+' de '+LOTE_ATUAL.length+'. Faltam:<br><b>'+_fl.slice(0,8).join('<br>')+'</b><br><br>Se seguir, '+(f===1?'esse pacote vira':'esses pacotes viram')+' <b>NÃO LOCALIZADO</b> e '+(f===1?'sai':'saem')+' da sua rota.',[{t:'Voltar e numerar',pri:true,fn:function(){}},{t:'Seguir mesmo assim',fn:function(){ rlConcluirFim(f); }}]);
+    return;
+  }
+  rlConcluirFim(f);
+}
+function rlDialogo(tit,msg,bts){
+  var o=el('rl-ask'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+  var d=document.createElement('div'); d.id='rl-ask'; d.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(31,10,61,.55);display:flex;align-items:center;justify-content:center;padding:22px';
+  var h='<div style="background:#fff;border-radius:20px;padding:22px 20px;max-width:400px;width:100%"><h3 style="margin:0 0 8px">'+tit+'</h3><p style="margin:0 0 16px;font-size:13.5px;line-height:1.45;color:var(--muted)">'+msg+'</p>', i;
+  for(i=0;i<bts.length;i++) h+='<button class="btn '+(bts[i].pri?'pri':'sec')+' wide" style="margin-top:8px" data-i="'+i+'">'+bts[i].t+'</button>';
+  d.innerHTML=h+'</div>'; document.body.appendChild(d);
+  Array.prototype.forEach.call(d.querySelectorAll('button[data-i]'),function(b){ b.onclick=function(){ var f=bts[+b.getAttribute('data-i')].fn; if(d.parentNode) d.parentNode.removeChild(d); try{ f(); }catch(e){} }; });
+}
+/* (v217) ao entrar na conferência: "Deseja numerar?" — Não = todos os pacotes ficam validados e a rota segue */
+function rlPerguntarNumerar(){
+  try{
+    if(!RP.preRota || RL.perguntou || !LOTE_ATUAL.length) return;
+    if(rlFalta()<=0) return;
+    RL.perguntou=true;
+    rlDialogo('🔢 Deseja numerar os pacotes?','Numerar é bipar cada pacote e escrever o número nele. Se você <b>não quiser numerar</b>, todos os pacotes ficam validados e você já vai para o próximo passo.',[
+      {t:'Sim, vou numerar',pri:true,fn:function(){}},
+      {t:'Não, seguir sem numerar',fn:function(){
+        LOTE_ATUAL.forEach(function(q){ RL.feitos[String(q.cod).toLowerCase()]=1; var j; for(j=0;j<(BP.meus||[]).length;j++) if(String(BP.meus[j].cod).toLowerCase()===String(q.cod).toLowerCase()) BP.meus[j].conf=true; });
+        try{ rotaGuardar(); }catch(e){}
+        rlConcluir();
+      }}]);
+  }catch(e){}
+}
+function rlConcluirFim(f){
   bpFecharCamera(); BP.camFn=null;
   var seguir=function(){ RP.preRota=false; rlContinuar(); };
   var depois=function(){
@@ -3154,7 +3183,7 @@ function rpComecar2(){
   var vlt=rpCfg().volta==='sim'; ROTA_KM=Math.round((vlt?r.totalKm:r.idaKm)*10)/10; ROTA_MIN=Math.round(vlt?r.totalMin:r.idaMin); RP.rota=r; RP.baseLL=RP.res.base||null; RP.ajustou=false;
   PONTEIRO=0; SAIU_TELA_CHEIA=false;
   if(RP.numFlag){ RP.numFlag=false; numCriar(); return; }
-  if(RP.preRota){ RL.ult=null; RL.feitos={}; try{ rlJuntarTodos(); }catch(e){} EST='rp_lista'; renderInicio(); return; }
+  if(RP.preRota){ RL.ult=null; RL.feitos={}; RL.perguntou=false; try{ rlJuntarTodos(); }catch(e){} EST='rp_lista'; renderInicio(); setTimeout(rlPerguntarNumerar,350); return; }
   try{ rpFixarNros(); }catch(eN){}
   EST='em_rota'; renderInicio();
 }
