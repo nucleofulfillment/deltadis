@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-69-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-70-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1572,7 +1572,7 @@ function srvAgendar(){
   if(SRV.timer) clearTimeout(SRV.timer);
   SRV.timer=setTimeout(function(){ SRV.timer=null; srvEnviar(); },3000);
 }
-function srvEnviar(cb){
+function srvEnviarDireto(cb){
   if(!SRV.pronto){ if(cb) cb(false); return; }
   if(SRV.env){ if(SRV.timer) clearTimeout(SRV.timer); SRV.timer=setTimeout(function(){ SRV.timer=null; srvEnviar(cb); },1500); return; }
   var b=srvBlocos(), ver=SRV.ver, lotes=[], cur={est:{},ped:{}}, tam=0, mudou={}, k, it, apagar=[], hk;
@@ -1609,6 +1609,61 @@ function srvEnviar(cb){
       if(cb) cb(false);
     });
   })();
+}
+/* ══ (70) VÁRIAS TELAS, MESMO LOGIN: antes cada tela guardava a própria cópia e a última a salvar apagava o que as outras tinham feito. Agora:
+   • a cada 15 s (aba visível e nada pendente de envio) a tela pergunta ao servidor se algum bloco de pedidos mudou e traz o que mudou;
+   • antes de enviar, se outra tela mexeu no mesmo bloco, junta os pedidos (nenhum some) e só então envia. ══ */
+function srvLinhaPed(a){ var p={cod:a[0], tr:a[1], mt:a[2], cliente:a[9]||'', bairro:a[10]||'', vl:(a[11]==null?null:a[11]), cep:a[12]||'', area:a[13]||'', fechId:a[14]||null, tel:a[15]||'', canal:a[16]||'', vend:a[17]||'', rua:a[18]||'', num:a[19]||'', comp:a[20]||'', bai:a[21]||'', cid:a[22]||'', endOrig:a[23]||'', st:a[3], t1:'', t2:'', scan:a[7]||a[0], dia:a[4], hora:a[5], obs:a[6], ent:a[8]}; try{ garantirEndereco(p); }catch(e){} return p; }
+function srvChaveDia(p){ return String(p.dia||'_').replace(/[^0-9A-Za-z_-]/g,'_').slice(0,40); }
+var SRV_FINAL={entregue:1,devolvido:1,extraviado:1};
+/* modo 'servidor': o servidor manda (tela sem nada pendente). modo 'juntar': une local + servidor (local vence, exceto status final vindo do servidor). */
+function srvMesclar(d,bases,modo){
+  var i, a, p, loc, mapa={}, mud=0, ehBase={}; bases.forEach(function(b){ ehBase[b]=1; });
+  if(modo==='servidor'){
+    PEDIDOS=PEDIDOS.filter(function(x){ return !ehBase[srvChaveDia(x)]; });
+    bases.forEach(function(b){ srvJuntar(d.ped,b).forEach(function(r){ PEDIDOS.push(srvLinhaPed(r)); mud++; }); });
+  } else {
+    for(i=0;i<PEDIDOS.length;i++){ mapa[PEDIDOS[i].cod]=PEDIDOS[i]; }
+    bases.forEach(function(b){ srvJuntar(d.ped,b).forEach(function(r){
+      loc=mapa[r[0]];
+      if(!loc){ p=srvLinhaPed(r); PEDIDOS.push(p); mapa[p.cod]=p; mud++; }
+      else if(SRV_FINAL[r[3]] && !SRV_FINAL[loc.st]){ p=srvLinhaPed(r); PEDIDOS[PEDIDOS.indexOf(loc)]=p; mapa[p.cod]=p; mud++; }
+    }); });
+  }
+  return mud;
+}
+function srvMudados(v){ var mud=[],k; for(k in v.h){ if(k.charAt(0)==='p' && SRV.hashes[k]!==v.h[k]) mud.push(k); } return mud; }
+function srvBasesDe(chaves){ var o={}; chaves.forEach(function(k){ o[k.slice(2).split('~')[0]]=1; }); return Object.keys(o); }
+var SYNC_P={rodando:false};
+function srvPuxar(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || SYNC_P.rodando || SRV.env || SRV.timer || srvPendente() || document.hidden) return;
+  SYNC_P.rodando=true;
+  fetch(DELTADIS_API+'/painel/versao',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(v){
+    if(!v||!v.ok) throw 0;
+    var mud=srvMudados(v); if(!mud.length){ SYNC_P.rodando=false; return; }
+    return fetch(DELTADIS_API+'/painel/tudo',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+      SYNC_P.rodando=false;
+      if(!d||!d.ok||!d.ped||SRV.env||SRV.timer||srvPendente()) return;
+      var n=srvMesclar(d,srvBasesDe(mud),'servidor'), k;
+      for(k in d.ped) SRV.hashes['p:'+k]=d.ped[k].h;
+      try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo();
+    });
+  }).catch(function(){ SYNC_P.rodando=false; });
+}
+setInterval(srvPuxar,15000);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) setTimeout(srvPuxar,500); });
+function srvEnviar(cb){
+  if(!SRV.pronto){ if(cb) cb(false); return; }
+  fetch(DELTADIS_API+'/painel/versao',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(v){
+    if(!v||!v.ok) throw 0;
+    var mud=srvMudados(v); if(!mud.length) return false;
+    return fetch(DELTADIS_API+'/painel/tudo',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+      if(!d||!d.ok||!d.ped) return false;
+      srvMesclar(d,srvBasesDe(mud),'juntar');
+      var k; for(k in d.ped) SRV.hashes['p:'+k]=d.ped[k].h;   /* a partir de agora partimos da versão do servidor (já juntada) */
+      try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); return true;
+    });
+  }).catch(function(){ return false; }).then(function(){ srvEnviarDireto(cb); });
 }
 function srvBarra(titulo,msg,botoes){
   var b=el('srv-bar'), h='<b>'+titulo+'</b>'+msg+'<br>', i;
