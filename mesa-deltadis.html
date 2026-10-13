@@ -204,6 +204,7 @@
   .mo-extra label{display:block;font-size:11.5px;font-weight:700;color:var(--muted2);margin:8px 0 4px}
   .mo-extra input[type=text]{width:100%;box-sizing:border-box;border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13.5px}
   .xml-it{border:1px solid var(--border2);border-radius:10px;padding:7px 10px;margin:5px 0;font-size:12.5px;background:#fff} .xml-it.er{border-color:#F3C9C9;background:#FCEBEB}
+  @media(max-width:900px){ .voltar{display:none !important} }
   @media (orientation:landscape) and (max-height:520px) and (pointer:coarse){ #gire-ovl{display:flex !important} }
 </style>
 </head>
@@ -269,7 +270,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-58-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-59-1010</p>
   </div>
 </div>
 
@@ -358,9 +359,9 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
         <div id="scan-conteudo" style="display:none">
           <h3 id="scan-nome">—</h3>
-          <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><input id="mot-aqui" list="mot-lista" autocomplete="off" placeholder="digite ou escolha o motorista" onchange="escolherMotoristaAqui()"></div>
           <div class="scan-grid">
           <div class="sg-acoes">
+          <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><input id="mot-aqui" list="mot-lista" autocomplete="off" placeholder="digite ou escolha o motorista" onchange="escolherMotoristaAqui()"></div>
           <div class="manual" id="scan-manual-box">
             <div class="manual-row">
               <input type="text" id="scan-manual" placeholder="Bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter') registrarManual()" oninput="scanAuto()">
@@ -608,6 +609,8 @@ function aviso(t){var e=el('toast'); e.textContent=t; e.classList.add('on');
   clearTimeout(window._tt); window._tt=setTimeout(function(){e.classList.remove('on');},2600);}
 
 
+/* (59) celular: o teclado só abre quando a pessoa toca no campo (a câmera é o jeito de bipar) */
+function focarScan(i){ try{ if(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches) return; }catch(e){} if(i) i.focus(); }
 var CARDS_EXP=false;   /* (58) celular: com transportadora escolhida, só ela aparece; o + abre a lista de novo */
 function cardsExpandir(){ CARDS_EXP=true; pintarCards(); }
 function pintarCards(){
@@ -693,7 +696,7 @@ function abrirMesa(id){
   
   pintarCards(); salvarSessao();
   modoPreparar();
-  setTimeout(function(){ var i=el('scan-manual'); if(i) i.focus(); },50);
+  setTimeout(function(){ var i=el('scan-manual'); if(i) focarScan(i); },50);
 }
 
 /* reconhece a transportadora pelo começo do código (só quando a caixinha está marcada) */
@@ -732,7 +735,7 @@ function motOk(){
 function escolherMotoristaAqui(){
   var campo=el('mot-aqui'), t=campo.value, novo=achaMot(t);
   if(t.trim()&&!novo){ aviso('Motorista não encontrado. Digite o nome completo ou escolha na lista.'); campo.value=(MOT&&MOT.id)?MOT.n:''; return; }
-  MOT=novo||{id:'',n:''}; if(novo){ campo.value=novo.n; aviso('Motorista: '+novo.n); var i=el('scan-manual'); if(i) i.focus(); }
+  MOT=novo||{id:'',n:''}; if(novo){ campo.value=novo.n; aviso('Motorista: '+novo.n); var i=el('scan-manual'); if(i) focarScan(i); }
   salvarSessao();
 }
 function motAquiMostrar(){
@@ -755,7 +758,7 @@ function pedirTamanho(rotulo,cb){
 function tamEscolher(t){
   var o=el('tam-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o);
   TAM_ABERTO=false; var cb=TAM_CB; TAM_CB=null;
-  var i=el('scan-manual'); if(i){ i.value=''; i.focus(); }
+  var i=el('scan-manual'); if(i){ i.value=''; focarScan(i); }
   if(cb) cb(t);
 }
 function registrarPacote(cod){
@@ -814,7 +817,7 @@ function registrarManual(){
   if(!ATIVA) return;
   var inp=el('scan-manual'), val=(inp.value||'').trim();
   if(!val){ aviso('Digite ou bipe o código'); return; }
-  registrarPacote(val); inp.value=''; inp.focus();
+  registrarPacote(val); inp.value=''; focarScan(inp);
 }
 
 function desfazerUltimo(){
@@ -858,7 +861,7 @@ function pintarModos(){
     sb.innerHTML=hs; sb.style.display='flex';
   } else { sb.innerHTML=''; sb.style.display='none'; }
 }
-function devMotivo(m){ DEV_MOT=m; pintarModos(); var i=el('scan-manual'); if(i&&ATIVA) i.focus(); }
+function devMotivo(m){ DEV_MOT=m; pintarModos(); var i=el('scan-manual'); if(i&&ATIVA) focarScan(i); }
 function trocarModo(m){
   if(m===MODO){ if(m==='esquecido'&&!ATIVA) abrirEsquecido(); return; }
   if(MODO==='os'&&OS_LOTE.length){ if(!confirm('Há '+OS_LOTE.length+' OS na lista que ainda NÃO foram criadas. Se trocar de modo, a lista se perde. Trocar mesmo?')) return; OS_LOTE=[]; CNT=0; }
@@ -878,7 +881,7 @@ function ajustarModoTela(){
 function modoPreparar(){
   var ex=el('mo-extra'), xm=(MODO==='xml'); motAquiMostrar();
   el('scan-manual-box').style.display=''; el('scan-auto-box').style.display=(MODO==='entrada')?'':'none';
-  el('scan-cam-row').style.display=(xm||MODO==='os')?'none':'';
+  el('scan-cam-row').style.display=(MODO==='os')?'none':'';
   el('scan-manual').placeholder=(MODO==='os')?'Digite o número da OS (mín. 5 caracteres)':(xm?'Bipe a chave da NF (código de barras da nota, 44 números)':(MODO==='cte'?'Bipe a chave do CT-e (código de barras da DACTE, 44 números)':'Bipe ou digite o código'));
   el('btn-desfazer').style.display=(MODO==='entrada')?'':'none';
   var be=el('btn-encerrar'); if(be) be.style.display=(MODO==='devolucao'||MODO==='entrada'||MODO==='cte')?'none':'';   /* (50) entregas e (49) devolução: o aviso sonoro já confirma — cada bipe é registrado na hora, não precisa encerrar */
@@ -910,7 +913,7 @@ function devolverEnviar(cod,m){
     CNT++; el('scan-cnt').textContent=CNT; somBipeOk();
     mostrarUlt('ok','✔ Na base — '+nome+(d.paga?' · 💰 3ª tentativa (vai pro financeiro)':''),d.cod||cod);
   }).catch(function(){ somErro(); mostrarUlt('err','Sem conexão. Esse pacote NÃO foi registrado — bipe de novo.',cod); });
-  var i1=el('scan-manual'); if(i1) i1.focus();
+  var i1=el('scan-manual'); if(i1) focarScan(i1);
 }
 /* DEVOLUÇÃO: a transportadora o sistema já sabe pelo pedido — basta o motorista e o motivo */
 function abrirDevolucao(){
@@ -918,14 +921,14 @@ function abrirDevolucao(){
   ATIVA={id:'dev',n:'Devolução',hoje:0};
   el('scan-cnt').textContent=CNT; el('scan-vazio').style.display='none'; el('scan-conteudo').style.display='block';
   modoPreparar();
-  setTimeout(function(){ var i=el('scan-manual'); if(i) i.focus(); },50);
+  setTimeout(function(){ var i=el('scan-manual'); if(i) focarScan(i); },50);
 }
 /* ESQUECIDO */
 function abrirEsquecido(){
   ATIVA={id:'esq',n:'Esquecido na base',hoje:0};
   el('scan-cnt').textContent=CNT; el('scan-vazio').style.display='none'; el('scan-conteudo').style.display='block';
   modoPreparar(); carregarEsquecidos();
-  setTimeout(function(){ var i=el('scan-manual'); if(i) i.focus(); },50);
+  setTimeout(function(){ var i=el('scan-manual'); if(i) focarScan(i); },50);
 }
 function esquecerPacote(cod){
   api('/mesa/esquecido',{method:'POST',body:JSON.stringify({cod:cod})}).then(function(d){
@@ -963,7 +966,7 @@ function osBiparAbrir(cod){
   OS_PEND=cod; el('osm-cod').textContent=cod; el('osm-cliente').value=''; el('osm-cep').value=''; el('osm-num').value='';
   el('os-overlay').classList.add('on'); setTimeout(function(){ el('osm-cliente').focus(); },60);
 }
-function osModalCancelar(){ el('os-overlay').classList.remove('on'); OS_PEND=''; var i=el('scan-manual'); if(i){ i.value=''; i.focus(); } }
+function osModalCancelar(){ el('os-overlay').classList.remove('on'); OS_PEND=''; var i=el('scan-manual'); if(i){ i.value=''; focarScan(i); } }
 function osModalOk(){
   if(!OS_PEND||!ATIVA) return;
   var cod=OS_PEND; OS_PEND='';
@@ -972,7 +975,7 @@ function osModalOk(){
   CNT=OS_LOTE.length; el('scan-cnt').textContent=CNT; somBipeOk();
   mostrarUlt('ok','✔ Na lista — ainda não criada. Toque em Encerrar contagem para criar.',cod);
   osPintarLista();
-  var i=el('scan-manual'); if(i){ i.value=''; i.focus(); }
+  var i=el('scan-manual'); if(i){ i.value=''; focarScan(i); }
 }
 function osRemover(cod){
   var i; for(i=0;i<OS_LOTE.length;i++) if(OS_LOTE[i].cod===cod){ OS_LOTE.splice(i,1); break; }
@@ -1129,7 +1132,7 @@ function cteMascara(inp){
   var int=d.slice(0,-2).replace(/\B(?=(\d{3})+(?!\d))/g,'.'), cen=d.slice(-2);
   inp.value='R$ '+int+','+cen;
 }
-function cteCancelar(){ CTE_PEND=null; var o=el('cte-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o); var i=el('scan-manual'); if(i) i.focus(); }
+function cteCancelar(){ CTE_PEND=null; var o=el('cte-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o); var i=el('scan-manual'); if(i) focarScan(i); }
 function cteRegistrar(){
   if(CTE_BUSY||!CTE_PEND||!ATIVA) return;
   var ch=CTE_PEND, fixo=(CTE_MODO==='fixo'), v=Number(cteCentavos((el('cte-valor')||{}).value))/100, m=el('cte-msg');
