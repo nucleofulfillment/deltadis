@@ -131,7 +131,7 @@
   .manual-row button:hover{filter:brightness(1.05)}
   .divisor{height:1px;background:var(--border);margin:10px 0}
 
-  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--text);color:#fff;padding:11px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:.2s;z-index:100;pointer-events:none}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--text);color:#fff;padding:11px 18px;border-radius:99px;font-size:13px;font-weight:600;opacity:0;transition:.2s;z-index:30000;pointer-events:none}
   .toast.on{opacity:1;transform:translate(-50%,0)}
 
   /* ══ modal Romaneio de Carga ══ */
@@ -204,6 +204,11 @@
   .mo-extra label{display:block;font-size:11.5px;font-weight:700;color:var(--muted2);margin:8px 0 4px}
   .mo-extra input[type=text]{width:100%;box-sizing:border-box;border:1px solid var(--border2);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13.5px}
   .xml-it{border:1px solid var(--border2);border-radius:10px;padding:7px 10px;margin:5px 0;font-size:12.5px;background:#fff} .xml-it.er{border-color:#F3C9C9;background:#FCEBEB}
+  #scan-conteudo.sem-mot #scan-manual-box,#scan-conteudo.sem-mot #scan-auto-box,#scan-conteudo.sem-mot #mbtns,#scan-conteudo.sem-mot #tam-bar,#scan-conteudo.sem-mot #scan-cam-row{display:none !important}
+  .tam-bar{display:none;align-items:center;gap:8px}
+  .tam-bar span{font-size:12px;font-weight:800;color:var(--muted2);text-transform:uppercase;letter-spacing:.5px;margin-right:2px}
+  .tam-b{flex:1;font-size:22px;font-weight:800;padding:12px 0;border-radius:12px;border:2px solid #C4B5FD;background:#fff;color:#6D28D9;cursor:pointer;font-family:inherit}
+  .tam-b.on{background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-color:transparent}
   .mbtns{display:none;gap:10px}
   @media(max-width:900px) and (pointer:coarse){ .mbtns{display:flex} .mbtns .btn{flex:1;padding:16px 8px;font-size:15px;font-weight:700;line-height:1.5} #scan-cam-row{display:none !important} .sg-cnt .cnt{font-size:44px} .sg-cnt{padding:8px 14px} }
   @media(max-width:900px){ .voltar{display:none !important} }
@@ -272,7 +277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-60-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-62-1010</p>
   </div>
 </div>
 
@@ -363,8 +368,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <h3 id="scan-nome">—</h3>
           <div class="scan-grid">
           <div class="sg-acoes">
-          <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><input id="mot-aqui" list="mot-lista" autocomplete="off" placeholder="digite ou escolha o motorista" onchange="escolherMotoristaAqui()"></div>
+          <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><select id="mot-aqui" onchange="escolherMotoristaAqui()"><option value="">Escolha o motorista…</option></select></div>
+          <div id="mot-hint" style="display:none;text-align:center;font-weight:700;color:#6D28D9;padding:10px 6px">Escolha o motorista para liberar a bipagem.</div>
           <div class="mbtns" id="mbtns"><button type="button" class="btn pri" id="mbtn-qr" onclick="abrirCamera()">▦<br>QR / Barras</button><button type="button" class="btn pri" onclick="digitarPacote()">⌨<br>Digitar pacote</button></div>
+          <div class="tam-bar" id="tam-bar"><span>Tamanho</span><button type="button" class="tam-b on" data-t="P" onclick="tamSel('P')">P</button><button type="button" class="tam-b" data-t="M" onclick="tamSel('M')">M</button><button type="button" class="tam-b" data-t="G" onclick="tamSel('G')">G</button></div>
           <div class="manual" id="scan-manual-box">
             <div class="manual-row">
               <input type="text" id="scan-manual" placeholder="Bipe ou digite o código" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key==='Enter') registrarManual()" oninput="scanAuto()">
@@ -613,6 +620,12 @@ function aviso(t){var e=el('toast'); e.textContent=t; e.classList.add('on');
 
 
 /* (59) celular: o teclado só abre quando a pessoa toca no campo (a câmera é o jeito de bipar) */
+function trancarTeclado(){
+  if(!(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches)) return;
+  var i=el('scan-manual'); if(!i||i.getAttribute('data-tk')) return; i.setAttribute('data-tk','1'); i.readOnly=true;
+  i.addEventListener('pointerdown',function(){ i.readOnly=false; });
+  i.addEventListener('blur',function(){ i.readOnly=true; });
+}
 function focarScan(i){ try{ if(window.matchMedia&&window.matchMedia('(pointer:coarse)').matches) return; }catch(e){} if(i) i.focus(); }
 var CARDS_EXP=false;   /* (58) celular: com transportadora escolhida, só ela aparece; o + abre a lista de novo */
 function cardsExpandir(){ CARDS_EXP=true; pintarCards(); }
@@ -672,7 +685,7 @@ function carregarMotoristas(){
     var s=el('mot-sel'), h='', i;
     MOTS=(d&&d.ok&&d.motoristas)||[];
     for(i=0;i<MOTS.length;i++) h+='<option value="'+esc(MOTS[i].n)+'"></option>';
-    el('mot-lista').innerHTML=h;
+    el('mot-lista').innerHTML=h; motAquiOpcoes();
     s.placeholder=MOTS.length?'digite ou escolha o motorista':'Nenhum motorista cadastrado no painel';
     if(!ATIVA) restaurarSessao();
   }).catch(function(){ el('mot-sel').placeholder='Não consegui carregar os motoristas'; });
@@ -691,7 +704,7 @@ function escolherMotorista(){
 }
 function abrirMesa(id){
   var t=achaTr(id); if(!t) return;
-  CARDS_EXP=false; ATIVA=t;
+  CARDS_EXP=false; ATIVA=t; TAM_SEL='P';
   el('scan-nome').textContent=tituloScan();
   el('scan-cnt').textContent=CNT;
   el('scan-vazio').style.display='none';
@@ -727,7 +740,10 @@ function bipReverter(p,tr,cod,sid){
   el('scan-cnt').textContent=CNT; pintarCards(); salvarSessao();
 }
 /* (56) MOTORISTA NA CARGA + TAMANHO DO PACOTE: em Entregas, XML, OS e CT-e escolhe o motorista antes de bipar e, a cada pacote, informa P, M ou G (o motorista recebe base + adicional do tamanho) */
-var TAM_ABERTO=false, TAM_CB=null;
+var TAM_ABERTO=false, TAM_CB=null, TAM_SEL='P';
+/* (62) tamanho PRÉ-SELECIONADO: começa em P e vale pra todos os bipes até a pessoa tocar em M ou G */
+function tamPintar(){ var bs=document.querySelectorAll('.tam-b'), i; for(i=0;i<bs.length;i++) bs[i].classList.toggle('on',bs[i].getAttribute('data-t')===TAM_SEL); }
+function tamSel(t){ TAM_SEL=t; tamPintar(); }
 function modoPedeMot(){ return MODO==='entrada'||MODO==='xml'||MODO==='os'||MODO==='cte'; }
 function motOk(){
   if(!modoPedeMot()) return true;
@@ -736,16 +752,30 @@ function motOk(){
   var f=el('mot-aqui'); if(f) f.focus();
   return false;
 }
+function motAquiOpcoes(){
+  var f=el('mot-aqui'); if(!f) return;
+  var h='<option value="">Escolha o motorista…</option>', i;
+  for(i=0;i<MOTS.length;i++) h+='<option value="'+esc(String(MOTS[i].id))+'">'+esc(MOTS[i].n)+'</option>';
+  f.innerHTML=h; f.value=(MOT&&MOT.id)?String(MOT.id):'';
+}
 function escolherMotoristaAqui(){
-  var campo=el('mot-aqui'), t=campo.value, novo=achaMot(t);
-  if(t.trim()&&!novo){ aviso('Motorista não encontrado. Digite o nome completo ou escolha na lista.'); campo.value=(MOT&&MOT.id)?MOT.n:''; return; }
-  MOT=novo||{id:'',n:''}; if(novo){ campo.value=novo.n; aviso('Motorista: '+novo.n); var i=el('scan-manual'); if(i) focarScan(i); }
-  salvarSessao(); if(novo) camAuto();
+  var f=el('mot-aqui'), id=f.value, novo=null, i;
+  for(i=0;i<MOTS.length;i++){ if(String(MOTS[i].id)===String(id)){ novo=MOTS[i]; break; } }
+  MOT=novo||{id:'',n:''};
+  if(novo) aviso('Motorista: '+novo.n);
+  salvarSessao(); aplicarGate(); if(novo) camAuto();
+}
+function aplicarGate(){   /* (61) só libera a bipagem com motorista vinculado */
+  var c=el('scan-conteudo'), h=el('mot-hint'), fecha=!!(modoPedeMot()&&ATIVA&&!(MOT&&MOT.id));
+  if(c) c.classList.toggle('sem-mot',fecha);
+  if(h) h.style.display=fecha?'':'none';
 }
 function motAquiMostrar(){
   var b=el('mot-aqui-box'), f=el('mot-aqui'); if(!b) return;
-  b.style.display=modoPedeMot()?'':'none';
-  if(f) f.value=(MOT&&MOT.id)?MOT.n:'';
+  b.style.display=modoPedeMot()?'':'none'; var tb=el('tam-bar'); if(tb) tb.style.display=modoPedeMot()?'flex':'none'; tamPintar();
+  if(f&&f.options.length-1!==MOTS.length) motAquiOpcoes();
+  if(f) f.value=(MOT&&MOT.id)?String(MOT.id):'';
+  aplicarGate();
 }
 function pedirTamanho(rotulo,cb){
   if(TAM_ABERTO) return false;
@@ -783,11 +813,7 @@ function registrarPacote(cod){
     if(dt && dt.id!==tr.id){ tr=dt; ATIVA=dt; el('scan-nome').textContent=tituloScan(); pintarCards(); aviso('Transportadora trocada para '+dt.n); salvarSessao(); }
   }
   if(VISTOS[cod]){ somErro(); mostrarUlt('rep','Já bipado nesta contagem ('+VISTOS[cod].tn+', '+VISTOS[cod].hora+')',cod); return; }
-  pedirTamanho('Pacote '+cod+' · '+tr.n,function(tam){
-    if(!tam) return;
-    if(VISTOS[cod]) return;
-    registrarPacoteOk(cod,tr,tam);
-  });
+  registrarPacoteOk(cod,tr,TAM_SEL);
 }
 function registrarPacoteOk(cod,tr,tam){
   var sid=SESS_BIP, mot=MOT, ag=new Date(), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2)+':'+('0'+ag.getSeconds()).slice(-2);
@@ -871,7 +897,7 @@ function trocarModo(m){
   if(MODO==='os'&&OS_LOTE.length){ if(!confirm('Há '+OS_LOTE.length+' OS na lista que ainda NÃO foram criadas. Se trocar de modo, a lista se perde. Trocar mesmo?')) return; OS_LOTE=[]; CNT=0; }
   if(ATIVA && CNT>0 && !confirm('Trocar de modo encerra a contagem atual ('+CNT+' pacotes). Os pacotes já bipados continuam salvos. Trocar?')) return;
   if(ATIVA) encerrar();
-  MODO=m; XML_LOTE=[]; CTE_LOTE=[]; DEV_MOT=''; ajustarModoTela(); pintarCards();
+  MODO=m; XML_LOTE=[]; CTE_LOTE=[]; DEV_MOT=''; TAM_SEL='P'; ajustarModoTela(); pintarCards();
   if(m==='esquecido') abrirEsquecido();
   if(m==='devolucao'&&MOT) abrirDevolucao();
 }
@@ -964,7 +990,7 @@ var OS_TAM='';
 function osBipar(cod){
   var i; for(i=0;i<OS_LOTE.length;i++) if(OS_LOTE[i].cod===cod){ somErro(); mostrarUlt('rep','Essa OS já está na lista',cod); return; }
   if(!motOk()) return;
-  pedirTamanho('OS '+cod,function(tam){ if(!tam) return; OS_TAM=tam; osBiparAbrir(cod); });
+  OS_TAM=TAM_SEL; osBiparAbrir(cod);
 }
 function osBiparAbrir(cod){
   OS_PEND=cod; el('osm-cod').textContent=cod; el('osm-cliente').value=''; el('osm-cep').value=''; el('osm-num').value='';
@@ -1104,9 +1130,9 @@ function cteBipar(cod){
   somBipeOk(); cteAbrirValor(ch);
 }
 var CTE_MODO='pct', CTE_TAM='';
-function cteTam(t){ CTE_TAM=t; ['P','M','G'].forEach(function(k){ var b=el('cte-t-'+k); if(b) b.className='btn '+(k===t?'pri':'sec'); }); var m=el('cte-msg'); if(m) m.textContent=''; var v=el('cte-valor'); if(v) v.focus(); }
+function cteTam(t){ CTE_TAM=t; TAM_SEL=t; tamPintar(); ['P','M','G'].forEach(function(k){ var b=el('cte-t-'+k); if(b) b.className='btn '+(k===t?'pri':'sec'); }); var m=el('cte-msg'); if(m) m.textContent=''; var v=el('cte-valor'); if(v) v.focus(); }
 function cteAbrirValor(ch){
-  CTE_PEND=ch; CTE_MODO='pct'; CTE_TAM=''; var o=el('cte-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+  CTE_PEND=ch; CTE_MODO='pct'; CTE_TAM=TAM_SEL; var o=el('cte-ovl'); if(o&&o.parentNode) o.parentNode.removeChild(o);
   var tr=ATIVA||{};
   o=document.createElement('div'); o.id='cte-ovl'; o.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(31,10,61,.55);display:flex;align-items:center;justify-content:center;padding:20px';
   o.innerHTML='<div style="background:#fff;border-radius:20px;padding:22px 20px;max-width:380px;width:100%"><h3 style="margin:0 0 4px">📄 Como cobrar este CT-e?</h3>'+
@@ -1120,7 +1146,7 @@ function cteAbrirValor(ch){
     '<p id="cte-msg" style="min-height:18px;margin:8px 0 0;font-size:12.5px;color:#c0392b;font-weight:700"></p>'+
     '<button class="btn pri wide" id="cte-ok" style="margin-top:6px" onclick="cteRegistrar()">Registrar</button>'+
     '<button class="btn sec wide" style="margin-top:8px" onclick="cteCancelar()">Cancelar</button></div>';
-  document.body.appendChild(o); setTimeout(function(){ var v=el('cte-valor'); if(v) v.focus(); },80);
+  document.body.appendChild(o); cteTam(TAM_SEL); setTimeout(function(){ var v=el('cte-valor'); if(v) v.focus(); },80);
 }
 function cteModo(m){
   CTE_MODO=m; var p=el('cte-m-pct'), f=el('cte-m-fixo'), r=el('cte-rot'), msg=el('cte-msg'), v=el('cte-valor');
@@ -1162,12 +1188,8 @@ function xmlBipar(cod){
   for(var i=0;i<XML_LOTE.length;i++){ if(XML_LOTE[i].chave===ch){ somErro(); mostrarUlt('rep','Essa nota já foi bipada nesta lista',ch); return; } }
   if(!motOk()) return;
   var nfB=String(parseInt(ch.slice(25,34),10)||'');
-  pedirTamanho('NF '+nfB+' · '+tituloScan(),function(tam){
-    if(!tam) return;
-    for(var j=0;j<XML_LOTE.length;j++){ if(XML_LOTE[j].chave===ch) return; }
-    var o={chave:ch,nf:nfB,estado:'buscando',arq:'chave '+ch.slice(25,34),tam:tam};
-    XML_LOTE.push(o); somBipeOk(); xmlPrev(); NF_FILA.push(o); xmlFila();
-  });
+  var o={chave:ch,nf:nfB,estado:'buscando',arq:'chave '+ch.slice(25,34),tam:TAM_SEL};
+  XML_LOTE.push(o); somBipeOk(); xmlPrev(); NF_FILA.push(o); xmlFila();
 }
 function xmlFila(){   /* uma consulta por vez: o Meu Danfe bloqueia a conta se pedirem rápido demais */
   if(NF_RODANDO||!NF_FILA.length) return; NF_RODANDO=true;
@@ -1183,17 +1205,8 @@ function xmlArqFim(){
   var vs={}, novos=[]; XML_LOTE.forEach(function(x){ if(x.erro||x.estado) return; if(vs[x.nf]){ x.erro='nota repetida na seleção'; return; } vs[x.nf]=1; novos.push(x); }); xmlPrev();
   if(!novos.length) return;
   if(!motOk()){ novos.forEach(function(x){ x.erro='escolha o motorista e selecione de novo'; }); xmlPrev(); return; }
-  var k=0, ok=[];
-  (function prox(){
-    if(k>=novos.length){ if(ok.length) xmlEnviar(ok); return; }
-    var x=novos[k];
-    if(x.tam){ ok.push(x); k++; return prox(); }
-    var abriu=pedirTamanho('NF '+x.nf+' ('+(k+1)+' de '+novos.length+')',function(tam){
-      if(!tam){ x.erro='sem tamanho — não registrada'; } else { x.tam=tam; ok.push(x); }
-      k++; xmlPrev(); setTimeout(prox,30);
-    });
-    if(abriu===false) setTimeout(prox,200);
-  })();
+  novos.forEach(function(x){ x.tam=TAM_SEL; });
+  xmlEnviar(novos);
 }
 function xmlPrev(){
   var h='', i, x, vistos={}, ok=0, busc=0, ac, end;
@@ -1267,10 +1280,11 @@ var CAM={st:null,tr:null,caps:{},zoomOn:false,luz:false,ult:'',q:0,lendo:false,t
 /* (60) celular: igual ao app do motorista — escolheu o motorista, a câmera já abre pra bipar; botões grandes QR / Barras e Digitar pacote */
 function ehCelular(){ try{ return window.matchMedia('(pointer:coarse)').matches && window.matchMedia('(max-width:900px)').matches; }catch(e){ return false; } }
 function camAuto(){ if(ehCelular() && ATIVA && MOT && MOT.id && MODO!=='os' && modoPedeMot() && !CAM.st && !TAM_ABERTO && !CTE_PEND) setTimeout(function(){ if(!CAM.st) abrirCamera(); },150); }
-function digitarPacote(){ if(!motOk()) return; var i=el('scan-manual'); if(i){ try{ i.scrollIntoView({block:'center'}); }catch(e){} i.focus(); } }
+function digitarPacote(){ if(!motOk()) return; var i=el('scan-manual'); if(i){ i.readOnly=false; try{ i.scrollIntoView({block:'center'}); }catch(e){} i.focus(); } }
 function travarEmPe(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(e){} }
 function abrirCamera(){
   if(!ATIVA) return;
+  if(!motOk()) return;
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ aviso('Este aparelho não lê código pela câmera aqui. Use o leitor ou digite o código.'); return; }
   bpMontaDetector(function(det){
   if(!det){ aviso('Câmera de leitura indisponível neste aparelho.'); return; }
@@ -1284,8 +1298,9 @@ function abrirCamera(){
         '<i style="'+cn+'left:0;top:0;border-right:0;border-bottom:0;border-radius:10px 0 0 0"></i><i style="'+cn+'right:0;top:0;border-left:0;border-bottom:0;border-radius:0 10px 0 0"></i><i style="'+cn+'left:0;bottom:0;border-right:0;border-top:0;border-radius:0 0 0 10px"></i><i style="'+cn+'right:0;bottom:0;border-left:0;border-top:0;border-radius:0 0 10px 0"></i>'+
         '<div style="position:absolute;left:4%;right:4%;top:50%;height:2px;background:rgba(236,72,153,.85)"></div></div>'+
       '<div style="position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 0;display:flex;justify-content:space-between;align-items:center"><button class="btn sec" style="padding:8px 14px" onclick="fecharCamera()">✕ Fechar</button><span style="display:flex;gap:8px"><button id="bp-zoom" class="btn sec" style="padding:8px 14px;display:none" onclick="camZoom()">1x</button><button id="bp-luz" class="btn sec" style="padding:8px 14px;display:none" onclick="camLuz()">🔦</button></span></div>'+
+      '<div style="position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);display:flex;gap:10px;padding:0 16px">'+['P','M','G'].map(function(k){ return '<button type="button" class="tam-b" data-t="'+k+'" onclick="tamSel(\''+k+'\')" style="background-clip:padding-box">'+k+'</button>'; }).join('')+'</div>'+
       '<div id="bp-caminfo" style="position:absolute;left:0;right:0;bottom:0;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 22px);color:#fff;font-size:14px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.7))">Aponte para o código de barras da etiqueta</div>';
-    document.body.appendChild(ov); var v=el('bp-vid'); v.srcObject=st; v.play().catch(function(){});
+    document.body.appendChild(ov); tamPintar(); try{ if(document.activeElement&&document.activeElement.blur) document.activeElement.blur(); }catch(e){} var v=el('bp-vid'); v.srcObject=st; v.play().catch(function(){});
     try{ var de=document.documentElement; if(de.requestFullscreen&&!document.fullscreenElement) de.requestFullscreen().then(travarEmPe).catch(travarEmPe); else travarEmPe(); }catch(e){ travarEmPe(); }
     var tr=st.getVideoTracks()[0], caps={}; try{ caps=(tr.getCapabilities&&tr.getCapabilities())||{}; }catch(e){}
     try{ if(caps.focusMode && caps.focusMode.indexOf('continuous')>=0) tr.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){}); }catch(e){}
@@ -1318,7 +1333,7 @@ function fecharCamera(){
   if(tinha){ try{ if(document.fullscreenElement&&document.exitFullscreen) document.exitFullscreen().catch(function(){}); }catch(e){} }
 }
 /* (57) celular: tenta manter a tela em pé; se o aparelho não deixar travar, pede pra desvirar */
-travarEmPe();
+travarEmPe(); trancarTeclado();
 
 /* ══ Romaneios de entrada — vêm do servidor (ficam salvos), agrupados por motorista e transportadora ══ */
 function hojeLocalDe(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
