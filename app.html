@@ -591,7 +591,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div style="text-align:center;font-size:12px;color:var(--muted2);font-weight:700;margin:2px 0 6px">— já tenho PIN —</div>
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-220-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-222-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1969,11 +1969,19 @@ function bpAtualizar(){
     uh='<div style="border:1px solid '+cor[1]+';background:'+cor[0]+';color:'+cor[2]+';border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px">'+BP.ult.m+(BP.ult.cod?'<b style="display:block;font-size:15px;margin-top:3px;word-break:break-all">'+cpCod(BP.ult.cod)+'</b>':'')+'</div>'; }
   var big='';
   if(BP.ult&&BP.ult.num) big='<div style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-radius:18px;padding:14px 12px;text-align:center;margin:0 0 12px"><div style="font-size:13px;opacity:.9">Escreva este número no pacote</div><div style="font-size:84px;font-weight:800;line-height:1.05">'+BP.ult.num+'</div><div style="font-size:12px;opacity:.9;margin-top:2px;cursor:pointer" onclick="bpVoz()">'+(NUM.voz?'🔊 Voz ligada (toque para desligar)':'🔇 Voz desligada (toque para ligar)')+'</div></div>';
-  u.innerHTML=big+uh+bpMesaHtml();
+  u.innerHTML=big+uh; var mz=el('bp-mesa'); if(mz) mz.innerHTML=bpMesaHtml();
   var h='', i, n=BP.meus.length;
   if(!n) h='<div class="empty">Nenhum pacote bipado ainda</div>';
   for(i=n-1;i>=0;i--){ BP.meus[i].n=i+1; h+=bpItemHtml(BP.meus[i]); }
   l.innerHTML=h;
+}
+/* (221) o pacote é MEU se a Mesa me entregou ou se o nome do dono é o meu (evita o aviso errado "registrado para <eu mesmo>") */
+function bpEhMeu(e,canon){
+  var i,k=String(canon||'').toLowerCase(),s=String(e&&e.s||'').toLowerCase(),M=BP.mesa||[];
+  for(i=0;i<M.length;i++){ var c=String(M[i].cod||'').toLowerCase(); if(c&&(c===k||c===s)) return true; }
+  function nn(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  var a=nn(e&&e.d),b=nn(RP.mtn),u=nn(DD_M_USER&&DD_M_USER.nome);
+  return !!a&&(a===b||a===u);
 }
 function bpBipar(v){
   var cod=bpNorm(v); if(!cod) return;
@@ -1990,7 +1998,7 @@ function bpBipar(v){
     }
     somErroBip(); BP.ult={t:'rep',m:'Você já bipou este pacote.',cod:canon,num:ex.num||0}; bpAtualizar(); return; }
   if(BP.outros[canon.toLowerCase()]){ somErroBip(); BP.ult={t:'err',m:'Este pacote já foi bipado por '+esc(BP.outros[canon.toLowerCase()])+'.',cod:canon}; bpAtualizar(); return; }
-  if(e && e.m && String(e.m)!==String(RP.mt)){ somErroBip(); BP.ult={t:'err',m:'Este pacote está registrado para '+esc(e.d||'outro motorista')+'. Fale com a Mesa.',cod:canon}; bpAtualizar(); return; }
+  if(e && e.m && String(e.m)!==String(RP.mt) && !bpEhMeu(e,canon)){ somErroBip(); BP.ult={t:'err',m:'Este pacote está registrado para '+esc(e.d||'outro motorista')+'. Fale com a Mesa.',cod:canon}; bpAtualizar(); return; }
   /* otimista: mostra o pacote na hora e confirma com o servidor em segundo plano; se o servidor recusar, tira da lista e avisa */
   var NAO=(rpCfg().rota==='nao'), item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};
   if(e&&e.a&&e.a[0]&&e.a[1]&&e.a[4]){ item.d={cep:e.a[5]||'',num:e.a[1],comp:e.a[2]||'',rua:e.a[0],bai:e.a[3]||'',cid:e.a[4]}; item.r=e.a[0]+', '+e.a[1]; item.e=1; item.novo=false; }   /* (128) o endereço já veio na lista: aparece NA HORA, sem esperar o servidor */   /* (111) o número só aparece na 2ª bipagem (conferência da rota) */
@@ -2032,8 +2040,8 @@ function bpMesaHtml(){
   for(i=0;i<tot;i++){ if(M[i].b) bip++; else if(M[i].nl) nls.push(M[i]); else falta.push(M[i]); }
   if(!falta.length&&!nls.length) return '';   /* tudo conferido: sem aviso */
   var h='<div style="border:1px solid #F9A8D4;background:#FDF2F8;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px"><b style="color:#BE185D">Mesa: '+bip+' de '+tot+' bipados'+(nls.length?' · '+nls.length+' não localizado'+(nls.length===1?'':'s'):'')+'</b>';
-  if(falta.length){ h+='<div style="color:#9D174D;margin:3px 0 4px">Faltam bipar:</div>'; for(i=0;i<falta.length&&i<30;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#831843;word-break:break-all">'+cpCod(falta[i].cod)+(falta[i].tr?' <span style="font-weight:500;color:#9D174D">· '+esc(falta[i].tr)+'</span>':'')+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(falta[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),true)">Não localizei</button></div>'; if(falta.length>30) h+='<div style="color:#9D174D">… e mais '+(falta.length-30)+'</div>'; }
-  if(nls.length){ h+='<div style="color:#B91C1C;margin:6px 0 3px;font-weight:700">⚠ Não localizados (Mesa avisada):</div>'; for(i=0;i<nls.length;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#7F1D1D;word-break:break-all">'+cpCod(nls[i].cod)+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(nls[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),false)">Desfazer</button></div>'; }
+  if(falta.length){ h+='<div style="color:#9D174D;margin:3px 0 4px">Faltam bipar:</div><div style="max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch">'; for(i=0;i<falta.length&&i<30;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:#831843;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cpCod(falta[i].cod)+'</div>'+(falta[i].tr?'<div style="font-weight:500;font-size:11.5px;color:#9D174D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(falta[i].tr)+'</div>':'')+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(falta[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),true)">Não localizei</button></div>'; if(falta.length>30) h+='<div style="color:#9D174D">… e mais '+(falta.length-30)+'</div>'; h+='</div>'; }
+  if(nls.length){ h+='<div style="color:#B91C1C;margin:6px 0 3px;font-weight:700">⚠ Não localizados (Mesa avisada):</div>'; for(i=0;i<nls.length;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#7F1D1D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cpCod(nls[i].cod)+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(nls[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),false)">Desfazer</button></div>'; }
   return h+'</div>';
 }
 function bpDigitado(){ clearTimeout(BP_T); var i=el('bp-cod'); if(!i) return; var v=i.value; i.value=''; if(v) bpBipar(v); try{ i.focus({preventScroll:true}); }catch(e){} }
@@ -2386,6 +2394,7 @@ function bpTela(){
     '<div id="bp-ult"></div>'+
     (BP.meus.some(function(m){ return m.auto; })?'':'<div class="bp-campo"><span id="bp-ico">'+BP_IC.bar+'</span><input id="bp-cod" placeholder="Aponte e bipe" inputmode="none" autocomplete="off" autocapitalize="characters" oninput="bpEntrada()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bpDigitado();}"><button class="btn pri" id="bp-reg" style="display:none;padding:10px 14px" onclick="bpDigitado()">Registrar</button></div>')+
     (BP.meus.some(function(m){ return m.auto; })?'':'<div style="display:flex;gap:10px;margin-bottom:14px">'+('<button class="bp-acao" onclick="bpCamera()"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/></svg>QR / Barras</button>')+'<button class="bp-acao" id="bp-dig" onclick="bpModo()"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg><span id="bp-dig-t">Digitar pacote</span></button></div>')+
+    '<div id="bp-mesa"></div>'+
     '<div id="bp-lista"></div>'+
     '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="bpSair()">Voltar</button><button class="btn pri" style="flex:1" onclick="bpFechar()">'+(rpCfg().rota==='nao'?'Finalizar entrada':'Montar rota')+'</button></div></div>';
 }
