@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-65-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-66-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -983,6 +983,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">Quem você cadastra aqui entra no painel com o próprio e-mail e senha. Os motoristas continuam na aba Motoristas.</p>
     <div id="us-lista" style="margin-bottom:14px"><div style="color:var(--muted);font-size:13px">Carregando...</div></div>
     <div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">NOVO USUÁRIO</div>
+    <div class="field"><label>Acesso</label><select class="inp" id="us-perfil"><option value="gerente">Operacional — todo o painel, menos Financeiro e Configurações</option><option value="mesa">Mesa — só a Mesa</option></select></div>
     <div class="field"><label>Nome</label><input class="inp" id="us-nome" autocomplete="off"></div>
     <div class="field"><label>E-mail</label><input class="inp" id="us-email" type="email" autocomplete="off"></div>
     <div class="field"><label>Celular com DDD (opcional)</label><input class="inp" id="us-fone" inputmode="tel" autocomplete="off" placeholder="(47) 99999-9999"></div>
@@ -1384,7 +1385,7 @@ function veExtrato(){
   return a;
 }
 function fatCarregar(){
-  if(!REAL||!DD_TOKEN||!DD_USER||(DD_USER.perfil!=='dono'&&DD_USER.perfil!=='gerente')) return;
+  if(!REAL||!DD_TOKEN||!DD_USER||DD_USER.perfil!=='dono') return;
   if(Date.now()-FAT_T<60000) return; FAT_T=Date.now();
   fetch(DELTADIS_API+'/conta/faturas',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
     if(!d||!d.ok) return; var a=[],i,f;
@@ -2933,18 +2934,22 @@ var NAV_MOBILE=[
 ];
 var PAG='dashboard';
 function svgIco(d){return '<svg viewBox="0 0 24 24">'+d+'</svg>';}
+/* (66) ACESSOS por perfil: dono = tudo · gerente (Operacional) = tudo menos Financeiro e Configurações · mesa = só a Mesa */
+function acessoPaginas(){ var p=DD_USER&&DD_USER.perfil; if(p==='mesa') return ['mesa']; if(p==='gerente') return ['dashboard','pedidos','mesa','mapeamento','motoristas','veiculos','mensagens']; return null; }
+function pagOk(id){ var a=acessoPaginas(); return !a||a.indexOf(id)>=0; }
 function montarNav(){
   var h='',i;
-  for(i=0;i<NAV_DESKTOP.length;i++){var n=NAV_DESKTOP[i];
+  for(i=0;i<NAV_DESKTOP.length;i++){var n=NAV_DESKTOP[i]; if(!pagOk(n.id)) continue;
     h+='<button class="'+(n.id===PAG?'on':'')+'" data-p="'+n.id+'" onclick="ir(\''+n.id+'\')"><span class="ic">'+svgIco(n.ic)+'</span><span>'+n.lb+'</span></button>';}
   el('side').innerHTML=h;
   var tb='';
-  for(i=0;i<NAV_MOBILE.length;i++){var m=NAV_MOBILE[i];
+  for(i=0;i<NAV_MOBILE.length;i++){var m=NAV_MOBILE[i]; if(!pagOk(m.id)) continue;
     tb+='<button class="'+(m.id===PAG?'on':'')+'" data-p="'+m.id+'" onclick="ir(\''+m.id+'\')">'+svgIco(m.ic)+'<span>'+m.lb+'</span></button>';}
   el('tabbar').innerHTML=tb;
   try{ msgPintarBadge(); }catch(e){}
 }
 function ir(p){
+  if(!pagOk(p)){ var _ap=acessoPaginas(); if(!_ap||!_ap.length) return; p=_ap[0]; }
   PAG=p;
   try{ pintarIndicadores(); }catch(e){}
   if(p==='financeiro' && typeof carregarSaldoAsaas==='function' && (Date.now()-SALDO_QUANDO>60000)) carregarSaldoAsaas(true);
@@ -3040,12 +3045,12 @@ function ctCnpj(v){ var d=String(v||'').replace(/\D/g,''); return d.length===14?
 function ctFone(v){ var d=String(v||'').replace(/\D/g,''); if(d.indexOf('55')===0&&d.length>=12) d=d.slice(2); return d.length===11?d.replace(/^(\d{2})(\d{5})(\d{4})$/,'($1) $2-$3'):(d.length===10?d.replace(/^(\d{2})(\d{4})(\d{4})$/,'($1) $2-$3'):(v||'—')); }
 function contaBotao(nome){ var b=el('tb-plano'); if(b){ b.style.display=''; b.textContent='💳 '+(nome||'Meu plano'); } var mi=el('mav-plano'); if(mi) mi.style.display=''; }
 function contaRapido(){
-  if(!REAL||!DD_TOKEN||!DD_USER||(DD_USER.perfil!=='dono'&&DD_USER.perfil!=='gerente')) return;
+  if(!REAL||!DD_TOKEN||!DD_USER||DD_USER.perfil!=='dono') return;
   var k='dd_plano_'+(DD_USER.cliente_id||DD_USER.cli||''); try{ var c=localStorage.getItem(k); if(c) contaBotao(c); }catch(e){}
   fetch(DELTADIS_API+'/conta?leve=1',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){ if(!d||!d.ok) return; contaBotao(d.plano_nome); try{ localStorage.setItem(k,d.plano_nome||''); }catch(e){} }).catch(function(){});
 }
 function contaCarregar(cb){
-  if(!REAL||!DD_TOKEN||!DD_USER||(DD_USER.perfil!=='dono'&&DD_USER.perfil!=='gerente')) return;
+  if(!REAL||!DD_TOKEN||!DD_USER||DD_USER.perfil!=='dono') return;
   fetch(DELTADIS_API+'/conta',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
     if(!d||!d.ok) return; CT.dados=d;
     var b=el('tb-plano'); if(b){ b.style.display=''; b.textContent='💳 '+(d.plano?d.plano.nome:'Meu plano'); }
@@ -3141,7 +3146,7 @@ function usuCarregar(){
     var l=(d.usuarios||[]).filter(function(u){ return u.perfil!=='motorista'; }), h='', i, u;
     for(i=0;i<l.length;i++){ u=l[i]; var dono=u.perfil==='dono';
       h+='<div style="border:1px solid var(--border2);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--s2)">'+
-        '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(u.nome)+'</b><span style="font-size:11.5px;font-weight:700;color:'+(u.ativo?'#2e7d32':'#c0392b')+'">'+(dono?'Dono':'Gerente')+(u.ativo?'':' · inativo')+'</span></div>'+
+        '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(u.nome)+'</b><span style="font-size:11.5px;font-weight:700;color:'+(u.ativo?'#2e7d32':'#c0392b')+'">'+(dono?'Dono':(u.perfil==='mesa'?'Mesa':'Operacional'))+(u.ativo?'':' · inativo')+'</span></div>'+
         '<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;word-break:break-all">'+esc(u.email)+'</div>'+
         (dono?'':'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-id="'+esc(u.id)+'" onclick="usuNovaSenha(this.getAttribute(\'data-id\'))">Nova senha</button><button class="btn sec" data-id="'+esc(u.id)+'" data-at="'+(u.ativo?0:1)+'" onclick="usuAtivo(this.getAttribute(\'data-id\'),this.getAttribute(\'data-at\'))">'+(u.ativo?'Desativar':'Ativar')+'</button></div>')+'</div>'; }
     box.innerHTML=h||'<div style="color:var(--muted);font-size:13px">Nenhum usuário.</div>';
@@ -3152,7 +3157,7 @@ function usuCriar(){
   var nome=el('us-nome').value.trim(), email=el('us-email').value.trim(), fone=el('us-fone').value.trim(), senha=el('us-senha').value;
   if(!nome){ m.textContent='Informe o nome.'; return; } if(!email){ m.textContent='Informe o e-mail.'; return; }
   if(senha.length<8){ m.textContent='A senha precisa ter pelo menos 8 caracteres.'; return; }
-  var o={perfil:'gerente',nome:nome,email:email,senha:senha}; if(fone) o.telefone=fone;
+  var o={perfil:el('us-perfil').value,nome:nome,email:email,senha:senha}; if(fone) o.telefone=fone;
   b.disabled=true; b.textContent='Cadastrando...';
   fetch(DELTADIS_API+'/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)})
   .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
@@ -3210,6 +3215,7 @@ function relogio(){
 }
 
 function montarTudo(){
+  if(!pagOk(PAG)){ var _a0=acessoPaginas(); PAG=_a0[0]; }
   montarNav();
   try{ msgIniciarBadge(); }catch(e){}
   pintarIndicadores();
