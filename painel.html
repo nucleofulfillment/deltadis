@@ -831,7 +831,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-63-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-64-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1494,6 +1494,16 @@ function aplicarSalvo(d){
   }
 }
 function carregarLocal(){
+  /* (64) abrir o painel com ?zerarlocal=1 joga fora a cópia guardada neste navegador e traz tudo do servidor (usado depois de limpar a base) */
+  var zerar=false; try{ zerar=/[?&]zerarlocal=1/.test(location.search); }catch(e){}
+  if(zerar){
+    try{ localStorage.removeItem(LS_KEY); localStorage.removeItem('dd_pend'); }catch(e){}
+    idbGravar({real:false}, function(){
+      try{ history.replaceState(null,'',location.pathname); }catch(e){}
+      LOCAL_CLI=null; LOCAL_OK=true; var cbz=LOCAL_CBS; LOCAL_CBS=[]; cbz.forEach(function(f){ try{f();}catch(e){} });
+    });
+    return;
+  }
   try{
     var r=localStorage.getItem(LS_KEY);
     if(r){ var d=JSON.parse(r); aplicarSalvo(d);
