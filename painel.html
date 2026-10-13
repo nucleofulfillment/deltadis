@@ -760,7 +760,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MOTORISTAS -->
       <section class="page" id="pg-motoristas">
-        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirNotifColeta()">🔔 Notificação de Coleta</button><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="limparMotoristasAuto()">🧹 Limpar automáticos</button><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div></div>
+        <div class="pghd"><div><h1>Motoristas</h1><div class="sub">freteiros cadastrados no ponto</div></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirNotifColeta()">🔔 Notificação de Coleta</button><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="limparMotoristasAuto()">🧹 Limpar motoristas</button><button class="btn" style="background:#fff;border:1.5px solid var(--roxo);color:var(--roxo)" onclick="abrirGrupo()">+ Criar Grupo</button><button class="btn pri" onclick="abrirNovoMotorista()">+ Cadastrar</button></div></div>
         <div class="card">
           <div class="search"><span>🔎</span><input id="mt-busca" placeholder="buscar motorista" oninput="pintarMotoristas()"></div>
           <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:14px"><div class="pills" id="mt-pills" style="display:contents"></div><div class="pills" id="mt-filtros" style="display:contents"></div></div>
@@ -848,7 +848,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-82-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-83-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -2204,20 +2204,22 @@ function motoristaAutomatico(m){
 }
 function limparMotoristasAuto(){
   if(!DD_TOKEN){ aviso('Entre no sistema primeiro.'); return; }
-  aviso('Conferindo quais motoristas foram criados pela planilha...');
-  fetch(DELTADIS_API+'/usuarios').then(function(r){return r.json();}).then(function(d){
+  var r=window.prompt('Manter os motoristas do nº 1 até o nº:\n(todos os motoristas com número MAIOR serão apagados)','5'); if(r==null) return;
+  var ate=parseInt(String(r).replace(/\D/g,''),10); if(!(ate>=0)){ aviso('Número inválido. Nada foi apagado.'); return; }
+  aviso('Conferindo os acessos do app...');
+  fetch(DELTADIS_API+'/usuarios').then(function(x){return x.json();}).then(function(d){
     if(!d||!d.ok){ aviso('Não consegui conferir os acessos do app. Nada foi apagado.'); return; }
-    var comApp={}; (d.usuarios||[]).forEach(function(u){ if(u.mt_ref!=null&&u.mt_ref!=='') comApp[String(u.mt_ref)]=1; });
-    var rem=MOTORISTAS.filter(function(m){ return motoristaAutomatico(m) && !comApp[String(m.id)]; });
-    if(!rem.length){ aviso('Nenhum motorista automático para limpar.'); return; }
-    if(!window.confirm('Apagar '+rem.length+' motoristas criados automaticamente pela planilha?\n\nOs motoristas cadastrados por você NÃO são apagados. Os pacotes deles ficam sem motorista até você vincular o apelido e subir a planilha de novo.')) return;
+    var comApp={}; (d.usuarios||[]).forEach(function(u){ if(u.mt_ref!=null&&u.mt_ref!==''&&u.ativo!==0) comApp[String(u.mt_ref)]=1; });
+    var rem=[], prot=[]; MOTORISTAS.forEach(function(m){ if(Number(m.id)>ate){ if(comApp[String(m.id)]) prot.push(m); else rem.push(m); } });
+    if(!rem.length){ aviso('Nenhum motorista acima do nº '+ate+' para apagar.'+(prot.length?(' ('+prot.length+' têm acesso ao app e foram mantidos)'):'')); return; }
+    if(!window.confirm('Apagar '+rem.length+' motoristas (nº maior que '+ate+')?\n\nOs nº 1 a '+ate+' ficam.'+(prot.length?('\n'+prot.length+' com acesso ao app serão mantidos.'):'')+'\nOs pacotes deles ficam sem motorista até vincular o apelido e subir a planilha de novo.')) return;
     var ids={}; rem.forEach(function(m){ ids[m.id]=1; });
     var sem=0; PEDIDOS.forEach(function(q){ if(ids[q.mt]){ q.mt=null; sem++; } });
-    GRUPOS.forEach(function(g){ g.ids=g.ids.filter(function(x){ return !ids[x]; }); });
+    GRUPOS.forEach(function(g){ g.ids=g.ids.filter(function(y){ return !ids[y]; }); });
     MOTORISTAS=MOTORISTAS.filter(function(m){ return !ids[m.id]; });
     if(REAL){ try{ recalcularReal(); }catch(e2){} salvarLocal(); }
     pintarMotoristas(); pintarPedidos(); pintarFinanceiro(); try{ pintarDashboard(); }catch(e3){}
-    aviso(rem.length+' motoristas automáticos apagados · '+sem+' pacotes ficaram sem motorista');
+    aviso(rem.length+' motoristas apagados · '+sem+' pacotes ficaram sem motorista');
   }).catch(function(){ aviso('Sem conexão. Nada foi apagado.'); });
 }
 /* separa o endereço em rua / número / complemento (a roteirização precisa do número separado).
