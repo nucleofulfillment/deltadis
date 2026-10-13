@@ -48,6 +48,8 @@ a{color:inherit}
 /* (v40) dentro do app o fundo fica parado: as bolhas animadas e as linhas gastavam bateria e deixavam o app lento */
 html.dd-in #curves,html.dd-in .glow{display:none}
 html.dd-in #fundo i{animation:none}
+/* (v215) na tela de login, enquanto digita, o fundo para de animar (celular fraco travava os números do PIN) */
+html.dd-digitando #fundo i{animation:none;filter:none}   /* (v216) sem o desfoque pesado enquanto digita: as bolhas já são degradê suave */
 /* tela de carregamento (sessão já guardada): logo enquanto o app confere o login */
 #splash{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:26px;background:transparent}
 html.dd-ret #splash{display:flex}
@@ -589,7 +591,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div style="text-align:center;font-size:12px;color:var(--muted2);font-weight:700;margin:2px 0 6px">— já tenho PIN —</div>
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-214-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-216-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -4549,6 +4551,10 @@ function ddInsets(){
 document.addEventListener('DOMContentLoaded',function(){
   try{ if(ddEhApk()) document.documentElement.classList.add('apk'); ddInsets(); setTimeout(ddInsets,400); setTimeout(ddInsets,1500); var wm0=document.querySelector('#login .lg-logo svg.wm'), tw=document.getElementById('topo-wm'); if(wm0&&tw) tw.appendChild(wm0.cloneNode(true)); }catch(e){}
   fundoSegueCursor(); curvesLigar();
+  try{ var lgBox=el('login'); if(lgBox){
+    lgBox.addEventListener('focusin',function(ev){ if(ev.target&&ev.target.tagName==='INPUT'){ document.documentElement.classList.add('dd-digitando'); curvesDesligar(); } });
+    lgBox.addEventListener('focusout',function(){ setTimeout(function(){ var a=document.activeElement; if(a&&a.tagName==='INPUT'&&lgBox.contains(a)) return; document.documentElement.classList.remove('dd-digitando'); if(lgBox.style.display!=='none'&&!document.documentElement.classList.contains('dd-in')) curvesLigar(); },150); });
+  } }catch(e){}
   var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
   var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
   retomarSessao();
