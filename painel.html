@@ -848,7 +848,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-79-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-80-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -5282,9 +5282,6 @@ function abrirMotorista(id,volta){
   if(m.enderecoRua||m.enderecoBairro) h+='<div class="sh-row"><span class="k">Endereço</span><span class="v">'+esc([(m.enderecoRua||'')+(m.enderecoNumero?', '+m.enderecoNumero:'')+(m.enderecoComplemento?' ('+m.enderecoComplemento+')':''),m.enderecoBairro,m.enderecoCidade,m.enderecoCep].filter(Boolean).join(' — '))+'</span></div>';
   if(REAL){
     var rsm=resumoFinanceiro().porMot[m.id]||{ent:0,val:0};
-    if(m.logins && m.logins.jt) h+='<div class="sh-row"><span class="k">Nome na J&amp;T</span><span class="v">'+esc(m.logins.jt)+'</span></div>';
-    if(m.logins && m.logins.pic) h+='<div class="sh-row"><span class="k">Nome na Pichau</span><span class="v">'+esc(m.logins.pic)+'</span></div>';
-    if(m.logins && m.logins.anj) h+='<div class="sh-row"><span class="k">Login na Anjun</span><span class="v">'+esc(m.logins.anj)+'</span></div>';
     h+='<div class="sh-row"><span class="k">Pacotes / em rota</span><span class="v">'+(m.pac||0)+' / '+(m.emrota||0)+'</span></div>';
     h+='<div class="sh-row"><span class="k">A repassar (entregues × valor)</span><span class="v">'+moeda(rsm.val)+'</span></div>';
   }
@@ -5317,6 +5314,8 @@ function abrirMotorista(id,volta){
   if(gm.length) h+='<div class="sh-row"><span class="k">Grupos</span><span class="v">'+esc(gm.join(', '))+'</span></div>';
   h+='<div class="sh-row"><span class="k">Contrato</span><span class="v">'+badgeStatus(m.contrato)+'</span></div>';
   h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Preço fixo por pacote<br><span style="font-size:10.5px;font-weight:500">opcional — se preenchido, vale no lugar da área</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 38px"><input class="inp mt-cfg-valor" placeholder="Valor R$" id="mt-padrao-'+m.id+'" value="'+(m.valorPadrao?String(m.valorPadrao).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarValorPadraoMotorista('+m.id+')">✓</button></div></span></div>';
+  var lgn=m.logins||{};
+  h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Nome nas planilhas<br><span style="font-size:10.5px;font-weight:500">como ele aparece na planilha da transportadora (apelido). Ao subir a planilha, esse nome vira este motorista</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 1fr 1fr 38px;gap:6px"><input class="inp mt-cfg-valor" placeholder="Nome na Anjun" title="Como aparece na planilha da Anjun" id="mt-lga-'+m.id+'" value="'+esc(lgn.anj||'')+'"><input class="inp mt-cfg-valor" placeholder="Nome na J&amp;T" title="Como aparece na planilha da J&amp;T" id="mt-lgj-'+m.id+'" value="'+esc(lgn.jt||'')+'"><input class="inp mt-cfg-valor" placeholder="Nome na Pichau" title="Como aparece na planilha da Pichau" id="mt-lgp-'+m.id+'" value="'+esc(lgn.pic||'')+'"><button class="btn sec mt-cfg-add" onclick="salvarNomesPlanilha('+m.id+')">✓</button></div></span></div>';
   h+='<div class="sh-row" style="align-items:flex-start"><span class="k">Adicional por tamanho<br><span style="font-size:10.5px;font-weight:500">soma ao valor base de cada pacote P, M ou G</span></span><span class="v" style="width:100%"><div class="mt-cfg-linha" style="grid-template-columns:1fr 1fr 1fr 38px;gap:6px"><input class="inp mt-cfg-valor" placeholder="P R$" title="Adicional do pacote P" id="mt-adp-'+m.id+'" value="'+(m.adP?String(m.adP).replace('.',','):'')+'"><input class="inp mt-cfg-valor" placeholder="M R$" title="Adicional do pacote M" id="mt-adm-'+m.id+'" value="'+(m.adM?String(m.adM).replace('.',','):'')+'"><input class="inp mt-cfg-valor" placeholder="G R$" title="Adicional do pacote G" id="mt-adg-'+m.id+'" value="'+(m.adG?String(m.adG).replace('.',','):'')+'"><button class="btn sec mt-cfg-add" onclick="salvarAdicionaisMotorista('+m.id+')">✓</button></div></span></div>';
   if(!REAL) h+='<div class="mapa-mock" style="height:190px;margin-top:16px;margin-bottom:0">'+
      '<iframe class="mapa-iframe" src="https://www.google.com/maps?q=Itaja%C3%AD,SC&z=13&output=embed" loading="lazy" title="Mapa"></iframe>'+
@@ -5405,6 +5404,31 @@ function acessoAppReset(uid,id){
 function acessoAppAtivo(uid,ativo,id){
   fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(uid),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ativo:ativo})})
     .then(function(r){return r.json();}).then(function(d){ if(!d.ok){ acessoAppMsg(d.mensagem||'Erro.'); return; } aviso(ativo?'Acesso reativado':'Acesso desativado'); acessoAppCarregar(id); }).catch(function(){ acessoAppMsg('Sem conexão com o servidor.'); });
+}
+/* (80) NOME NAS PLANILHAS (apelido): liga o nome que a Anjun/J&T/Pichau usa ao motorista cadastrado. Se a planilha já tinha criado um motorista "solto" com esse nome, os pacotes dele passam pra este e o solto some. */
+function salvarNomesPlanilha(id){
+  var m=motorista(id); if(!m) return;
+  var tmap={anj:'mt-lga-',jt:'mt-lgj-',pic:'mt-lgp-'}, novo={}, tr, i, v;
+  for(tr in tmap){ var e=el(tmap[tr]+id); v=String((e&&e.value)||'').replace(/\s+/g,' ').trim(); if(v) novo[tr]=v; }
+  var fundir=[], lista=ACESSO_APP.lista||[];
+  for(tr in novo){
+    for(i=0;i<MOTORISTAS.length;i++){ var o=MOTORISTAS[i]; if(o.id===m.id) continue;
+      if(o.logins && o.logins[tr] && String(o.logins[tr]).toLowerCase()===novo[tr].toLowerCase()){
+        var solto=(o.doc==='a preencher' && o.contrato==='pendente' && !o.valorPadrao && !(o.fechamentos&&o.fechamentos.length)), comApp=lista.some(function(u){ return String(u.mt_ref||'')===String(o.id); });
+        if(!solto || comApp){ aviso('O nome "'+novo[tr]+'" já está ligado a outro motorista ('+o.n+'). Nada foi alterado.'); return; }
+        if(fundir.indexOf(o)<0) fundir.push(o);
+      } }
+  }
+  m.logins=m.logins||{}; ['anj','jt','pic'].forEach(function(k){ if(novo[k]) m.logins[k]=novo[k]; else delete m.logins[k]; });
+  var movidos=0;
+  fundir.forEach(function(o){
+    PEDIDOS.forEach(function(q){ if(q.mt===o.id){ q.mt=m.id; movidos++; } });
+    GRUPOS.forEach(function(g){ var k=g.ids.indexOf(o.id); if(k>=0){ if(g.ids.indexOf(m.id)<0) g.ids[k]=m.id; else g.ids.splice(k,1); } });
+    MOTORISTAS.splice(MOTORISTAS.indexOf(o),1);
+  });
+  if(REAL){ try{ recalcularReal(); }catch(e2){} salvarLocal(); }
+  pintarMotoristas(); pintarPedidos(); pintarFinanceiro();
+  aviso('Nomes das planilhas salvos!'+(fundir.length?(' '+movidos+' pacote'+(movidos===1?'':'s')+' passou'+(movidos===1?'':'aram')+' para '+m.n+'.'):''));
 }
 function salvarValorPadraoMotorista(id){
   var m=motorista(id); if(!m) return;
