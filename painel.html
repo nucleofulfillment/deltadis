@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-70-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-71-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1632,8 +1632,23 @@ function srvMesclar(d,bases,modo){
   }
   return mud;
 }
-function srvMudados(v){ var mud=[],k; for(k in v.h){ if(k.charAt(0)==='p' && SRV.hashes[k]!==v.h[k]) mud.push(k); } return mud; }
-function srvBasesDe(chaves){ var o={}; chaves.forEach(function(k){ o[k.slice(2).split('~')[0]]=1; }); return Object.keys(o); }
+function srvMudados(v){ var mud=[],k; for(k in v.h){ if(SRV.hashes[k]!==v.h[k]) mud.push(k); } return mud; }
+function srvBasesDe(chaves,tp){ var o={}; chaves.forEach(function(k){ if(k.charAt(0)===tp) o[k.slice(2).split('~')[0]]=1; }); return Object.keys(o); }
+/* (71) blocos de CADASTRO/FINANCEIRO (motoristas, extrato, preços, áreas...): o servidor manda — a tela traz o que outra tela mudou (ex.: motorista excluído) */
+function srvAplicarEst(d,bases){
+  var e=d.est||{}, mud=0;
+  bases.forEach(function(b){
+    if(b==='motoristas'){ MOTORISTAS=srvJuntar(e,'motoristas'); MOTORISTAS.forEach(function(m){ var lg=m.logins&&m.logins.anj; if(lg && m.n===nomeAntigoDeLogin(lg)){ m.n=String(lg).trim(); m.ini=iniciaisNome(m.n); } }); mud++; }
+    else if(b==='extrato'){ EXTRATO=srvJuntar(e,'extrato'); mud++; }
+    else if(b==='areas'){ AREAS=srvJuntar(e,'areas'); mud++; }
+    else if(b==='grupos'){ GRUPOS=srvJuntar(e,'grupos'); mud++; }
+    else if(b==='ciclos'){ CICLOS=srvJuntar(e,'ciclos'); mud++; }
+    else if(b==='rast'){ RASTREADOS={}; srvJuntar(e,'rast').forEach(function(c){ RASTREADOS[c]=1; }); mud++; }
+    else if(b==='precos' && e.precos && e.precos.d){ PRECOS=e.precos.d; mud++; }
+    else if(b==='transps' && e.transps && e.transps.d){ try{ aplicarTransps(e.transps.d); }catch(x){} mud++; }
+  });
+  return mud;
+}
 var SYNC_P={rodando:false};
 function srvPuxar(){
   if(!REAL || !DD_TOKEN || !SRV.pronto || SYNC_P.rodando || SRV.env || SRV.timer || srvPendente() || document.hidden) return;
@@ -1644,8 +1659,11 @@ function srvPuxar(){
     return fetch(DELTADIS_API+'/painel/tudo',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
       SYNC_P.rodando=false;
       if(!d||!d.ok||!d.ped||SRV.env||SRV.timer||srvPendente()) return;
-      var n=srvMesclar(d,srvBasesDe(mud),'servidor'), k;
+      var n=0, k, bp=srvBasesDe(mud,'p'), be=srvBasesDe(mud,'e');
+      if(bp.length) n+=srvMesclar(d,bp,'servidor');
+      if(be.length) n+=srvAplicarEst(d,be);
       for(k in d.ped) SRV.hashes['p:'+k]=d.ped[k].h;
+      for(k in d.est) SRV.hashes['e:'+k]=d.est[k].h;
       try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo();
     });
   }).catch(function(){ SYNC_P.rodando=false; });
@@ -1659,8 +1677,10 @@ function srvEnviar(cb){
     var mud=srvMudados(v); if(!mud.length) return false;
     return fetch(DELTADIS_API+'/painel/tudo',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
       if(!d||!d.ok||!d.ped) return false;
-      srvMesclar(d,srvBasesDe(mud),'juntar');
-      var k; for(k in d.ped) SRV.hashes['p:'+k]=d.ped[k].h;   /* a partir de agora partimos da versão do servidor (já juntada) */
+      var bp2=srvBasesDe(mud,'p'), be2=srvBasesDe(mud,'e');
+      if(bp2.length) srvMesclar(d,bp2,'juntar');
+      if(be2.length) srvAplicarEst(d,be2);
+      var k; for(k in d.ped) SRV.hashes['p:'+k]=d.ped[k].h; for(k in d.est) SRV.hashes['e:'+k]=d.est[k].h;   /* a partir de agora partimos da versão do servidor (já juntada) */
       try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); return true;
     });
   }).catch(function(){ return false; }).then(function(){ srvEnviarDireto(cb); });
