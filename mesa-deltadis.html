@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-46-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-49-1010</p>
   </div>
 </div>
 
@@ -374,7 +374,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           </div>
           <div class="divisor"></div>
           <div class="row">
-            <button class="btn pri" onclick="encerrar();if(MODO==='devolucao'&&MOT)abrirDevolucao()">Encerrar contagem</button>
+            <button class="btn pri" id="btn-encerrar" onclick="encerrar();if(MODO==='devolucao'&&MOT)abrirDevolucao()">Encerrar contagem</button>
           </div>
           </div>
           <div class="sg-cnt">
@@ -493,6 +493,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="rm-corpo">
       <div class="rm-resumo" id="rm-resumo">0 pacotes bipados</div>
       <div class="rm-lista" id="rm-lista"></div>
+      <div id="rm-rel"></div>
     </div>
     <div class="rm-rodape">
       <button class="btn pri" onclick="abrirRelatorioRomaneio()">🖨️ Imprimir / salvar PDF</button>
@@ -719,6 +720,7 @@ function registrarPacote(cod){
   if(MODO==='esquecido'){ esquecerPacote(cod); return; }
   if(MODO==='os'){ osBipar(cod); return; }
   if(MODO==='xml'){ xmlBipar(cod); return; }
+  if(cod.replace(/\D/g,'').length>=40){ somErro(); mostrarUlt('err','Esse é o código da NOTA (chave com 44 números). Em Entregas bipe o código de rastreio da etiqueta. Para dar entrada pela nota use a opção XML.',cod); return; }   /* (48) entrada por Entregas não aceita chave de NF */
   var tr=ATIVA;
   if(el('scan-auto').checked){
     var d0=detectarTr(cod), dt=d0?achaTr(d0):null;
@@ -774,7 +776,7 @@ function desfazerUltimo(){
 
 function encerrar(){
   if(MODO==='os'&&OS_LOTE.length){ osEncerrar(); return; }   /* (46) OS: os pedidos só são criados aqui */
-  if(MODO==='xml'){ var pend=XML_LOTE.filter(function(x){ return x.estado==='buscando'||x.estado==='enviando'||x.estado==='demorou'||x.estado==='envfalhou'; }).length; if(pend){ aviso(pend+' nota'+(pend===1?'':'s')+' ainda sem registrar — espere terminar, tente de novo ou toque em "tirar".'); return; } XML_LOTE=[]; }
+  if(MODO==='xml'){ var pend=XML_LOTE.filter(function(x){ return x.estado==='buscando'||x.estado==='enviando'||x.estado==='demorou'||x.estado==='envfalhou'; }).length; if(pend){ aviso(pend+' nota'+(pend===1?'':'s')+' ainda sem registrar — espere terminar, tente de novo ou toque em "tirar".'); return; } try{ xmlRelatorio(XML_LOTE); }catch(eR){} XML_LOTE=[]; }
   if(CNT) aviso(CNT+' pacote'+(CNT===1?'':'s')+' registrado'+(CNT===1?'':'s')+' nesta contagem');
   fecharCamera();
   SESS_BIP++; ATIVA=null; CNT=0; PACOTES=[]; VISTOS={}; ULT=null;
@@ -823,6 +825,7 @@ function modoPreparar(){
   el('scan-cam-row').style.display=(xm||MODO==='os')?'none':'';
   el('scan-manual').placeholder=(MODO==='os')?'Digite o número da OS (mín. 5 caracteres)':(xm?'Bipe a chave da NF (código de barras da nota, 44 números)':'Bipe ou digite o código');
   el('btn-desfazer').style.display=(MODO==='entrada')?'':'none';
+  var be=el('btn-encerrar'); if(be) be.style.display=(MODO==='devolucao')?'none':'';   /* (49) devolução: o aviso sonoro já confirma — cada bipe é registrado na hora, não precisa encerrar */
   var t=el('scan-nome');
   if(MODO==='devolucao') t.textContent='↩ Devolução';
   else if(MODO==='xml') t.textContent='🧾 XML da NF · '+tituloScan();
@@ -947,21 +950,51 @@ function osEncerrar(){
     });
   })();
 }
-/* relatório das OS no mesmo padrão dos outros relatórios: logo da Delta, nome do ponto e listagem */
+/* (47) relatórios da Mesa (OS e XML): no mesmo padrão dos outros relatórios; ficam SALVOS no servidor e podem ser reimpressos na tela de Romaneios */
+function relHtml(tipo,t,linhas){
+  var ag=new Date(t||Date.now()), emit=dataBR(hojeLocalDe(ag))+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2), i, r, tb='', trs={}, ok=0, xml=(tipo==='xml');
+  for(i=0;i<linhas.length;i++){ r=linhas[i]; trs[r.trn]=1; if(/^Criad|^Registrad/.test(r.sit||'')) ok++;
+    tb+='<tr><td>'+(i+1)+'</td><td><b>'+esc(r.cod)+'</b></td><td>'+esc(r.cliente||'—')+'</td><td>'+esc(r.end||((r.cep?'CEP '+r.cep:'')+(r.num?(r.cep?' · ':'')+'nº '+r.num:''))||'—')+'</td><td>'+esc(r.trn||'')+'</td><td>'+esc(r.sit||'')+'</td></tr>'; }
+  return '<!doctype html><html><head><meta charset="utf-8"><title>'+(xml?'Notas XML':'Ordens de serviço')+' '+emit+'</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;padding:0;color:#111;font-size:9px}h1{font-size:15px;margin:6px 0 2px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:8px;margin-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:6px}thead{display:table-header-group}tr{page-break-inside:avoid}td,th{border-bottom:1px solid #ddd;padding:3px 5px;font-size:9px;text-align:left;line-height:1.25}th{background:#f3effb;border-bottom:1px solid #999}tbody tr:nth-child(even){background:#faf8fe}p{margin:3px 0;font-size:10px}</style></head><body>'+
+    '<div class="cab">'+logoRelatorioHtml()+'<div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
+    '<h1>'+(xml?'Notas fiscais (XML) registradas na Mesa':'Ordens de serviço criadas na Mesa')+'</h1>'+
+    '<p style="color:#555">'+ok+' de '+linhas.length+' '+(xml?'nota':'OS')+(linhas.length===1?'':'s')+' registrada'+(ok===1?'':'s')+' &nbsp;|&nbsp; Transportadora: '+esc(Object.keys(trs).join(', '))+' &nbsp;|&nbsp; Emitido em '+emit+'</p>'+
+    '<table><thead><tr><th>#</th><th>'+(xml?'Nota fiscal':'OS')+'</th><th>Cliente</th><th>Endereço</th><th>Transportadora</th><th>Situação</th></tr></thead><tbody>'+tb+'</tbody></table>'+
+    '<script>window.onload=function(){window.print();}</'+'script></body></html>';
+}
+function relImprimir(tipo,t,linhas){
+  var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups para imprimir o relatório.'); return; }
+  w.document.open(); w.document.write(relHtml(tipo,t,linhas)); w.document.close();
+}
+function relSalvar(tipo,linhas){
+  var trs={}, i; for(i=0;i<linhas.length;i++) trs[linhas[i].trn]=1;
+  api('/mesa/relatorio-salvar',{method:'POST',body:JSON.stringify({tipo:tipo,trn:Object.keys(trs).join(', '),itens:linhas})}).then(function(d){ if(!d||!d.ok) aviso('O relatório saiu, mas não consegui guardar na tela de Romaneios.'); }).catch(function(){ aviso('O relatório saiu, mas não consegui guardar (sem conexão).'); });
+}
+var REL_LISTA=[];
+function carregarRelatoriosMesa(dia){
+  var b=el('rm-rel'); if(!b) return; if(RMF){ b.innerHTML=''; return; }
+  api('/mesa/relatorios?dia='+encodeURIComponent(dia)).then(function(d){
+    REL_LISTA=(d&&d.ok&&d.itens)||[]; if(!REL_LISTA.length){ b.innerHTML=''; return; }
+    var h='<div style="font-weight:800;margin:18px 0 6px;font-size:14px">Relatórios de entrada da Mesa (OS e XML)</div>', i, r, dt;
+    for(i=0;i<REL_LISTA.length;i++){ r=REL_LISTA[i]; dt=new Date(r.t);
+      h+='<div style="display:flex;align-items:center;gap:10px;border:1px solid #E3D9F2;border-radius:10px;padding:8px 12px;margin-bottom:6px"><div style="flex:1"><b>'+(r.tipo==='xml'?'🧾 XML':'📝 OS')+'</b> · '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2)+' · '+r.qtd+' '+(r.tipo==='xml'?'nota':'OS')+(r.qtd===1?'':'s')+'<div style="font-size:11.5px;color:#8A7FA3">'+esc(r.trn||'')+(r.por?' · '+esc(r.por):'')+'</div></div><button class="btn sec" style="padding:6px 12px" onclick="relReimprimir('+i+')">🖨 Imprimir</button></div>'; }
+    b.innerHTML=h;
+  }).catch(function(){});
+}
+function relReimprimir(i){ var r=REL_LISTA[i]; if(r) relImprimir(r.tipo,r.t,r.itens||[]); }
+/* OS: depois do Encerrar, abre o relatório e guarda */
 function osRelatorio(res){
   if(!res.length) return;
-  var w=window.open('','_blank'); if(!w){ aviso('Permita pop-ups para imprimir o relatório.'); return; }
-  var ag=new Date(), emit=dataBR(hojeLocalDe(ag))+' '+('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2), i, r, linhas='', trs={}, ok=0;
-  for(i=0;i<res.length;i++){ r=res[i]; trs[r.trn]=1; if(r.resultado==='novo') ok++;
-    var sit=r.resultado==='novo'?'Criada'+(r.cepst==='ok'?' · endereço pelo CEP':(r.cepst==='nao_achou'?' · CEP não encontrado':(r.cepst==='invalido'?' · CEP incompleto':''))):(r.resultado==='repetido'?'Não criada — já existia':'Não criada');
-    linhas+='<tr><td>'+(i+1)+'</td><td><b>'+esc(r.cod)+'</b></td><td>'+esc(r.cliente||'—')+'</td><td>'+esc(r.cep||'—')+'</td><td>'+esc(r.num||'—')+'</td><td>'+esc(r.trn)+'</td><td>'+esc(sit)+'</td></tr>'; }
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>Ordens de serviço '+emit+'</title><style>@page{size:A4;margin:10mm}body{font-family:Arial,sans-serif;padding:0;color:#111;font-size:9px}h1{font-size:15px;margin:6px 0 2px}.cab{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #6D28D9;padding-bottom:8px;margin-bottom:8px}table{width:100%;border-collapse:collapse;margin-top:6px}thead{display:table-header-group}tr{page-break-inside:avoid}td,th{border-bottom:1px solid #ddd;padding:3px 5px;font-size:9px;text-align:left;line-height:1.25}th{background:#f3effb;border-bottom:1px solid #999}tbody tr:nth-child(even){background:#faf8fe}p{margin:3px 0;font-size:10px}</style></head><body>'+
-    '<div class="cab">'+logoRelatorioHtml()+'<div style="text-align:right;font-size:10px"><b>Ponto de coleta</b><br>'+esc(PONTO_NOME)+'</div></div>'+
-    '<h1>Ordens de serviço criadas na Mesa</h1>'+
-    '<p style="color:#555">'+ok+' de '+res.length+' OS criada'+(ok===1?'':'s')+' &nbsp;|&nbsp; Transportadora: '+esc(Object.keys(trs).join(', '))+' &nbsp;|&nbsp; Emitido em '+emit+'</p>'+
-    '<table><thead><tr><th>#</th><th>OS</th><th>Cliente</th><th>CEP</th><th>Número</th><th>Transportadora</th><th>Situação</th></tr></thead><tbody>'+linhas+'</tbody></table>'+
-    '<script>window.onload=function(){window.print();}</'+'script></body></html>';
-  w.document.open(); w.document.write(html); w.document.close();
+  var linhas=res.map(function(r){ return {cod:r.cod,cliente:r.cliente,cep:r.cep,num:r.num,end:'',trn:r.trn,sit:(r.resultado==='novo'?'Criada'+(r.cepst==='ok'?' · endereço pelo CEP':(r.cepst==='nao_achou'?' · CEP não encontrado':(r.cepst==='invalido'?' · CEP incompleto':''))):(r.resultado==='repetido'?'Não criada — já existia':'Não criada'))}; });
+  relImprimir('os',Date.now(),linhas); relSalvar('os',linhas);
+}
+/* XML: ao encerrar, as notas registradas viram um relatório (aberto e guardado) */
+function xmlRelatorio(lote){
+  var lst=lote.filter(function(x){ return x.estado==='reg'||x.estado==='rep'; });
+  if(!lst.length) return;
+  var tn=(ATIVA&&ATIVA.n)||'';
+  var linhas=lst.map(function(x){ var end=[x.rua,x.num].filter(Boolean).join(', ')+(x.bai?' — '+x.bai:'')+(x.cid?' · '+x.cid:'')+(x.cep?' · CEP '+x.cep:''); return {cod:'NF '+x.nf,cliente:x.cliente||'',cep:x.cep||'',num:x.num||'',end:end,trn:tn,sit:x.estado==='reg'?'Registrada':'Já existia'}; });
+  relImprimir('xml',Date.now(),linhas); relSalvar('xml',linhas);
 }
 window.addEventListener('beforeunload',function(e){ if(OS_LOTE.length){ e.preventDefault(); e.returnValue=''; } });
 /* XML da NF */
@@ -1091,6 +1124,7 @@ function abrirRomaneio(f){
 }
 function carregarRomaneio(){
   var dia=el('rm-dia').value||hojeLocal();
+  carregarRelatoriosMesa(dia);
   api('/mesa/entradas?dia='+encodeURIComponent(dia)).then(function(d){
     if(!d||!d.ok){ el('rm-lista').innerHTML='<div class="rm-vazio">Não consegui carregar.</div>'; return; }
     var it=(d.itens||[]).filter(function(x){ return (true) && (!RMF || x.tr==='Bipado no app'); });
