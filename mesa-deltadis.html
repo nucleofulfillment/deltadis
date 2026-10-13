@@ -277,7 +277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-62-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-63-1010</p>
   </div>
 </div>
 
@@ -1265,7 +1265,15 @@ function bpMontaDetector(cb){
     }catch(e){ cb(null); }
   };
   if('BarcodeDetector' in window){
-    var usar=function(f){ try{ var d=new BarcodeDetector({formats:f}); return cb(d); }catch(e){ zx(); } };
+    var usar=function(f){ try{ var d=new BarcodeDetector({formats:f});
+      /* (63) igual ao app: o leitor nativo também lê SÓ a faixa do meio (a área limpa com a linha), não a tela inteira */
+      var cv=document.createElement('canvas'), cx=cv.getContext('2d');
+      return cb({detect:function(v){
+        var w=v.videoWidth, hh=v.videoHeight; if(!w||!hh) return Promise.resolve([]);
+        var sx=Math.round(w*0.05), sw=Math.round(w*0.9), sy=Math.round(hh*0.3), sh=Math.round(hh*0.4), e2=Math.min(1,1280/sw);
+        cv.width=Math.round(sw*e2); cv.height=Math.round(sh*e2); cx.drawImage(v,sx,sy,sw,sh,0,0,cv.width,cv.height);
+        return d.detect(cv);
+      }}); }catch(e){ zx(); } };
     if(BarcodeDetector.getSupportedFormats){
       BarcodeDetector.getSupportedFormats().then(function(sup){
         var f=BP_FORMATOS.filter(function(x){ return sup.indexOf(x)>=0; });
