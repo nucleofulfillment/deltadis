@@ -830,9 +830,25 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         </div>
       </section>
 
+      <!-- CT-e (relatório do que a Mesa registrou pela DACTE) -->
+      <section class="page" id="pg-cte">
+        <div class="pghd"><div><h1>CT-e</h1><div class="sub">frete declarado × % da Delta Express · a % de cada transportadora fica em Configurações → Precificação</div></div></div>
+        <div class="card">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+            <input type="date" class="inp" id="cte-de" onchange="cteCarregar()" title="De" style="width:150px"><span style="color:var(--muted);font-size:12px">até</span><input type="date" class="inp" id="cte-ate" onchange="cteCarregar()" title="Até" style="width:150px">
+            <select class="inp" id="cte-tr" onchange="cteDesenhar()" style="width:190px"><option value="">Todas as transportadoras</option></select>
+            <span class="vertodos" onclick="cteTodoPeriodo()">Todo o período</span>
+            <span style="margin-left:auto"><button class="btn sec" onclick="cteBaixarCsv()">⬇ Excel (CSV)</button></span>
+          </div>
+          <div class="duo" id="cte-tot" style="margin-bottom:12px"></div>
+          <div id="cte-aviso" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+          <div class="tb-wrap"><table class="tb"><thead><tr><th>Data</th><th>Transportadora</th><th>CT-e nº</th><th style="text-align:right">Valor declarado</th><th style="text-align:right">%</th><th style="text-align:right">Ganho Delta Express</th><th></th></tr></thead><tbody id="cte-corpo"></tbody></table></div>
+        </div>
+      </section>
+
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-74-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-75-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1543,7 +1559,7 @@ var LOCAL_OK=false, LOCAL_CBS=[], LOCAL_CLI=null;
 function cliAtual(){ return (DD_USER&&DD_USER.cliente_id)||null; }
 function srvH(t){ var h=0,k; for(k=0;k<t.length;k++){ h=(Math.imul(h,31)+t.charCodeAt(k))|0; } return h+':'+t.length; }
 function srvChunks(arr,max){ var out=[],cur=[],n=0,i,t; for(i=0;i<arr.length;i++){ t=JSON.stringify(arr[i]); if(cur.length&&n+t.length>max){ out.push('['+cur.join(',')+']'); cur=[]; n=0; } cur.push(t); n+=t.length+1; } if(cur.length||!out.length) out.push('['+cur.join(',')+']'); return out; }
-function packTransp(){ return TRANSPORTADORAS.map(function(t){ return {id:t.id,n:t.n,ini:t.ini,cor:t.cor,dominio:t.dominio||null,sla:t.sla||0,logo:t.logo||'',dataPagamento:t.dataPagamento||'',cicloIni:t.cicloIni||'',cicloFim:t.cicloFim||''}; }); }
+function packTransp(){ return TRANSPORTADORAS.map(function(t){ return {id:t.id,n:t.n,ini:t.ini,cor:t.cor,dominio:t.dominio||null,sla:t.sla||0,logo:t.logo||'',dataPagamento:t.dataPagamento||'',cicloIni:t.cicloIni||'',cicloFim:t.cicloFim||'',ctePct:Number(t.ctePct)||0}; }); }
 function aplicarTransps(lista){
   if(!lista||!lista.length) return;
   var nova=[], i, k;
@@ -3053,6 +3069,7 @@ var NAV_DESKTOP=[
   {id:'motoristas', lb:'Motoristas', ic:'<rect x="1" y="7" width="15" height="10" rx="1.5"/><path d="M16 10h3l3 3v4h-6z"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/>'},
   {id:'veiculos',   lb:'Veículos',   ic:'<path d="M5 17h14M5 17a2 2 0 110-4M19 17a2 2 0 100-4M3 13l2-6h14l2 6M7 10h10"/>'},
   {id:'mensagens',  lb:'Mensagens',  ic:'<path d="M21 11.5a8.4 8.4 0 01-8.9 8.4 8.6 8.6 0 01-3.7-.9L3 20l1.2-4.9a8.4 8.4 0 1116.8-3.6z"/>'},
+  {id:'cte',        lb:'CT-e',       ic:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h7"/>'},
   {id:'financeiro', lb:'Financeiro', ic:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V16.5M9.3 14.3C9.3 15.5 10.4 16.2 12 16.2C13.6 16.2 14.7 15.5 14.7 14.2C14.7 11.6 9.3 12.6 9.3 10C9.3 8.7 10.4 8 12 8C13.6 8 14.7 8.7 14.7 9.9"/>'},
   {id:'config',     lb:'Configurações', ic:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>'}
 ];
@@ -3081,6 +3098,49 @@ function montarNav(){
   el('tabbar').innerHTML=tb;
   try{ msgPintarBadge(); }catch(e){}
 }
+
+/* ══ (75) CT-e: relatório do que a Mesa registrou pela DACTE. Ganho = valor declarado × % da transportadora (a % que valia quando foi registrado; se estava sem %, usa a de hoje). ══ */
+var CTE_R={itens:[],carregou:false};
+function cteAbrirTela(){
+  var d=el('cte-de'), a=el('cte-ate'); if(d&&!d.value) d.value=hojeISO().slice(0,8)+'01'; if(a&&!a.value) a.value=hojeISO();
+  var s=el('cte-tr'); if(s){ var v=s.value, h='<option value="">Todas as transportadoras</option>', i; for(i=0;i<TRANSPORTADORAS.length;i++) h+='<option value="'+esc(TRANSPORTADORAS[i].id)+'">'+esc(TRANSPORTADORAS[i].n)+'</option>'; s.innerHTML=h; s.value=v; }
+  cteCarregar();
+}
+function cteTodoPeriodo(){ var d=el('cte-de'), a=el('cte-ate'); if(d) d.value=''; if(a) a.value=''; cteCarregar(); }
+function cteCarregar(){
+  var de=(el('cte-de')||{}).value||'', ate=(el('cte-ate')||{}).value||'';
+  el('cte-aviso').textContent='Carregando…';
+  fetch(DELTADIS_API+'/mesa/cte?de='+encodeURIComponent(de)+'&ate='+encodeURIComponent(ate),{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    if(!d||!d.ok){ el('cte-aviso').textContent=(d&&d.erro==='sem_permissao')?'Só o dono vê este relatório.':'Não consegui carregar o relatório.'; return; }
+    CTE_R.itens=d.itens||[]; CTE_R.carregou=true; cteDesenhar();
+  }).catch(function(){ el('cte-aviso').textContent='Sem conexão com o servidor.'; });
+}
+function cteLinhas(){
+  var f=(el('cte-tr')||{}).value||'';
+  return (CTE_R.itens||[]).filter(function(x){ return !f||String(x.tr)===f; }).map(function(x){
+    var t=transp(x.tr), pct=(Number(x.pct)>0)?Number(x.pct):((t&&Number(t.ctePct))||0), v=Number(x.valor)||0;
+    return {chave:x.chave, nf:String(parseInt(String(x.chave).slice(25,34),10)||''), dia:x.dia||'', tr:(x.trn||(t&&t.n)||x.tr||''), valor:v, pct:pct, ganho:Math.round(v*pct)/100};
+  });
+}
+function cteDesenhar(){
+  var L=cteLinhas(), i, tv=0, tg=0, h='';
+  for(i=0;i<L.length;i++){ var r=L[i]; tv+=r.valor; tg+=r.ganho;
+    h+='<tr><td>'+esc(r.dia.slice(8,10)+'/'+r.dia.slice(5,7)+'/'+r.dia.slice(0,4))+'</td><td>'+esc(r.tr)+'</td><td title="'+esc(r.chave)+'">'+esc(r.nf)+'</td><td style="text-align:right">'+moeda(r.valor)+'</td><td style="text-align:right">'+(r.pct?String(r.pct).replace('.',',')+'%':'<span style="color:#c0392b" title="Cadastre a % da transportadora em Configurações → Precificação">sem %</span>')+'</td><td style="text-align:right"><b>'+moeda(r.ganho)+'</b></td><td><span class="vertodos" onclick="cteRemover(\''+r.chave+'\')">remover</span></td></tr>';
+  }
+  el('cte-corpo').innerHTML=h||'<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:18px">Nenhum CT-e registrado nesse período.</td></tr>';
+  el('cte-tot').innerHTML='<div class="kpi"><div class="lb">CT-e REGISTRADOS</div><div class="vl">'+L.length+'</div></div><div class="kpi"><div class="lb">VALOR DECLARADO</div><div class="vl">'+moeda(tv)+'</div></div><div class="kpi"><div class="lb">GANHO DELTA EXPRESS</div><div class="vl">'+moeda(tg)+'</div></div>';
+  var sp=L.filter(function(r){ return !r.pct; }).length;
+  el('cte-aviso').textContent=sp?(sp+' CT-e sem % cadastrada: o ganho aparece zerado. Cadastre a % em Configurações → Precificação.'):'';
+}
+function cteRemover(ch){
+  if(!window.confirm('Remover este CT-e do relatório?')) return;
+  fetch(DELTADIS_API+'/mesa/cte-remover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chave:ch})}).then(function(r){ return r.json(); }).then(function(d){ if(d&&d.ok){ aviso('CT-e removido'); cteCarregar(); } else aviso('Não consegui remover.'); }).catch(function(){ aviso('Sem conexão.'); });
+}
+function cteBaixarCsv(){
+  var L=cteLinhas(), out=['Data;Transportadora;CT-e;Chave;Valor declarado;%;Ganho Delta Express'], i;
+  for(i=0;i<L.length;i++){ var r=L[i]; out.push([r.dia,r.tr,r.nf,r.chave,String(r.valor.toFixed(2)).replace('.',','),String(r.pct).replace('.',','),String(r.ganho.toFixed(2)).replace('.',',')].join(';')); }
+  var b=new Blob(['﻿'+out.join('\n')],{type:'text/csv;charset=utf-8'}), a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='relatorio-cte.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
 function ir(p){
   if(!pagOk(p)){ var _ap=acessoPaginas(); if(!_ap||!_ap.length) return; p=_ap[0]; }
   PAG=p;
@@ -3093,6 +3153,7 @@ function ir(p){
   if(p==='veiculos') veCarregar();
   if(p==='mapeamento'&&VIVO_ON) setTimeout(function(){ vivoBuscar(); },800);
   if(p==='mensagens') msgAbrirTela(); else clearInterval(MSG.timer);
+  if(p==='cte') cteAbrirTela();
   if(p==='mapeamento' && typeof mpBuscar==='function'){ MP_ENQ=true; setTimeout(mpBuscar,30); }
   window.scrollTo(0,0);
 }
@@ -4079,12 +4140,12 @@ var PR_GRID='display:grid;grid-template-columns:1.2fr 0.8fr 1fr 0.55fr 0.55fr 0.
 function abrirPrecos(){
   var h='<div style="'+PR_GRID+'font-size:10.5px;font-weight:700;color:var(--muted);margin-bottom:6px"><span>Transportadora</span><span>Recebe (R$)</span><span>Pagamento</span><span>Ciclo de</span><span>até</span><span></span></div>',i;
   for(i=0;i<TRANSPORTADORAS.length;i++){var t=TRANSPORTADORAS[i], pr=PRECOS[t.id]||{};
-    h+=linhaPrecoTransp(t.id, t.n, pr.recebe, t.dataPagamento, t.cicloIni, t.cicloFim, t.dominio, t.logo);}
+    h+=linhaPrecoTransp(t.id, t.n, pr.recebe, t.dataPagamento, t.cicloIni, t.cicloFim, t.dominio, t.logo, t.ctePct);}
   h+='<button class="btn sec wide" type="button" style="margin:4px 0 10px" onclick="adicionarLinhaTransp()">+ Adicionar transportadora</button>';
   el('pr-linhas').innerHTML=h;
   abrir('sh-precos');
 }
-function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim,dominio,logo){
+function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim,dominio,logo,ctePct){
   return '<div class="pr-linha" style="'+PR_GRID+'margin-bottom:8px" data-id="'+(id||'')+'">'+
     '<input class="inp" placeholder="Nome" value="'+esc(nome||'')+'">'+
     '<input class="inp" inputmode="decimal" placeholder="0,00" value="'+fmtNumBR(recebe)+'">'+
@@ -4093,6 +4154,7 @@ function linhaPrecoTransp(id,nome,recebe,dataPg,cicloIni,cicloFim,dominio,logo){
     '<input class="inp" placeholder="dia" value="'+esc(cicloFim||'')+'">'+
     '<span class="vertodos" style="white-space:nowrap" onclick="'+(id?('removerTransportadora(\''+id+'\')'):'this.closest(\'.pr-linha\').remove()')+'">remover</span>'+
     '<div style="grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:-2px"><input class="inp" style="flex:1;min-width:200px" placeholder="Site pra puxar o ícone (ex: jtexpress.com.br)" value="'+esc(dominio||'')+'">'+
+    '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap" title="Porcentagem que a Delta Express ganha sobre o valor do frete declarado no CT-e (DACTE)">CT-e %<input class="inp" data-cte="1" inputmode="decimal" style="width:80px" placeholder="ex: 8" value="'+(ctePct?fmtNumBR(ctePct):'')+'"></label>'+
     '<label class="btn sec" style="padding:7px 12px;font-size:12px;cursor:pointer;margin:0">📷 Enviar logo<input type="file" accept="image/*" style="display:none" onchange="trLogoEscolhida(this)"></label>'+
     '<img class="pr-logo" alt="" src="'+(logo||'')+'" style="width:34px;height:34px;object-fit:contain;border:1px solid var(--bd,#E3D9F2);border-radius:8px;background:#fff;'+(logo?'':'display:none')+'">'+
     '<span class="vertodos" style="font-size:11.5px;'+(logo?'':'display:none')+'" onclick="trLogoLimpar(this)">tirar logo</span></div></div>';
@@ -4146,6 +4208,7 @@ function salvarPrecos(){
     t.n=nome; t.dataPagamento=dataPg; t.cicloIni=cicloIni; t.cicloFim=cicloFim;
     var dom=(inputs[5]?inputs[5].value:'').trim().replace(/^https?:\/\//i,'').replace(/^www\./i,'').split('/')[0].toLowerCase(); t.dominio=dom||null;   /* (54) site → favicon */
     var lgi=row.querySelector('.pr-logo'); t.logo=(lgi&&lgi.getAttribute('src'))||'';
+    var cti=row.querySelector('[data-cte]'); t.ctePct=cti?(Number(String(cti.value||'0').replace(',','.'))||0):(t.ctePct||0);   /* (75) % do CT-e */
     PRECOS[id]={recebe:recebe};
   }
   salvarLocal(); fecharTudo(); pintarFinanceiro(); pintarMotoristas(); pintarIndicadores(); pintarDashboard(); pintarPedidos();
