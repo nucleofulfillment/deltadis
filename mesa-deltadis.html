@@ -268,7 +268,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-54-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-55-1010</p>
   </div>
 </div>
 
@@ -1077,7 +1077,7 @@ function cteRegistrar(){
     CTE_BUSY=false;
     if(!d||!d.ok){ if(b){ b.disabled=false; b.textContent='Registrar'; } if(d&&d.erro==='repetido'){ cteCancelar(); somErro(); mostrarUlt('rep','Esse CT-e já estava registrado',ch); return; } if(m) m.textContent=(d&&d.mensagem)||'Não consegui registrar. Tente de novo.'; return; }
     CTE_LOTE.push({chave:ch,valor:v,fixo:fixo,tr:tr.n,hora:new Date().toTimeString().slice(0,5)}); CNT++; el('scan-cnt').textContent=CNT;
-    cteCancelar(); somBipeOk(); mostrarUlt('ok','✔ CT-e registrado — '+(fixo?'ganho fixo ':'')+'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2})+' · '+tr.n,ch); ctePintarLista();
+    cteCancelar(); somBipeOk(); mostrarUlt(d.pedido?'ok':'err',(d.pedido?'✔ CT-e registrado e pedido criado — ':'⚠ CT-e registrado, MAS SEM pedido ('+(d.pedido_motivo||'Worker antigo')+') — ')+(fixo?'ganho fixo ':'')+'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2})+' · '+tr.n,ch); ctePintarLista();
   }).catch(function(){ CTE_BUSY=false; if(b){ b.disabled=false; b.textContent='Registrar'; } if(m) m.textContent='Sem conexão. O CT-e NÃO foi registrado — tente de novo.'; });
 }
 function ctePintarLista(){
