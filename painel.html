@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-67-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-68-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1730,6 +1730,7 @@ function bipAbsorver(){
       if(p && b.end_rua && !p.rua){ p.rua=b.end_rua; p.num=b.end_num||''; p.comp=b.end_comp||''; p.bai=b.end_bai||''; p.cid=b.end_cid||''; p.cep=b.end_cep||''; p.bairro=b.end_bai||p.bairro||''; mud++; }
       if(p){
         if(mid!=null && p.mt!==mid){ p.mt=mid; mud++; }
+        if(b.mtn && p.mtn!==b.mtn){ p.mtn=b.mtn; mud++; }   /* (68) guarda o NOME de quem está com o pacote, mesmo se o motorista não estiver na lista do painel */
         if(p.st==='coletado' || p.st==='nao localizado' || p.st==='fora de rota' || p.st==='esquecido'){ p.st='em rota'; mud++; }
       } else {
         dt=new Date(b.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
