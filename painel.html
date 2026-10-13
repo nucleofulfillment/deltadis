@@ -832,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-68-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-69-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1663,22 +1663,39 @@ function mesaAbsorver(){
   MESA_ABS.rodando=true;
   fetch(DELTADIS_API+'/mesa/entradas?pend=1',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
     if(!d || !d.ok || !d.itens || !d.itens.length){ MESA_ABS.rodando=false; return; }
-    var idx={}, i, it, p, novos=0, cods=[], dt, hh;
-    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=1; if(PEDIDOS[i].scan) idx[PEDIDOS[i].scan]=1; }   /* (v141) código bipado = scan de um pedido que já existe: não cria duplicado */
+    var idx={}, i, it, p, novos=0, cods=[], dt, hh, mudTr=0;
+    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }   /* (v141) código bipado = scan de um pedido que já existe: não cria duplicado */
     for(i=0;i<d.itens.length;i++){
       it=d.itens[i]; cods.push(it.cod);
-      if(idx[it.cod]) continue;
+      if(idx[it.cod]){ var pe=idx[it.cod]; if(it.tr && it.tr!=='anj' && pe.tr==='anj' && String(pe.obs||'').indexOf('a conferir')>=0 && !pe.fechId){ pe.tr=it.tr; mudTr++; } continue; }   /* (69) o motorista bipou antes da Mesa ser absorvida: a transportadora vem da entrada da Mesa */
       dt=new Date(it.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
       var mtId=null, mk; if(it.mt){ for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(it.mt)){ mtId=MOTORISTAS[mk].id; break; } } }
       p={cod:it.cod, tr:it.tr||'anj', mt:mtId, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'',
          scan:it.cod, dia:(it.dia||hojeISO()), hora:hh, obs:'entrada por bipagem — a conferir'+(it.mtn?(' ('+it.mtn+')'):''), ent:'', fechId:null};
       PEDIDOS.push(p); idx[it.cod]=1; novos++;
     }
-    if(novos){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); aviso(novos+' pacote'+(novos===1?'':'s')+' entrou'+(novos===1?'':'ram')+' pela Mesa (a conferir).'); }
+    if(novos||mudTr){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); if(novos) aviso(novos+' pacote'+(novos===1?'':'s')+' entrou'+(novos===1?'':'ram')+' pela Mesa (a conferir).'); }
     return fetch(DELTADIS_API+'/mesa/absorver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cods:cods})}).then(function(r){ return r.json(); }).then(function(){ MESA_ABS.rodando=false; });
   }).catch(function(){ MESA_ABS.rodando=false; });
 }
 setInterval(mesaAbsorver,20000);
+/* (69) CONSERTO DA TRANSPORTADORA: pacote bipado pelo motorista antes de a Mesa ser absorvida ficou como "Anjun" (padrão). Olha as entradas da Mesa de hoje e ontem e põe a transportadora certa. */
+var TR_FIX={rodando:false};
+function mesaCorrigeTr(){
+  if(!REAL || !DD_TOKEN || !SRV.pronto || TR_FIX.rodando || document.hidden) return;
+  TR_FIX.rodando=true;
+  var dias=[hojeISO(), ymdLocal(new Date(Date.now()-86400000))], feitos=0;
+  Promise.all(dias.map(function(dia){ return fetch(DELTADIS_API+'/mesa/entradas?dia='+dia,{cache:'no-store'}).then(function(r){ return r.json(); }).catch(function(){ return null; }); })).then(function(rs){
+    var idx={}, i, j, d, it, p, mud=0;
+    for(i=0;i<PEDIDOS.length;i++){ idx[PEDIDOS[i].cod]=PEDIDOS[i]; if(PEDIDOS[i].scan) idx[PEDIDOS[i].scan]=PEDIDOS[i]; }
+    for(j=0;j<rs.length;j++){ d=rs[j]; if(!d||!d.ok||!d.itens) continue;
+      for(i=0;i<d.itens.length;i++){ it=d.itens[i]; p=idx[it.cod];
+        if(p && it.tr && it.tr!=='anj' && it.tr!=='Bipado no app' && p.tr==='anj' && String(p.obs||'').indexOf('a conferir')>=0 && !p.fechId){ p.tr=it.tr; mud++; } } }
+    TR_FIX.rodando=false;
+    if(mud){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); }
+  }).catch(function(){ TR_FIX.rodando=false; });
+}
+setInterval(mesaCorrigeTr,300000); setTimeout(mesaCorrigeTr,12000);
 /* ── (v151) EVENTOS DA MESA: devolução (com status), esquecido na base, XML da NF e OS sem NF. XML/OS criam o pedido (número = NF / número digitado) já com motorista, transportadora e endereço. ── */
 var MESA_EV={rodando:false};
 function mesaEventosAbsorver(){
