@@ -650,6 +650,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <div class="quem"><b id="mav-nome">—</b><small id="mav-mail"></small></div>
           <button onclick="menuAvFecha();abrirMeusDados()">👤 Meus dados</button>
           <button id="mav-plano" style="display:none" onclick="menuAvFecha();contaAbrir()">💳 Meu plano</button>
+          <button id="mav-usu" style="display:none" onclick="menuAvFecha();usuAbrir()">👥 Usuários do painel</button>
           <button onclick="menuAvFecha();abrirTrocarSenhaPainel()">🔑 Trocar senha</button>
           <button class="sair" onclick="menuAvFecha();sair()">⎋ Sair</button>
         </div>
@@ -831,7 +832,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-64-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-65-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -975,6 +976,20 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="sheet" id="sh-plano">
   <div class="sh-hd"><h3>Meu plano</h3><button onclick="fecharTudo()">✕</button></div>
   <div class="sh-bd"><div id="ct-corpo"><div style="color:var(--muted);font-size:13px">Carregando...</div></div></div>
+</div>
+<div class="sheet" id="sh-usuarios">
+  <div class="sh-hd"><h3>Usuários do painel</h3><button onclick="fecharTudo()">✕</button></div>
+  <div class="sh-bd">
+    <p style="margin:0 0 10px;font-size:12.5px;color:var(--muted)">Quem você cadastra aqui entra no painel com o próprio e-mail e senha. Os motoristas continuam na aba Motoristas.</p>
+    <div id="us-lista" style="margin-bottom:14px"><div style="color:var(--muted);font-size:13px">Carregando...</div></div>
+    <div style="font-weight:800;font-size:12px;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">NOVO USUÁRIO</div>
+    <div class="field"><label>Nome</label><input class="inp" id="us-nome" autocomplete="off"></div>
+    <div class="field"><label>E-mail</label><input class="inp" id="us-email" type="email" autocomplete="off"></div>
+    <div class="field"><label>Celular com DDD (opcional)</label><input class="inp" id="us-fone" inputmode="tel" autocomplete="off" placeholder="(47) 99999-9999"></div>
+    <div class="field"><label>Senha (mínimo 8 caracteres)</label><input class="inp" id="us-senha" type="password" autocomplete="new-password"></div>
+    <p id="us-msg" style="color:#c0392b;font-weight:700;font-size:13px;min-height:18px;margin:4px 0 10px"></p>
+    <button class="btn pri wide" id="us-btn" onclick="usuCriar()">Cadastrar usuário</button>
+  </div>
 </div>
 <div class="sheet" id="sh-trocar-senha">
   <div class="sh-hd"><h3>Trocar senha</h3><button onclick="fecharTudo()">✕</button></div>
@@ -3014,7 +3029,7 @@ function entrar(){
 }
 /* ══ menu do avatar: meus dados, trocar senha, sair ══ */
 function menuAv(e){ e.stopPropagation(); var m=el('menu-av-l'); if(!m) return;
-  el('mav-nome').textContent=(DD_USER&&DD_USER.nome)||'—'; el('mav-mail').textContent=(DD_USER&&DD_USER.email)||'';
+  el('mav-nome').textContent=(DD_USER&&DD_USER.nome)||'—'; el('mav-mail').textContent=(DD_USER&&DD_USER.email)||''; var _mu=el('mav-usu'); if(_mu) _mu.style.display=(DD_USER&&DD_USER.perfil==='dono')?'':'none';
   m.classList.toggle('on'); }
 function menuAvFecha(){ var m=el('menu-av-l'); if(m) m.classList.remove('on'); }
 document.addEventListener('click',menuAvFecha);
@@ -3113,6 +3128,48 @@ function salvarMeusDados(){
     var _tn=el('tb-tenant'); if(_tn) _tn.textContent=DD_USER.cliente_nome||''; CT.dados=null; contaRapido();
     fecharTudo(); aviso('Dados atualizados!');
   }).catch(function(){ b.disabled=false; b.textContent='Salvar'; m.textContent='Sem conexão com o servidor.'; });
+}
+/* ── (64) USUÁRIOS DO PAINEL: o dono (pai) cadastra os usuários filhos (gerentes) do cliente dele ── */
+function usuAbrir(){
+  ['us-nome','us-email','us-fone','us-senha'].forEach(function(i){ el(i).value=''; }); el('us-msg').textContent='';
+  el('us-lista').innerHTML='<div style="color:var(--muted);font-size:13px">Carregando...</div>'; abrir('sh-usuarios'); usuCarregar();
+}
+function usuCarregar(){
+  fetch(DELTADIS_API+'/usuarios',{cache:'no-store'}).then(function(r){ return r.json().catch(function(){ return null; }); }).then(function(d){
+    var box=el('us-lista'); if(!box) return;
+    if(!d||!d.ok){ box.innerHTML='<div style="color:#c0392b;font-size:13px">Não consegui carregar a lista.</div>'; return; }
+    var l=(d.usuarios||[]).filter(function(u){ return u.perfil!=='motorista'; }), h='', i, u;
+    for(i=0;i<l.length;i++){ u=l[i]; var dono=u.perfil==='dono';
+      h+='<div style="border:1px solid var(--border2);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--s2)">'+
+        '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>'+esc(u.nome)+'</b><span style="font-size:11.5px;font-weight:700;color:'+(u.ativo?'#2e7d32':'#c0392b')+'">'+(dono?'Dono':'Gerente')+(u.ativo?'':' · inativo')+'</span></div>'+
+        '<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;word-break:break-all">'+esc(u.email)+'</div>'+
+        (dono?'':'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-id="'+esc(u.id)+'" onclick="usuNovaSenha(this.getAttribute(\'data-id\'))">Nova senha</button><button class="btn sec" data-id="'+esc(u.id)+'" data-at="'+(u.ativo?0:1)+'" onclick="usuAtivo(this.getAttribute(\'data-id\'),this.getAttribute(\'data-at\'))">'+(u.ativo?'Desativar':'Ativar')+'</button></div>')+'</div>'; }
+    box.innerHTML=h||'<div style="color:var(--muted);font-size:13px">Nenhum usuário.</div>';
+  }).catch(function(){ var b=el('us-lista'); if(b) b.innerHTML='<div style="color:#c0392b;font-size:13px">Sem conexão com o servidor.</div>'; });
+}
+function usuCriar(){
+  var m=el('us-msg'), b=el('us-btn'); m.textContent='';
+  var nome=el('us-nome').value.trim(), email=el('us-email').value.trim(), fone=el('us-fone').value.trim(), senha=el('us-senha').value;
+  if(!nome){ m.textContent='Informe o nome.'; return; } if(!email){ m.textContent='Informe o e-mail.'; return; }
+  if(senha.length<8){ m.textContent='A senha precisa ter pelo menos 8 caracteres.'; return; }
+  var o={perfil:'gerente',nome:nome,email:email,senha:senha}; if(fone) o.telefone=fone;
+  b.disabled=true; b.textContent='Cadastrando...';
+  fetch(DELTADIS_API+'/usuarios',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(o)})
+  .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){
+    b.disabled=false; b.textContent='Cadastrar usuário';
+    if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível cadastrar.'; return; }
+    ['us-nome','us-email','us-fone','us-senha'].forEach(function(i){ el(i).value=''; }); aviso('Usuário cadastrado ✅'); usuCarregar();
+  }).catch(function(){ b.disabled=false; b.textContent='Cadastrar usuário'; m.textContent='Sem conexão com o servidor.'; });
+}
+function usuNovaSenha(id){
+  var n=window.prompt('Digite a nova senha para este usuário (mínimo 8 caracteres):'); if(!n) return;
+  if(n.length<8){ aviso('A senha precisa ter pelo menos 8 caracteres.'); return; }
+  fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({senha:n})})
+  .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){ aviso(d&&d.ok?'Senha trocada ✅':((d&&d.mensagem)||'Não foi possível trocar.')); }).catch(function(){ aviso('Sem conexão com o servidor.'); });
+}
+function usuAtivo(id,at){
+  fetch(DELTADIS_API+'/usuarios/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ativo:Number(at)})})
+  .then(function(r){ return r.json().catch(function(){ return {ok:false}; }); }).then(function(d){ if(!d||!d.ok){ aviso((d&&d.mensagem)||'Não foi possível alterar.'); return; } aviso(Number(at)?'Usuário ativado':'Usuário desativado'); usuCarregar(); }).catch(function(){ aviso('Sem conexão com o servidor.'); });
 }
 function abrirTrocarSenhaPainel(){ el('ts-atual').value=''; el('ts-nova').value=''; el('ts-nova2').value=''; el('ts-msg').textContent=''; abrir('sh-trocar-senha'); }
 function salvarSenhaPainel(){
