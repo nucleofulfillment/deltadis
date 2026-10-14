@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="versao" content="SITE-5-1410"><meta name="theme-color" content="#5328bc">
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="versao" content="SITE-6-1410"><meta name="theme-color" content="#5328bc">
 <title>DELTADIS — Do recebimento à entrega, tudo em um só lugar</title>
 <meta name="description" content="Bipagem por transportadora, separação por motorista, financeiro e fechamento — o painel do seu ponto de distribuição.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,6 +53,8 @@ h1{font-size:clamp(28px,min(9vw,4.8vh),40px);margin:0 0 10px}
 .vid-shade{background:linear-gradient(0deg,rgba(60,10,120,.55) 0%,rgba(60,10,120,.2) 40%,rgba(60,10,120,0) 65%),linear-gradient(90deg,rgba(60,10,120,.35) 0%,rgba(60,10,120,0) 70%)}
 }
 .acoes{display:flex;align-items:center;gap:10px}
+.cta-meio{display:flex;align-items:center;gap:10px;margin-top:clamp(14px,2.4vh,22px);flex-wrap:wrap}
+@media(max-width:640px){.cta-meio{margin-top:12px}.cta-meio .assinar,.cta-meio .entrar{padding:10px 20px;font-size:14px}}
 .assinar{display:inline-block;padding:11px 26px;border-radius:99px;background:#fff;border:1.5px solid #fff;color:#6D28D9;font-weight:800;font-size:14px;text-decoration:none;transition:background .15s,color .15s}
 .assinar:hover{background:#F472B6;border-color:#F472B6;color:#fff}
 #as-modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(20,10,40,.6);align-items:center;justify-content:center;padding:16px}
@@ -133,11 +135,12 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 508 10 12 59 14 298 11 l286 -3 76 -38z"/>
 </g></svg>
       </div>
-    <div class="acoes"><a class="entrar" href="/download">Baixar APP</a><a class="entrar" href="/painel">Entrar</a><a class="assinar" href="#assinar" onclick="asAbrir();return false">Assinar</a></div>
+    <div class="acoes"><a class="entrar" href="/painel">Entrar</a></div>
   </div>
   <div class="hero">
     <h1>Do recebimento à entrega, tudo em um só lugar.</h1>
     <p class="lead">Sistema inteligente que controla todos os processos da sua operação.</p>
+    <div class="cta-meio"><a class="assinar" href="#assinar" onclick="asAbrir();return false">Assinar</a><a class="entrar" href="/download">Baixar APP</a></div>
   </div>
   <div class="meio">
     <div class="mod">Módulos do DeltaDIS</div>
@@ -150,7 +153,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     </div>
   </div>
 </div>
-<div id="as-modal"><div class="as-card"><button type="button" class="as-x" onclick="asFechar()">×</button><div id="as-corpo"></div><div class="as-ver">DELTADIS-SITE-5-1410</div></div></div>
+<div id="as-modal"><div class="as-card"><button type="button" class="as-x" onclick="asFechar()">×</button><div id="as-corpo"></div><div class="as-ver">DELTADIS-SITE-6-1410</div></div></div>
 <script>
 /* ASSINAR: plano -> dados da empresa -> Pix -> conta criada quando o pagamento é confirmado */
 var DD_API='https://api.deltadis.com.br';
