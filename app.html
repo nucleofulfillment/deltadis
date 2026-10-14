@@ -580,18 +580,18 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-223-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-224-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
 <div id="lg-modal" style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;z-index:300;background:rgba(20,10,40,.6);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)primeiroFechar()">
   <div style="background:#fff;border-radius:18px;padding:20px;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.35)">
-    <div style="font-weight:800;color:var(--roxo);font-size:18px;margin-bottom:6px">🆕 Primeiro acesso</div>
+    <div style="font-weight:800;color:var(--roxo);font-size:18px;margin-bottom:6px">🆕 É a sua primeira vez aqui?</div>
     <p class="sub" style="margin:0 0 12px">Digite o seu telefone. Você recebe um código no WhatsApp e ele será o seu PIN para entrar.</p>
     <div class="field"><label>Telefone (WhatsApp)</label><input class="inp" id="lg-ptel" type="tel" inputmode="tel" placeholder="(47) 9 0000-0000"></div>
     <p class="demo" id="lg-pmsg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
     <button class="btn pri wide" id="lg-prim-btn" onclick="primeiroAcesso()">Enviar código no WhatsApp</button>
-    <button class="btn sec wide" style="margin-top:8px" onclick="primeiroFechar()">Cancelar</button>
+    <button class="btn sec wide" style="margin-top:8px" onclick="primeiroFechar()">Já tenho PIN — quero entrar</button>
   </div>
 </div>
 <div id="splash"><div id="sp-logo"></div><div class="sp-pts"><i></i><i></i><i></i></div></div>
@@ -1051,6 +1051,7 @@ function sair(){
 /* já tem sessão guardada (vale 30 dias)? confere no servidor e entra direto */
 function retomarSessao(){
   if(!DD_M_TOKEN){ ddMostrarLogin(); return; }
+  try{ localStorage.setItem('dd_ja_entrou','1'); }catch(e){}
   var abriu=false;
   /* o usuário guardado tem que ser o DONO do token (o token traz o id dele). Se não for, não mostra o nome guardado: espera o servidor dizer quem é */
   try{ var pl=JSON.parse(atob(DD_M_TOKEN.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); if(DD_M_USER&&pl&&pl.uid!=null&&String(pl.uid)!==String(DD_M_USER.id)){ DD_M_USER=null; ddLimparLocal(); RP.mt=null; RP.mtn=''; } }catch(e){}
@@ -1678,10 +1679,13 @@ try{ RP.mt=localStorage.getItem('dd_mt')||null; }catch(e){}
 /* LOGIN (etapa B1d): com sessão, vai o token do motorista no cabeçalho (sem a chave antiga) */
 var DD_M_TOKEN='', DD_M_USER=null;
 try{ DD_M_TOKEN=localStorage.getItem('dd_m_jwt')||''; DD_M_USER=JSON.parse(localStorage.getItem('dd_m_user')||'null'); }catch(e){}
-function ddMostrarLogin(){ document.documentElement.classList.remove('dd-ret'); var l=el('login'); if(l&&l.style.display!=='none') curvesLigar(); }
+var PRIM_AUTO=false;
+function ddMostrarLogin(){ document.documentElement.classList.remove('dd-ret'); var l=el('login'); if(l&&l.style.display!=='none') curvesLigar();
+  /* (v224) quem NUNCA entrou neste aparelho vê primeiro a janela do "Primeiro acesso" (assim não digita login/PIN sem ter pedido o código) */
+  try{ if(!PRIM_AUTO && l && l.style.display!=='none' && localStorage.getItem('dd_ja_entrou')!=='1' && !DD_M_TOKEN && !codPendente()){ PRIM_AUTO=true; primeiroAbrir(); } }catch(e){} }
 /* dados guardados no aparelho que são de UM motorista: somem quando entra outro (ou quando sai) */
 function ddLimparLocal(){ try{ ['dd_ponto_sel','dd_num','dd_feitos','dd_fila_ent','dd_rota','dd_bp'].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){} }
-function ddGuardarM(tk,us){ var ant=DD_M_USER; if(tk&&ant&&us&&String(ant.id)!==String(us.id)) ddLimparLocal(); if(!tk) ddLimparLocal(); DD_M_TOKEN=tk||''; DD_M_USER=us||null; try{ if(tk){ localStorage.setItem('dd_m_jwt',tk); localStorage.setItem('dd_m_user',JSON.stringify(us||null)); } else { localStorage.removeItem('dd_m_jwt'); localStorage.removeItem('dd_m_user'); localStorage.removeItem('dd_mt'); RP.mt=null; RP.mtn=''; RP.total=0; } }catch(e){} }
+function ddGuardarM(tk,us){ var ant=DD_M_USER; if(tk&&ant&&us&&String(ant.id)!==String(us.id)) ddLimparLocal(); if(!tk) ddLimparLocal(); DD_M_TOKEN=tk||''; DD_M_USER=us||null; try{ if(tk){ localStorage.setItem('dd_ja_entrou','1'); localStorage.setItem('dd_m_jwt',tk); localStorage.setItem('dd_m_user',JSON.stringify(us||null)); } else { localStorage.removeItem('dd_m_jwt'); localStorage.removeItem('dd_m_user'); localStorage.removeItem('dd_mt'); RP.mt=null; RP.mtn=''; RP.total=0; } }catch(e){} }
 function rpApi(caminho,opts){
   if(DD_M_TOKEN){
     opts=opts||{}; var h={}, h0=opts.headers||{}, k; for(k in h0) h[k]=h0[k]; h['Authorization']='Bearer '+DD_M_TOKEN; opts.headers=h;
