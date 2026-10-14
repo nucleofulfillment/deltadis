@@ -580,7 +580,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-226-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-227-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1482,7 +1482,7 @@ function rpAcoesSem(tipo,i,cod){
   var c=String(cod).replace(/[^A-Za-z0-9_-]/g,''), k=tipo+i+c, cf=(RP.conf===k);
   return '<div class="rp-acoes"><button onclick="abrirEndereco(\''+tipo+'\','+i+')">✏️ Endereço</button>'+
     '<button onclick="rpSaida(\''+tipo+'\','+i+',\'remarcada\')">🔁 Amanhã</button>'+
-    '<button class="perigo" onclick="rpDevPedir(\''+tipo+'\','+i+')">↩ Devolver à base</button></div>';
+    (DEV_OBRIGATORIA?'<button class="perigo" onclick="rpDevPedir(\''+tipo+'\','+i+')">↩ Devolver à base</button>':'')+'</div>';
 }
 /* (129) devolver à base sempre pergunta o motivo (Ausente / Não localizado) e confirma */
 var DEVMOT={fn:null,m:null};
@@ -1609,15 +1609,15 @@ function abrirRemarcar(){
   REMARCAR_ESCOLHA=null; REMARCAR_IDX=-1; REMARCAR_MOTIVO='ausente';   /* (130) a remarcação não pergunta motivo; o motivo é pedido só ao devolver à base */
   var h='<p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">Escolha em qual janela essa entrega pode ser tentada novamente:</p>',i, X=PONTEIRO+1, N=LOTE_ATUAL.length;
   var cur0=LOTE_ATUAL[PONTEIRO], ultima=!!(cur0 && cur0.origem==='painel' && rpTentDe(cur0)+1>=3);
-  if(ultima) h+='<p style="margin:0 0 12px;padding:10px 12px;background:var(--s3);border-radius:12px;font-size:12.5px"><b>Última tentativa (3ª).</b> Se não entregar hoje, devolva à base.</p>';
+  if(ultima&&DEV_OBRIGATORIA) h+='<p style="margin:0 0 12px;padding:10px 12px;background:var(--s3);border-radius:12px;font-size:12.5px"><b>Última tentativa (3ª).</b> Se não entregar hoje, devolva à base.</p>';
   for(i=0;i<REMARCAR_JANELAS.length;i++){
     if(i===1 && N<X+1) continue;
-    if(i===2 && ultima) continue;
+    if(i===2 && ultima && DEV_OBRIGATORIA) continue;
     h+='<button class="btn sec wide" style="margin-bottom:8px;justify-content:flex-start" id="jn-'+i+'" onclick="escolherJanela('+i+')">'+REMARCAR_JANELAS[i]+'</button>';
     if(i===1) h+='<div id="rm-posbox" style="display:none;margin:-2px 0 10px;padding:10px 12px;background:var(--s3);border-radius:12px"><p style="margin:0 0 8px;font-size:12.5px">Este pedido está na posição <b>'+X+'</b> de <b>'+N+'</b>. Em qual posição você quer que ele fique?</p><input class="inp" id="rm-pos" type="number" inputmode="numeric" min="'+(X+1)+'" max="'+N+'" placeholder="Entre '+(X+1)+' e '+N+'"></div>';
   }
   h+='<button class="btn pri wide" style="margin-top:6px" onclick="confirmarRemarcacao()">Confirmar remarcação</button>';
-  h+='<button class="btn sec wide" style="margin-top:8px" onclick="devolverDaRemarcar()">↩ Devolver à base</button>';
+  if(DEV_OBRIGATORIA) h+='<button class="btn sec wide" style="margin-top:8px" onclick="devolverDaRemarcar()">↩ Devolver à base</button>';
   el('sh-remarcar-corpo').innerHTML=h;
   abrir('sh-remarcar');
 }
@@ -2283,7 +2283,9 @@ function asgConfirmar(){
   }).catch(function(){ ASG.busy=false; el('asg-ok').textContent='Confirmar'; m.textContent='Sem conexão. A assinatura NÃO foi salva. Tente de novo.'; });
 }
 /* ══ (110) SEM ROTEIRIZAÇÃO: tela de entregas — o motorista marca o que entregou e devolve à base o que não entregou ══ */
-var ENT={sel:{},done:{},dig:false,foco:''};
+/* (v227) CHAVE: devolução obrigatória à base. false = DESLIGADA (o motorista marca AUSENTE e o pacote continua com ele, pronto pra entregar depois). true = volta o botão 'Devolver à base' como era. */
+var DEV_OBRIGATORIA=false;
+var ENT={sel:{},done:{},aus:{},dig:false,foco:''};
 /* (212) localizar pacote na lista de entrega: câmera (QR/barras) ou digitado. Marca o pacote e rola até ele */
 function entLocalizar(v){
   var c=bpNorm(v); if(!c) return; var k=c.toLowerCase(), L=entLista(), i, ach=null;
@@ -2314,23 +2316,23 @@ function entTela(){
   if(ENT.dig) h+='<div class="bp-campo" style="margin-bottom:10px"><input id="ent-cod" placeholder="Código do pacote" autocomplete="off" autocapitalize="characters" onkeydown="if(event.key===\'Enter\'){event.preventDefault();entDigOk();}"><button class="btn pri" style="padding:10px 14px" onclick="entDigOk()">Localizar</button></div>';
   h+='<label style="display:flex;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--border);font-weight:800"><input type="checkbox" '+(ns===n?'checked':'')+' onchange="entTodos(this.checked)" style="width:22px;height:22px"> Selecionar todos <span style="margin-left:auto;color:var(--muted);font-weight:600;font-size:12.5px">'+ns+'/'+n+'</span></label>';
   for(i=0;i<n;i++){ var m=L[i], on=!!ENT.sel[m.cod];
-    h+='<label '+(m.cod===ENT.foco?'id="ent-foco" ':'')+'style="display:flex;gap:12px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--border);'+(on?'background:#F3E8FF;':'')+(m.cod===ENT.foco?'outline:2px solid #EC4899;':'')+'"><input type="checkbox" '+(on?'checked ':'')+'onchange="entMarca(\''+esc(m.cod)+'\',this.checked)" style="width:22px;height:22px"><span style="min-width:0;flex:1;overflow:hidden"><b style="word-break:break-all">'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<span style="display:block;color:#5B5170;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.cl)+'</span>':'')+'<span style="display:block;color:#7A7090;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.r?esc(m.r+((m.d&&m.d.bai)?' — '+m.d.bai:'')):'<i>sem endereço cadastrado</i>')+'</span>'+'</span></label>'; }
-  h+='<div style="display:flex;gap:10px;margin-top:14px"><button class="btn sec" style="flex:1" onclick="entAplicar(\'devolvido\')">↩ Devolver à base'+(ns?' ('+ns+')':'')+'</button><button class="btn pri" style="flex:1" onclick="entAplicar(\'entregue\')">✔ Entregue'+(ns?' ('+ns+')':'')+'</button></div>';
-  h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'rp_bip\';BP.ult=null;renderInicio();bpCarregar(true)">Voltar</button></div></div>';
+    h+='<label '+(m.cod===ENT.foco?'id="ent-foco" ':'')+'style="display:flex;gap:12px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--border);'+(on?'background:#F3E8FF;':'')+(m.cod===ENT.foco?'outline:2px solid #EC4899;':'')+'"><input type="checkbox" '+(on?'checked ':'')+'onchange="entMarca(\''+esc(m.cod)+'\',this.checked)" style="width:22px;height:22px"><span style="min-width:0;flex:1;overflow:hidden"><b style="word-break:break-all">'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(ENT.aus[m.cod]?'<span style="display:block;color:#B45309;font-size:12px;font-weight:800">⏳ Ausente · tentar de novo</span>':'')+(m.cl?'<span style="display:block;color:#5B5170;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(m.cl)+'</span>':'')+'<span style="display:block;color:#7A7090;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(m.r?esc(m.r+((m.d&&m.d.bai)?' — '+m.d.bai:'')):'<i>sem endereço cadastrado</i>')+'</span>'+'</span></label>'; }
+  h+='<div style="display:flex;gap:10px;margin-top:14px"><button class="btn sec" style="flex:1" onclick="entAplicar(\''+(DEV_OBRIGATORIA?'devolvido':'ausente')+'\')">'+(DEV_OBRIGATORIA?'↩ Devolver à base':'🚪 Ausente')+(ns?' ('+ns+')':'')+'</button><button class="btn pri" style="flex:1" onclick="entAplicar(\'entregue\')">✔ Entregue'+(ns?' ('+ns+')':'')+'</button></div>';
+  h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'rp_bip\';BP.ult=null;renderInicio();bpCarregar(true)">Voltar</button>'+((!DEV_OBRIGATORIA&&Object.keys(ENT.aus).length)?'<button class="btn pri" style="flex:1" onclick="entFinalizar()">Finalizar lote</button>':'')+'</div></div>';
   return h;
 }
 function entAplicar(status,motivo){
   var L=entLista().filter(function(m){ return ENT.sel[m.cod]; });
   if(!L.length){ aviso('Marque ao menos um pacote'); return; }
-  if(status==='devolvido'&&!motivo){ devMotAbrir(function(m){ entAplicar('devolvido',m); }); return; }
+  if(status==='devolvido'&&!motivo&&DEV_OBRIGATORIA){ devMotAbrir(function(m){ entAplicar('devolvido',m); }); return; }
   var f=rpFilaEnt(), t=Date.now();
   L.forEach(function(m){
     if(status==='entregue') f.push({cod:m.cod,scan:'',mt:String(RP.mt),mtn:RP.mtn||'',cli:m.cl||'',lat:null,lng:null,t:t});
-    else f.push({cod:m.cod,scan:'',status:'devolvido',motivo:motivo||'',mt:String(RP.mt),mtn:RP.mtn||'',t:t});
-    ENT.done[m.cod]=status;
+    else f.push({cod:m.cod,scan:'',status:(status==='ausente'?'ausente':'devolvido'),motivo:(status==='ausente'?'ausente':(motivo||'')),mt:String(RP.mt),mtn:RP.mtn||'',t:t});
+    if(status==='ausente') ENT.aus[m.cod]=1; else ENT.done[m.cod]=status;   /* (v227) ausente continua na lista: o motorista entrega depois */
   });
   rpSalvaFilaEnt(f); rpDescarregarEnt(); ENT.sel={};
-  aviso(L.length+' pacote'+(L.length===1?'':'s')+(status==='entregue'?' marcado'+(L.length===1?'':'s')+' como entregue':' devolvido'+(L.length===1?'':'s')+' à base'));
+  aviso(L.length+' pacote'+(L.length===1?'':'s')+(status==='entregue'?' marcado'+(L.length===1?'':'s')+' como entregue':(status==='ausente'?' marcado'+(L.length===1?'':'s')+' como ausente — continua'+(L.length===1?'':'m')+' com você':' devolvido'+(L.length===1?'':'s')+' à base')));
   renderInicio();
 }
 function entFinalizar(tent){
@@ -2341,7 +2343,7 @@ function entFinalizar(tent){
   bpMarcaFin();
   var nE=0, nD=0, kD; for(kD in ENT.done){ if(ENT.done[kD]==='entregue') nE++; else nD++; }
   if(nE||nD) LOTES_HOJE.unshift({id:Date.now(), data:hojeISO(), transportadoras:['Lote misto'], totalPacotes:nE+nD, entregues:nE, devolvidos:nD, naoLocalizados:0, remarcados:0, km:0, tempoMin:0, fechamento:'aberto', pagamento:'a pagar', _detalhe:[]});
-  BP.meus=[]; ENT.done={}; ENT.sel={}; RP.bipMode=false; PT.sel=null; try{ ptGravar(); }catch(e){}
+  BP.meus=[]; ENT.done={}; ENT.aus={}; ENT.sel={}; RP.bipMode=false; PT.sel=null; try{ ptGravar(); }catch(e){}
   EST='sem_lote'; renderInicio(); aviso('Lote finalizado'); setTimeout(carregarResumo,2500);
 }
 function bpSair(){ bpFecharCamera(); EST='sem_lote'; renderInicio(); }
