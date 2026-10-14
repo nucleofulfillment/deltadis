@@ -580,7 +580,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-224-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-225-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -592,6 +592,17 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <p class="demo" id="lg-pmsg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
     <button class="btn pri wide" id="lg-prim-btn" onclick="primeiroAcesso()">Enviar código no WhatsApp</button>
     <button class="btn sec wide" style="margin-top:8px" onclick="primeiroFechar()">Já tenho PIN — quero entrar</button>
+  </div>
+</div>
+<div id="pin-modal" style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;z-index:310;background:rgba(20,10,40,.7);align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:18px;padding:20px;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.35)">
+    <div style="font-weight:800;color:var(--roxo);font-size:18px;margin-bottom:6px">🔐 Crie o seu PIN</div>
+    <p class="sub" style="margin:0 0 12px">Escolha um PIN de 4 a 6 números que você lembre. Ele vai ser usado sempre que você entrar.</p>
+    <div class="field"><label>Novo PIN (4 a 6 números)</label><input class="inp" id="pn-a" type="password" inputmode="numeric" maxlength="6" placeholder="••••"></div>
+    <div class="field"><label>Repita o PIN</label><input class="inp" id="pn-b" type="password" inputmode="numeric" maxlength="6" placeholder="••••"></div>
+    <p class="demo" id="pn-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
+    <button class="btn pri wide" id="pn-btn" onclick="pinNovoSalvar()">Salvar meu PIN</button>
+    <button class="btn wide" style="margin-top:6px;background:transparent;border:0;box-shadow:none;color:var(--muted2);font-size:12.5px" onclick="pinNovoFechar()">Agora não (meu PIN será o código do WhatsApp)</button>
   </div>
 </div>
 <div id="splash"><div id="sp-logo"></div><div class="sp-pts"><i></i><i></i><i></i></div></div>
@@ -998,7 +1009,7 @@ function entrar(){
       .then(function(r){return r.json().catch(function(){return {ok:false};});})
       .then(function(d){
         b.disabled=false; b.textContent='Entrar';
-        if(d&&d.ok){ try{ localStorage.removeItem('dd_cod_pend'); }catch(e){} ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; abrirApp(); }
+        if(d&&d.ok){ try{ localStorage.removeItem('dd_cod_pend'); }catch(e){} ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; abrirApp(); try{ pinNovoAbrir(pin); }catch(eP){} }
         else entrarNormal();
       }).catch(function(){ b.disabled=false; b.textContent='Entrar'; entrarNormal(); });
     return;
@@ -1040,6 +1051,21 @@ function primeiroAcesso(){
       var lm=el('lg-msg'); lm.style.color='#16A34A'; lm.textContent='✅ Código enviado no seu WhatsApp! Copie o código, volte aqui e digite no campo PIN.';
       try{ el('lg-senha').value=''; el('lg-senha').focus(); }catch(e){}
     }).catch(function(){ b.disabled=false; b.textContent='Enviar código no WhatsApp'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+}
+var PIN_COD='';
+function pinNovoAbrir(cod){ PIN_COD=String(cod||''); el('pn-a').value=''; el('pn-b').value=''; el('pn-msg').textContent=''; el('pin-modal').style.display='flex'; try{ el('pn-a').focus(); }catch(e){} }
+function pinNovoFechar(){ PIN_COD=''; el('pin-modal').style.display='none'; }
+function pinNovoSalvar(){
+  var a=el('pn-a').value.trim(), c=el('pn-b').value.trim(), m=el('pn-msg'), b=el('pn-btn');
+  m.style.color='#c0392b'; m.textContent='';
+  if(!/^\d{4,6}$/.test(a)){ m.textContent='O PIN deve ter de 4 a 6 números.'; return; }
+  if(a!==c){ m.textContent='Os dois PINs não são iguais.'; return; }
+  b.disabled=true; b.textContent='Salvando...';
+  rpApi('/auth/trocar-senha',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({atual:PIN_COD,nova:a})}).then(function(d){
+    b.disabled=false; b.textContent='Salvar meu PIN';
+    if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar. Tente de novo.'; return; }
+    pinNovoFechar(); try{ aviso('PIN salvo! Use esse PIN nas próximas vezes.'); }catch(e){}
+  }).catch(function(){ b.disabled=false; b.textContent='Salvar meu PIN'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
 function sair(){
   fecharTudo();
