@@ -848,7 +848,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-84-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-85-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1683,7 +1683,7 @@ function epocaVerificar(v){
     var at=localStorage.getItem('dd_epoca');
     if(at===v.epoca) return false;
     localStorage.setItem('dd_epoca',v.epoca);
-    if(at===null && !window.__epocaAcao){ /* primeira vez nesta tela: se já tem cópia velha, também limpa */ }
+    if(at===null) return false;   /* (v85) primeira vez neste navegador: só guarda a marca, SEM recarregar a tela (o srvCarregar já traz o servidor) */
     window.__epocaAcao=1;
     localStorage.removeItem(LS_KEY); localStorage.removeItem('dd_pend');
     idbGravar({real:false}, function(){ location.reload(); });
