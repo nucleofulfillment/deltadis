@@ -848,7 +848,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 
       <!-- MENSAGENS (WhatsApp com os motoristas) -->
       <section class="page" id="pg-mensagens">
-        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-83-1010</span></div></div></div>
+        <div class="pghd"><div><h1>Mensagens</h1><div class="sub">conversas com os motoristas pelo WhatsApp da DELTADIS · <span style="opacity:.6">DELTADIS-PAINEL-MSG-84-1010</span></div></div></div>
         <div class="msg-wrap" id="msg-wrap">
           <div class="msg-lista">
             <div class="msg-busca"><input id="msg-q" placeholder="Buscar motorista" oninput="msgPintarLista()"></div>
@@ -1608,18 +1608,27 @@ function srvEnviarDireto(cb){
   var pos=0;
   (function prox(){
     if(pos>=lotes.length){
-      SRV.env=false; SRV.tent=0; srvStatus('☁ salvo'); if(ver===SRV.ver) srvPend(false); else srvAgendar();
+      SRV.env=false; SRV.tent=0; SRV.juntou=false; SRV.forcaJuntar=false; SRV.forcarProx=false; srvStatus('☁ salvo'); if(ver===SRV.ver) srvPend(false); else srvAgendar();
       if(cb) cb(true); return;
     }
     var lote=lotes[pos];
-    fetch(DELTADIS_API+'/painel/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({v:73},lote))})
+    fetch(DELTADIS_API+'/painel/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({v:73},lote,SRV.forcarProx?{forcar:true}:{}))})
     .then(function(r){ return r.json().catch(function(){ return null; }); }).then(function(d){
-      if(!d||!d.ok) throw new Error((d&&d.mensagem)||'falhou');
+      if(!d||!d.ok){ var er=new Error((d&&d.mensagem)||'falhou'); er.cod=d&&d.erro; throw er; }
       var t,kk; for(t in {est:1,ped:1}) if(lote[t]) for(kk in lote[t]) SRV.hashes[(t==='est'?'e:':'p:')+kk]=lote[t][kk].h;
       (lote.apagar||[]).forEach(function(a){ delete SRV.hashes[(a.indexOf('est:')===0?'e:':'p:')+a.replace(/^(est|ped):/,'')]; });
       pos++; prox();
     }).catch(function(e){
-      SRV.env=false; SRV.tent++; srvStatus('⚠ não salvou no servidor',true);
+      SRV.env=false;
+      if(e && e.cod==='encolheu'){   /* (v84) o servidor recusou: esta tela tem bem menos pedidos que ele. 1º: juntar com os do servidor. 2º (se insistir): perguntar. */
+        if(!SRV.juntou){ SRV.juntou=true; SRV.forcaJuntar=true; srvStatus('☁ conferindo com o servidor…'); setTimeout(function(){ srvEnviar(); },800); if(cb) cb(false); return; }
+        SRV.juntou=false; SRV.forcaJuntar=false;
+        var okF=false; try{ okF=window.confirm('ATENÇÃO: o servidor recusou salvar porque esta tela tem MUITO MENOS pedidos do que ele. Salvar assim pode APAGAR pedidos.\n\nSó clique em OK se você apagou os pedidos de propósito.\nCancelar = manter os pedidos do servidor (recomendado).'); }catch(xf){}
+        if(okF){ SRV.forcarProx=true; setTimeout(function(){ srvEnviar(); },500); }
+        else { srvStatus('⚠ gravação protegida — recarregando do servidor',true); srvPend(false); setTimeout(srvCarregar,500); }
+        if(cb) cb(false); return;
+      }
+      SRV.tent++; srvStatus('⚠ não salvou no servidor',true);
       if(String(e&&e.message).indexOf('Atualize')===0) aviso(e.message);
       else if(SRV.tent===1) aviso('Não consegui salvar no servidor agora. Seus dados estão guardados neste navegador e eu tento de novo.');
       setTimeout(function(){ srvEnviar(); },Math.min(60000,10000*SRV.tent));
@@ -1708,7 +1717,8 @@ function srvEnviar(cb){
   fetch(DELTADIS_API+'/painel/versao',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(v){
     if(!v||!v.ok) throw 0;
     if(epocaVerificar(v)) throw 0;
-    var mud=srvMudados(v); if(!mud.length) return false;
+    var mud=srvMudados(v); if(SRV.forcaJuntar){ Object.keys(v.h).forEach(function(kj){ if(kj.charAt(0)==='p' && mud.indexOf(kj)<0) mud.push(kj); }); }
+    if(!mud.length) return false;
     return fetch(DELTADIS_API+'/painel/tudo',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
       if(!d||!d.ok||!d.ped) return false;
       var bp2=srvBasesDe(mud,'p'), be2=srvBasesDe(mud,'e');
@@ -1750,6 +1760,7 @@ function srvCarregar(){
     }
     if(srvPendente() && localMesmo && temLocal){   /* alterações feitas aqui que não deu tempo de enviar: valem mais que o servidor */
       try{ if(d.est.transps&&d.est.transps.d) aplicarTransps(d.est.transps.d); }catch(eT){}   /* (57) a lista de transportadoras do servidor nunca é trocada por uma cópia antiga deste navegador */
+      for(k in SRV.hashes){ if(k.indexOf('p:')===0) delete SRV.hashes[k]; }   /* (v84) pedidos: NÃO partir da versão do servidor — srvEnviar junta os pedidos daqui com os do servidor antes de enviar, nada some */
       SRV.pronto=true; srvEnviar(); repintarTudo(); return;
     }
     var pc=[], bases={}, p;
