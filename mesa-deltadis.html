@@ -212,6 +212,8 @@
   .mbtns{display:none;gap:10px}
   @media(max-width:900px) and (pointer:coarse){ .mbtns{display:flex} .mbtns .btn{flex:1;padding:16px 8px;font-size:15px;font-weight:700;line-height:1.5} #scan-cam-row{display:none !important} .sg-cnt .cnt{font-size:44px} .sg-cnt{padding:8px 14px} }
   @media(max-width:900px){ .voltar{display:none !important} }
+  /* (v65) celular: o card da bipagem cresce até mostrar tudo (P/M/G inteiros) e o motorista fica logo abaixo do nome da transportadora */
+  @media(max-width:900px){ .col-dir .scan{flex:none;max-height:none;overflow:visible} #scan-conteudo[style*="block"]{grid-template-rows:none;height:auto} .scan-grid{gap:12px;grid-template-columns:minmax(0,1fr)} .scan-grid>*,.sg-acoes>*{min-width:0;box-sizing:border-box} .sg-acoes{display:contents} .manual-row{min-width:0} .manual-row input{min-width:0;flex:1} .mot-box{order:-3;margin-bottom:0} #mot-hint{order:-3} .sg-cnt{order:-2} .col-dir{padding-bottom:34px} .wrap{padding-bottom:30px} }
 </style>
 </head>
 <div id="login">
@@ -276,7 +278,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-64-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-65-1010</p>
   </div>
 </div>
 
