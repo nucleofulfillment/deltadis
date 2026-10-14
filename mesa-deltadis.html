@@ -212,7 +212,6 @@
   .mbtns{display:none;gap:10px}
   @media(max-width:900px) and (pointer:coarse){ .mbtns{display:flex} .mbtns .btn{flex:1;padding:16px 8px;font-size:15px;font-weight:700;line-height:1.5} #scan-cam-row{display:none !important} .sg-cnt .cnt{font-size:44px} .sg-cnt{padding:8px 14px} }
   @media(max-width:900px){ .voltar{display:none !important} }
-  @media (orientation:landscape) and (max-height:520px) and (pointer:coarse){ #gire-ovl{display:flex !important} }
 </style>
 </head>
 <div id="login">
@@ -277,7 +276,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-63-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-64-1010</p>
   </div>
 </div>
 
@@ -434,7 +433,6 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
   <button class="btn sec" onclick="fecharCamera()">Fechar câmera</button>
 </div>
 
-<div id="gire-ovl" style="display:none;position:fixed;inset:0;z-index:20000;background:#1F0A3D;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:18px;font-weight:800;padding:24px">📱 Gire o celular para ficar em pé</div>
 <div class="toast" id="toast"></div>
 
 <div class="rm-overlay" id="rm-overlay">
