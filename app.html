@@ -576,23 +576,22 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <h2>Entrar</h2>
     <p class="sub">Use o telefone cadastrado no ponto de distribuição.</p>
     <div class="field"><label>Telefone</label><input class="inp" id="lg-tel" type="tel" inputmode="tel" autocomplete="username" placeholder="(47) 9 0000-0000"></div>
-    <div id="lg-prim-caixa" style="border:2px solid var(--roxo);background:#F5F3FF;border-radius:14px;padding:12px;margin:6px 0 14px">
-      <div style="font-weight:800;color:var(--roxo);font-size:14.5px;margin-bottom:4px">🆕 É a sua primeira vez aqui?</div>
-      <p class="sub" style="margin:0 0 8px">Digite o telefone acima e toque no botão. Você recebe um código no WhatsApp e cria o seu PIN.</p>
-      <button class="btn pri wide" id="lg-prim-btn" onclick="primeiroAcesso()">Primeiro acesso / esqueci o PIN</button>
-      <div id="lg-prim" style="display:none;margin-top:10px">
-        <p class="sub">Enviamos um código de 6 dígitos no seu WhatsApp. Digite o código e escolha o seu PIN.</p>
-        <div class="field"><label>Código do WhatsApp</label><input class="inp" id="lg-cod" inputmode="numeric" maxlength="6" placeholder="000000"></div>
-        <div class="field"><label>Crie seu PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" maxlength="6" id="lg-novopin" placeholder="••••"></div>
-        <button class="btn pri wide" id="lg-pin-btn" onclick="definirPin()">Salvar PIN e entrar</button>
-      </div>
-    </div>
     <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-    <div style="text-align:center;font-size:12px;color:var(--muted2);font-weight:700;margin:2px 0 6px">— já tenho PIN —</div>
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-222-1010</p>
+    <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-223-1010</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
+  </div>
+</div>
+<div id="lg-modal" style="display:none;position:fixed;left:0;top:0;right:0;bottom:0;z-index:300;background:rgba(20,10,40,.6);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)primeiroFechar()">
+  <div style="background:#fff;border-radius:18px;padding:20px;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.35)">
+    <div style="font-weight:800;color:var(--roxo);font-size:18px;margin-bottom:6px">🆕 Primeiro acesso</div>
+    <p class="sub" style="margin:0 0 12px">Digite o seu telefone. Você recebe um código no WhatsApp e ele será o seu PIN para entrar.</p>
+    <div class="field"><label>Telefone (WhatsApp)</label><input class="inp" id="lg-ptel" type="tel" inputmode="tel" placeholder="(47) 9 0000-0000"></div>
+    <p class="demo" id="lg-pmsg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
+    <button class="btn pri wide" id="lg-prim-btn" onclick="primeiroAcesso()">Enviar código no WhatsApp</button>
+    <button class="btn sec wide" style="margin-top:8px" onclick="primeiroFechar()">Cancelar</button>
   </div>
 </div>
 <div id="splash"><div id="sp-logo"></div><div class="sp-pts"><i></i><i></i><i></i></div></div>
@@ -993,7 +992,22 @@ function abrirApp(){
 }
 function entrar(){
   var tel=el('lg-tel').value.trim(), pin=el('lg-senha').value.trim(), m=el('lg-msg'), b=el('lg-btn');
-  m.textContent='';
+  if(tel && /^\d{6}$/.test(pin) && codPendente()){   /* acabou de pedir o código no WhatsApp: o código recebido vira o PIN */
+    m.textContent=''; b.disabled=true; b.textContent='Entrando...';
+    fetch(RP_API+'/auth/motorista/definir-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefone:tel,codigo:pin,pin:pin})})
+      .then(function(r){return r.json().catch(function(){return {ok:false};});})
+      .then(function(d){
+        b.disabled=false; b.textContent='Entrar';
+        if(d&&d.ok){ try{ localStorage.removeItem('dd_cod_pend'); }catch(e){} ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; abrirApp(); }
+        else entrarNormal();
+      }).catch(function(){ b.disabled=false; b.textContent='Entrar'; entrarNormal(); });
+    return;
+  }
+  entrarNormal();
+}
+function entrarNormal(){
+  var tel=el('lg-tel').value.trim(), pin=el('lg-senha').value.trim(), m=el('lg-msg'), b=el('lg-btn');
+  m.style.color='#c0392b'; m.textContent='';
   if(!tel||!pin){ m.textContent='Digite o telefone e o PIN.'; return; }
   b.disabled=true; b.textContent='Entrando...';
   fetch(RP_API+'/auth/login-motorista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefone:tel,pin:pin})})
@@ -1004,33 +1018,28 @@ function entrar(){
       ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; abrirApp();
     }).catch(function(){ b.disabled=false; b.textContent='Entrar'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
+function primeiroAbrir(){
+  var t=el('lg-tel').value.trim(); if(t) el('lg-ptel').value=t;
+  el('lg-pmsg').textContent=''; el('lg-modal').style.display='flex';
+  try{ el('lg-ptel').focus(); }catch(e){}
+}
+function primeiroFechar(){ el('lg-modal').style.display='none'; }
+function codPendente(){ try{ var o=JSON.parse(localStorage.getItem('dd_cod_pend')||'null'); return !!(o&&o.t&&Date.now()-o.t<900000); }catch(e){ return false; } }
 function primeiroAcesso(){
-  var tel=el('lg-tel').value.trim(), m=el('lg-msg'), b=el('lg-prim-btn');
+  var tel=el('lg-ptel').value.trim(), m=el('lg-pmsg'), b=el('lg-prim-btn');
   m.style.color='#c0392b'; m.textContent='';
-  if(!tel){ m.textContent='Digite o seu telefone acima e toque de novo.'; return; }
+  if(!tel){ m.textContent='Digite o seu telefone.'; return; }
   b.disabled=true; b.textContent='Enviando código...';
   fetch(RP_API+'/auth/motorista/codigo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefone:tel})})
     .then(function(r){return r.json().catch(function(){return {ok:false};});})
     .then(function(d){
-      b.disabled=false; b.textContent='Primeiro acesso / esqueci o PIN';
+      b.disabled=false; b.textContent='Enviar código no WhatsApp';
       if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível enviar o código.'; return; }
-      el('lg-prim').style.display='block'; m.style.color='#16A34A'; m.textContent='Código enviado! Veja o seu WhatsApp.';
-      try{ el('lg-cod').focus(); }catch(e){}
-    }).catch(function(){ b.disabled=false; b.textContent='Primeiro acesso / esqueci o PIN'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
-}
-function definirPin(){
-  var tel=el('lg-tel').value.trim(), cod=el('lg-cod').value.trim(), pin=el('lg-novopin').value.trim(), m=el('lg-msg'), b=el('lg-pin-btn');
-  m.style.color='#c0392b'; m.textContent='';
-  if(!/^\d{6}$/.test(cod)){ m.textContent='Digite o código de 6 números.'; return; }
-  if(!/^\d{4,6}$/.test(pin)){ m.textContent='O PIN deve ter de 4 a 6 números.'; return; }
-  b.disabled=true; b.textContent='Salvando...';
-  fetch(RP_API+'/auth/motorista/definir-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({telefone:tel,codigo:cod,pin:pin})})
-    .then(function(r){return r.json().catch(function(){return {ok:false};});})
-    .then(function(d){
-      b.disabled=false; b.textContent='Salvar PIN e entrar';
-      if(!d||!d.ok){ m.textContent=(d&&d.mensagem)||'Não foi possível salvar o PIN.'; return; }
-      ddGuardarM(d.token,d.usuario); el('lg-senha').value=''; el('lg-cod').value=''; el('lg-novopin').value=''; el('lg-prim').style.display='none'; abrirApp();
-    }).catch(function(){ b.disabled=false; b.textContent='Salvar PIN e entrar'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
+      try{ localStorage.setItem('dd_cod_pend',JSON.stringify({t:Date.now()})); }catch(e){}
+      el('lg-tel').value=tel; primeiroFechar();
+      var lm=el('lg-msg'); lm.style.color='#16A34A'; lm.textContent='✅ Código enviado no seu WhatsApp! Copie o código, volte aqui e digite no campo PIN.';
+      try{ el('lg-senha').value=''; el('lg-senha').focus(); }catch(e){}
+    }).catch(function(){ b.disabled=false; b.textContent='Enviar código no WhatsApp'; m.textContent='Sem conexão com o servidor. Tente de novo.'; });
 }
 function sair(){
   fecharTudo();
