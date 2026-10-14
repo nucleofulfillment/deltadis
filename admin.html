@@ -269,7 +269,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <button class="btn pri" id="lg-btn" style="width:100%;margin-top:18px;padding:13px;font-size:14.5px" onclick="entrar()">Entrar</button>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <div class="erro" id="lg-erro"></div>
-      <div class="bld">DELTADIS-ADMIN-22-1010</div>
+      <div class="bld">DELTADIS-ADMIN-23-1410</div>
     </div>
   </div>
 </div>
@@ -315,6 +315,10 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div id="srv-cfg-info" class="sub2" style="padding:0 2px 8px">Carregando...</div>
     </div>
     <div class="card">
+      <h3><span>Apps para download</span><span class="dir"><span class="lnk" onclick="abrirApks()">Enviar / trocar APK</span></span></h3>
+      <div id="apk-info" class="sub2" style="padding:0 2px 8px">O site entrega direto o arquivo enviado aqui.</div>
+    </div>
+    <div class="card">
       <h3><span>Fluxo de caixa</span><span class="dir"><span class="lnk" onclick="carregarFluxo();carregarSaldo()">↻ Atualizar</span><span class="lnk" onclick="abrirLanc()">+ Novo lançamento</span></span></h3>
       <div class="filtros" id="fc-filtros"></div>
       <div id="fc-aviso"></div>
@@ -325,7 +329,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <tbody id="fc-corpo"><tr><td colspan="5" class="vazio">Carregando...</td></tr></tbody>
       </table></div>
     </div>
-    <div class="bld">DELTADIS-ADMIN-22-1010</div>
+    <div class="bld">DELTADIS-ADMIN-23-1410</div>
   </main>
 </div>
 
@@ -655,6 +659,38 @@ function desenharClientes(){
 }
 function alternaClientes(){var b=el('cli-corpo'),o=b.style.display==='none';b.style.display=o?'block':'none';el('cli-mais').textContent=o?'−':'+';}
 /* ── janelas ── */
+
+/* ── (v23) APKs para download no site ── */
+function abrirApks(){
+  abrirModal('<h3>Apps para download</h3><div class="vazio">Carregando...</div>');
+  chamar('GET','/admin/apk').then(function(d){
+    if(!d||!d.ok){abrirModal('<h3>Apps para download</h3><div class="vazio">Não consegui carregar.</div><div class="acoes" style="justify-content:flex-end"><button class="btn" onclick="fechar()">Fechar</button></div>');return;}
+    var A=d.apks||{},h='<h3>Apps para download</h3>';
+    [['motorista','DELTADIS Motorista'],['mesa','DELTADIS Mesa']].forEach(function(x){
+      var m=A[x[0]];
+      h+='<label>'+x[1]+'</label><div class="sub" style="margin:0 0 6px">'+(m?('Enviado em '+new Date(m.em).toLocaleString('pt-BR')+' · '+(m.tamanho/1048576).toFixed(1)+' MB'):'Ainda não enviado')+'</div>'+
+        '<input type="file" id="apk-'+x[0]+'" accept=".apk,application/vnd.android.package-archive"><div style="margin:6px 0 12px"><button class="btn pri" id="apk-bt-'+x[0]+'" onclick="enviarApk(\''+x[0]+'\')">Enviar '+x[1]+'</button></div>';
+    });
+    h+='<div id="apk-msg" class="sub"></div><div class="acoes" style="justify-content:flex-end"><button class="btn" onclick="fechar()">Fechar</button></div>';
+    abrirModal(h);
+  }).catch(function(){abrirModal('<h3>Apps para download</h3><div class="vazio">Não consegui carregar.</div>');});
+}
+function enviarApk(app){
+  var f=el('apk-'+app).files[0],msg=el('apk-msg');
+  if(!f){msg.textContent='Escolha o arquivo .apk primeiro.';return;}
+  if(f.size>20*1048576){msg.textContent='Arquivo grande demais (máx. 20 MB).';return;}
+  var bt=el('apk-bt-'+app);bt.disabled=true;msg.textContent='Enviando... aguarde.';
+  var rd=new FileReader();
+  rd.onload=function(){
+    var b64=String(rd.result).split(',')[1]||'';
+    chamar('POST','/admin/apk',{app:app,arquivo:b64,nome:f.name}).then(function(d){
+      if(d&&d.ok){toast('APK enviado!');abrirApks();}
+      else{bt.disabled=false;msg.textContent=(d&&d.mensagem)||'Não consegui enviar.';}
+    }).catch(function(){bt.disabled=false;msg.textContent='Falha na conexão. Tente de novo.';});
+  };
+  rd.onerror=function(){bt.disabled=false;msg.textContent='Não consegui ler o arquivo.';};
+  rd.readAsDataURL(f);
+}
 function abrirModal(html){el('modal').innerHTML=html;el('fundo').classList.add('on');}
 function fechar(){el('fundo').classList.remove('on');el('modal').innerHTML='';}
 function abrirNovoCliente(){
