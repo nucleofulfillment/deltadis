@@ -1,0 +1,10 @@
+{
+  "appId": "br.com.deltadis.mesa",
+  "appName": "Mesa Delta",
+  "webDir": "www",
+  "server": {
+    "url": "https://deltadis.com.br/mesa-deltadis.html",
+    "cleartext": false,
+    "allowNavigation": ["deltadis.com.br", "*.deltadis.com.br", "api.deltadis.com.br"]
+  }
+}
