@@ -580,7 +580,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-232-1610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-233-1610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1303,7 +1303,8 @@ function trkDist(a,b,c,d){ var R=6371000, r=Math.PI/180, x=(c-a)*r, y=(d-b)*r*Ma
 function trkEnviar(corpo){ try{ return rpApi('/motorista/posicao',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo)}).catch(function(){}); }catch(e){} }
 function trkTick(){
   try{
-    var rodando=(EST==='em_rota')&&!!DD_M_TOKEN&&LOTE_ATUAL.length>0&&PONTEIRO<LOTE_ATUAL.length;
+    /* (233) também rastreia quem NÃO usa roteirização: enquanto tiver pacote na lista dele (bipado e ainda não entregue/fechado) */
+    var rodando=!!DD_M_TOKEN&&( ((EST==='em_rota')&&LOTE_ATUAL.length>0&&PONTEIRO<LOTE_ATUAL.length) || (BP&&BP.meus&&BP.meus.length>0) );
     if(!rodando){ if(TRK.ativo){ TRK.ativo=false; TRK.lat=null; TRK.t=0; trkEnviar({fim:true}); } return; }
     if(document.hidden||TRK.busy||!navigator.geolocation) return;
     TRK.busy=true;
