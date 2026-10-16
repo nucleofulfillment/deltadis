@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-123-1610</p>
+      <p class="bld">DELTADIS-BASE-124-1610</p>
     </div>
   </div>
 </div>
@@ -1276,7 +1276,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-123-1610</div>
+<div class="bld-fix">DELTADIS-BASE-124-1610</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -4028,7 +4028,8 @@ function bipbAplicar(){
   var sp=document.querySelectorAll('#pd-corpo .bipb'), i, c, s2, f, h;
   for(i=0;i<sp.length;i++){
     c=sp[i].getAttribute('data-bc'); s2=sp[i].getAttribute('data-bs'); f=BIPB.info[c]||(s2&&BIPB.info[s2]);
-    if(f){ h='<span title="Bipado no app'+(f.mtn?(' por '+esc(f.mtn)):'')+' · última bipagem '+esc(bipbFmt(f.t))+'" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;background:#ECFDF3;border:1px solid #B7EBC9;color:#166534;font-size:10.5px;font-weight:800;vertical-align:middle">'+bipbOrdinal(f.n)+'</span>'; if(sp[i].innerHTML!==h) sp[i].innerHTML=h; }
+    if(f){ var det=''; if(f.l&&f.l.length){ det=f.l.map(function(q,ix){ return (ix+1)+') '+bipbFmt(q.t)+(q.mtn?(' · '+q.mtn):'')+(q.tent>0?(' · +'+q.tent+' nova(s) tentativa(s) após devolução na Mesa'):''); }).join('\n'); }
+      h='<span title="'+esc(det||('Bipado no app'+(f.mtn?(' por '+f.mtn):'')+' · última bipagem '+bipbFmt(f.t)))+'" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;background:#ECFDF3;border:1px solid #B7EBC9;color:#166534;font-size:10.5px;font-weight:800;vertical-align:middle">'+bipbOrdinal(f.n)+'</span>'; if(sp[i].innerHTML!==h) sp[i].innerHTML=h; }
     else if(sp[i].innerHTML) sp[i].innerHTML='';
   }
 }
