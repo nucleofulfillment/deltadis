@@ -580,7 +580,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-229-1610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-230-1610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1847,6 +1847,8 @@ var BIP_ROTA=true;   /* true = a rota nasce da bipagem do motorista; false = vol
 var BP={mesa:[],camFn:null,atual:'',idx:{},meus:[],outros:{},ult:null,ok:false,carregando:false,ocupado:false,cam:null};
 function bpNorm(v){ return String(v==null?'':v).replace(/[^A-Za-z0-9_.-]/g,''); }
 function bpTr(cod){ var c=String(cod).toUpperCase(); if(/^AJ/.test(c)) return 'anj'; if(/^GP.*BR$/.test(c)) return 'pic'; return ''; }
+/* (v230) pacote bipado que NÃO está na lista do motorista: dois tons médios, diferente do ok (agudo) e do erro (grave) */
+function somForaLista(){ _tom(660,0,0.12,0.45); _tom(440,0.15,0.2,0.45); try{ if(navigator.vibrate) navigator.vibrate([80,60,80]); }catch(e){} }
 function somErroBip(){ _tom(220,0,0.18,0.5); _tom(180,0.2,0.22,0.5); try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){} }
 /* parada sem rastreio: pergunta se o pacote tem código de rastreio */
 function srPerguntar(){
@@ -2004,7 +2006,7 @@ function bpAtualizar(){
   var fbp=BP.meus.filter(function(m){ return m.auto&&!m.conf; }).length;
   c.textContent=BP.meus.length+' '+(BP.meus.length===1?'pacote':'pacotes')+(fbp?' · '+fbp+' por bipar':'');
   var uh='';
-  if(BP.ult){ var cor={ok:['#ECFDF3','#B7EBC9','#166534'],novo:['#EFF6FF','#BFDBFE','#1E40AF'],rep:['#FFF7E6','#F5D9A0','#8A5A00'],err:['#FCEBEB','#F3C9C9','#B91C1C']}[BP.ult.t]||['#F4EEFB','#E3D9F2','#5B5170'];
+  if(BP.ult){ var cor={ok:['#ECFDF3','#B7EBC9','#166534'],novo:['#EFF6FF','#BFDBFE','#1E40AF'],rep:['#FFF7E6','#F5D9A0','#8A5A00'],fora:['#FFF7E6','#F5D9A0','#8A5A00'],err:['#FCEBEB','#F3C9C9','#B91C1C']}[BP.ult.t]||['#F4EEFB','#E3D9F2','#5B5170'];
     uh='<div style="border:1px solid '+cor[1]+';background:'+cor[0]+';color:'+cor[2]+';border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px">'+BP.ult.m+(BP.ult.cod?'<b style="display:block;font-size:15px;margin-top:3px;word-break:break-all">'+cpCod(BP.ult.cod)+'</b>':'')+'</div>'; }
   var big='';
   if(BP.ult&&BP.ult.num) big='<div style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:#fff;border-radius:18px;padding:14px 12px;text-align:center;margin:0 0 12px"><div style="font-size:13px;opacity:.9">Escreva este número no pacote</div><div style="font-size:84px;font-weight:800;line-height:1.05">'+BP.ult.num+'</div><div style="font-size:12px;opacity:.9;margin-top:2px;cursor:pointer" onclick="bpVoz()">'+(NUM.voz?'🔊 Voz ligada (toque para desligar)':'🔇 Voz desligada (toque para ligar)')+'</div></div>';
@@ -2042,11 +2044,14 @@ function bpBipar(v){
   var NAO=(rpCfg().rota==='nao'), item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};
   if(e&&e.a&&e.a[0]&&e.a[1]&&e.a[4]){ item.d={cep:e.a[5]||'',num:e.a[1],comp:e.a[2]||'',rua:e.a[0],bai:e.a[3]||'',cid:e.a[4]}; item.r=e.a[0]+', '+e.a[1]; item.e=1; item.novo=false; }   /* (128) o endereço já veio na lista: aparece NA HORA, sem esperar o servidor */   /* (111) o número só aparece na 2ª bipagem (conferência da rota) */
   try{ if(BP.remT) delete BP.remT[String(item.cod).toLowerCase()]; if(BP.finT) delete BP.finT[String(item.cod).toLowerCase()]; }catch(e){}
-  item.pend=Date.now(); BP.meus.push(item); bpMarcaMesa(canon); somBipeOk();
+  var temLista=(BP.mesa||[]).length>0, naLista=false;   /* (v230) confere o bipado x a lista atribuída */
+  if(temLista){ (BP.mesa||[]).forEach(function(x){ if(String(x.cod).toLowerCase()===canon.toLowerCase()) naLista=true; }); }
+  item.pend=Date.now(); BP.meus.push(item); bpMarcaMesa(canon); if(temLista&&!naLista) somForaLista(); else somBipeOk();
   if(NAO) BP.ult={t:'ok',m:'✔ Registrado'+(e&&e.cl?' — '+esc(e.cl):''),cod:canon};
   else if(!e) BP.ult={t:'novo',m:'Clique e insira o endereço.',cod:canon};
   else if(!e.e) BP.ult={t:'novo',m:'Registrado, mas o endereço está incompleto.',cod:canon};
   else BP.ult={t:'ok',m:'✔ Registrado'+(e.cl?' — '+esc(e.cl):''),cod:canon};
+  if(temLista&&BP.ult&&BP.ult.t==='ok'){ if(naLista) BP.ult.m='✔ NA SUA LISTA'+(e&&e.cl?' — '+esc(e.cl):''); else { BP.ult.t='fora'; BP.ult.m='⚠ FORA DA LISTA — registrado mesmo assim'; } }
   BP.ult.num=item.num; bpAtualizar();
   function desfaz(msg,t){ var j; for(j=BP.meus.length-1;j>=0;j--) if(BP.meus[j]===item) BP.meus.splice(j,1); bpMarcaMesa(canon,true); somErroBip(); BP.ult={t:t||'err',m:msg,cod:canon}; bpAtualizar(); }
   rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:e?'':bpTr(canon),ponto:PT.sel?PT.sel.nome:'',num:item.num||null})}).then(function(d){
@@ -2414,11 +2419,17 @@ function bpCamera(){
         BP.cam.ult=c; BP.cam.q=ag;
         try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
         var f=el('bp-faixa'); if(f){ f.style.boxShadow='0 0 0 4px #22C55E inset'; setTimeout(function(){ var f2=el('bp-faixa'); if(f2) f2.style.boxShadow=''; },350); }
-        if(BP.camFn) BP.camFn(c); else { bpFecharCamera(); bpBipar(c); }
+        if(BP.camFn) BP.camFn(c); else { bpBipar(c); bpCamFeedback(); }   /* (v230) a câmera NÃO fecha a cada bipe: segue lendo o próximo pacote */
       }).catch(function(){ if(BP.cam) BP.cam.lendo=false; });
     },140)};
   }).catch(function(){ aviso('Não consegui abrir a câmera. Libere a permissão do navegador.'); });
   });
+}
+/* (v230) resposta de cada bipe DENTRO da câmera aberta (a tela de trás fica escondida) */
+function bpCamFeedback(){
+  var i=el('bp-caminfo'); if(!i||!BP.ult) return;
+  var cor={ok:'#86EFAC',novo:'#93C5FD',rep:'#FCD34D',fora:'#FCD34D',err:'#FCA5A5'}[BP.ult.t]||'#fff';
+  i.innerHTML='<div style="color:'+cor+';font-weight:800;font-size:16px">'+BP.ult.m+'</div>'+(BP.ult.cod?'<div style="font-size:14px;margin-top:2px;word-break:break-all">'+esc(BP.ult.cod)+'</div>':'')+'<div style="opacity:.85;margin-top:4px;font-size:13px">'+BP.meus.length+' bipado'+(BP.meus.length===1?'':'s')+' · toque em Fechar quando terminar</div>';
 }
 function bpZoom(){ var c=BP.cam; if(!c||!c.caps.zoom) return; c.zoomOn=!c.zoomOn; var z=c.zoomOn?Math.min(c.caps.zoom.max,Math.max(c.caps.zoom.min*2,2)):c.caps.zoom.min; try{ c.tr.applyConstraints({advanced:[{zoom:z}]}).catch(function(){}); }catch(e){} var b=el('bp-zoom'); if(b) b.textContent=c.zoomOn?'2x':'1x'; }
 function bpLuz(){ var c=BP.cam; if(!c) return; c.luz=!c.luz; try{ c.tr.applyConstraints({advanced:[{torch:c.luz}]}).catch(function(){}); }catch(e){} var b=el('bp-luz'); if(b) b.style.opacity=c.luz?'1':'.7'; }
