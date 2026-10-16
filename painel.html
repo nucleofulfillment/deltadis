@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-126-1610</p>
+      <p class="bld">DELTADIS-BASE-127-1610</p>
     </div>
   </div>
 </div>
@@ -1277,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-126-1610</div>
+<div class="bld-fix">DELTADIS-BASE-127-1610</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3962,13 +3962,13 @@ var FILTRO_TR=null;
 var DASH_TR=null;   /* transportadora escolhida no Dashboard (clicar de novo tira o filtro) */
 function filtrarPorTransportadora(id){
   if(PAG==='dashboard'){ DASH_TR=(DASH_TR===id?null:id); pintarIndicadores(); pintarDashboard(); return; }
-  FILTRO_TR=id; ir('pedidos'); pintarPedidos();
+  FILTRO_TR=id; if(PAG!=='pedidos') VIS_PD='todos'; ir('pedidos'); pintarPedidos();
 }
 function limparFiltroDash(){ DASH_TR=null; pintarIndicadores(); pintarDashboard(); }
 function limparFiltroTransportadora(){ FILTRO_TR=null; pintarPedidos(); }
 function pintarPedidos(){
   var tf=FILTRO_TR?transp(FILTRO_TR):null;
-  el('pd-chip').innerHTML = (tf ? ('<div class="chip-filtro">Transportadora: '+esc(tf.n)+' <span onclick="limparFiltroTransportadora()">✕</span></div>') : '') + (FILTRO_PD==='acao' ? '<div class="chip-filtro">Precisa de ação: tentativas, devolvidos e extraviados <span onclick="filtrarPedidos(\'todos\')">✕</span></div>' : '');
+  el('pd-chip').innerHTML = (VIS_PD==='todos' ? '<div class="chip-filtro">Mostrando todos, inclusive retroativos <span onclick="VIS_PD=\'bip\';pintarPedidos()">✕</span></div>' : '') + (tf ? ('<div class="chip-filtro">Transportadora: '+esc(tf.n)+' <span onclick="limparFiltroTransportadora()">✕</span></div>') : '') + (FILTRO_PD==='acao' ? '<div class="chip-filtro">Precisa de ação: tentativas, devolvidos e extraviados <span onclick="filtrarPedidos(\'todos\')">✕</span></div>' : '');
 
   var dIni=(el('pd-data-ini')&&el('pd-data-ini').value)||'', dFim=(el('pd-data-fim')&&el('pd-data-fim').value)||'';
   function passaData(p2){ if(!p2.dia) return !dIni && !dFim; if(dIni && p2.dia<dIni) return false; if(dFim && p2.dia>dFim) return false; return true; }
@@ -3996,13 +3996,14 @@ function pintarPedidos(){
   function temB(p2){ var k=String(p2.cod).toLowerCase(); return !!(BIPT[k]||(p2.scan&&BIPT[String(p2.scan).toLowerCase()])); }
   function passaBusca(p2){ if(!busca) return true; return (p2.cod+' '+p2.cliente+' '+(p2.scan||'')).toLowerCase().indexOf(busca)>=0; }
   function passaOc(p2){ if(!ocFiltro) return true; if(ocFiltro==='__semnum') return !(p2.st==='entregue'||incompletoDe(p2)!=='num'); if(ocFiltro==='__semrua') return !(p2.st==='entregue'||incompletoDe(p2)!=='rua'); return p2.obs===ocFiltro; }
-  var nB=0;
-  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaMot(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=temB(pc); if(tbC) nB++; if(FILTRO_B && !tbC) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
+  var nB=0, nR=0;
+  function visOk(tb){ if(BIPT_SIG===''||VIS_PD==='todos') return true; return VIS_PD==='retro'?!tb:tb; }   /* (127) por padrão só pacotes já bipados; retroativos (sem bipagem) só aparecem se pedir */
+  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaMot(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=temB(pc); if(tbC) nB++; else nR++; if(!visOk(tbC)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var pills='';
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
     pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i]==='nao localizado'?'Não localizado':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
   }
-  if(REAL){ pills+='<span class="pill'+(FILTRO_B?' on':'')+'" style="position:relative;overflow:visible" title="Só pacotes que já foram bipados no app do motorista" onclick="filtrarBip()">1ª B<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(nB>0?'#16A34A':'var(--border2)')+';color:'+(nB>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+nB+'</span></span>'; }
+  if(REAL){ pills+='<span class="pill'+(VIS_PD==="retro"?' on':'')+'" style="position:relative;overflow:visible" title="Pacotes que ainda NÃO foram bipados no app (retroativos). Toque de novo para voltar" onclick="filtrarRetro()">Retroativos<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(nR>0?'#D97706':'var(--border2)')+';color:'+(nR>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+nR+'</span></span>'; }
   el('pd-pills').innerHTML=pills;
 
   var h='', n=0, LIM=300;
@@ -4011,7 +4012,7 @@ function pintarPedidos(){
     else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
-    if(FILTRO_B && !temB(p)) continue;
+    if(!visOk(temB(p))) continue;
     if(!passaMot(p)) continue;
     if(ocFiltro==='__semnum'){ if(p.st==='entregue'||incompletoDe(p)!=='num') continue; }
     else if(ocFiltro==='__semrua'){ if(p.st==='entregue'||incompletoDe(p)!=='rua') continue; }
@@ -4024,7 +4025,7 @@ function pintarPedidos(){
     h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b>'+cpBtn(p.cod)+(n<=45?('<span class="bipb" data-bc="'+esc(p.cod)+'" data-bs="'+esc((p.scan&&p.scan!==p.cod)?p.scan:'')+'"></span>'):'')+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
        '<td>'+esc(t?t.n:'—')+'</td><td>'+esc(m?m.n:'sem motorista')+'</td><td>'+badgeStatus(p.st)+'</td><td>'+(p.vl==null?'—':moeda(p.vl))+'</td></tr>';}
   if(n>LIM) h+='<tr><td colspan="5"><div class="empty">Mostrando os primeiros '+LIM+' de '+n+' pacotes — use a busca ou os filtros para ver os outros</div></td></tr>';
-  if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+'</div></td></tr>';
+  if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+(VIS_PD==='bip'&&BIPT_SIG!==''?' entre os já bipados. Toque em "Retroativos" para ver os que ainda não foram bipados.':'')+'</div></td></tr>';
   el('pd-corpo').innerHTML=h;
   try{ bipbPintar(); }catch(eBb){}
 }
@@ -4053,9 +4054,9 @@ function bipbPintar(){
   }).catch(function(){ BIPB.rodando=false; });
 }
 setInterval(function(){ try{ if(!document.hidden && document.querySelector('#pd-corpo .bipb')){ BIPB.ts=0; bipbPintar(); } }catch(e){} },10000);
-var FILTRO_B=false;   /* (123) filtro "1ª B": só pacotes bipados no app */
+var VIS_PD='bip';   /* (127) 'bip' = só bipados (padrão) · 'retro' = só retroativos (sem bipagem) · 'todos' = tudo (vindo do Dashboard) */
 var BIPT={}, BIPT_SIG='', BIPT_RODANDO=false;
-function filtrarBip(){ FILTRO_B=!FILTRO_B; pintarPedidos(); }
+function filtrarRetro(){ VIS_PD=(VIS_PD==='retro')?'bip':'retro'; pintarPedidos(); }
 function bipTodosCarregar(){
   if(BIPT_RODANDO||!REAL||!DD_TOKEN||document.hidden) return;
   BIPT_RODANDO=true;
@@ -4071,7 +4072,7 @@ setTimeout(bipTodosCarregar,2500);
 function filtrarPedidos(s){FILTRO_PD=s; pintarPedidos();}
 /* clicou num card do Dashboard: abre Pedidos já filtrado pelo status (limpa transportadora, datas e ocorrência pra bater com o número do card) */
 function dashParaPedidos(st){
-  FILTRO_TR=DASH_TR||null; FILTRO_PD=st;
+  FILTRO_TR=DASH_TR||null; FILTRO_PD=st; VIS_PD='todos';
   var a=el('pd-data-ini'), b=el('pd-data-fim'), o=el('pd-ocor'), q=el('pd-busca');
   if(a) a.value=DASH_G_INI||''; if(b) b.value=DASH_G_FIM||''; if(o) o.value=''; if(q) q.value=''; if(el('pd-mot')) el('pd-mot').value='';
   ir('pedidos'); pintarPedidos();
