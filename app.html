@@ -580,7 +580,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-230-1610</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-232-1610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2037,7 +2037,7 @@ function bpBipar(v){
       rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:'',ponto:PT.sel?PT.sel.nome:'',num:ex.num})}).then(function(d){ if(!d||!d.ok){ ex.conf=false; bpAtualizar(); } }).catch(function(){ ex.conf=false; somErroBip(); BP.ult={t:'err',m:'Sem conexão. Esse pacote NÃO foi conferido — bipe de novo.',cod:canon}; bpAtualizar(); });
       return;
     }
-    somErroBip(); BP.ult={t:'rep',m:'Você já bipou este pacote.',cod:canon,num:ex.num||0}; bpAtualizar(); return; }
+    somErroBip(); BP.ult={t:'novo',m:'✔ JÁ REGISTRADO — este pacote já está na sua lista',cod:canon,num:ex.num||0}; bpAtualizar(); return; }
   if(BP.outros[canon.toLowerCase()]){ somErroBip(); BP.ult={t:'err',m:'Este pacote já foi bipado por '+esc(BP.outros[canon.toLowerCase()])+'.',cod:canon}; bpAtualizar(); return; }
   if(e && e.m && String(e.m)!==String(RP.mt) && !bpEhMeu(e,canon)){ somErroBip(); BP.ult={t:'err',m:'Este pacote está registrado para '+esc(e.d||'outro motorista')+'. Fale com a Mesa.',cod:canon}; bpAtualizar(); return; }
   /* otimista: mostra o pacote na hora e confirma com o servidor em segundo plano; se o servidor recusar, tira da lista e avisa */
@@ -2062,7 +2062,7 @@ function bpBipar(v){
     if(d.resultado==='devolvido'){ desfaz(d.mensagem||'Pacote devolvido à base. Só volta para a rota depois que a Mesa der entrada.','err'); return; }   /* (125) devolvido à base: só a Mesa devolve pra rota */
     if(d.cliente&&!item.cl) item.cl=d.cliente;
     if(d.end&&d.end.rua&&d.end.num){ item.d={cep:d.end.cep||'',num:d.end.num,comp:d.end.comp||'',rua:d.end.rua,bai:d.end.bai||'',cid:d.end.cid||''}; item.r=d.end.rua+', '+d.end.num; item.e=1; item.novo=false; bpAtualizar(); }   /* (119) endereço do pedido (ex.: XML da NF) já vem completo na bipagem */
-    if(d.resultado==='repetido'){ var j2,n2=0; for(j2=0;j2<BP.meus.length;j2++) if(BP.meus[j2].cod.toLowerCase()===canon.toLowerCase()) n2++; if(n2>1) desfaz('Você já bipou este pacote.','rep'); }
+    if(d.resultado==='repetido'){ var j2,n2=0; for(j2=0;j2<BP.meus.length;j2++) if(BP.meus[j2].cod.toLowerCase()===canon.toLowerCase()) n2++; if(n2>1) desfaz('✔ JÁ REGISTRADO — este pacote já está na sua lista','novo'); }
   }).catch(function(){ item.pend=0; desfaz('Sem conexão. Esse pacote NÃO foi registrado — bipe de novo.'); });
 }
 /* romaneio da Mesa: marca (ou desmarca) o pacote como bipado na lista de conferência */
@@ -2084,6 +2084,12 @@ function bpMesaHtml(){
   for(i=0;i<tot;i++){ if(M[i].b) bip++; else if(M[i].nl) nls.push(M[i]); else falta.push(M[i]); }
   if(!falta.length&&!nls.length) return '';   /* tudo conferido: sem aviso */
   var h='<div style="border:1px solid #F9A8D4;background:#FDF2F8;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px"><b style="color:#BE185D">Seus pacotes: '+bip+' de '+tot+' bipados'+(nls.length?' · '+nls.length+' não localizado'+(nls.length===1?'':'s'):'')+'</b>';
+  if(bip){ var ja={}, ord=[], mk, jj; for(i=0;i<M.length;i++) if(M[i].b) ja[String(M[i].cod).toLowerCase()]=M[i];
+    for(jj=(BP.meus||[]).length-1;jj>=0;jj--){ mk=String(BP.meus[jj].cod||'').toLowerCase(); if(ja[mk]){ ord.push(ja[mk]); delete ja[mk]; } }
+    for(mk in ja) ord.push(ja[mk]);
+    h+='<div style="color:#047857;margin:3px 0 4px;font-weight:700">✔ Já bipados ('+bip+'):</div><div style="max-height:110px;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#ECFDF5;border-radius:8px;padding:2px 8px;margin-bottom:6px">';
+    for(i=0;i<ord.length&&i<30;i++) h+='<div style="font-weight:700;font-size:13px;color:#065F46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:3px 0">✔ '+cpCod(ord[i].cod)+'</div>';
+    h+='</div>'; }
   if(falta.length){ h+='<div style="color:#9D174D;margin:3px 0 4px">Faltam bipar:</div><div style="max-height:200px;overflow-y:auto;-webkit-overflow-scrolling:touch">'; for(i=0;i<falta.length&&i<30;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:#831843;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cpCod(falta[i].cod)+'</div>'+(falta[i].tr?'<div style="font-weight:500;font-size:11.5px;color:#9D174D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(falta[i].tr)+'</div>':'')+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(falta[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),true)">Não localizei</button></div>'; if(falta.length>30) h+='<div style="color:#9D174D">… e mais '+(falta.length-30)+'</div>'; h+='</div>'; }
   if(nls.length){ h+='<div style="color:#B91C1C;margin:6px 0 3px;font-weight:700">⚠ Não localizados (Mesa avisada):</div>'; for(i=0;i<nls.length;i++) h+='<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><div style="flex:1;min-width:0;font-weight:700;font-size:13px;color:#7F1D1D;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+cpCod(nls[i].cod)+'</div><button class="btn sec" style="padding:5px 10px;min-width:0;font-size:11.5px;flex:none" data-c="'+esc(nls[i].cod)+'" onclick="bpNaoLoc(this.getAttribute(\'data-c\'),false)">Desfazer</button></div>'; }
   return h+'</div>';
