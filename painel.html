@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-125-1610</p>
+      <p class="bld">DELTADIS-BASE-126-1610</p>
     </div>
   </div>
 </div>
@@ -694,12 +694,13 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
         <div id="pd-chip"></div>
         <div class="card">
           <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:18px">
-            <div class="search" style="margin-bottom:0"><span>🔎</span><input id="pd-busca" placeholder="buscar por código, cliente ou motorista" oninput="pintarPedidos()"></div>
+            <div class="search" style="margin-bottom:0"><span>🔎</span><input id="pd-busca" placeholder="buscar por código ou cliente" oninput="pintarPedidos()"></div>
             <div class="fc-filtros" style="margin-bottom:0;gap:10px">
+              <select class="inp" id="pd-mot" onchange="pintarPedidos()" title="Motorista" style="width:auto;max-width:230px"></select>
               <select class="inp" id="pd-ocor" onchange="pintarPedidos()" title="Ocorrência" style="width:auto;max-width:230px"></select>
               <input type="date" id="pd-data-ini" onchange="pintarPedidos()" title="Data inicial">
               <input type="date" id="pd-data-fim" onchange="pintarPedidos()" title="Data final">
-              <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';document.getElementById('pd-ocor').value='';pintarPedidos()" style="white-space:nowrap">Limpar</span>
+              <span class="vertodos" onclick="document.getElementById('pd-data-ini').value='';document.getElementById('pd-data-fim').value='';document.getElementById('pd-ocor').value='';document.getElementById('pd-mot').value='';pintarPedidos()" style="white-space:nowrap">Limpar</span>
             </div>
           </div>
           <div class="pills" id="pd-pills" style="margin-top:20px;margin-bottom:6px"></div>
@@ -1276,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-125-1610</div>
+<div class="bld-fix">DELTADIS-BASE-126-1610</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3974,6 +3975,12 @@ function pintarPedidos(){
 
   var stAll=REAL?['todos','coletado','em rota','tentativa 1','tentativa 2','tentativa 3','devolvido','extraviado','fora de rota','nao localizado','esquecido','entregue']:['todos','aguardando','em rota','tratativa','entregue'],i,j,cont={};
   for(i=0;i<stAll.length;i++) cont[stAll[i]]=0;
+  /* (126) filtro SÓ de motorista (a busca de texto não mexe mais no nome do motorista) */
+  var mtSel=el('pd-mot'), mtAtual=mtSel.value, mtH='<option value="">Todos os motoristas</option><option value="__sem">Sem motorista</option>', mtLista=MOTORISTAS.slice().sort(function(a,b){ return String(a.n).localeCompare(String(b.n),'pt-BR'); });
+  for(i=0;i<mtLista.length;i++) mtH+='<option value="'+esc(String(mtLista[i].id))+'">'+esc(mtLista[i].n)+'</option>';
+  if(mtSel.getAttribute('data-h')!==mtH){ mtSel.innerHTML=mtH; mtSel.setAttribute('data-h',mtH); mtSel.value=mtAtual; if(mtSel.value!==mtAtual) mtSel.value=''; }
+  var mtFiltro=mtSel.value;
+  function passaMot(p2){ if(!mtFiltro) return true; if(mtFiltro==='__sem') return p2.mt==null; return String(p2.mt)===mtFiltro; }
   var ocSel=el('pd-ocor'), ocAtual=ocSel.value, ocCont={}, ocN=0, ocH='';
   for(j=0;j<PEDIDOS.length;j++){ var po=PEDIDOS[j]; if(FILTRO_TR && po.tr!==FILTRO_TR) continue; if(!passaData(po)) continue; if(po.obs && po.obs!=='em aberto' && po.st!=='entregue'){ ocCont[po.obs]=(ocCont[po.obs]||0)+1; } }
   var ocLista=Object.keys(ocCont).sort(function(a,b){return ocCont[b]-ocCont[a];}), nSemNum=0, nSemRua=0;
@@ -3987,10 +3994,10 @@ function pintarPedidos(){
   /* (123) as quantidades de cada status respeitam os OUTROS filtros (busca/motorista, transportadora, data, ocorrência e "1ª B") */
   var busca=(el('pd-busca').value||'').toLowerCase().trim();
   function temB(p2){ var k=String(p2.cod).toLowerCase(); return !!(BIPT[k]||(p2.scan&&BIPT[String(p2.scan).toLowerCase()])); }
-  function passaBusca(p2){ if(!busca) return true; var m2=motorista(p2.mt); return (p2.cod+' '+p2.cliente+' '+(p2.scan||'')+' '+(m2?m2.n:'')).toLowerCase().indexOf(busca)>=0; }
+  function passaBusca(p2){ if(!busca) return true; return (p2.cod+' '+p2.cliente+' '+(p2.scan||'')).toLowerCase().indexOf(busca)>=0; }
   function passaOc(p2){ if(!ocFiltro) return true; if(ocFiltro==='__semnum') return !(p2.st==='entregue'||incompletoDe(p2)!=='num'); if(ocFiltro==='__semrua') return !(p2.st==='entregue'||incompletoDe(p2)!=='rua'); return p2.obs===ocFiltro; }
   var nB=0;
-  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=temB(pc); if(tbC) nB++; if(FILTRO_B && !tbC) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
+  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaMot(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=temB(pc); if(tbC) nB++; if(FILTRO_B && !tbC) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var pills='';
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
     pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i]==='nao localizado'?'Não localizado':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
@@ -4005,11 +4012,12 @@ function pintarPedidos(){
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
     if(FILTRO_B && !temB(p)) continue;
+    if(!passaMot(p)) continue;
     if(ocFiltro==='__semnum'){ if(p.st==='entregue'||incompletoDe(p)!=='num') continue; }
     else if(ocFiltro==='__semrua'){ if(p.st==='entregue'||incompletoDe(p)!=='rua') continue; }
     else if(ocFiltro && p.obs!==ocFiltro) continue;
     var m=motorista(p.mt);
-    var alvo=(p.cod+' '+p.cliente+' '+(p.scan||'')+' '+(m?m.n:'')).toLowerCase();
+    var alvo=(p.cod+' '+p.cliente+' '+(p.scan||'')).toLowerCase();
     if(busca && alvo.indexOf(busca)<0) continue;
     n++; if(n>LIM) continue;
     var t=transp(p.tr);
@@ -4065,7 +4073,7 @@ function filtrarPedidos(s){FILTRO_PD=s; pintarPedidos();}
 function dashParaPedidos(st){
   FILTRO_TR=DASH_TR||null; FILTRO_PD=st;
   var a=el('pd-data-ini'), b=el('pd-data-fim'), o=el('pd-ocor'), q=el('pd-busca');
-  if(a) a.value=DASH_G_INI||''; if(b) b.value=DASH_G_FIM||''; if(o) o.value=''; if(q) q.value='';
+  if(a) a.value=DASH_G_INI||''; if(b) b.value=DASH_G_FIM||''; if(o) o.value=''; if(q) q.value=''; if(el('pd-mot')) el('pd-mot').value='';
   ir('pedidos'); pintarPedidos();
 }
 
