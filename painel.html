@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-120-1610</p>
+      <p class="bld">DELTADIS-BASE-121-1610</p>
     </div>
   </div>
 </div>
@@ -1276,7 +1276,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-120-1610</div>
+<div class="bld-fix">DELTADIS-BASE-121-1610</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -2097,7 +2097,9 @@ function lerColunas(cab,amostra){
       tel:ach(function(t){return t==='celular do destinatario';}),
       tel2:ach(function(t){return t==='tel fixo do destinatario';}),
       cid:ach(function(t){return t==='cidade destino';}),
-      canal:ach(function(t){return t==='origem do pedido';})};
+      canal:ach(function(t){return t==='origem do pedido';}),
+      unif:ach(function(t){return t.indexOf('pedido unificado')===0;}),
+      princ:ach(function(t){return t.indexOf('numero da carta de porte principal')===0;})};
   }
   /* Pichau: "Código" + "Último motorista" + logradouro/número/complemento do destinatário; a 1ª coluna (sem título) é a data de criação */
   var pcod=ach(function(t){return t==='codigo';});
@@ -2299,13 +2301,25 @@ function statusPorMotivo(m){
 function importarPlanilha(linhas,c){
   IMP_SEM={};
   if(!REAL){ PEDIDOS=[]; MOTORISTAS=[]; EXTRATO=[]; REAL=true; }
-  var tr=c.tr, idx={}, i, r, cod, s, mot, e, p, en, novos=0, atualizados=0, desconhecidos=0, ignorados=0, codigosNovos=[];
+  var FILHO_VL={}, filhosFora=0; var tr=c.tr, idx={}, i, r, cod, s, mot, e, p, en, novos=0, atualizados=0, desconhecidos=0, ignorados=0, codigosNovos=[];
   for(i=0;i<PEDIDOS.length;i++) idx[PEDIDOS[i].cod]=PEDIDOS[i];
   for(i=1;i<linhas.length;i++){
     r=linhas[i]; cod=String(r[c.cod]==null?'':r[c.cod]).trim();
     if(!cod) continue;
     en=''; var areaPic='';
     if(tr==='jt'){
+      /* (121) J&T: pedido "filho" (código-001) é o mesmo pacote do principal. Não entra como pedido; o valor dele passa pro principal e o filho que já tinha entrado sai da base */
+      var ehFilho=false, codPrinc='';
+      if(c.princ>=0){ codPrinc=String(r[c.princ]==null?'':r[c.princ]).trim(); }
+      if(c.unif>=0 && normTxt(r[c.unif]).indexOf('filho')>=0) ehFilho=true;
+      if(!ehFilho && codPrinc && codPrinc!==cod && cod.indexOf(codPrinc+'-')===0) ehFilho=true;
+      if(ehFilho){
+        var pPr=idx[codPrinc], vF=(c.valor>=0)?parseFloat(String(r[c.valor]==null?'':r[c.valor]).replace(/[^\d,.-]/g,'').replace(',','.')):NaN;
+        if(pPr && !isNaN(vF) && !(pPr.vl>0)) pPr.vl=vF;
+        else if(!pPr && !isNaN(vF)){ FILHO_VL[codPrinc]=vF; }
+        var pFi=idx[cod]; if(pFi && !pFi.fechId){ var kf=PEDIDOS.indexOf(pFi); if(kf>=0) PEDIDOS.splice(kf,1); delete idx[cod]; filhosFora++; }
+        continue;
+      }
       var te=c.ent>=0?String(r[c.ent]==null?'':r[c.ent]).trim():'';
       s=te?{st:'entregue'}:{st:'em rota', obs:'em aberto'};
       if(!te && c.saida>=0 && !String(r[c.saida]==null?'':r[c.saida]).trim()) s={st:'coletado', obs:'na base'};
@@ -2349,6 +2363,7 @@ function importarPlanilha(linhas,c){
     else{
       p={cod:cod, tr:tr, mt:mot?mot.id:null, cliente:clienteNv, bairro:endComCep, rua:sep.rua, num:sep.num, comp:sep.comp, bai:bairroNv, cid:cidNv, endOrig:endOrig, vl:valorNv, cep:cepNv, area:areaNv, st:s.st, t1:'', t2:'', tel:telNv, canal:canalNv, vend:vendNv,
          scan:(tr==='anj'?String(r[c.scan]==null?'':r[c.scan]).trim():cod), dia:e.dia, hora:e.hora, obs:s.obs||'', ent:en, fechId:null};
+      if(!(p.vl>0) && FILHO_VL[cod]) p.vl=FILHO_VL[cod];
       PEDIDOS.push(p); idx[cod]=p; novos++; codigosNovos.push(cod);
     }
   }
