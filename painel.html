@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-121-1610</p>
+      <p class="bld">DELTADIS-BASE-122-1610</p>
     </div>
   </div>
 </div>
@@ -1276,7 +1276,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-121-1610</div>
+<div class="bld-fix">DELTADIS-BASE-122-1610</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -4005,12 +4005,37 @@ function pintarPedidos(){
     if(busca && alvo.indexOf(busca)<0) continue;
     n++; if(n>LIM) continue;
     var t=transp(p.tr);
-    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b>'+cpBtn(p.cod)+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
+    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b>'+cpBtn(p.cod)+(n<=45?('<span class="bipb" data-bc="'+esc(p.cod)+'" data-bs="'+esc((p.scan&&p.scan!==p.cod)?p.scan:'')+'"></span>'):'')+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
        '<td>'+esc(t?t.n:'—')+'</td><td>'+esc(m?m.n:'sem motorista')+'</td><td>'+badgeStatus(p.st)+'</td><td>'+(p.vl==null?'—':moeda(p.vl))+'</td></tr>';}
   if(n>LIM) h+='<tr><td colspan="5"><div class="empty">Mostrando os primeiros '+LIM+' de '+n+' pacotes — use a busca ou os filtros para ver os outros</div></td></tr>';
   if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+'</div></td></tr>';
   el('pd-corpo').innerHTML=h;
+  try{ bipbPintar(); }catch(eBb){}
 }
+/* (122) "1ª B": mostra ao lado do código quantas vezes o pacote foi bipado no app do motorista, e por quem/quando */
+var BIPB={info:{}, ts:0, rodando:false};
+function bipbOrdinal(n){ return n+'ª B'; }
+function bipbFmt(t){ if(!t) return ''; var d=new Date(Number(t)); if(isNaN(d.getTime())) return ''; return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+function bipbAplicar(){
+  var sp=document.querySelectorAll('#pd-corpo .bipb'), i, c, s2, f, h;
+  for(i=0;i<sp.length;i++){
+    c=sp[i].getAttribute('data-bc'); s2=sp[i].getAttribute('data-bs'); f=BIPB.info[c]||(s2&&BIPB.info[s2]);
+    if(f){ h='<span title="Bipado no app'+(f.mtn?(' por '+esc(f.mtn)):'')+' · última bipagem '+esc(bipbFmt(f.t))+'" style="display:inline-block;margin-left:6px;padding:1px 7px;border-radius:10px;background:#ECFDF3;border:1px solid #B7EBC9;color:#166534;font-size:10.5px;font-weight:800;vertical-align:middle">'+bipbOrdinal(f.n)+'</span>'; if(sp[i].innerHTML!==h) sp[i].innerHTML=h; }
+    else if(sp[i].innerHTML) sp[i].innerHTML='';
+  }
+}
+function bipbPintar(){
+  var sp=document.querySelectorAll('#pd-corpo .bipb'), i, c, s2, lista=[], vis={};
+  if(!sp.length||!REAL||!DD_TOKEN) return;
+  for(i=0;i<sp.length;i++){ c=sp[i].getAttribute('data-bc'); s2=sp[i].getAttribute('data-bs'); if(c&&!vis[c]){ vis[c]=1; lista.push(c); } if(s2&&!vis[s2]){ vis[s2]=1; lista.push(s2); } }
+  bipbAplicar();
+  if(BIPB.rodando || !lista.length || (Date.now()-BIPB.ts<8000 && BIPB.chave===lista.join(','))) return;
+  BIPB.rodando=true; BIPB.chave=lista.join(','); BIPB.ts=Date.now();
+  fetch(DELTADIS_API+'/mesa/bip-info?cods='+encodeURIComponent(lista.slice(0,90).join(',')),{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    BIPB.rodando=false; if(d&&d.ok&&d.itens){ var k; BIPB.info={}; for(k in d.itens) BIPB.info[k]=d.itens[k]; bipbAplicar(); }
+  }).catch(function(){ BIPB.rodando=false; });
+}
+setInterval(function(){ try{ if(!document.hidden && document.querySelector('#pd-corpo .bipb')){ BIPB.ts=0; bipbPintar(); } }catch(e){} },10000);
 function filtrarPedidos(s){FILTRO_PD=s; pintarPedidos();}
 /* clicou num card do Dashboard: abre Pedidos já filtrado pelo status (limpa transportadora, datas e ocorrência pra bater com o número do card) */
 function dashParaPedidos(st){
