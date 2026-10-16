@@ -580,7 +580,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-227-1010</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-228-1610</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -4630,10 +4630,11 @@ function ddInsets(){
 document.addEventListener('DOMContentLoaded',function(){
   try{ if(ddEhApk()) document.documentElement.classList.add('apk'); ddInsets(); setTimeout(ddInsets,400); setTimeout(ddInsets,1500); var wm0=document.querySelector('#login .lg-logo svg.wm'), tw=document.getElementById('topo-wm'); if(wm0&&tw) tw.appendChild(wm0.cloneNode(true)); }catch(e){}
   fundoSegueCursor(); curvesLigar();
-  try{ var lgBox=el('login'); if(lgBox){
+  /* (v228) o "primeiro acesso" (lg-modal) e a criação do PIN (pin-modal) ficam FORA da caixa #login: o fundo pesado continuava animando enquanto digitava o telefone e os números demoravam ~2 s. Agora as 3 caixas desligam o fundo ao digitar. */
+  ['login','lg-modal','pin-modal'].forEach(function(idBx){ try{ var lgBox=el(idBx); if(lgBox){
     lgBox.addEventListener('focusin',function(ev){ if(ev.target&&ev.target.tagName==='INPUT'){ document.documentElement.classList.add('dd-digitando'); curvesDesligar(); } });
-    lgBox.addEventListener('focusout',function(){ setTimeout(function(){ var a=document.activeElement; if(a&&a.tagName==='INPUT'&&lgBox.contains(a)) return; document.documentElement.classList.remove('dd-digitando'); if(lgBox.style.display!=='none'&&!document.documentElement.classList.contains('dd-in')) curvesLigar(); },150); });
-  } }catch(e){}
+    lgBox.addEventListener('focusout',function(){ setTimeout(function(){ var a=document.activeElement; if(a&&a.tagName==='INPUT'&&lgBox.contains(a)) return; document.documentElement.classList.remove('dd-digitando'); var lg=el('login'); if(lg&&lg.style.display!=='none'&&!document.documentElement.classList.contains('dd-in')) curvesLigar(); },150); });
+  } }catch(e){} });
   var ls=el('lg-senha'); if(ls) ls.addEventListener('keydown',function(ev){ if(ev.key==='Enter') entrar(); });
   var lt=el('lg-tel'); if(lt) lt.addEventListener('keydown',function(ev){ if(ev.key==='Enter') el('lg-senha').focus(); });
   retomarSessao();

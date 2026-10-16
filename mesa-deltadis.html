@@ -278,7 +278,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-65-1010</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-66-1610</p>
   </div>
 </div>
 
@@ -807,6 +807,7 @@ function registrarPacote(cod){
   if(MODO==='xml'){ xmlBipar(cod); return; }
   if(MODO==='cte'){ cteBipar(cod); return; }
   if(cod.replace(/\D/g,'').length>=40){ somErro(); mostrarUlt('err','Esse é o código da NOTA (chave com 44 números). Em Entregas bipe o código de rastreio da etiqueta. Para dar entrada pela nota use a opção XML.',cod); return; }   /* (48) entrada por Entregas não aceita chave de NF */
+  if(cod.length>25){ somErro(); mostrarUlt('err','Código com mais de 25 caracteres — não é o rastreio. Bipe outro código da etiqueta.',cod); return; }   /* (66) Entregas: limite de 25 dígitos, não pega os códigos aleatórios compridos da etiqueta */
   var tr=ATIVA;
   if(el('scan-auto').checked){
     var d0=detectarTr(cod), dt=d0?achaTr(d0):null;
