@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-129-1610</p>
+      <p class="bld">DELTADIS-BASE-130-1910</p>
     </div>
   </div>
 </div>
@@ -1277,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-129-1610</div>
+<div class="bld-fix">DELTADIS-BASE-130-1910</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1793,7 +1793,7 @@ function mesaAbsorver(){
       dt=new Date(it.t||Date.now()); hh=('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);
       var mtId=null, mk; if(it.mt){ for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(it.mt)){ mtId=MOTORISTAS[mk].id; break; } } }
       p={cod:it.cod, tr:it.tr||'anj', mt:mtId, cliente:'', bairro:'', rua:'', num:'', comp:'', bai:'', cid:'', endOrig:'', vl:null, cep:'', area:'', st:'coletado', t1:'', t2:'', tel:'', canal:'', vend:'',
-         scan:it.cod, dia:(it.dia||hojeISO()), hora:hh, obs:'entrada por bipagem — a conferir'+(it.mtn?(' ('+it.mtn+')'):''), ent:'', fechId:null};
+         scan:it.cod, dia:(it.dia||hojeISO()), hora:hh, obs:(it.transf?'TRANSFERÊNCIA — entrada pela Mesa, sem motorista':('entrada por bipagem — a conferir'+(it.mtn?(' ('+it.mtn+')'):''))), ent:'', fechId:null};
       PEDIDOS.push(p); idx[it.cod]=1; novos++;
     }
     if(novos||mudTr){ try{ recalcularReal(); }catch(e){} salvarLocal(); repintarTudo(); if(novos) aviso(novos+' pacote'+(novos===1?'':'s')+' entrou'+(novos===1?'':'ram')+' pela Mesa (a conferir).'); }
@@ -4006,7 +4006,7 @@ function pintarPedidos(){
   function passaOc(p2){ if(!ocFiltro) return true; if(ocFiltro==='__semnum') return !(p2.st==='entregue'||incompletoDe(p2)!=='num'); if(ocFiltro==='__semrua') return !(p2.st==='entregue'||incompletoDe(p2)!=='rua'); return p2.obs===ocFiltro; }
   var nB=0, nR=0;
   function visOk(tb){ if(BIPT_SIG===''||VIS_PD==='todos') return true; return VIS_PD==='retro'?!tb:tb; }   /* (127) por padrão só pacotes já bipados; retroativos (sem bipagem) só aparecem se pedir */
-  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaMot(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=temB(pc); if(tbC) nB++; else nR++; if(!visOk(tbC)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
+  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaMot(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=(temB(pc)||temTf(pc)); if(tbC) nB++; else nR++; if(!visOk(tbC)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var pills='';
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
     pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i]==='nao localizado'?'Não localizado':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
@@ -4020,7 +4020,7 @@ function pintarPedidos(){
     else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
-    if(!visOk(temB(p))) continue;
+    if(!visOk(temB(p)||temTf(p))) continue;
     if(!passaMot(p)) continue;
     if(ocFiltro==='__semnum'){ if(p.st==='entregue'||incompletoDe(p)!=='num') continue; }
     else if(ocFiltro==='__semrua'){ if(p.st==='entregue'||incompletoDe(p)!=='rua') continue; }
@@ -4030,7 +4030,7 @@ function pintarPedidos(){
     if(busca && alvo.indexOf(busca)<0) continue;
     n++; if(n>LIM) continue;
     var t=transp(p.tr);
-    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b>'+cpBtn(p.cod)+(n<=45?('<span class="bipb" data-bc="'+esc(p.cod)+'" data-bs="'+esc((p.scan&&p.scan!==p.cod)?p.scan:'')+'"></span>'):bipbEst(p))+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
+    h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b>'+cpBtn(p.cod)+(temTf(p)?'<span style="display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:10.5px;font-weight:800;vertical-align:middle">TRANSFERÊNCIA</span>':'')+(n<=45?('<span class="bipb" data-bc="'+esc(p.cod)+'" data-bs="'+esc((p.scan&&p.scan!==p.cod)?p.scan:'')+'"></span>'):bipbEst(p))+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
        '<td>'+esc(t?t.n:'—')+'</td><td>'+esc(m?m.n:'sem motorista')+'</td><td>'+badgeStatus(p.st)+'</td><td>'+(p.vl==null?'—':moeda(p.vl))+'</td></tr>';}
   if(n>LIM) h+='<tr><td colspan="5"><div class="empty">Mostrando os primeiros '+LIM+' de '+n+' pacotes — use a busca ou os filtros para ver os outros</div></td></tr>';
   if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+(VIS_PD==='bip'&&BIPT_SIG!==''?' entre os já bipados. Toque em "Retroativos" para ver os que ainda não foram bipados.':'')+'</div></td></tr>';
@@ -4066,6 +4066,18 @@ function bipbPintar(){
 setInterval(function(){ try{ if(!document.hidden && document.querySelector('#pd-corpo .bipb')){ BIPB.ts=0; bipbPintar(); } }catch(e){} },10000);
 var VIS_PD='bip';   /* (127) 'bip' = só bipados (padrão) · 'retro' = só retroativos (sem bipagem) · 'todos' = tudo (vindo do Dashboard) */
 var BIPT={}, BIPT_SIG='', BIPT_RODANDO=false;
+/* (130) TRANSFERÊNCIA: pacotes que a Mesa marcou como transferência (entram sem motorista). Mostram a tag e ficam visíveis mesmo sem bipagem no app. */
+var TFM={}, TFM_RODANDO=false;
+function transfCarregar(){
+  if(TFM_RODANDO||!REAL||!DD_TOKEN||document.hidden) return;
+  TFM_RODANDO=true;
+  fetch(DELTADIS_API+'/mesa/transf',{cache:'no-store'}).then(function(r){ return r.json(); }).then(function(d){
+    TFM_RODANDO=false; if(!d||!d.ok||!d.itens) return;
+    var k, novo={}, n=0, ant=Object.keys(TFM).length; for(k in d.itens){ novo[String(k).toLowerCase()]=1; n++; }
+    TFM=novo; if(n!==ant && PAG==='pedidos') pintarPedidos();
+  }).catch(function(){ TFM_RODANDO=false; });
+}
+function temTf(p2){ var k=String(p2.cod).toLowerCase(); return !!(TFM[k]||(p2.scan&&TFM[String(p2.scan).toLowerCase()])); }
 function filtrarRetro(){ VIS_PD=(VIS_PD==='retro')?'bip':'retro'; pintarPedidos(); }
 function bipTodosCarregar(){
   if(BIPT_RODANDO||!REAL||!DD_TOKEN||document.hidden) return;
@@ -4077,8 +4089,8 @@ function bipTodosCarregar(){
     BIPT=novo; BIPT_SIG=sig; if(PAG==='pedidos') pintarPedidos();
   }).catch(function(){ BIPT_RODANDO=false; });
 }
-setInterval(function(){ if(PAG==='pedidos') bipTodosCarregar(); },15000);
-setTimeout(bipTodosCarregar,2500);
+setInterval(function(){ if(PAG==='pedidos'){ bipTodosCarregar(); transfCarregar(); } },15000);
+setTimeout(bipTodosCarregar,2500); setTimeout(transfCarregar,3000);
 function filtrarPedidos(s){FILTRO_PD=s; pintarPedidos();}
 /* clicou num card do Dashboard: abre Pedidos já filtrado pelo status (limpa transportadora, datas e ocorrência pra bater com o número do card) */
 function dashParaPedidos(st){

@@ -278,7 +278,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-66-1610</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-67-1910</p>
   </div>
 </div>
 
@@ -369,7 +369,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
           <h3 id="scan-nome">—</h3>
           <div class="scan-grid">
           <div class="sg-acoes">
-          <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><select id="mot-aqui" onchange="escolherMotoristaAqui()"><option value="">Escolha o motorista…</option></select></div>
+          <div class="mot-box" id="mot-aqui-box" style="display:none"><label>Motorista desta carga</label><select id="mot-aqui" onchange="escolherMotoristaAqui()"><option value="">Escolha o motorista…</option></select><button type="button" class="btn sec" id="btn-transf" onclick="alternarTransf()" style="margin-top:8px;width:100%">🔁 Transferência (sem motorista)</button></div>
           <div id="mot-hint" style="display:none;text-align:center;font-weight:700;color:#6D28D9;padding:10px 6px">Escolha o motorista para liberar a bipagem.</div>
           <div class="mbtns" id="mbtns"><button type="button" class="btn pri" id="mbtn-qr" onclick="abrirCamera()">▦<br>QR / Barras</button><button type="button" class="btn pri" onclick="digitarPacote()">⌨<br>Digitar pacote</button></div>
           <div class="tam-bar" id="tam-bar"><span>Tamanho</span><button type="button" class="tam-b on" data-t="P" onclick="tamSel('P')">P</button><button type="button" class="tam-b" data-t="M" onclick="tamSel('M')">M</button><button type="button" class="tam-b" data-t="G" onclick="tamSel('G')">G</button></div>
@@ -642,7 +642,7 @@ function pintarCards(){
 
 /* ══ estado da bipagem ══
    A sessão (contagem) é única: dá pra trocar de transportadora no meio e cada pacote guarda a sua. */
-var ATIVA=null, CNT=0, PACOTES=[], VISTOS={}, ULT=null, OCUPADO=false, MOT={id:'',n:''}, MOTS=[];   /* (44) a Mesa não escolhe motorista: só dá entrada. O dono do pacote vira o motorista que bipar no app. */
+var ATIVA=null, CNT=0, PACOTES=[], VISTOS={}, ULT=null, OCUPADO=false, MOT={id:'',n:''}, MOTS=[], TRANSF=false;   /* (44) a Mesa não escolhe motorista: só dá entrada. O dono do pacote vira o motorista que bipar no app. */
 
 function achaTr(id){ var i; for(i=0;i<TRANSPORTADORAS.length;i++) if(TRANSPORTADORAS[i].id===id) return TRANSPORTADORAS[i]; return null; }
 
@@ -653,7 +653,7 @@ function salvarSessao(){
   try{
     if(!MOT || !ATIVA){ localStorage.removeItem(SESS_KEY); return; }
     if(MODO!=='entrada') return;
-    localStorage.setItem(SESS_KEY,JSON.stringify({dia:hojeChave(),mot:MOT.id,tr:ATIVA.id,cnt:CNT,pac:PACOTES.map(function(p){ return {seq:p.seq,cod:p.cod,tr:p.tr,tn:p.tn,hora:p.hora}; }),vistos:VISTOS,ult:ULT?ULT.cod:''}));
+    localStorage.setItem(SESS_KEY,JSON.stringify({dia:hojeChave(),transf:TRANSF?1:0,mot:MOT.id,tr:ATIVA.id,cnt:CNT,pac:PACOTES.map(function(p){ return {seq:p.seq,cod:p.cod,tr:p.tr,tn:p.tn,hora:p.hora}; }),vistos:VISTOS,ult:ULT?ULT.cod:''}));
   }catch(e){}
 }
 function restaurarSessao(){
@@ -661,7 +661,7 @@ function restaurarSessao(){
     var raw=localStorage.getItem(SESS_KEY); if(!raw) return;
     var d=JSON.parse(raw), m=MOT, i;
     if(!d || d.dia!==hojeChave()){ localStorage.removeItem(SESS_KEY); return; }
-    var t=achaTr(d.tr); if(!m || !t) return;
+    TRANSF=!!d.transf; var t=achaTr(d.tr); if(!t || (!m && !TRANSF)) return;
     MODO='entrada'; ajustarModoTela(); pintarModos();
     PACOTES=(d.pac||[]).map(function(p){ p.pend=0; return p; }); VISTOS=d.vistos||{}; CNT=Number(d.cnt)||PACOTES.length;
     ULT=PACOTES.length?PACOTES[PACOTES.length-1]:null;
@@ -747,10 +747,25 @@ function tamSel(t){ TAM_SEL=t; tamPintar(); }
 function modoPedeMot(){ return MODO==='entrada'||MODO==='xml'||MODO==='os'||MODO==='cte'; }
 function motOk(){
   if(!modoPedeMot()) return true;
+  if(transfAtivo()) return true;   /* (67) transferência: entra sem motorista */
   if(MOT&&MOT.id) return true;
   somErro(); aviso('Escolha o motorista desta carga antes de bipar.');
   var f=el('mot-aqui'); if(f) f.focus();
   return false;
+}
+/* (67) TRANSFERÊNCIA: só em Entregas. O pacote entra na base SEM motorista e fica marcado "TRANSFERÊNCIA" nos Pedidos do painel. */
+function transfAtivo(){ return !!TRANSF && MODO==='entrada'; }
+function transfPintar(){
+  var b=el('btn-transf'); if(!b) return; var on=transfAtivo();
+  b.style.display=(MODO==='entrada')?'':'none';
+  b.className='btn '+(on?'pri':'sec'); b.textContent=on?'🔁 TRANSFERÊNCIA LIGADA — toque para desligar':'🔁 Transferência (sem motorista)';
+  var f=el('mot-aqui'); if(f){ f.disabled=on; if(on) f.value=''; }
+}
+function alternarTransf(){
+  TRANSF=!TRANSF;
+  if(TRANSF){ MOT={id:'',n:''}; aviso('Transferência ligada: os pacotes entram sem motorista.'); }
+  else aviso('Transferência desligada: escolha o motorista.');
+  salvarSessao(); motAquiMostrar(); if(transfAtivo()) camAuto();
 }
 function motAquiOpcoes(){
   var f=el('mot-aqui'); if(!f) return;
@@ -762,17 +777,18 @@ function escolherMotoristaAqui(){
   var f=el('mot-aqui'), id=f.value, novo=null, i;
   for(i=0;i<MOTS.length;i++){ if(String(MOTS[i].id)===String(id)){ novo=MOTS[i]; break; } }
   MOT=novo||{id:'',n:''};
+  if(novo && TRANSF){ TRANSF=false; }
   if(novo) aviso('Motorista: '+novo.n);
   salvarSessao(); aplicarGate(); if(novo) camAuto();
 }
 function aplicarGate(){   /* (61) só libera a bipagem com motorista vinculado */
-  var c=el('scan-conteudo'), h=el('mot-hint'), fecha=!!(modoPedeMot()&&ATIVA&&!(MOT&&MOT.id));
+  var c=el('scan-conteudo'), h=el('mot-hint'), fecha=!!(modoPedeMot()&&ATIVA&&!(MOT&&MOT.id)&&!transfAtivo());
   if(c) c.classList.toggle('sem-mot',fecha);
   if(h) h.style.display=fecha?'':'none';
 }
 function motAquiMostrar(){
   var b=el('mot-aqui-box'), f=el('mot-aqui'); if(!b) return;
-  b.style.display=modoPedeMot()?'':'none'; var tb=el('tam-bar'); if(tb) tb.style.display=modoPedeMot()?'flex':'none'; tamPintar();
+  b.style.display=modoPedeMot()?'':'none'; var tb=el('tam-bar'); if(tb) tb.style.display=(modoPedeMot()&&!transfAtivo())?'flex':'none'; tamPintar(); transfPintar();
   if(f&&f.options.length-1!==MOTS.length) motAquiOpcoes();
   if(f) f.value=(MOT&&MOT.id)?String(MOT.id):'';
   aplicarGate();
@@ -817,13 +833,13 @@ function registrarPacote(cod){
   registrarPacoteOk(cod,tr,TAM_SEL);
 }
 function registrarPacoteOk(cod,tr,tam){
-  var sid=SESS_BIP, mot=MOT, ag=new Date(), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2)+':'+('0'+ag.getSeconds()).slice(-2);
+  var sid=SESS_BIP, tf=transfAtivo(), mot=tf?{id:'',n:''}:MOT, ag=new Date(), hora=('0'+ag.getHours()).slice(-2)+':'+('0'+ag.getMinutes()).slice(-2)+':'+('0'+ag.getSeconds()).slice(-2);
   CNT++; tr.hoje++;
   var p={seq:CNT, cod:cod, tr:tr.id, tn:tr.n, hora:hora, pend:1, tam:tam}; PACOTES.push(p); VISTOS[cod]={tn:tr.n,hora:hora}; ULT=p;
   el('scan-cnt').textContent=CNT; el('btn-desfazer').disabled=false;
-  mostrarUlt('ok','✔ Entrou na base — '+tr.n+' · tamanho '+tam,cod);
+  mostrarUlt('ok',tf?('✔ Entrou na base — TRANSFERÊNCIA · '+tr.n):('✔ Entrou na base — '+tr.n+' · tamanho '+tam),cod);
   pintarCards(); somBipeOk(); salvarSessao();
-  api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,trn:tr.n,mt:mot.id,mtn:mot.n,tam:tam})}).then(function(d){
+  api('/mesa/entrada',{method:'POST',body:JSON.stringify({cod:cod,tr:tr.id,trn:tr.n,mt:mot.id,mtn:mot.n,tam:(tf?'':tam),transf:(tf?1:0)})}).then(function(d){
     if(!d||!d.ok){ bipReverter(p,tr,cod,sid); somErro(); mostrarUlt('err',(d&&d.mensagem)||'Não consegui registrar. Bipe de novo.',cod); return; }
     p.pend=0;
     if(d.resultado==='repetido'){
@@ -1288,7 +1304,7 @@ function bpMontaDetector(cb){
 var CAM={st:null,tr:null,caps:{},zoomOn:false,luz:false,ult:'',q:0,lendo:false,timer:null};
 /* (60) celular: igual ao app do motorista — escolheu o motorista, a câmera já abre pra bipar; botões grandes QR / Barras e Digitar pacote */
 function ehCelular(){ try{ return window.matchMedia('(pointer:coarse)').matches && window.matchMedia('(max-width:900px)').matches; }catch(e){ return false; } }
-function camAuto(){ if(ehCelular() && ATIVA && MOT && MOT.id && MODO!=='os' && modoPedeMot() && !CAM.st && !TAM_ABERTO && !CTE_PEND) setTimeout(function(){ if(!CAM.st) abrirCamera(); },150); }
+function camAuto(){ if(ehCelular() && ATIVA && ((MOT && MOT.id)||transfAtivo()) && MODO!=='os' && modoPedeMot() && !CAM.st && !TAM_ABERTO && !CTE_PEND) setTimeout(function(){ if(!CAM.st) abrirCamera(); },150); }
 function digitarPacote(){ if(!motOk()) return; var i=el('scan-manual'); if(i){ i.readOnly=false; try{ i.scrollIntoView({block:'center'}); }catch(e){} i.focus(); } }
 function travarEmPe(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(e){} }
 function abrirCamera(){
@@ -1378,7 +1394,7 @@ function carregarRomaneio(){
     var g={}, ordem=[], i, k, h='';
     var nNl=it.filter(function(x){ return x.nl; }).length; el('rm-tot').innerHTML='· '+it.length+' pacote'+(it.length===1?'':'s')+' em romaneio fechado'+(abertos.length?'<div style="font-size:12px;color:#8A7FA3;margin-top:4px">'+abertos.length+' pacote'+(abertos.length===1?'':'s')+' bipado'+(abertos.length===1?'':'s')+' ainda sem fechamento — o romaneio só é gerado quando a contagem é finalizada.</div>':'')+(nNl?' · <b style="color:#B91C1C">⚠ '+nNl+' não localizado'+(nNl===1?'':'s')+'</b>':'');
     if(!it.length){ el('rm-lista').innerHTML='<div class="rm-vazio">Nenhum romaneio fechado neste dia'+''+'.</div>'; return; }
-    for(i=it.length-1;i>=0;i--){ k=(it[i].mtn||'Sem motorista')+'\u0001'+(it[i].rom||''); if(!g[k]){ g[k]={}; ordem.push(k); }
+    for(i=it.length-1;i>=0;i--){ k=(it[i].mtn||(it[i].transf?'Transferência':'Sem motorista'))+'\u0001'+(it[i].rom||''); if(!g[k]){ g[k]={}; ordem.push(k); }
       var tn=(achaTr(it[i].tr)||{n:it[i].tr}).n; (g[k][tn]=g[k][tn]||[]).push(it[i]); }
     ordem.sort(romOrdena);
     ordem.forEach(function(mk){ var mn=mk.split('\u0001')[0], rm=mk.split('\u0001')[1];
@@ -1406,7 +1422,7 @@ function logoRelatorioHtml(){
 function stRom(p){ var s=p.st; return s==='entregue'?['Entregue','#047857']:(s==='ausente'?['Ausente','#b45309']:(s==='nao_localizado'?['Não localizado','#b91c1c']:((s==='devolvido'||s==='devolvido_ok')?['Devolvido','#b91c1c']:(s==='em_rota'?['Em rota','#4c1d95']:(s==='na_base'?['Na base','#666']:['','#111']))))); }
 function htmlRomaneio(itens,dia,logo){
   var g={}, ordem=[], i, k, agora=new Date(), emitido=dataBR(hojeLocal())+' '+('0'+agora.getHours()).slice(-2)+':'+('0'+agora.getMinutes()).slice(-2), corpo='';
-  for(i=0;i<itens.length;i++){ k=(itens[i].mtn||'Sem motorista')+'\u0001'+(itens[i].rom||''); if(!g[k]){ g[k]=[]; ordem.push(k); } g[k].push(itens[i]); }
+  for(i=0;i<itens.length;i++){ k=(itens[i].mtn||(itens[i].transf?'Transferência':'Sem motorista'))+'\u0001'+(itens[i].rom||''); if(!g[k]){ g[k]=[]; ordem.push(k); } g[k].push(itens[i]); }
   ordem.sort(romOrdena);
   ordem.forEach(function(mk,ix){
     var mn=mk.split('\u0001')[0], rm=mk.split('\u0001')[1];
