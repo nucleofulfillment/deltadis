@@ -1271,8 +1271,20 @@ function confete(){
   }catch(e){}
 }
 function bpMarcaFin(){ BP.finT=BP.finT||{}; var t=Date.now(), i; try{ for(i=0;i<BP.meus.length;i++) BP.finT[String(BP.meus[i].cod).toLowerCase()]=t; for(i=0;i<LOTE_ATUAL.length;i++) BP.finT[String(LOTE_ATUAL[i].cod).toLowerCase()]=t; }catch(e){} }
+/* (236) lote fechado: a lista do romaneio da Mesa ("Seus pacotes: X de Y bipados") sai do app; o que não foi bipado volta pra base e não reaparece nesta lista */
+function bpMesaFechar(){
+  try{ var M=BP.mesa||[], o=null, i; try{ o=JSON.parse(localStorage.getItem('dd_mesa_fim')||'null'); }catch(e){}
+    if(!o||o.dia!==hojeISO()||String(o.mt)!==String(RP.mt||'')) o={dia:hojeISO(),mt:String(RP.mt||''),c:{}};
+    for(i=0;i<M.length;i++) o.c[String(M[i].cod).toLowerCase()]=1;
+    localStorage.setItem('dd_mesa_fim',JSON.stringify(o)); }catch(e){}
+  BP.mesa=[]; bpCacheGravar();
+}
+function bpMesaFiltra(L){
+  try{ var o=JSON.parse(localStorage.getItem('dd_mesa_fim')||'null'); if(!o||o.dia!==hojeISO()||String(o.mt)!==String(RP.mt||'')) return L;
+    return L.filter(function(x){ return !o.c[String(x.cod).toLowerCase()]; }); }catch(e){ return L; }
+}
 function finalizarRota(){
-  bpMarcaFin(); if(LOTE_ATUAL.length&&BP.meus.length) BP.meus=[]; rotaLimpar();
+  bpMarcaFin(); bpMesaFechar(); if(LOTE_ATUAL.length&&BP.meus.length) BP.meus=[]; rotaLimpar();
   var entregues=0,devolvidos=0,naoLoc=0,remarc=0,detalhe=[],i;
   for(i=0;i<LOTE_ATUAL.length;i++){
     var p=LOTE_ATUAL[i];
@@ -1931,7 +1943,7 @@ function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por b
     if(!d||!d.ok){ if(!sil){ BP.ult={t:'err',m:'Não consegui carregar seus pacotes. Confira a internet.'}; bpAtualizar(); } return; }
     var i, x; BP.idx={}; for(i=0;i<d.lista.length;i++){ x=d.lista[i]; BP.idx[x.c.toLowerCase()]=x; if(x.s) BP.idx[x.s.toLowerCase()]=x; }
     BP.outros={}; for(x in (d.outros||{})) BP.outros[x.toLowerCase()]=d.outros[x];
-    BP.mesa=d.mesa||[];
+    BP.mesa=bpMesaFiltra(d.mesa||[]);   /* (236) */
     var _ant=BP.meus||[];
     BP.meus=(d.meus||[]).map(function(m){ var e=BP.idx[String(m.cod).toLowerCase()], it={cod:m.cod,t:m.t,cl:(m.cli||(e?e.cl:'')),r:e?e.r:'',e:e?e.e:0,novo:!e,rom:m.rom||'',v:(m.valor>0?Number(m.valor):0),num:(m.pos>0?Number(m.pos):0),auto:String(m.auto)==='1',conf:String(m.conf)==='1'};
       if(m.end_rua){ it.e=1; it.novo=false; it.r=m.end_rua+(m.end_num?', '+m.end_num:''); it.d={cep:m.end_cep||'',num:m.end_num||'',comp:m.end_comp||'',rua:m.end_rua,bai:m.end_bai||'',cid:m.end_cid||''}; }
@@ -1999,7 +2011,7 @@ function bpItemHtml(m){
 }
 function metaPintar(){ var m=metaHoje(), t=el('meta-txt'), f=el('meta-fill'); if(t) t.textContent=m.feitos+'/'+m.meta; if(f) f.style.width=Math.min(100,Math.round(m.feitos/Math.max(1,m.meta)*100))+'%'; }
 function bpCacheGravar(){ try{ if(!BP.ok) return; localStorage.setItem('dd_bp',JSON.stringify({dia:hojeISO(),mt:String(RP.mt||''),meus:BP.meus,mesa:BP.mesa||[]})); }catch(e){} }
-function bpCacheLer(){ try{ var o=JSON.parse(localStorage.getItem('dd_bp')||'null'); if(!o||o.dia!==hojeISO()||String(o.mt)!==String(RP.mt||'')||!o.meus) return; BP.meus=o.meus; BP.mesa=o.mesa||[]; BP.ok=true; }catch(e){} }
+function bpCacheLer(){ try{ var o=JSON.parse(localStorage.getItem('dd_bp')||'null'); if(!o||o.dia!==hojeISO()||String(o.mt)!==String(RP.mt||'')||!o.meus) return; BP.meus=o.meus; BP.mesa=bpMesaFiltra(o.mesa||[]); BP.ok=true; }catch(e){} }
 function bpAtualizar(){
   bpCacheGravar();
   metaPintar();
@@ -2391,7 +2403,7 @@ function entFinalizar(tent){
   if(rpFilaEnt().length&&tent<8){ rpDescarregarEnt(); setTimeout(function(){ entFinalizar(tent+1); },1000); aviso('Enviando as entregas…'); return; }
   rpApi('/motorista/bipagens-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lote:'l'+Date.now()})}).catch(function(){});
   /* (173) o lote sem roteirização também entra na meta do dia (antes sumia e a régua voltava) */
-  bpMarcaFin();
+  bpMarcaFin(); bpMesaFechar();   /* (236) */
   var nE=0, nD=0, kD; for(kD in ENT.done){ if(ENT.done[kD]==='entregue') nE++; else nD++; }
   if(nE||nD) LOTES_HOJE.unshift({id:Date.now(), data:hojeISO(), transportadoras:['Lote misto'], totalPacotes:nE+nD, entregues:nE, devolvidos:nD, naoLocalizados:0, remarcados:0, km:0, tempoMin:0, fechamento:'aberto', pagamento:'a pagar', _detalhe:[]});
   BP.meus=[]; ENT.done={}; ENT.aus={}; ENT.sel={}; RP.bipMode=false; PT.sel=null; try{ ptGravar(); }catch(e){}
