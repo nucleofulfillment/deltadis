@@ -582,7 +582,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-235-1910</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-246-2110</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1921,7 +1921,7 @@ function trSemEscolha(){ BP.tr=''; BP.trN=''; trGravar(); EST='rp_bip'; BP.ult=n
 function trVoltar(){ if(TRS.volta==='troca'){ EST='rp_bip'; renderInicio(); bpCarregar(true); } else ptAbrir(); }
 /* ══ (37) PONTO DE COLETA — o motorista escolhe onde pegou os pacotes antes de bipar; a rota sai dele ══ */
 function ptGravar(){ try{ if(PT.sel) localStorage.setItem('dd_ponto_sel',JSON.stringify(PT.sel)); else localStorage.removeItem('dd_ponto_sel'); }catch(e){} }
-function ptAbrir(){ EST='rp_ponto'; PT.novo=false; PT.err=''; renderInicio(); ptCarregar(); }
+function ptAbrir(){ EST='rp_ponto'; PT.novo=false; PT.err=''; PT.gpsErr=''; PT.gpsBusy=false; renderInicio(); ptCarregar(); }
 function ptCarregar(){
   PT.carregando=true;
   rpApi('/motorista/pontos').then(function(d){
@@ -1935,6 +1935,7 @@ function ptTela(){
   var h='<div class="card"><h3 style="margin:0 0 2px">Onde você coletou os pacotes?</h3><p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">Escolha o ponto de coleta antes de bipar. A rota sai dele.</p>', i, x, L=PT.lista||[];
   if(PT.carregando&&!PT.lista) h+='<div class="aviso-acao" style="margin:0 0 12px"><b>Carregando os pontos…</b></div>';
   if(PT.err) h+='<div style="color:#B91C1C;font-size:13px;margin:0 0 10px">'+esc(PT.err)+'</div>';
+  h+='<button class="btn pri wide" style="margin:0 0 12px" id="pt-gps" onclick="ptGps()">📍 Minha localização atual</button>'+(PT.gpsErr?'<div style="color:#B91C1C;font-size:13px;margin:-4px 0 10px">'+esc(PT.gpsErr)+'</div>':'');   /* (246) coleta em outro lugar: usa onde o motorista está agora */
   for(i=0;i<L.length;i++){ x=L[i];
     h+='<div class="bp-item" style="cursor:pointer" onclick="ptEscolher('+i+')"><span class="bp-seq">📍</span><div class="bp-info" style="flex:1"><b>'+esc(x.nome)+'</b><span>'+esc(x.endereco)+' · '+(x.tipo==='deltadis'?'DELTADIS':'outra empresa')+'</span></div>'+(x.tipo==='externo'?'<button class="btn sec" style="padding:8px 14px;min-width:0;margin-left:18px" onclick="event.stopPropagation();ptRemover('+i+')">✕</button>':'')+'</div>';
   }
@@ -1944,6 +1945,26 @@ function ptTela(){
   } else h+='<button class="btn sec wide" style="margin-top:12px" onclick="PT.novo=true;renderInicio()">➕ Outra empresa (cadastrar ponto)</button>';
   h+='<button class="btn sec wide" style="margin-top:10px" onclick="EST=\'sem_lote\';renderInicio()">Voltar</button></div>';
   return h;
+}
+/* (246) MINHA LOCALIZAÇÃO ATUAL: vira o ponto de coleta (a rota sai de onde o motorista está). Não grava ponto novo na lista. */
+function ptGps(){
+  var b=el('pt-gps'); if(PT.gpsBusy) return;
+  if(!navigator.geolocation){ PT.gpsErr='Este aparelho não consegue dar a localização.'; renderInicio(); return; }
+  PT.gpsBusy=true; PT.gpsErr=''; if(b) b.textContent='Buscando sua localização…';
+  navigator.geolocation.getCurrentPosition(function(p){
+    var lat=p.coords.latitude, lng=p.coords.longitude, fim=function(nomeRua){
+      PT.gpsBusy=false;
+      var end=nomeRua||('Localização atual ('+lat.toFixed(5)+', '+lng.toFixed(5)+')');
+      ptUsar({id:'gps',nome:'Minha localização atual',endereco:end,tipo:'gps',assina:false,lat:lat,lng:lng});
+    }, feito=false, tm=setTimeout(function(){ if(!feito){ feito=true; fim(''); } },3000);
+    try{ fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lng+'&localityLanguage=pt').then(function(r){ return r.json(); }).then(function(g){
+      if(feito) return; feito=true; clearTimeout(tm);
+      var nm=[g.locality,g.city,g.principalSubdivisionCode].filter(function(x){ return !!x; }).join(' - ');
+      fim(nm?('Localização atual — '+nm+' ('+lat.toFixed(5)+', '+lng.toFixed(5)+')'):'');
+    }).catch(function(){ if(feito) return; feito=true; clearTimeout(tm); fim(''); }); }catch(e){ if(!feito){ feito=true; clearTimeout(tm); fim(''); } }
+  },function(err){
+    PT.gpsBusy=false; PT.gpsErr=(err&&err.code===1)?'Permita a localização do aparelho para o app e toque de novo.':'Não consegui pegar a localização. Tente de novo ao ar livre ou escolha um ponto da lista.'; renderInicio();
+  },{enableHighAccuracy:true,timeout:12000,maximumAge:30000});
 }
 function ptEscolher(i){ var x=(PT.lista||[])[i]; if(!x) return; ptUsar(x); }
 function ptUsar(x){
