@@ -1735,7 +1735,7 @@ function ddMostrarLogin(){ document.documentElement.classList.remove('dd-ret'); 
   /* (v224) quem NUNCA entrou neste aparelho vê primeiro a janela do "Primeiro acesso" (assim não digita login/PIN sem ter pedido o código) */
   try{ if(!PRIM_AUTO && l && l.style.display!=='none' && localStorage.getItem('dd_ja_entrou')!=='1' && !DD_M_TOKEN && !codPendente()){ PRIM_AUTO=true; primeiroAbrir(); } }catch(e){} }
 /* dados guardados no aparelho que são de UM motorista: somem quando entra outro (ou quando sai) */
-function ddLimparLocal(){ try{ ['dd_ponto_sel','dd_num','dd_feitos','dd_fila_ent','dd_rota','dd_bp'].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){} }
+function ddLimparLocal(){ try{ ['dd_ponto_sel','dd_num','dd_feitos','dd_fila_ent','dd_rota','dd_bp','dd_tr'].forEach(function(k){ localStorage.removeItem(k); }); }catch(e){} }
 function ddGuardarM(tk,us){ var ant=DD_M_USER; if(tk&&ant&&us&&String(ant.id)!==String(us.id)) ddLimparLocal(); if(!tk) ddLimparLocal(); DD_M_TOKEN=tk||''; DD_M_USER=us||null; try{ if(tk){ localStorage.setItem('dd_ja_entrou','1'); localStorage.setItem('dd_m_jwt',tk); localStorage.setItem('dd_m_user',JSON.stringify(us||null)); } else { localStorage.removeItem('dd_m_jwt'); localStorage.removeItem('dd_m_user'); localStorage.removeItem('dd_mt'); RP.mt=null; RP.mtn=''; RP.total=0; } }catch(e){} }
 function rpApi(caminho,opts){
   if(DD_M_TOKEN){
@@ -1887,6 +1887,38 @@ function srSim(){
 }
 function srNao(){ srFechar(); setTimeout(function(){ vzAbrir('','voz'); },30); }
 function srFechar(){ var o=el('sr-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
+/* ══ (245) TRANSPORTADORA — o motorista escolhe de qual transportadora são os pacotes ANTES de bipar (as mesmas do painel/Mesa; as criadas depois entram sozinhas) e pode trocar na tela da bipagem ══ */
+var TRS={lista:null,carregando:false,err:'',volta:'novo'};
+function trGravar(){ try{ if(BP.tr) localStorage.setItem('dd_tr',JSON.stringify({dia:hojeISO(),mt:String(RP.mt||''),id:BP.tr,n:BP.trN||''})); else localStorage.removeItem('dd_tr'); }catch(e){} }
+function trRestaurar(){ try{ if(BP.tr) return; var o=JSON.parse(localStorage.getItem('dd_tr')||'null'); if(o&&o.id&&o.dia===hojeISO()&&String(o.mt)===String(RP.mt||'')){ BP.tr=o.id; BP.trN=o.n||''; } }catch(e){} }
+function trAbrir(volta){ TRS.volta=volta||'novo'; TRS.err=''; EST='rp_tr'; renderInicio(); trCarregar(); }
+function trCarregar(){
+  TRS.carregando=true;
+  rpApi('/motorista/transportadoras').then(function(d){
+    TRS.carregando=false;
+    if(d&&d.ok){ TRS.lista=d.itens||[]; TRS.err=''; } else TRS.err='Não consegui carregar as transportadoras. Confira a internet.';
+    if(EST==='rp_tr') renderInicio();
+  }).catch(function(){ TRS.carregando=false; TRS.err='Sem conexão. Tente de novo.'; if(EST==='rp_tr') renderInicio(); });
+}
+function trTela(){
+  var L=TRS.lista||[], h='<div class="card"><h3 style="margin:0 0 2px">Qual a transportadora?</h3><p style="margin:0 0 12px;color:var(--muted);font-size:12.5px">Escolha antes de bipar. Se levar pacotes de mais de uma, é só trocar na tela da bipagem.</p>', i, x;
+  if(TRS.carregando&&!TRS.lista) h+='<div class="aviso-acao" style="margin:0 0 12px"><b>Carregando as transportadoras…</b></div>';
+  if(TRS.err) h+='<div style="color:#B91C1C;font-size:13px;margin:0 0 10px">'+esc(TRS.err)+' <a style="color:var(--roxo);font-weight:700" onclick="trCarregar();TRS.carregando=true;renderInicio()">Tentar de novo</a></div>';
+  for(i=0;i<L.length;i++){ x=L[i];
+    h+='<div class="bp-item" style="cursor:pointer;'+(BP.tr===x.id?'background:#F3E8FF;':'')+'" onclick="trEscolher('+i+')"><span class="bp-seq" style="background:'+esc(x.cor||'#EDE9FE')+';color:#fff;font-size:12px">'+esc(x.ini||String(x.n).slice(0,2).toUpperCase())+'</span><div class="bp-info" style="flex:1"><b>'+esc(x.n)+'</b></div></div>';
+  }
+  if(TRS.lista&&!L.length) h+='<p style="color:var(--muted);font-size:13px">Nenhuma transportadora cadastrada ainda.</p>';
+  if(TRS.err||(TRS.lista&&!L.length)) h+='<button class="btn sec wide" style="margin-top:10px" onclick="trSemEscolha()">Continuar sem escolher</button>';
+  h+='<button class="btn sec wide" style="margin-top:10px" onclick="trVoltar()">Voltar</button></div>';
+  return h;
+}
+function trEscolher(i){
+  var x=(TRS.lista||[])[i]; if(!x) return;
+  BP.tr=x.id; BP.trN=x.n; trGravar();
+  EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok);
+}
+function trSemEscolha(){ BP.tr=''; BP.trN=''; trGravar(); EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok); }
+function trVoltar(){ if(TRS.volta==='troca'){ EST='rp_bip'; renderInicio(); bpCarregar(true); } else ptAbrir(); }
 /* ══ (37) PONTO DE COLETA — o motorista escolhe onde pegou os pacotes antes de bipar; a rota sai dele ══ */
 function ptGravar(){ try{ if(PT.sel) localStorage.setItem('dd_ponto_sel',JSON.stringify(PT.sel)); else localStorage.removeItem('dd_ponto_sel'); }catch(e){} }
 function ptAbrir(){ EST='rp_ponto'; PT.novo=false; PT.err=''; renderInicio(); ptCarregar(); }
@@ -1917,7 +1949,8 @@ function ptEscolher(i){ var x=(PT.lista||[])[i]; if(!x) return; ptUsar(x); }
 function ptUsar(x){
   PT.sel={id:x.id,nome:x.nome,endereco:x.endereco,tipo:x.tipo,assina:!!x.assina,lat:x.lat==null?null:x.lat,lng:x.lng==null?null:x.lng,dia:numHoje()}; ptGravar();
   if(x.lat!=null&&x.lng!=null) RP.baseGeo[x.endereco]={ok:true,lat:x.lat,lng:x.lng,achado:x.endereco};
-  EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar();
+  BP.tr=''; BP.trN=''; trGravar(); try{ bpCarregar(true); }catch(e){}   /* (245) depois do ponto, escolhe a transportadora */
+  trAbrir('novo');
 }
 function ptSalvarNovo(){
   var o=ptFormLer('pt'); if(!o) return;
@@ -1945,6 +1978,7 @@ function bpAbrir(jt){
   if(rpCfg().rota==='nao'&&BP.ok&&BP.meus.length&&BP.meus.every(function(m){ return m.rom; })){ RP.bipMode=true; entAbrir(); return; }
   /* (115) LOTE NOVO (nada bipado ainda): sempre pergunta se usa roteirização e qual o ponto de coleta — com ou sem rota */
   if(!BP.meus.length){ rotaPerguntar(function(){ PT.sel=null; ptGravar(); ptAbrir(); }); return; }
+  trRestaurar(); if(!BP.tr){ trAbrir('novo'); return; }   /* (245) sem transportadora escolhida: pergunta antes de continuar */
   EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok);
 }
 function bpCarregar(sil){   /* sil: a lista já está na tela — atualiza por baixo, sem aviso de carregando */
@@ -2080,7 +2114,7 @@ function bpBipar(v){
   if(temLista&&naLista&&BP.ult&&BP.ult.t==='ok'){ BP.ult.m='✔ NA SUA LISTA'+(e&&e.cl?' — '+esc(e.cl):''); }   /* (238) só avisa quando o pacote É da lista; se não for, segue como "Registrado" */
   BP.ult.num=item.num; bpAtualizar();
   function desfaz(msg,t){ var j; for(j=BP.meus.length-1;j>=0;j--) if(BP.meus[j]===item) BP.meus.splice(j,1); bpMarcaMesa(canon,true); somErroBip(); BP.ult={t:t||'err',m:msg,cod:canon}; bpAtualizar(); }
-  rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:e?'':bpTr(canon),ponto:PT.sel?PT.sel.nome:'',num:item.num||null})}).then(function(d){
+  rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:(BP.tr||(e?'':bpTr(canon))),ponto:PT.sel?PT.sel.nome:'',num:item.num||null})}).then(function(d){
     item.pend=0;
     if(!d||!d.ok){ desfaz((d&&d.mensagem)||'Não consegui registrar. Bipe de novo.'); return; }
     if(d.resultado==='outro'){ desfaz('Este pacote já foi bipado por '+esc(d.mtn)+'.'); return; }
@@ -2541,6 +2575,7 @@ function bpTela(){
   BP.man=false;
   return '<div class="card"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><b id="bp-cnt" style="font-size:15px">'+BP.meus.length+' '+(BP.meus.length===1?'pacote':'pacotes')+'</b><span style="color:var(--muted);font-size:12.5px">'+(rpCfg().rota==='nao'?'Bipe os pacotes que você pegou':'Bipe para iniciar a rota')+'</span></div>'+
     (PT.sel?'<p style="margin:0 0 8px;font-size:12.5px">📍 <b>'+esc(PT.sel.nome)+'</b> · <a style="color:var(--roxo);font-weight:700" onclick="ptAbrir()">trocar</a></p>':'<p style="margin:0 0 8px;font-size:12.5px"><a style="color:var(--roxo);font-weight:700" onclick="ptAbrir()">📍 Escolher ponto de coleta</a></p>')+
+    (BP.tr?'<p style="margin:0 0 8px;font-size:12.5px">🚚 <b>'+esc(BP.trN||BP.tr)+'</b> · <a style="color:var(--roxo);font-weight:700" onclick="trAbrir(\'troca\')">trocar transportadora</a></p>':'<p style="margin:0 0 8px;font-size:12.5px"><a style="color:var(--roxo);font-weight:700" onclick="trAbrir(\'troca\')">🚚 Escolher transportadora</a></p>')+
     '<div id="bp-ult"></div>'+
     (BP.meus.some(function(m){ return m.auto; })?'':'<div class="bp-campo"><span id="bp-ico">'+BP_IC.bar+'</span><input id="bp-cod" placeholder="Aponte e bipe" inputmode="none" autocomplete="off" autocapitalize="characters" oninput="bpEntrada()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bpDigitado();}"><button class="btn pri" id="bp-reg" style="display:none;padding:10px 14px" onclick="bpDigitado()">Registrar</button></div>')+
     (BP.meus.some(function(m){ return m.auto; })?'':'<div style="display:flex;gap:10px;margin-bottom:14px">'+('<button class="bp-acao" onclick="bpCamera()"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/></svg>QR / Barras</button>')+'<button class="bp-acao" id="bp-dig" onclick="bpModo()"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg><span id="bp-dig-t">Digitar pacote</span></button></div>')+
@@ -3106,7 +3141,7 @@ function vzSalvar(auto){
   function fim(){ VZ.busy=false; }
   if(novo){
     cod='VOZ'+Date.now().toString(36).toUpperCase();
-    pre=rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,tr:'',ponto:PT.sel?PT.sel.nome:''})}).then(function(d){ if(!d||!d.ok||d.resultado!=='novo') throw new Error('bipar'); });
+    pre=rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,tr:(BP.tr||''),ponto:PT.sel?PT.sel.nome:''})}).then(function(d){ if(!d||!d.ok||d.resultado!=='novo') throw new Error('bipar'); });
   }
   pre.then(function(){
     return rpApi('/motorista/endereco',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:cod,cep:cep,num:num,comp:comp,cliente:cli,rua:rua,bai:bai,cid:cid,valor:(el('vz-val')&&(el('vz-val').value||'').trim()!==''?parseFloat(String(el('vz-val').value).replace(',','.')):undefined)})});
@@ -3512,6 +3547,8 @@ function renderInicio(){
        '<div style="display:flex;gap:10px;margin-top:16px"><button class="btn sec" style="flex:1" onclick="cancelarLote()">Cancelar</button><button class="btn pri" style="flex:1" onclick="fecharLote()">Fechar lote</button></div></div>';
   } else if(EST==='rp_bip'){
     h+=bpTela();
+  } else if(EST==='rp_tr'){
+    h+=trTela();
   } else if(EST==='rp_ponto'){
     h+=ptTela();
   } else if(EST==='rp_calc'){
