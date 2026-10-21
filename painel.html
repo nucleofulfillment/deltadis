@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-135-2110</p>
+      <p class="bld">DELTADIS-BASE-136-2110</p>
     </div>
   </div>
 </div>
@@ -1277,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-135-2110</div>
+<div class="bld-fix">DELTADIS-BASE-136-2110</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -4017,7 +4017,7 @@ function pintarPedidos(){
   function passaOc(p2){ if(!ocFiltro) return true; if(ocFiltro==='__semnum') return !(p2.st==='entregue'||incompletoDe(p2)!=='num'); if(ocFiltro==='__semrua') return !(p2.st==='entregue'||incompletoDe(p2)!=='rua'); return p2.obs===ocFiltro; }
   var nB=0, nR=0;
   function visOk(tb){ if(BIPT_SIG===''||VIS_PD==='todos') return true; return VIS_PD==='retro'?!tb:tb; }   /* (127) por padrão só pacotes já bipados; retroativos (sem bipagem) só aparecem se pedir */
-  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaMot(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=(temB(pc)||temTf(pc)); if(tbC) nB++; else nR++; if(!visOk(tbC)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
+  for(j=0;j<PEDIDOS.length;j++){ var pc=PEDIDOS[j]; if(FILTRO_TR && pc.tr!==FILTRO_TR) continue; if(!passaData(pc)) continue; if(!passaMot(pc)) continue; if(!passaBusca(pc)) continue; if(!passaOc(pc)) continue; var tbC=(temB(pc)||temTf(pc)||veioDeBip(pc)); if(tbC) nB++; else nR++; if(!visOk(tbC)) continue; cont.todos++; if(cont[pc.st]!=null) cont[pc.st]++; }
   var pills='';
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
     pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i]==='nao localizado'?'Não localizado':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
@@ -4031,7 +4031,7 @@ function pintarPedidos(){
     else if(FILTRO_PD!=='todos' && p.st!==FILTRO_PD) continue;
     if(FILTRO_TR && p.tr!==FILTRO_TR) continue;
     if(!passaData(p)) continue;
-    if(!visOk(temB(p)||temTf(p))) continue;
+    if(!visOk(temB(p)||temTf(p)||veioDeBip(p))) continue;
     if(!passaMot(p)) continue;
     if(ocFiltro==='__semnum'){ if(p.st==='entregue'||incompletoDe(p)!=='num') continue; }
     else if(ocFiltro==='__semrua'){ if(p.st==='entregue'||incompletoDe(p)!=='rua') continue; }
@@ -4088,6 +4088,8 @@ function transfCarregar(){
     TFM=novo; if(n!==ant && PAG==='pedidos') pintarPedidos();
   }).catch(function(){ TFM_RODANDO=false; });
 }
+/* (136) pedido que nasceu de bipagem do app ou da Mesa já conta como bipado na hora (sem esperar a lista de bipados atualizar) */
+function veioDeBip(p2){ var o=String(p2.obs||''); return o.indexOf('entrada por bipagem')===0 || o.indexOf('TRANSFERÊNCIA')===0 || o.indexOf('entrada pela Mesa')===0 || o.indexOf('Esquecido na base')===0 || o.indexOf('Devolvido à base')===0 || o.indexOf('OS manual')===0; }
 function temTf(p2){ var k=String(p2.cod).toLowerCase(); return !!(TFM[k]||(p2.scan&&TFM[String(p2.scan).toLowerCase()])); }
 function filtrarRetro(){ VIS_PD=(VIS_PD==='retro')?'bip':'retro'; pintarPedidos(); }
 function bipTodosCarregar(){
