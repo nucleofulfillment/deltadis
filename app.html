@@ -1882,7 +1882,7 @@ function ptCarregar(){
   PT.carregando=true;
   rpApi('/motorista/pontos').then(function(d){
     PT.carregando=false;
-    if(d&&d.ok){ PT.lista=[]; if(d.deltadis) PT.lista.push(d.deltadis); (d.meus||[]).forEach(function(x){ PT.lista.push(x); }); PT.err=''; }
+    if(d&&d.ok){ PT.lista=[]; if(d.deltadis) PT.lista.push(d.deltadis); (d.bases||[]).forEach(function(x){ PT.lista.push(x); }); (d.meus||[]).forEach(function(x){ PT.lista.push(x); }); PT.err=''; }
     else PT.err='Não consegui carregar os pontos. Confira a internet.';
     if(EST==='rp_ponto') renderInicio();
   }).catch(function(){ PT.carregando=false; PT.err='Sem conexão. Tente de novo.'; if(EST==='rp_ponto') renderInicio(); });
@@ -1923,7 +1923,7 @@ function ptRemover(i){
 /* o ponto de coleta escolhido em outro aparelho (ou perdido neste) volta sozinho, pelo nome gravado nos pacotes já bipados */
 function ptRestaurar(nome){
   rpApi('/motorista/pontos').then(function(d){
-    if(PT.sel||!d||!d.ok) return; var L=[], i; if(d.deltadis) L.push(d.deltadis); (d.meus||[]).forEach(function(x){ L.push(x); });
+    if(PT.sel||!d||!d.ok) return; var L=[], i; if(d.deltadis) L.push(d.deltadis); (d.bases||[]).forEach(function(x){ L.push(x); }); (d.meus||[]).forEach(function(x){ L.push(x); });
     for(i=0;i<L.length;i++) if(String(L[i].nome)===String(nome)){ var x=L[i]; PT.sel={id:x.id,nome:x.nome,endereco:x.endereco,tipo:x.tipo,assina:!!x.assina,lat:x.lat==null?null:x.lat,lng:x.lng==null?null:x.lng,dia:numHoje()}; ptGravar(); if(EST==='rp_bip') renderInicio(); return; }
   }).catch(function(){});
 }
@@ -4325,7 +4325,7 @@ function ptFormLer(p){
 var CTP={lista:null,novo:false,busy:false,err:''};
 function ctpCarregar(){
   rpApi('/motorista/pontos').then(function(d){
-    if(d&&d.ok){ CTP.lista=[]; if(d.deltadis) CTP.lista.push(d.deltadis); (d.meus||[]).forEach(function(x){ CTP.lista.push(x); }); CTP.err=''; }
+    if(d&&d.ok){ CTP.lista=[]; if(d.deltadis) CTP.lista.push(d.deltadis); (d.bases||[]).forEach(function(x){ CTP.lista.push(x); }); (d.meus||[]).forEach(function(x){ CTP.lista.push(x); }); CTP.err=''; }
     else CTP.err='Não consegui carregar os pontos.';
     ctpPintar();
   }).catch(function(){ CTP.err='Sem conexão.'; ctpPintar(); });
