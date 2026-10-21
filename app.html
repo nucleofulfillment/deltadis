@@ -582,7 +582,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-246-2110</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-249-2110</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -1955,7 +1955,7 @@ function ptGps(){
     var lat=p.coords.latitude, lng=p.coords.longitude, fim=function(nomeRua){
       PT.gpsBusy=false;
       var end=nomeRua||('Localização atual ('+lat.toFixed(5)+', '+lng.toFixed(5)+')');
-      ptUsar({id:'gps',nome:'Minha localização atual',endereco:end,tipo:'gps',assina:false,lat:lat,lng:lng});
+      ptUsar({id:'gps',nome:'Minha localização atual',endereco:end,tipo:'gps',assina:true,lat:lat,lng:lng});
     }, feito=false, tm=setTimeout(function(){ if(!feito){ feito=true; fim(''); } },3000);
     try{ fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lng+'&localityLanguage=pt').then(function(r){ return r.json(); }).then(function(g){
       if(feito) return; feito=true; clearTimeout(tm);
@@ -2187,7 +2187,7 @@ function bpRemover(cod){
   }).catch(function(){ delete BP.remT[String(cod).toLowerCase()]; BP.meus.splice(Math.min(pos,BP.meus.length),0,it); bpMarcaMesa(cod,false); bpAtualizar(); aviso('Sem conexão. Não removi.'); });
 }
 /* (141) assinatura do romaneio: ponto DELTADIS = obrigatória; ponto de outra empresa = só se ele ativou naquele ponto */
-function asgObrigatoria(){ if(window.APP_PLANO&&APP_PLANO.bloqueio) return false; if(PT.sel){ if(PT.sel.tipo==='deltadis') return true; return !!PT.sel.assina; } return rpCfg().assina==='sim'; }
+function asgObrigatoria(){ if(window.APP_PLANO&&APP_PLANO.bloqueio) return false; if(PT.sel){ if(PT.sel.tipo==='deltadis'||PT.sel.tipo==='gps') return true; return !!PT.sel.assina; } return rpCfg().assina==='sim'; }
 /* (75) pacote remarcado/ainda com o motorista JÁ pertence ao 1º romaneio (tem rom): não entra em romaneio novo nem pede nova assinatura */
 function bpNovos(){ return BP.meus.filter(function(m){ return !m.rom; }); }
 /* (110) depois do romaneio fechado: com roteirização segue pra montar a rota; sem roteirização vai pra tela de entregas */
@@ -2204,8 +2204,9 @@ function bpFechar(){
   var fbp2=BP.meus.filter(function(m){ return m.auto&&!m.conf; }).length;
   if(fbp2>0&&!(BP._ok2&&Date.now()-BP._ok2<90000)){ ddSim('Faltam '+fbp2+' pacote'+(fbp2===1?'':'s')+' da sua lista sem bipar. Montar a rota mesmo assim?',function(){ BP._ok2=Date.now(); bpFechar(); }); return; }
   bpFecharCamera();
-  if(!bpNovos().length){ bpSeguir(); return; }   /* só pacotes remarcados: segue o romaneio original, sem novo romaneio nem assinatura */
+  if(!bpNovos().length){ aviso('Sem assinatura: esses pacotes já estão em um romaneio assinado antes.'); bpSeguir(); return; }   /* só pacotes remarcados: segue o romaneio original, sem novo romaneio nem assinatura */
   if(asgObrigatoria()){ RP.asgVoltaRota=false; asgAbrir(); return; }
+  aviso('Sem assinatura: este ponto ('+(PT.sel?pontoNome(PT.sel.nome):'não escolhido')+') não exige.');
   /* (69) fechou = 1 romaneio (numerado no servidor), mesmo sem assinatura */
   var seguir=function(){ bpSeguir(); };
   rpApi('/motorista/romaneio-fechar',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(seguir).catch(seguir);
@@ -2415,12 +2416,37 @@ function entTela(){
   if(na){
     h+='<div style="font-size:12px;font-weight:800;color:var(--muted);margin:4px 0">Ausentes bipados</div>';
     for(i=na-1;i>=0;i--){ var m=aus[i];
-      h+='<div '+(m.cod===ENT.foco?'id="ent-foco" ':'')+'style="display:flex;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);'+(m.cod===ENT.foco?'background:#FFF7ED;':'')+'"><span style="min-width:0;flex:1;overflow:hidden"><b style="word-break:break-all">'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<br><span style="font-size:11.5px;color:var(--muted)">'+esc(m.cl)+'</span>':'')+'</span><button class="btn sec" style="padding:6px 12px" onclick="entDesmarca(\''+esc(m.cod)+'\')">✕</button></div>';
+      h+='<div '+(m.cod===ENT.foco?'id="ent-foco" ':'')+'style="display:flex;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);'+(m.cod===ENT.foco?'background:#FFF7ED;':'')+'"><span style="min-width:0;flex:1;overflow:hidden"><b style="word-break:break-all">'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<br><span style="font-size:11.5px;color:var(--muted)">'+esc(m.cl)+'</span>':'')+'</span><button class="btn sec" style="padding:6px 12px" onclick="entDevolver([\''+esc(m.cod)+'\'])">↩ Devolvido</button><button class="btn sec" style="padding:6px 12px" onclick="entDesmarca(\''+esc(m.cod)+'\')">✕</button></div>';
     }
   }
-  h+='<button class="btn pri wide" style="margin-top:14px" onclick="entConcluir()">'+(na?('Concluir — '+ne+' entregue'+(ne===1?'':'s')+' · '+na+' ausente'+(na===1?'':'s')):('✔ Todos os Pacotes Entregues ('+n+')'))+'</button>';
+  if(na) h+='<button class="btn sec wide" style="margin-top:12px" onclick="entDevolver()">↩ Devolvido — informar quem recebeu ('+na+')</button>';
+  h+='<button class="btn pri wide" style="margin-top:10px" onclick="entConcluir()">'+(na?('Concluir — '+ne+' entregue'+(ne===1?'':'s')+' · '+na+' ausente'+(na===1?'':'s')):('✔ Todos os Pacotes Entregues ('+n+')'))+'</button>';
   h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'rp_bip\';BP.ult=null;renderInicio();bpCarregar(true)">Voltar</button></div></div>';
   return h;
+}
+/* (249) DEVOLVIDO: o motorista devolve o pacote (ex.: ao remetente) e informa o NOME de quem recebeu (obrigatório). Status final "Devolvido" no painel, sem passar pela Mesa. */
+function entDevolver(cods){
+  var L=entLista().filter(function(m){ return ENT.sel[m.cod]||ENT.aus[m.cod]; });
+  if(cods) L=L.filter(function(m){ return cods.indexOf(m.cod)>=0; });
+  if(!L.length){ aviso('Bipe ao menos um pacote para devolver'); return; }
+  var old=el('dv-ovl'); if(old&&old.parentNode) old.parentNode.removeChild(old);
+  var o=document.createElement('div'); o.id='dv-ovl'; o.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(31,10,61,.6);display:flex;align-items:center;justify-content:center;padding:24px';
+  o.innerHTML='<div style="background:#fff;border-radius:18px;padding:20px;max-width:360px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)"><h3 style="margin:0 0 6px;font-size:16px;color:#1F0A3D">Quem recebeu o pacote?</h3><p style="margin:0 0 10px;font-size:12.5px;color:#6B5B84" id="dv-q"></p><input id="dv-nome" placeholder="Nome de quem recebeu" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;font-size:16px;border:1.5px solid #D8B8EE;border-radius:12px"><p id="dv-msg" style="color:#B91C1C;font-size:12.5px;margin:6px 0 0;min-height:16px"></p><div style="display:flex;gap:10px;margin-top:8px"><button type="button" class="btn sec" style="flex:1" id="dv-n">Cancelar</button><button type="button" class="btn pri" style="flex:1" id="dv-s">Confirmar</button></div></div>';
+  document.body.appendChild(o);
+  el('dv-q').textContent=L.length+' pacote'+(L.length===1?'':'s')+' será'+(L.length===1?'':'o')+' marcado'+(L.length===1?'':'s')+' como DEVOLVIDO.';
+  function fecha(){ if(o.parentNode) o.parentNode.removeChild(o); }
+  el('dv-n').onclick=fecha;
+  el('dv-s').onclick=function(){
+    var nome=String(el('dv-nome').value||'').replace(/\s+/g,' ').trim();
+    if(nome.length<3){ el('dv-msg').textContent='Informe o nome de quem recebeu (obrigatório).'; return; }
+    fecha();
+    var f=rpFilaEnt(), t=Date.now();
+    L.forEach(function(m){ f.push({cod:m.cod,scan:'',status:'devolvido',motivo:'final',recebeu:nome,mt:String(RP.mt),mtn:RP.mtn||'',t:t}); ENT.done[m.cod]='devolvido'; delete ENT.sel[m.cod]; delete ENT.aus[m.cod]; });
+    rpSalvaFilaEnt(f); rpDescarregarEnt();
+    aviso(L.length+' pacote'+(L.length===1?'':'s')+' devolvido'+(L.length===1?'':'s')+' — recebido por '+nome);
+    renderInicio();
+  };
+  setTimeout(function(){ var e=el('dv-nome'); if(e) e.focus(); },80);
 }
 function entDesmarca(cod){ delete ENT.sel[cod]; if(ENT.foco===cod) ENT.foco=''; renderInicio(); }
 /* (235) fecha a lista: o que foi bipado vira AUSENTE, o resto vira ENTREGUE (com a posição do motorista), e o lote é finalizado */

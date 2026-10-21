@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-140-2110</p>
+      <p class="bld">DELTADIS-BASE-141-2110</p>
     </div>
   </div>
 </div>
@@ -1277,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-140-2110</div>
+<div class="bld-fix">DELTADIS-BASE-141-2110</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1940,7 +1940,7 @@ function bipStatusSync(){
       if(b.st==='entregue') ns='entregue';
       else if(b.st==='ausente') ns='tentativa '+Math.min(3,tn);   /* (139) ausente marcado pelo motorista = TENTATIVA (n); só vira Base quando a Mesa recebe a devolução */
       else if(b.st==='nao_localizado') ns='tentativa '+Math.min(3,tn);
-      else if(b.st==='devolvido') ns=(tn>=3?'devolvido':'tentativa '+tn);
+      else if(b.st==='devolvido'){ if(b.mot==='final'){ ns='devolvido'; if(b.recebeu){ var _ob='Devolvido pelo motorista — recebido por '+b.recebeu; if(p.obs!==_ob){ p.obs=_ob; mud++; } } } else ns=(tn>=3?'devolvido':'tentativa '+tn); }   /* (141) devolução FINAL feita no app (com o nome de quem recebeu): status Devolvido */
       else if(b.st==='devolvido_ok') ns=(tn>=3?'devolvido':'coletado');   /* (59) já recebido pela Mesa: está na Base de novo */
       else continue;
       if(p.st!==ns){ p.st=ns; if(ns==='entregue'&&!p.ent) { var _d=new Date(Number(b.st_t)||Date.now()); p.ent=ymdLocal(_d)+' '+('0'+_d.getHours()).slice(-2)+':'+('0'+_d.getMinutes()).slice(-2); } mud++; }
