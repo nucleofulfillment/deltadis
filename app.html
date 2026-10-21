@@ -582,7 +582,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-249-2110</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-250-2110</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2388,6 +2388,22 @@ function entLocalizar(v){
   if(!ach){ try{ somErroBip(); }catch(e){} aviso('Esse pacote não está na sua lista'); if(inf) inf.innerHTML='<span style="font-size:26px;font-weight:800;color:#fff;display:block">Fora da sua lista</span>'+esc(c); return; }
   if(ENT.sel[ach.cod]||ENT.aus[ach.cod]){ aviso('Já marcado como ausente'); if(inf) inf.innerHTML='<span style="font-size:26px;font-weight:800;color:#fff;display:block">Já marcado como AUSENTE</span>'+esc(ach.cod); return; }
   try{ somBipeOk(); }catch(e){}
+  entEscolha(ach);   /* (250) pergunta: Ausente ou Devolvido */
+}
+/* (250) depois de bipar/digitar: o motorista escolhe se o pacote ficou AUSENTE ou foi DEVOLVIDO */
+function entEscolha(ach){
+  var old=el('esc-ovl'); if(old&&old.parentNode) old.parentNode.removeChild(old);
+  var o=document.createElement('div'); o.id='esc-ovl'; o.style.cssText='position:fixed;inset:0;z-index:99997;background:rgba(31,10,61,.6);display:flex;align-items:center;justify-content:center;padding:24px';
+  o.innerHTML='<div style="background:#fff;border-radius:18px;padding:20px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)"><h3 style="margin:0 0 4px;font-size:16px;color:#1F0A3D">O que aconteceu com o pacote?</h3><p style="margin:0 0 14px;font-size:13px;color:#6B5B84;word-break:break-all" id="esc-cod"></p><button type="button" class="btn pri wide" style="margin-bottom:10px" id="esc-a">🚪 Ausente</button><button type="button" class="btn pri wide" style="margin-bottom:10px" id="esc-d">↩ Devolvido</button><button type="button" class="btn sec wide" id="esc-c">Cancelar</button></div>';
+  document.body.appendChild(o);
+  el('esc-cod').textContent=ach.cod;
+  function fecha(){ if(o.parentNode) o.parentNode.removeChild(o); }
+  el('esc-c').onclick=fecha;
+  el('esc-a').onclick=function(){ fecha(); entMarcarAus(ach); };
+  el('esc-d').onclick=function(){ fecha(); entDevolver([ach.cod]); };
+}
+function entMarcarAus(ach){
+  var inf=el('bp-caminfo');
   ENT.sel[ach.cod]=1; ENT.foco=ach.cod; ENT.dig=false; renderInicio();   /* (235) a câmera segue aberta pro próximo */
   if(inf) inf.innerHTML='<span style="font-size:26px;font-weight:800;color:#fff;display:block">🚪 AUSENTE</span>'+esc(ach.cod);
   if(!el('bp-cam')) setTimeout(function(){ var e=el('ent-foco'); if(e&&e.scrollIntoView) e.scrollIntoView({block:'center'}); },80);
@@ -2426,8 +2442,7 @@ function entTela(){
 }
 /* (249) DEVOLVIDO: o motorista devolve o pacote (ex.: ao remetente) e informa o NOME de quem recebeu (obrigatório). Status final "Devolvido" no painel, sem passar pela Mesa. */
 function entDevolver(cods){
-  var L=entLista().filter(function(m){ return ENT.sel[m.cod]||ENT.aus[m.cod]; });
-  if(cods) L=L.filter(function(m){ return cods.indexOf(m.cod)>=0; });
+  var L=entLista().filter(function(m){ return cods?(cods.indexOf(m.cod)>=0):(ENT.sel[m.cod]||ENT.aus[m.cod]); });
   if(!L.length){ aviso('Bipe ao menos um pacote para devolver'); return; }
   var old=el('dv-ovl'); if(old&&old.parentNode) old.parentNode.removeChild(old);
   var o=document.createElement('div'); o.id='dv-ovl'; o.style.cssText='position:fixed;inset:0;z-index:99996;background:rgba(31,10,61,.6);display:flex;align-items:center;justify-content:center;padding:24px';
