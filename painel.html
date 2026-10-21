@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-137-2110</p>
+      <p class="bld">DELTADIS-BASE-138-2110</p>
     </div>
   </div>
 </div>
@@ -1277,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-137-2110</div>
+<div class="bld-fix">DELTADIS-BASE-138-2110</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1483,7 +1483,7 @@ function agendarEnvioPedidos(){ if(!REAL || !PEDIDOS.length) return; if(PED_SYNC
 function enviarPedidosServidor(forcar){
   if(!REAL || !PEDIDOS.length) return;
   if(PED_SYNC.enviando){ agendarEnvioPedidos(); return; }
-  var lista=listaParaServidor(), corpo=JSON.stringify({v:73, pedidos:lista, limpar:!lista.length}), h=0, k;
+  var lista=listaParaServidor(), corpo=JSON.stringify({v:73, ep:(function(){ try{ return localStorage.getItem('dd_epoca')||''; }catch(e){ return ''; } })(), pedidos:lista, limpar:!lista.length}), h=0, k;
   for(k=0;k<corpo.length;k++){ h=(Math.imul(h,31)+corpo.charCodeAt(k))|0; } h=h+':'+corpo.length;
   if(!forcar && h===PED_SYNC.hash) return;
   PED_SYNC.enviando=true;
