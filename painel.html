@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-133-2110</p>
+      <p class="bld">DELTADIS-BASE-134-2110</p>
     </div>
   </div>
 </div>
@@ -1277,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-133-2110</div>
+<div class="bld-fix">DELTADIS-BASE-134-2110</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -3981,7 +3981,7 @@ function limparFiltroDash(){ DASH_TR=null; pintarIndicadores(); pintarDashboard(
 function limparFiltroTransportadora(){ FILTRO_TR=null; pintarPedidos(); }
 function pintarPedidos(){
   var tf=FILTRO_TR?transp(FILTRO_TR):null;
-  el('pd-chip').innerHTML = (VIS_PD==='todos' ? '<div class="chip-filtro">Mostrando todos, inclusive retroativos <span onclick="VIS_PD=\'bip\';pintarPedidos()">✕</span></div>' : '') + (tf ? ('<div class="chip-filtro">Transportadora: '+esc(tf.n)+' <span onclick="limparFiltroTransportadora()">✕</span></div>') : '') + (FILTRO_PD==='acao' ? '<div class="chip-filtro">Precisa de ação: tentativas, devolvidos e extraviados <span onclick="filtrarPedidos(\'todos\')">✕</span></div>' : '');
+  el('pd-chip').innerHTML = (VIS_PD==='todos' ? '<div class="chip-filtro">Mostrando todos, inclusive os Pedidos Planilhas <span onclick="VIS_PD=\'bip\';pintarPedidos()">✕</span></div>' : '') + (tf ? ('<div class="chip-filtro">Transportadora: '+esc(tf.n)+' <span onclick="limparFiltroTransportadora()">✕</span></div>') : '') + (FILTRO_PD==='acao' ? '<div class="chip-filtro">Precisa de ação: tentativas, devolvidos e extraviados <span onclick="filtrarPedidos(\'todos\')">✕</span></div>' : '');
 
   var dIni=(el('pd-data-ini')&&el('pd-data-ini').value)||'', dFim=(el('pd-data-fim')&&el('pd-data-fim').value)||'';
   function passaData(p2){ if(!p2.dia) return !dIni && !dFim; if(dIni && p2.dia<dIni) return false; if(dFim && p2.dia>dFim) return false; return true; }
@@ -4016,7 +4016,7 @@ function pintarPedidos(){
   for(i=0;i<stAll.length;i++){ var qtdP=cont[stAll[i]];
     pills+='<span class="pill'+(FILTRO_PD===stAll[i]?' on':'')+'" style="position:relative;overflow:visible" onclick="filtrarPedidos(\''+stAll[i]+'\')">'+(stAll[i]==='todos'?'Todos':stAll[i]==='coletado'?'Base':stAll[i]==='nao localizado'?'Não localizado':stAll[i][0].toUpperCase()+stAll[i].slice(1))+'<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(qtdP>0?'var(--roxo)':'var(--border2)')+';color:'+(qtdP>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+qtdP+'</span></span>';
   }
-  if(REAL){ pills+='<span class="pill'+(VIS_PD==="retro"?' on':'')+'" style="position:relative;overflow:visible" title="Pacotes que ainda NÃO foram bipados no app (retroativos). Toque de novo para voltar" onclick="filtrarRetro()">Retroativos<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(nR>0?'#D97706':'var(--border2)')+';color:'+(nR>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+nR+'</span></span>'; }
+  if(REAL){ pills+='<span class="pill'+(VIS_PD==="retro"?' on':'')+'" style="position:relative;overflow:visible" title="Pedidos que vieram só pela planilha e ainda não foram bipados (Mesa ou app). Ficam ocultos da lista principal. Toque de novo para voltar" onclick="filtrarRetro()">Pedidos Planilhas<span style="position:absolute;top:-7px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:'+(nR>0?'#D97706':'var(--border2)')+';color:'+(nR>0?'#fff':'var(--muted2)')+';font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--s1)">'+nR+'</span></span>'; }
   el('pd-pills').innerHTML=pills;
 
   var h='', n=0, LIM=300;
@@ -4038,7 +4038,7 @@ function pintarPedidos(){
     h+='<tr onclick="abrirPedido(\''+p.cod+'\')"><td><b>'+esc(p.cod)+'</b>'+cpBtn(p.cod)+(temTf(p)?'<span style="display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;font-size:10.5px;font-weight:800;vertical-align:middle">TRANSFERÊNCIA</span>':'')+(n<=45?('<span class="bipb" data-bc="'+esc(p.cod)+'" data-bs="'+esc((p.scan&&p.scan!==p.cod)?p.scan:'')+'"></span>'):bipbEst(p))+'<br><span style="color:var(--muted);font-size:11.5px">'+esc(p.cliente||infoPacote(p))+'</span>'+(p.cliente&&entradaTxt(p)?'<br><span style="color:var(--muted);font-size:11px">'+esc(entradaTxt(p))+'</span>':'')+((p.obs&&p.obs!=='em aberto'&&p.obs!=='na base'&&p.st!=='entregue')?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+esc(p.obs)+'</span>':'')+((p.st!=='entregue'&&p.bairro&&(!p.num||!p.rua))?'<br><span style="color:var(--amber);font-size:11px;font-weight:600">⚠ '+(!p.num?'sem número':'sem nome da rua')+'</span>':'')+'</td>'+
        '<td>'+esc(t?t.n:'—')+'</td><td>'+esc(m?m.n:'sem motorista')+'</td><td>'+badgeStatus(p.st)+'</td><td>'+(p.vl==null?'—':moeda(p.vl))+'</td></tr>';}
   if(n>LIM) h+='<tr><td colspan="5"><div class="empty">Mostrando os primeiros '+LIM+' de '+n+' pacotes — use a busca ou os filtros para ver os outros</div></td></tr>';
-  if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+(VIS_PD==='bip'&&BIPT_SIG!==''?' entre os já bipados. Toque em "Retroativos" para ver os que ainda não foram bipados.':'')+'</div></td></tr>';
+  if(!h) h='<tr><td colspan="5"><div class="empty">Nenhum pacote encontrado'+(tf?' para esta transportadora':'')+(VIS_PD==='bip'&&BIPT_SIG!==''?' entre os já bipados. Toque em "Pedidos Planilhas" para ver os que vieram só pela planilha e ainda não foram bipados.':'')+'</div></td></tr>';
   el('pd-corpo').innerHTML=h;
   try{ bipbPintar(); }catch(eBb){}
 }
