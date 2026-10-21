@@ -2448,8 +2448,10 @@ function bpMontaDetector(cb){
 }
 function bpCamera(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ aviso('Este aparelho não lê código pela câmera aqui. Digite o código.'); return; }
+  if(BP.cam&&el('bp-cam')) return;   /* (237) já está aberta */
+  if(BP.camAbrindo&&Date.now()-BP.camAbrindo<6000) return; BP.camAbrindo=Date.now();
   bpMontaDetector(function(det){
-  if(!det){ aviso('Câmera de leitura indisponível. Digite o código.'); return; }
+  if(!det){ BP.camAbrindo=0; BP.camQuer=false; aviso('Câmera de leitura indisponível. Digite o código.'); return; }
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false}).then(function(st){
     /* (213) câmera em TELA CHEIA com faixa de leitura larga (código de barras é comprido), foco contínuo, zoom e lanterna quando o aparelho tiver */
     var ov=document.createElement('div'); ov.id='bp-cam'; ov.style.cssText='position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column';
@@ -2462,6 +2464,7 @@ function bpCamera(){
       '<div style="position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 0;display:flex;justify-content:space-between;align-items:center"><button class="btn sec" style="padding:8px 14px" onclick="bpFecharCamera()">✕ Fechar</button><span style="display:flex;gap:8px"><button id="bp-zoom" class="btn sec" style="padding:8px 14px;display:none" onclick="bpZoom()">1x</button><button id="bp-luz" class="btn sec" style="padding:8px 14px;display:none" onclick="bpLuz()">🔦</button></span></div>'+
       '<div id="bp-caminfo" style="position:absolute;left:0;right:0;bottom:0;padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 22px);color:#fff;font-size:14px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.7))">Aponte para o QR Code ou código de barras</div>';
     document.body.appendChild(ov); var v=el('bp-vid'); v.srcObject=st; v.play().catch(function(){});
+    BP.camAbrindo=0; if(!BP.camFn) BP.camQuer=true;   /* (237) o motorista quer a câmera ligada até tocar em Fechar */
     var tr=st.getVideoTracks()[0], caps={}; try{ caps=(tr.getCapabilities&&tr.getCapabilities())||{}; }catch(e){}
     try{ if(caps.focusMode && caps.focusMode.indexOf('continuous')>=0) tr.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(function(){}); }catch(e){}
     var zb=el('bp-zoom'), lb=el('bp-luz');
@@ -2480,9 +2483,23 @@ function bpCamera(){
         if(BP.camFn) BP.camFn(c); else { bpBipar(c); bpCamFeedback(); }   /* (v230) a câmera NÃO fecha a cada bipe: segue lendo o próximo pacote */
       }).catch(function(){ if(BP.cam) BP.cam.lendo=false; });
     },140)};
-  }).catch(function(){ aviso('Não consegui abrir a câmera. Libere a permissão do navegador.'); });
+  }).catch(function(){ BP.camAbrindo=0; BP.camQuer=false; aviso('Não consegui abrir a câmera. Libere a permissão do navegador.'); });
   });
 }
+/* (237) a câmera de bipagem fica ligada: se ela sumir sozinha depois de um bipe (o celular derruba a imagem), limpa e abre de novo, sem o motorista precisar tocar no botão */
+function bpCamLimpa(){
+  if(BP.cam){ clearInterval(BP.cam.timer); try{ BP.cam.st.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} BP.cam=null; }
+  var o=el('bp-cam'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+}
+setInterval(function(){
+  try{
+    if(!BP.camQuer||EST!=='rp_bip'||(typeof PAG!=='undefined'&&PAG!=='inicio')||document.hidden) return;
+    var morta=!el('bp-cam')||!BP.cam||(BP.cam.tr&&BP.cam.tr.readyState==='ended');
+    if(!morta) return;
+    BP.camReab=(BP.camReab||0)+1; if(BP.camReab>40){ BP.camQuer=false; BP.camReab=0; return; }   /* trava de segurança: não fica reabrindo pra sempre */
+    bpCamLimpa(); bpCamera();
+  }catch(e){}
+},500);
 /* (v230) resposta de cada bipe DENTRO da câmera aberta (a tela de trás fica escondida) */
 function bpCamFeedback(){
   var i=el('bp-caminfo'); if(!i||!BP.ult) return;
@@ -2492,8 +2509,8 @@ function bpCamFeedback(){
 function bpZoom(){ var c=BP.cam; if(!c||!c.caps.zoom) return; c.zoomOn=!c.zoomOn; var z=c.zoomOn?Math.min(c.caps.zoom.max,Math.max(c.caps.zoom.min*2,2)):c.caps.zoom.min; try{ c.tr.applyConstraints({advanced:[{zoom:z}]}).catch(function(){}); }catch(e){} var b=el('bp-zoom'); if(b) b.textContent=c.zoomOn?'2x':'1x'; }
 function bpLuz(){ var c=BP.cam; if(!c) return; c.luz=!c.luz; try{ c.tr.applyConstraints({advanced:[{torch:c.luz}]}).catch(function(){}); }catch(e){} var b=el('bp-luz'); if(b) b.style.opacity=c.luz?'1':'.7'; }
 function bpFecharCamera(){
-  if(BP.cam){ clearInterval(BP.cam.timer); try{ BP.cam.st.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} BP.cam=null; }
-  var o=el('bp-cam'); if(o&&o.parentNode) o.parentNode.removeChild(o);
+  BP.camQuer=false; BP.camReab=0; BP.camAbrindo=0;   /* (237) fechou de propósito: não reabre */
+  bpCamLimpa();
   BP.camFn=null;
 }
 var BP_IC={bar:'<svg class="ic" viewBox="0 0 24 24"><path d="M4 6v12M8 6v12M12 6v12M16 6v12M20 6v12"/></svg>',tec:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>'};
