@@ -2059,12 +2059,12 @@ function bpBipar(v){
   try{ if(BP.remT) delete BP.remT[String(item.cod).toLowerCase()]; if(BP.finT) delete BP.finT[String(item.cod).toLowerCase()]; }catch(e){}
   var temLista=(BP.mesa||[]).length>0, naLista=false;   /* (v230) confere o bipado x a lista atribuída */
   if(temLista){ (BP.mesa||[]).forEach(function(x){ if(String(x.cod).toLowerCase()===canon.toLowerCase()) naLista=true; }); }
-  item.pend=Date.now(); BP.meus.push(item); bpMarcaMesa(canon); if(temLista&&!naLista) somForaLista(); else somBipeOk();
+  item.pend=Date.now(); BP.meus.push(item); bpMarcaMesa(canon); somBipeOk();   /* (238) sem aviso/som de "fora da lista" */
   if(NAO) BP.ult={t:'ok',m:'✔ Registrado'+(e&&e.cl?' — '+esc(e.cl):''),cod:canon};
   else if(!e) BP.ult={t:'novo',m:'Clique e insira o endereço.',cod:canon};
   else if(!e.e) BP.ult={t:'novo',m:'Registrado, mas o endereço está incompleto.',cod:canon};
   else BP.ult={t:'ok',m:'✔ Registrado'+(e.cl?' — '+esc(e.cl):''),cod:canon};
-  if(temLista&&BP.ult&&BP.ult.t==='ok'){ if(naLista) BP.ult.m='✔ NA SUA LISTA'+(e&&e.cl?' — '+esc(e.cl):''); else { BP.ult.t='fora'; BP.ult.m='⚠ FORA DA LISTA — registrado mesmo assim'; } }
+  if(temLista&&naLista&&BP.ult&&BP.ult.t==='ok'){ BP.ult.m='✔ NA SUA LISTA'+(e&&e.cl?' — '+esc(e.cl):''); }   /* (238) só avisa quando o pacote É da lista; se não for, segue como "Registrado" */
   BP.ult.num=item.num; bpAtualizar();
   function desfaz(msg,t){ var j; for(j=BP.meus.length-1;j>=0;j--) if(BP.meus[j]===item) BP.meus.splice(j,1); bpMarcaMesa(canon,true); somErroBip(); BP.ult={t:t||'err',m:msg,cod:canon}; bpAtualizar(); }
   rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:e?'':bpTr(canon),ponto:PT.sel?PT.sel.nome:'',num:item.num||null})}).then(function(d){
@@ -2500,6 +2500,15 @@ setInterval(function(){
     bpCamLimpa(); bpCamera();
   }catch(e){}
 },500);
+function travarEmPe(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(e){} }
+travarEmPe();   /* (239) */
+/* (239) celular deitado: o app só funciona com o celular em pé. No app instalado a tela já trava; no navegador (que não deixa travar) aparece o aviso para virar */
+(function(){ try{
+  var st=document.createElement('style'); st.textContent='#dd-gire{display:none}@media (orientation:landscape) and (max-height:520px) and (pointer:coarse){#dd-gire{display:flex;flex-direction:column;position:fixed;inset:0;z-index:2147483000;background:#1F0A3D;color:#fff;align-items:center;justify-content:center;text-align:center;padding:24px;font:800 20px/1.4 Manrope,system-ui,sans-serif}}';
+  document.head.appendChild(st);
+  var mk=function(){ if(document.getElementById('dd-gire')) return; var d=document.createElement('div'); d.id='dd-gire'; d.innerHTML='<div style="font-size:44px">📱</div>Gire o celular<span style="font-weight:500;font-size:14px;opacity:.8;margin-top:6px">Este app funciona com o celular em pé.</span>'; document.body.appendChild(d); };
+  if(document.body) mk(); else document.addEventListener('DOMContentLoaded',mk);
+}catch(e){} })();
 /* (v230) resposta de cada bipe DENTRO da câmera aberta (a tela de trás fica escondida) */
 function bpCamFeedback(){
   var i=el('bp-caminfo'); if(!i||!BP.ult) return;

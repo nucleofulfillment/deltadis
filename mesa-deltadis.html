@@ -1359,6 +1359,13 @@ function fecharCamera(){
 }
 /* (57) celular: tenta manter a tela em pé; se o aparelho não deixar travar, pede pra desvirar */
 travarEmPe(); trancarTeclado();
+/* (239) celular deitado: o app só funciona com o celular em pé. No app instalado a tela já trava; no navegador (que não deixa travar) aparece o aviso para virar */
+(function(){ try{
+  var st=document.createElement('style'); st.textContent='#dd-gire{display:none}@media (orientation:landscape) and (max-height:520px) and (pointer:coarse){#dd-gire{display:flex;flex-direction:column;position:fixed;inset:0;z-index:2147483000;background:#1F0A3D;color:#fff;align-items:center;justify-content:center;text-align:center;padding:24px;font:800 20px/1.4 Manrope,system-ui,sans-serif}}';
+  document.head.appendChild(st);
+  var mk=function(){ if(document.getElementById('dd-gire')) return; var d=document.createElement('div'); d.id='dd-gire'; d.innerHTML='<div style="font-size:44px">📱</div>Gire o celular<span style="font-weight:500;font-size:14px;opacity:.8;margin-top:6px">Este app funciona com o celular em pé.</span>'; document.body.appendChild(d); };
+  if(document.body) mk(); else document.addEventListener('DOMContentLoaded',mk);
+}catch(e){} })();
 
 /* ══ Romaneios de entrada — vêm do servidor (ficam salvos), agrupados por motorista e transportadora ══ */
 function hojeLocalDe(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
