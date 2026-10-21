@@ -49,6 +49,8 @@ a{color:inherit}
 html.dd-in #curves,html.dd-in .glow{display:none}
 html.dd-in #fundo i{animation:none}
 /* (v215) na tela de login, enquanto digita, o fundo para de animar (celular fraco travava os números do PIN) */
+/* (244) celular/tablet: fundo PARADO e sem desfoque, sem as linhas animadas — era o que deixava o 1º toque no campo de telefone lento (1 a 2 s) */
+@media (pointer:coarse),(max-width:820px){#fundo i{filter:none;animation:none}#curves{display:none}}
 html.dd-digitando #fundo i{animation:none;filter:none}   /* (v216) sem o desfoque pesado enquanto digita: as bolhas já são degradê suave */
 /* tela de carregamento (sessão já guardada): logo enquanto o app confere o login */
 #splash{display:none;position:fixed;inset:0;z-index:50;align-items:center;justify-content:center;flex-direction:column;gap:26px;background:transparent}
@@ -1996,7 +1998,8 @@ function rpFixarNros(){
 }
 function numBadge(n){ return n?('<span class="nb" title="Número escrito no pacote">'+n+'</span>'):''; }
 var _vozU=null, _vozOk=false;
-function vozLiberar(){ if(_vozOk) return; try{ if(window.speechSynthesis){ var u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); _vozOk=true; } }catch(e){} }
+function vozLiberar(){ if(_vozOk) return; if(!document.documentElement.classList.contains('dd-in')) return;   /* (244) na tela de login não mexe na voz: isso travava o 1º toque */
+  _vozOk=true; setTimeout(function(){ try{ if(window.speechSynthesis){ var u=new SpeechSynthesisUtterance(' '); u.volume=0; speechSynthesis.speak(u); } }catch(e){} },900); }
 document.addEventListener('pointerdown',vozLiberar,true); document.addEventListener('keydown',vozLiberar,true);
 var _vozV=null;
 function vozEscolher(){ try{ var vs=speechSynthesis.getVoices()||[], i; _vozV=null; for(i=0;i<vs.length;i++) if(/^pt[-_]BR$/i.test(vs[i].lang)){ _vozV=vs[i]; return; } for(i=0;i<vs.length;i++) if(/^pt/i.test(vs[i].lang)){ _vozV=vs[i]; return; } }catch(e){} }
@@ -4475,7 +4478,7 @@ function fundoSegueCursor(){
     f.style.setProperty('--my',y.toFixed(3));
   });
 }
-function curvesLigar(){ if(CV.on) return; CV.on=true; if(!CV.ini){ CV.ini=true; initCurves(); } else if(CV.draw) requestAnimationFrame(CV.draw); }
+function curvesLigar(){ try{ if(window.matchMedia&&matchMedia('(pointer:coarse),(max-width:820px)').matches) return; }catch(e){} if(CV.on) return; CV.on=true; if(!CV.ini){ CV.ini=true; initCurves(); } else if(CV.draw) requestAnimationFrame(CV.draw); }
 function curvesDesligar(){ CV.on=false; }
 function initCurves(){
   var cv=el('curves'); if(!cv) return;
