@@ -582,7 +582,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>PIN (4 a 6 números)</label><input class="inp" type="password" inputmode="numeric" autocomplete="current-password" id="lg-senha" placeholder="••••"></div>
     <button class="btn sec wide" id="lg-btn" onclick="entrar()">Entrar</button>
     <button class="btn wide" id="lg-prim-link" style="margin-top:10px;background:transparent;border:0;color:var(--roxo);font-weight:800;box-shadow:none" onclick="primeiroAbrir()">Primeiro acesso / esqueci o PIN</button>
-    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-250-2110</p>
+    <p class="demo" style="opacity:.55;font-size:10.5px">DELTADIS-MOTORISTA-251-2110</p>
     <button class="btn sec wide" style="margin-top:10px" onclick="alternarTelaCheia()">⛶ Ver em tela cheia</button>
   </div>
 </div>
@@ -2432,10 +2432,9 @@ function entTela(){
   if(na){
     h+='<div style="font-size:12px;font-weight:800;color:var(--muted);margin:4px 0">Ausentes bipados</div>';
     for(i=na-1;i>=0;i--){ var m=aus[i];
-      h+='<div '+(m.cod===ENT.foco?'id="ent-foco" ':'')+'style="display:flex;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);'+(m.cod===ENT.foco?'background:#FFF7ED;':'')+'"><span style="min-width:0;flex:1;overflow:hidden"><b style="word-break:break-all">'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<br><span style="font-size:11.5px;color:var(--muted)">'+esc(m.cl)+'</span>':'')+'</span><button class="btn sec" style="padding:6px 12px" onclick="entDevolver([\''+esc(m.cod)+'\'])">↩ Devolvido</button><button class="btn sec" style="padding:6px 12px" onclick="entDesmarca(\''+esc(m.cod)+'\')">✕</button></div>';
+      h+='<div '+(m.cod===ENT.foco?'id="ent-foco" ':'')+'style="display:flex;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--border);'+(m.cod===ENT.foco?'background:#FFF7ED;':'')+'"><span style="min-width:0;flex:1;overflow:hidden"><b style="word-break:break-all">'+(/^VOZ[0-9A-Z]{6,}$/.test(m.cod)?'Sem rastreio':cpCod(m.cod))+'</b>'+(m.cl?'<br><span style="font-size:11.5px;color:var(--muted)">'+esc(m.cl)+'</span>':'')+'</span><button class="btn sec" style="padding:6px 12px" onclick="entDesmarca(\''+esc(m.cod)+'\')">✕</button></div>';
     }
   }
-  if(na) h+='<button class="btn sec wide" style="margin-top:12px" onclick="entDevolver()">↩ Devolvido — informar quem recebeu ('+na+')</button>';
   h+='<button class="btn pri wide" style="margin-top:10px" onclick="entConcluir()">'+(na?('Concluir — '+ne+' entregue'+(ne===1?'':'s')+' · '+na+' ausente'+(na===1?'':'s')):('✔ Todos os Pacotes Entregues ('+n+')'))+'</button>';
   h+='<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" style="flex:1" onclick="EST=\'rp_bip\';BP.ult=null;renderInicio();bpCarregar(true)">Voltar</button></div></div>';
   return h;
