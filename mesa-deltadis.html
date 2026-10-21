@@ -278,7 +278,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-68-2110</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-69-2110</p>
   </div>
 </div>
 
@@ -754,10 +754,10 @@ function motOk(){
   return false;
 }
 /* (67) TRANSFERÊNCIA: só em Entregas. O pacote entra na base SEM motorista e fica marcado "TRANSFERÊNCIA" nos Pedidos do painel. */
-function transfAtivo(){ return !!TRANSF && MODO==='entrada'; }
+function transfAtivo(){ return !!TRANSF && (MODO==='entrada'||MODO==='xml'); }   /* (69) também vale no XML */
 function transfPintar(){
   var b=el('btn-transf'); if(!b) return; var on=transfAtivo();
-  b.style.display=(MODO==='entrada')?'':'none';
+  b.style.display=(MODO==='entrada'||MODO==='xml')?'':'none';
   b.className='btn '+(on?'pri':'sec'); b.textContent=on?'🔁 TRANSFERÊNCIA LIGADA — toque para desligar':'🔁 Transferência (sem motorista)';
   var f=el('mot-aqui'); if(f){ f.disabled=false; if(on) f.value=''; }   /* (68) com transferência ligada o campo continua livre: escolher motorista desliga a transferência */
 }
@@ -1205,7 +1205,7 @@ function xmlBipar(cod){
   for(var i=0;i<XML_LOTE.length;i++){ if(XML_LOTE[i].chave===ch){ somErro(); mostrarUlt('rep','Essa nota já foi bipada nesta lista',ch); return; } }
   if(!motOk()) return;
   var nfB=String(parseInt(ch.slice(25,34),10)||'');
-  var o={chave:ch,nf:nfB,estado:'buscando',arq:'chave '+ch.slice(25,34),tam:TAM_SEL};
+  var o={chave:ch,nf:nfB,estado:'buscando',arq:'chave '+ch.slice(25,34),tam:(transfAtivo()?'':TAM_SEL)};
   XML_LOTE.push(o); somBipeOk(); xmlPrev(); NF_FILA.push(o); xmlFila();
 }
 function xmlFila(){   /* uma consulta por vez: o Meu Danfe bloqueia a conta se pedirem rápido demais */
@@ -1243,15 +1243,15 @@ function xmlPrev(){
 }
 function xmlEnviar(itens){
   if(!itens||!itens.length||!ATIVA||!MOT) return;
-  var mot=MOT, tr=ATIVA, sid=SESS_BIP;
-  itens.forEach(function(x){ x.estado='enviando'; }); xmlPrev();
-  api('/mesa/xml',{method:'POST',body:JSON.stringify({mt:mot.id,mtn:mot.n,tr:tr.id,trn:tr.n,itens:itens})}).then(function(d){
+  var tf=transfAtivo(), mot=tf?{id:'',n:''}:MOT, tr=ATIVA, sid=SESS_BIP;
+  itens.forEach(function(x){ x.estado='enviando'; if(tf) x.tam=''; }); xmlPrev();
+  api('/mesa/xml',{method:'POST',body:JSON.stringify({mt:mot.id,mtn:mot.n,tr:tr.id,trn:tr.n,transf:(tf?1:0),itens:itens})}).then(function(d){
     if(!d||!d.ok){ itens.forEach(function(x){ x.estado='envfalhou'; }); aviso((d&&d.mensagem)||'Não consegui registrar.'); somErro(); xmlPrev(); return; }
     var n=0, r=0;
     itens.forEach(function(x,k){ var it=d.itens[k]; if(it&&it.resultado==='repetido'){ x.estado='rep'; r++; } else if(it&&it.resultado==='novo'){ x.estado='reg'; n++; } else { x.estado='envfalhou'; } });
     if(sid===SESS_BIP){ CNT+=n; el('scan-cnt').textContent=CNT; pintarCards();
       if(n) somBipeOk(); else somErro();
-      mostrarUlt(n?'ok':'rep',n?('✔ '+n+' nota'+(n===1?'':'s')+' registrada'+(n===1?'':'s')+' — '+mot.n+' · '+tr.n):'Essa nota já existia',''); }
+      mostrarUlt(n?'ok':'rep',n?('✔ '+n+' nota'+(n===1?'':'s')+' registrada'+(n===1?'':'s')+' — '+(tf?'TRANSFERÊNCIA':mot.n)+' · '+tr.n):'Essa nota já existia',''); }
     var f=el('xml-file'); if(f) f.value=''; xmlPrev();
   }).catch(function(){ itens.forEach(function(x){ x.estado='envfalhou'; }); aviso('Sem conexão. A nota NÃO foi registrada.'); somErro(); xmlPrev(); });
 }
