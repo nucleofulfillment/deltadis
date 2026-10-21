@@ -579,7 +579,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
       <div style="display:flex;gap:10px"><button class="btn pri wide" id="lg-btn" style="flex:1;width:auto" onclick="entrar()">Entrar</button><a class="btn sec" href="/?assinar=1" style="text-decoration:none">Assinar</a></div>
       <p style="text-align:center;margin:12px 0 0"><a href="#" id="lg-alt" onclick="lgAlternar();return false" style="font-size:13px;font-weight:700;color:#6D28D9;text-decoration:none">Entrar com código (WhatsApp ou e-mail)</a></p>
       <p class="demo" id="lg-msg" style="color:#c0392b;font-weight:700;min-height:18px"></p>
-      <p class="bld">DELTADIS-BASE-134-2110</p>
+      <p class="bld">DELTADIS-BASE-135-2110</p>
     </div>
   </div>
 </div>
@@ -1277,7 +1277,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
 <div class="mp-tip" id="mp-tip"></div>
 <div class="toast" id="toast"></div>
 <div id="srv-bar"></div>
-<div class="bld-fix">DELTADIS-BASE-134-2110</div>
+<div class="bld-fix">DELTADIS-BASE-135-2110</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
@@ -1614,7 +1614,7 @@ function srvEnviarDireto(cb){
       if(cb) cb(true); return;
     }
     var lote=lotes[pos];
-    fetch(DELTADIS_API+'/painel/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({v:73},lote,SRV.forcarProx?{forcar:true}:{}))})
+    fetch(DELTADIS_API+'/painel/salvar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({v:73,ep:(function(){ try{ return localStorage.getItem('dd_epoca')||''; }catch(e){ return ''; } })()},lote,SRV.forcarProx?{forcar:true}:{}))})
     .then(function(r){ return r.json().catch(function(){ return null; }); }).then(function(d){
       if(!d||!d.ok){ var er=new Error((d&&d.mensagem)||'falhou'); er.cod=d&&d.erro; throw er; }
       var t,kk; for(t in {est:1,ped:1}) if(lote[t]) for(kk in lote[t]) SRV.hashes[(t==='est'?'e:':'p:')+kk]=lote[t][kk].h;
@@ -1622,6 +1622,12 @@ function srvEnviarDireto(cb){
       pos++; prox();
     }).catch(function(e){
       SRV.env=false;
+      if(e && e.cod==='epoca_antiga'){   /* (v263) a base foi zerada no servidor e esta tela tinha cópia antiga: joga fora e recarrega do servidor */
+        srvStatus('⚠ base zerada — recarregando do servidor',true);
+        try{ localStorage.setItem('dd_epoca','__antiga'); }catch(e0){}
+        fetch(DELTADIS_API+'/painel/versao',{cache:'no-store'}).then(function(r){ return r.json(); }).then(epocaVerificar).catch(function(){});
+        if(cb) cb(false); return;
+      }
       if(e && e.cod==='encolheu'){   /* (v84) o servidor recusou: esta tela tem bem menos pedidos que ele. 1º: juntar com os do servidor. 2º (se insistir): perguntar. */
         if(!SRV.juntou){ SRV.juntou=true; SRV.forcaJuntar=true; srvStatus('☁ conferindo com o servidor…'); setTimeout(function(){ srvEnviar(); },800); if(cb) cb(false); return; }
         SRV.juntou=false; SRV.forcaJuntar=false;
@@ -1685,7 +1691,7 @@ function epocaVerificar(v){
     var at=localStorage.getItem('dd_epoca');
     if(at===v.epoca) return false;
     localStorage.setItem('dd_epoca',v.epoca);
-    if(at===null) return false;   /* (v85) primeira vez neste navegador: só guarda a marca, SEM recarregar a tela (o srvCarregar já traz o servidor) */
+    if(at===null && !(PEDIDOS&&PEDIDOS.length)) return false;   /* (v85) primeira vez neste navegador e SEM dados guardados: só guarda a marca, SEM recarregar (o srvCarregar já traz o servidor). (v263) Com dados guardados de antes da marca = cópia antiga: joga fora. */
     window.__epocaAcao=1;
     localStorage.removeItem(LS_KEY); localStorage.removeItem('dd_pend');
     idbGravar({real:false}, function(){ location.reload(); });
