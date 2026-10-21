@@ -870,6 +870,16 @@ function somEntregaOk(){
   _tom(1568, 0.18, 0.18, 0.36);
 }
 
+/* (243) confirmação própria: o confirm() do navegador NÃO funciona no navegador de dentro do WhatsApp/iPhone (devolve "não" sem mostrar nada) */
+function ddSim(msg,fn){
+  var o=document.createElement('div'); o.style.cssText='position:fixed;inset:0;z-index:99995;background:rgba(31,10,61,.6);display:flex;align-items:center;justify-content:center;padding:24px';
+  o.innerHTML='<div style="background:#fff;border-radius:18px;padding:20px;max-width:340px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.3)"><div style="font-size:14.5px;color:#1F0A3D;line-height:1.45;white-space:pre-line;margin-bottom:16px"></div><div style="display:flex;gap:10px"><button type="button" class="btn sec" style="flex:1" data-n="1">Não</button><button type="button" class="btn pri" style="flex:1" data-s="1">Sim</button></div></div>';
+  o.firstChild.firstChild.textContent=msg;
+  function fecha(){ if(o.parentNode) o.parentNode.removeChild(o); }
+  o.querySelector('[data-n]').onclick=fecha;
+  o.querySelector('[data-s]').onclick=function(){ fecha(); try{ fn(); }catch(e){} };
+  document.body.appendChild(o);
+}
 function aviso(t){var e=el('toast'); e.textContent=t; e.classList.add('on');
   clearTimeout(window._tt); window._tt=setTimeout(function(){e.classList.remove('on');},2600);}
 function abrir(id){el('ovl').classList.add('on'); el(id).classList.add('on');}
@@ -1511,7 +1521,7 @@ function devMotOk(){
 }
 function rpDevPedir(tipo,i){
   /* (176) antes de sair pra rota (conferência) a devolução é direta: sem perguntar Ausente / Não localizado */
-  if(tipo==='lote'&&RP.preRota){ if(confirm('Devolver este pacote à base?')) rpSaida(tipo,i,'devolvido',''); return; }
+  if(tipo==='lote'&&RP.preRota){ ddSim('Devolver este pacote à base?',function(){ rpSaida(tipo,i,'devolvido',''); }); return; }
   devMotAbrir(function(m){ rpSaida(tipo,i,'devolvido',m); }); }
 function rpSaida(tipo,i,status,motivo){
   RP.conf=null; var p=(tipo==='extra')?RP.extra[i]:LOTE_ATUAL[i]; if(!p) return;
@@ -2084,7 +2094,7 @@ function bpMarcaMesa(cod,desmarcar){ var i, k=String(cod).toLowerCase(); for(i=0
 function bpNaoLoc(cod,v){
   var i, k=String(cod).toLowerCase(), it=null; for(i=0;i<(BP.mesa||[]).length;i++) if(String(BP.mesa[i].cod).toLowerCase()===k) it=BP.mesa[i];
   if(!it) return;
-  if(v&&!confirm('Confirma que o pacote '+it.cod+' NÃO está com você? A Mesa será avisada para procurar.')) return;
+  if(v&&!BP._okNl){ ddSim('Confirma que o pacote '+it.cod+' NÃO está com você? A Mesa será avisada para procurar.',function(){ BP._okNl=true; try{ bpNaoLoc(cod,v); }finally{ BP._okNl=false; } }); return; }
   var ant=it.nl; it.nl=v?1:0; bpAtualizar();
   rpApi('/motorista/mesa-nl',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:it.cod,nl:v?1:0})}).then(function(d){
     if(!d||!d.ok){ it.nl=ant; bpAtualizar(); aviso((d&&d.mensagem)||'Não consegui avisar a Mesa. Tente de novo.'); }
@@ -2132,9 +2142,9 @@ function bpFechar(){
   /* lista vinda da planilha (endereço já completo): monta a rota e abre a tela de conferência (posição + bipe); assinatura só ao concluir ela, e só depois abre o mapa */
   if(!NAO||BP.meus.some(function(m){ return m.auto; })){ bpFecharCamera(); RP.preRota=true; RP.asgVoltaRota=false; RP.bipMode=true; rpIniciar(); return; }
   var fm=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }).length;
-  if(fm>0&&!confirm('Faltam '+fm+' pacote'+(fm===1?'':'s')+' do romaneio da Mesa sem bipar. Montar a rota mesmo assim?')) return;
+  if(fm>0&&!(BP._ok1&&Date.now()-BP._ok1<90000)){ ddSim('Faltam '+fm+' pacote'+(fm===1?'':'s')+' do romaneio da Mesa sem bipar. Montar a rota mesmo assim?',function(){ BP._ok1=Date.now(); bpFechar(); }); return; }
   var fbp2=BP.meus.filter(function(m){ return m.auto&&!m.conf; }).length;
-  if(fbp2>0&&!confirm('Faltam '+fbp2+' pacote'+(fbp2===1?'':'s')+' da sua lista sem bipar. Montar a rota mesmo assim?')) return;
+  if(fbp2>0&&!(BP._ok2&&Date.now()-BP._ok2<90000)){ ddSim('Faltam '+fbp2+' pacote'+(fbp2===1?'':'s')+' da sua lista sem bipar. Montar a rota mesmo assim?',function(){ BP._ok2=Date.now(); bpFechar(); }); return; }
   bpFecharCamera();
   if(!bpNovos().length){ bpSeguir(); return; }   /* só pacotes remarcados: segue o romaneio original, sem novo romaneio nem assinatura */
   if(asgObrigatoria()){ RP.asgVoltaRota=false; asgAbrir(); return; }
@@ -2192,7 +2202,7 @@ function rlVoltar(){
   LOTE_ATUAL=[]; EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(true);
 }
 function rlCancelar(){
-  if(!confirm('Cancelar esta rota e voltar ao início? A lista de pacotes bipados será apagada e você começa de novo.')) return;
+  if(!RL._okC){ ddSim('Cancelar esta rota e voltar ao início? A lista de pacotes bipados será apagada e você começa de novo.',function(){ RL._okC=true; try{ rlCancelar(); }finally{ RL._okC=false; } }); return; }
   var novos=bpNovos().map(function(m){ return m.cod; });
   bpFecharCamera(); BP.camFn=null; RP.preRota=false; RP.asgVoltaRota=false;
   BP.meus=BP.meus.filter(function(m){ return !!m.rom; });
@@ -2211,7 +2221,7 @@ function rlTirar(cods){
 }
 function rlBase(i){
   var p=LOTE_ATUAL[i]; if(!p) return;
-  if(!confirm('Marcar este pacote como NÃO LOCALIZADO? Ele sai da sua rota e o escritório é avisado.')) return;
+  if(!RL._okB){ ddSim('Marcar este pacote como NÃO LOCALIZADO? Ele sai da sua rota e o escritório é avisado.',function(){ RL._okB=true; try{ rlBase(i); }finally{ RL._okB=false; } }); return; }
   rpApi('/motorista/ocorrencia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:p.cod,tipo:'nl'})}).then(function(d){
     if(!d||!d.ok){ aviso('Não consegui agora. Tente de novo.'); return; }
     rlTirar([p.cod]); aviso('Pacote marcado como não localizado'); renderInicio();
@@ -2362,7 +2372,7 @@ function entConcluir(){
   L.forEach(function(m){ (ENT.sel[m.cod]||ENT.aus[m.cod]?aus:ent).push(m); });
   if(!L.length) return;
   var msg=aus.length?(ent.length+' pacote'+(ent.length===1?'':'s')+' será'+(ent.length===1?'':'o')+' marcado'+(ent.length===1?'':'s')+' como ENTREGUE e '+aus.length+' como AUSENTE.\n\nConfirma?'):('Marcar os '+ent.length+' pacote'+(ent.length===1?'':'s')+' como ENTREGUE?');
-  if(!confirm(msg)) return;
+  if(!ENT._ok){ ddSim(msg,function(){ ENT._ok=true; try{ entConcluir(); }finally{ ENT._ok=false; } }); return; }
   ENT.concl=true;
   var seguir=function(la,lo){
     var f=rpFilaEnt(), t=Date.now();
