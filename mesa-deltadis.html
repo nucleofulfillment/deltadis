@@ -278,7 +278,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-67-1910</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-68-2110</p>
   </div>
 </div>
 
@@ -759,7 +759,7 @@ function transfPintar(){
   var b=el('btn-transf'); if(!b) return; var on=transfAtivo();
   b.style.display=(MODO==='entrada')?'':'none';
   b.className='btn '+(on?'pri':'sec'); b.textContent=on?'🔁 TRANSFERÊNCIA LIGADA — toque para desligar':'🔁 Transferência (sem motorista)';
-  var f=el('mot-aqui'); if(f){ f.disabled=on; if(on) f.value=''; }
+  var f=el('mot-aqui'); if(f){ f.disabled=false; if(on) f.value=''; }   /* (68) com transferência ligada o campo continua livre: escolher motorista desliga a transferência */
 }
 function alternarTransf(){
   TRANSF=!TRANSF;
@@ -779,7 +779,7 @@ function escolherMotoristaAqui(){
   MOT=novo||{id:'',n:''};
   if(novo && TRANSF){ TRANSF=false; }
   if(novo) aviso('Motorista: '+novo.n);
-  salvarSessao(); aplicarGate(); if(novo) camAuto();
+  salvarSessao(); motAquiMostrar(); if(novo) camAuto();
 }
 function aplicarGate(){   /* (61) só libera a bipagem com motorista vinculado */
   var c=el('scan-conteudo'), h=el('mot-hint'), fecha=!!(modoPedeMot()&&ATIVA&&!(MOT&&MOT.id)&&!transfAtivo());
