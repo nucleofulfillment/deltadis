@@ -2124,37 +2124,54 @@ function asgObrigatoria(){ if(window.APP_PLANO&&APP_PLANO.bloqueio) return false
 function bpNovos(){ return BP.meus.filter(function(m){ return !m.rom; }); }
 /* (110) depois do romaneio fechado: com roteirização segue pra montar a rota; sem roteirização vai pra tela de entregas */
 function bpSeguir(){ RP.bipMode=true; if(rpCfg().rota==='nao'){ bpFecharCamera(); entAbrir(); } else rpIniciar(); }
-/* (240) o romaneio que a Mesa mandou pro motorista vale como bipagem: ao finalizar, o que ficou sem bipar entra junto (mesmas regras do bipe: pacote de outro motorista ou devolvido fica de fora) */
+/* (241) refeito: tenta de novo os que falharam, não segue com lista incompleta, e a lista do servidor manda. (240) o romaneio que a Mesa mandou pro motorista vale como bipagem: ao finalizar, o que ficou sem bipar entra junto (mesmas regras do bipe: pacote de outro motorista ou devolvido fica de fora) */
 function bpAceitarMesa(fim){
-  var pend=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }), i=0, feitos=0, ok=0, falhou=0, recusados=0, ativos=0, total=pend.length;
+  var pend=(BP.mesa||[]).filter(function(x){ return !x.b&&!x.nl; }), total=pend.length, feitos=0, ok=0, recusados=0, tent=0;
   var ov=document.createElement('div'); ov.id='bp-acc'; ov.style.cssText='position:fixed;inset:0;z-index:99990;background:rgba(31,10,61,.72);display:flex;align-items:center;justify-content:center;padding:24px';
   ov.innerHTML='<div style="background:#fff;border-radius:18px;padding:22px 24px;text-align:center;max-width:320px;width:100%"><div style="font-weight:800;font-size:16px;color:#1F0A3D">Registrando seus pacotes…</div><div id="bp-acc-n" style="font-size:30px;font-weight:800;color:#7C3AED;margin:8px 0">0/'+total+'</div><div style="font-size:12.5px;color:#6B7280">Não feche o app.</div></div>';
   document.body.appendChild(ov);
-  function termina(){
-    var o=el('bp-acc'); if(o&&o.parentNode) o.parentNode.removeChild(o);
-    bpAtualizar();
-    if(recusados) aviso(recusados+' pacote'+(recusados===1?'':'s')+' ficou'+(recusados===1?'':'ram')+' de fora (já estão com outro motorista ou foram devolvidos).');
-    if(!ok&&falhou){ aviso('Sem conexão. Os pacotes NÃO foram registrados. Tente de novo.'); return; }
-    fim();
-  }
-  function prox(){
-    if(i>=total){ if(ativos===0) termina(); return; }
-    var x=pend[i++], k0=String(x.cod).toLowerCase(), e=BP.idx[k0], canon=e?e.c:x.cod; ativos++;
-    var item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};
-    if(e&&e.a&&e.a[0]&&e.a[1]&&e.a[4]){ item.d={cep:e.a[5]||'',num:e.a[1],comp:e.a[2]||'',rua:e.a[0],bai:e.a[3]||'',cid:e.a[4]}; item.r=e.a[0]+', '+e.a[1]; item.e=1; item.novo=false; }
-    rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:e?'':bpTr(canon),ponto:PT.sel?PT.sel.nome:'',num:null})}).then(function(d){
-      if(!d||!d.ok) falhou++;
-      else if(d.resultado==='outro'||d.resultado==='limite'||d.resultado==='devolvido') recusados++;
-      else {
+  function tira(){ var o=el('bp-acc'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
+  /* uma rodada: tenta a lista toda (3 por vez); devolve pro callback só os que deram erro de conexão/servidor */
+  function rodada(lista,cb){
+    var i=0, ativos=0, falhas=[];
+    function prox(){
+      if(i>=lista.length){ if(ativos===0) cb(falhas); return; }
+      var x=lista[i++], k0=String(x.cod).toLowerCase(), e=BP.idx[k0], canon=e?e.c:x.cod; ativos++;
+      var item={cod:canon,t:Date.now(),cl:e?e.cl:'',r:e?e.r:'',e:e?e.e:0,novo:!e,num:0};
+      if(e&&e.a&&e.a[0]&&e.a[1]&&e.a[4]){ item.d={cep:e.a[5]||'',num:e.a[1],comp:e.a[2]||'',rua:e.a[0],bai:e.a[3]||'',cid:e.a[4]}; item.r=e.a[0]+', '+e.a[1]; item.e=1; item.novo=false; }
+      rpApi('/motorista/bipar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cod:canon,tr:e?'':bpTr(canon),ponto:PT.sel?PT.sel.nome:'',num:null})}).then(function(d){
+        if(!d||!d.ok){ falhas.push(x); return; }
+        feitos++;
+        if(d.resultado==='outro'||d.resultado==='limite'||d.resultado==='devolvido'){ recusados++; return; }
+        ok++;
+        if(d.resultado==='repetido'||d.resultado==='conferido') return;   /* já existia: se estiver aberto no servidor, a recarga abaixo traz; se já foi entregue/fechado, não ressuscita */
         if(d.cliente&&!item.cl) item.cl=d.cliente;
         if(d.end&&d.end.rua&&d.end.num){ item.d={cep:d.end.cep||'',num:d.end.num,comp:d.end.comp||'',rua:d.end.rua,bai:d.end.bai||'',cid:d.end.cid||''}; item.r=d.end.rua+', '+d.end.num; item.e=1; item.novo=false; }
         var ja=false, j; for(j=0;j<BP.meus.length;j++) if(String(BP.meus[j].cod).toLowerCase()===String(canon).toLowerCase()) ja=true;
-        if(!ja) BP.meus.push(item); bpMarcaMesa(x.cod); ok++;
-      }
-    }).catch(function(){ falhou++; }).then(function(){ ativos--; feitos++; var n=el('bp-acc-n'); if(n) n.textContent=feitos+'/'+total; prox(); });
+        if(!ja) BP.meus.push(item); bpMarcaMesa(x.cod);
+      }).catch(function(){ falhas.push(x); }).then(function(){ ativos--; var n=el('bp-acc-n'); if(n) n.textContent=feitos+'/'+total; prox(); });
+    }
+    if(!lista.length){ cb([]); return; }
+    for(var c=0;c<3;c++) prox();
   }
-  if(!total){ termina(); return; }
-  for(var c=0;c<6;c++) prox();
+  function depois(falhas){
+    if(falhas.length&&tent<3){ tent++; var n=el('bp-acc-n'); if(n) n.textContent=feitos+'/'+total+' · tentando de novo…'; setTimeout(function(){ rodada(falhas,depois); },800*tent); return; }
+    if(falhas.length){
+      tira(); bpAtualizar();
+      aviso(falhas.length+' pacote'+(falhas.length===1?'':'s')+' não '+(falhas.length===1?'foi registrado':'foram registrados')+' (internet ruim). Toque em Finalizar de novo.');
+      return;   /* não segue com lista incompleta */
+    }
+    /* tudo registrado: a lista do servidor é a verdade (só o que está aberto com este motorista) */
+    var p=null; try{ p=bpCarregar(true); }catch(e){}
+    var fecha=function(){
+      tira(); bpAtualizar();
+      if(recusados) aviso(recusados+' pacote'+(recusados===1?'':'s')+' ficou'+(recusados===1?'':'ram')+' de fora (já estão com outro motorista ou foram devolvidos).');
+      fim();
+    };
+    if(p&&p.then) p.then(fecha,fecha); else fecha();
+  }
+  if(!total){ tira(); fim(); return; }
+  rodada(pend,depois);
 }
 function bpFechar(){
   var aceitou=!!BP._aceitou; BP._aceitou=false;
