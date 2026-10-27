@@ -823,11 +823,20 @@ function codigoDaTr(cod,tr){
   return false;
 }
 var REGRA_ULT='';
+/* som de código errado: sirene aguda por ~1,6s no volume máximo (o erro comum é grave e baixo) */
+function somErroRegra(){
+  try{
+    var ctx=_getAudioCtx(); if(!ctx) return;
+    if(ctx.state==='suspended') ctx.resume().catch(function(){});
+    var mestre=ctx.createGain(); mestre.gain.value=1; mestre.connect(ctx.destination); var k, t0=ctx.currentTime, fr=[1000,700,1000,700,1000,700,1000,700];
+    for(k=0;k<fr.length;k++){ ['square','sawtooth'].forEach(function(tp){ var o=ctx.createOscillator(), g=ctx.createGain(), ti=t0+k*0.2; o.type=tp; o.frequency.value=fr[k]; o.connect(g); g.connect(mestre); g.gain.setValueAtTime(0,ti); g.gain.linearRampToValueAtTime(0.9,ti+0.01); g.gain.setValueAtTime(0.9,ti+0.18); g.gain.linearRampToValueAtTime(0,ti+0.2); o.start(ti); o.stop(ti+0.21); }); }
+  }catch(e){}
+}
 function erroRegra(cod,tr){
   var cam=!!(typeof CAM!=='undefined'&&CAM&&CAM.q&&Date.now()-CAM.q<400);   /* veio da câmera: avisa uma vez só por código */
   if(cam&&REGRA_ULT===cod){ return; }
   REGRA_ULT=cod;
-  somErro(); mostrarUlt('err','Esse código não é da '+(tr?tr.n:'transportadora')+' — bipe o código certo da etiqueta',cod);
+  somErroRegra(); mostrarUlt('err','Esse código não é da '+(tr?tr.n:'transportadora')+' — bipe o código certo da etiqueta',cod);
 }
 function registrarPacote(cod){
   if(!ATIVA) return;
