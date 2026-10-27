@@ -2120,7 +2120,7 @@ function bpBipar(v){
   var cod=bpNorm(v); if(!cod) return;
   if(BP.ocupado) return;
   if(!BP.ok){ BP.ult={t:'err',m:'Os pacotes ainda não carregaram. Aguarde um instante.'}; bpAtualizar(); return; }
-  if(!BP.idx[cod.toLowerCase()] && !bpCodigoOk(cod)){
+  if(!bpCodigoOk(cod)){
     var daCam=BP.deCam; BP.deCam=false;
     if(daCam&&BP.rgUlt===cod) return;   /* câmera apontada pra mesma etiqueta: avisa e apita uma vez só */
     BP.rgUlt=cod; somErroBip(); BP.ult={t:'err',m:'Esse código não é da '+esc(BP.trN||'transportadora')+'. Bipe o código certo da etiqueta.',cod:cod}; bpAtualizar(); return;
