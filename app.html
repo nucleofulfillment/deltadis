@@ -2110,13 +2110,13 @@ function bpEhMeu(e,canon){
 function somErroRegra(){
   try{
     var ctx=_getAudioCtx(); if(ctx){ if(ctx.state==='suspended') ctx.resume().catch(function(){});
-      /* sirene: alterna entre dois tons agudos por ~1,6s, no volume máximo, com duas ondas somadas */
+      /* aviso: 3 bipes agudos, ~0,6s */
       var mestre=ctx.createGain(); mestre.gain.value=1; mestre.connect(ctx.destination); var k, t0=ctx.currentTime;
-      var fr=[1000,700,1000,700,1000,700,1000,700];
-      for(k=0;k<fr.length;k++){ ['square','sawtooth'].forEach(function(tp){ var o=ctx.createOscillator(), g=ctx.createGain(), ti=t0+k*0.2; o.type=tp; o.frequency.value=fr[k]; o.connect(g); g.connect(mestre); g.gain.setValueAtTime(0,ti); g.gain.linearRampToValueAtTime(0.9,ti+0.01); g.gain.setValueAtTime(0.9,ti+0.18); g.gain.linearRampToValueAtTime(0,ti+0.2); o.start(ti); o.stop(ti+0.21); }); }
+      var fr=[900,650,900];
+      for(k=0;k<fr.length;k++){ ['square'].forEach(function(tp){ var o=ctx.createOscillator(), g=ctx.createGain(), ti=t0+k*0.2; o.type=tp; o.frequency.value=fr[k]; o.connect(g); g.connect(mestre); g.gain.setValueAtTime(0,ti); g.gain.linearRampToValueAtTime(0.45,ti+0.01); g.gain.setValueAtTime(0.45,ti+0.18); g.gain.linearRampToValueAtTime(0,ti+0.2); o.start(ti); o.stop(ti+0.21); }); }
     }
   }catch(e){}
-  try{ if(navigator.vibrate) navigator.vibrate([500,100,500,100,500,100,500]); }catch(e){}
+  try{ if(navigator.vibrate) navigator.vibrate([300,100,300]); }catch(e){}
 }
 function bpCodigoOk(cod){
   var rg=BP.trRg; if(!BP.tr||!rg||!rg.length) return true;

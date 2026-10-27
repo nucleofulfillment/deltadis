@@ -823,13 +823,13 @@ function codigoDaTr(cod,tr){
   return false;
 }
 var REGRA_ULT='';
-/* som de código errado: sirene aguda por ~1,6s no volume máximo (o erro comum é grave e baixo) */
+/* som de código errado: aviso agudo de ~0,6s, firme mas sem susto (o erro comum é grave e baixo) */
 function somErroRegra(){
   try{
     var ctx=_getAudioCtx(); if(!ctx) return;
     if(ctx.state==='suspended') ctx.resume().catch(function(){});
-    var mestre=ctx.createGain(); mestre.gain.value=1; mestre.connect(ctx.destination); var k, t0=ctx.currentTime, fr=[1000,700,1000,700,1000,700,1000,700];
-    for(k=0;k<fr.length;k++){ ['square','sawtooth'].forEach(function(tp){ var o=ctx.createOscillator(), g=ctx.createGain(), ti=t0+k*0.2; o.type=tp; o.frequency.value=fr[k]; o.connect(g); g.connect(mestre); g.gain.setValueAtTime(0,ti); g.gain.linearRampToValueAtTime(0.9,ti+0.01); g.gain.setValueAtTime(0.9,ti+0.18); g.gain.linearRampToValueAtTime(0,ti+0.2); o.start(ti); o.stop(ti+0.21); }); }
+    var mestre=ctx.createGain(); mestre.gain.value=1; mestre.connect(ctx.destination); var k, t0=ctx.currentTime, fr=[900,650,900];
+    for(k=0;k<fr.length;k++){ ['square'].forEach(function(tp){ var o=ctx.createOscillator(), g=ctx.createGain(), ti=t0+k*0.2; o.type=tp; o.frequency.value=fr[k]; o.connect(g); g.connect(mestre); g.gain.setValueAtTime(0,ti); g.gain.linearRampToValueAtTime(0.45,ti+0.01); g.gain.setValueAtTime(0.45,ti+0.18); g.gain.linearRampToValueAtTime(0,ti+0.2); o.start(ti); o.stop(ti+0.21); }); }
   }catch(e){}
 }
 function erroRegra(cod,tr){
