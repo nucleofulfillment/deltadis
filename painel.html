@@ -1873,7 +1873,8 @@ function bipAbsorver(){
     for(i=0;i<d.itens.length;i++){
       b=d.itens[i]; feitos.push({cod:b.cod,dia:b.dia});
       if(b.lote==='removido') continue;   /* tirado da lista pelo motorista (não localizado): não mexe */
-      mid=null; for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(b.mt)){ mid=MOTORISTAS[mk].id; break; } }
+      mid=null; for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].id)===String(b.mt) || (/^\d+$/.test(String(b.mt)) && Number(MOTORISTAS[mk].id)===Number(b.mt))){ mid=MOTORISTAS[mk].id; break; } }   /* "0012" = 12 */
+      if(mid==null && b.mtn){ var nb=String(b.mtn).trim().toLowerCase(); for(mk=0;mk<MOTORISTAS.length;mk++){ if(String(MOTORISTAS[mk].n||'').trim().toLowerCase()===nb){ mid=MOTORISTAS[mk].id; break; } } }   /* código não bateu: liga pelo nome igual */
       p=idx[b.cod];
       if(p && b.end_rua && !p.rua){ p.rua=b.end_rua; p.num=b.end_num||''; p.comp=b.end_comp||''; p.bai=b.end_bai||''; p.cid=b.end_cid||''; p.cep=b.end_cep||''; p.bairro=b.end_bai||p.bairro||''; mud++; }
       if(p){
