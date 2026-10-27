@@ -811,6 +811,24 @@ function tamEscolher(t){
   var i=el('scan-manual'); if(i){ i.value=''; focarScan(i); }
   if(cb) cb(t);
 }
+/* filtro de código por transportadora: regras (começa com + nº de caracteres + tipo) vindas do painel. Sem regra = aceita tudo. */
+function codigoDaTr(cod,tr){
+  var rg=tr&&tr.regras; if(!rg||!rg.length) return true;
+  var c=String(cod||'').toUpperCase(), i;
+  for(i=0;i<rg.length;i++){ var r=rg[i];
+    if(r.n&&c.length!==r.n) continue;
+    if(r.p&&c.indexOf(String(r.p).toUpperCase())!==0) continue;
+    if(r.t==='n'?!/^\d+$/.test(c):!/^[A-Z0-9]+$/.test(c)) continue;
+    return true; }
+  return false;
+}
+var REGRA_ULT='';
+function erroRegra(cod,tr){
+  var cam=!!(typeof CAM!=='undefined'&&CAM&&CAM.q&&Date.now()-CAM.q<400);   /* veio da câmera: avisa uma vez só por código */
+  if(cam&&REGRA_ULT===cod){ return; }
+  REGRA_ULT=cod;
+  somErro(); mostrarUlt('err','Esse código não é da '+(tr?tr.n:'transportadora')+' — bipe o código certo da etiqueta',cod);
+}
 function registrarPacote(cod){
   if(!ATIVA) return;
   cod=String(cod||'').replace(/[^A-Za-z0-9_.-]/g,'');
@@ -825,10 +843,12 @@ function registrarPacote(cod){
   if(cod.replace(/\D/g,'').length>=40){ somErro(); mostrarUlt('err','Esse é o código da NOTA (chave com 44 números). Em Entregas bipe o código de rastreio da etiqueta. Para dar entrada pela nota use a opção XML.',cod); return; }   /* (48) entrada por Entregas não aceita chave de NF */
   if(cod.length>25){ somErro(); mostrarUlt('err','Código com mais de 25 caracteres — não é o rastreio. Bipe outro código da etiqueta.',cod); return; }   /* (66) Entregas: limite de 25 dígitos, não pega os códigos aleatórios compridos da etiqueta */
   var tr=ATIVA;
+  if(!el('scan-auto').checked && !codigoDaTr(cod,tr)){ erroRegra(cod,tr); return; }   /* filtro de código por transportadora (Configurações → Precificação) */
   if(el('scan-auto').checked){
     var d0=detectarTr(cod), dt=d0?achaTr(d0):null;
     if(dt && dt.id!==tr.id){ tr=dt; ATIVA=dt; el('scan-nome').textContent=tituloScan(); pintarCards(); aviso('Transportadora trocada para '+dt.n); salvarSessao(); }
   }
+  if(!codigoDaTr(cod,tr)){ erroRegra(cod,tr); return; }
   if(VISTOS[cod]){ somErro(); mostrarUlt('rep','Já bipado nesta contagem ('+VISTOS[cod].tn+', '+VISTOS[cod].hora+')',cod); return; }
   registrarPacoteOk(cod,tr,TAM_SEL);
 }
@@ -1739,7 +1759,7 @@ function carregarTransportadoras(quieto){
     if(!d||!d.ok||!d.itens||!d.itens.length) return;
     var esp=TRANSPORTADORAS.filter(function(t){ return t.somente; }), ant={}, i;
     for(i=0;i<TRANSPORTADORAS.length;i++) ant[TRANSPORTADORAS[i].id]=TRANSPORTADORAS[i];
-    var nova=d.itens.filter(function(s){ return s&&s.id&&s.n&&!ant[s.id]||(s&&s.id&&s.n&&!ant[s.id].somente); }).map(function(s){ var o=ant[s.id]||{}; return {id:s.id,n:s.n,ini:s.ini||String(s.n).slice(0,2).toUpperCase(),cor:s.cor||'#6D28D9',hoje:o.hoje||0,dominio:s.dominio||null,logo:s.logo||''}; });
+    var nova=d.itens.filter(function(s){ return s&&s.id&&s.n&&!ant[s.id]||(s&&s.id&&s.n&&!ant[s.id].somente); }).map(function(s){ var o=ant[s.id]||{}; return {id:s.id,n:s.n,ini:s.ini||String(s.n).slice(0,2).toUpperCase(),cor:s.cor||'#6D28D9',hoje:o.hoje||0,dominio:s.dominio||null,logo:s.logo||'',regras:Array.isArray(s.regras)?s.regras:[]}; });
     if(!nova.length) return;
     TRANSPORTADORAS.length=0; nova.concat(esp).forEach(function(t){ TRANSPORTADORAS.push(t); });
     pintarCards(); if(!quieto) carregarContagemDia();

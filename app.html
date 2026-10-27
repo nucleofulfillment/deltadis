@@ -1889,14 +1889,14 @@ function srNao(){ srFechar(); setTimeout(function(){ vzAbrir('','voz'); },30); }
 function srFechar(){ var o=el('sr-ov'); if(o&&o.parentNode) o.parentNode.removeChild(o); }
 /* ══ (245) TRANSPORTADORA — o motorista escolhe de qual transportadora são os pacotes ANTES de bipar (as mesmas do painel/Mesa; as criadas depois entram sozinhas) e pode trocar na tela da bipagem ══ */
 var TRS={lista:null,carregando:false,err:'',volta:'novo'};
-function trGravar(){ try{ if(BP.tr) localStorage.setItem('dd_tr',JSON.stringify({dia:hojeISO(),mt:String(RP.mt||''),id:BP.tr,n:BP.trN||''})); else localStorage.removeItem('dd_tr'); }catch(e){} }
-function trRestaurar(){ try{ if(BP.tr) return; var o=JSON.parse(localStorage.getItem('dd_tr')||'null'); if(o&&o.id&&o.dia===hojeISO()&&String(o.mt)===String(RP.mt||'')){ BP.tr=o.id; BP.trN=o.n||''; } }catch(e){} }
+function trGravar(){ try{ if(BP.tr) localStorage.setItem('dd_tr',JSON.stringify({dia:hojeISO(),mt:String(RP.mt||''),id:BP.tr,n:BP.trN||'',rg:BP.trRg||[]})); else localStorage.removeItem('dd_tr'); }catch(e){} }
+function trRestaurar(){ try{ if(BP.tr) return; var o=JSON.parse(localStorage.getItem('dd_tr')||'null'); if(o&&o.id&&o.dia===hojeISO()&&String(o.mt)===String(RP.mt||'')){ BP.tr=o.id; BP.trN=o.n||''; BP.trRg=o.rg||[]; } }catch(e){} }
 function trAbrir(volta){ TRS.volta=volta||'novo'; TRS.err=''; EST='rp_tr'; renderInicio(); trCarregar(); }
 function trCarregar(){
   TRS.carregando=true;
   rpApi('/motorista/transportadoras').then(function(d){
     TRS.carregando=false;
-    if(d&&d.ok){ TRS.lista=d.itens||[]; TRS.err=''; } else TRS.err='Não consegui carregar as transportadoras. Confira a internet.';
+    if(d&&d.ok){ TRS.lista=d.itens||[]; TRS.err=''; var q; for(q=0;q<TRS.lista.length;q++) if(BP.tr&&TRS.lista[q].id===BP.tr){ BP.trRg=TRS.lista[q].regras||[]; trGravar(); } } else TRS.err='Não consegui carregar as transportadoras. Confira a internet.';
     if(EST==='rp_tr') renderInicio();
   }).catch(function(){ TRS.carregando=false; TRS.err='Sem conexão. Tente de novo.'; if(EST==='rp_tr') renderInicio(); });
 }
@@ -1914,10 +1914,10 @@ function trTela(){
 }
 function trEscolher(i){
   var x=(TRS.lista||[])[i]; if(!x) return;
-  BP.tr=x.id; BP.trN=x.n; trGravar();
+  BP.tr=x.id; BP.trN=x.n; BP.trRg=x.regras||[]; BP.rgUlt=''; trGravar();
   EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok);
 }
-function trSemEscolha(){ BP.tr=''; BP.trN=''; trGravar(); EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok); }
+function trSemEscolha(){ BP.tr=''; BP.trN=''; BP.trRg=[]; trGravar(); EST='rp_bip'; BP.ult=null; renderInicio(); bpCarregar(BP.ok); }
 function trVoltar(){ if(TRS.volta==='troca'){ EST='rp_bip'; renderInicio(); bpCarregar(true); } else ptAbrir(); }
 /* ══ (37) PONTO DE COLETA — o motorista escolhe onde pegou os pacotes antes de bipar; a rota sai dele ══ */
 function ptGravar(){ try{ if(PT.sel) localStorage.setItem('dd_ponto_sel',JSON.stringify(PT.sel)); else localStorage.removeItem('dd_ponto_sel'); }catch(e){} }
@@ -2105,10 +2105,27 @@ function bpEhMeu(e,canon){
   var a=nn(e&&e.d),b=nn(RP.mtn),u=nn(DD_M_USER&&DD_M_USER.nome);
   return !!a&&(a===b||a===u);
 }
+/* filtro de código por transportadora (regras cadastradas no painel: começa com + nº de caracteres + tipo). Sem regra = aceita tudo. */
+function bpCodigoOk(cod){
+  var rg=BP.trRg; if(!BP.tr||!rg||!rg.length) return true;
+  var c=String(cod).toUpperCase(), i;
+  for(i=0;i<rg.length;i++){ var r=rg[i];
+    if(r.n&&c.length!==r.n) continue;
+    if(r.p&&c.indexOf(String(r.p).toUpperCase())!==0) continue;
+    if(r.t==='n'?!/^\d+$/.test(c):!/^[A-Z0-9]+$/.test(c)) continue;
+    return true; }
+  return false;
+}
 function bpBipar(v){
   var cod=bpNorm(v); if(!cod) return;
   if(BP.ocupado) return;
   if(!BP.ok){ BP.ult={t:'err',m:'Os pacotes ainda não carregaram. Aguarde um instante.'}; bpAtualizar(); return; }
+  if(!BP.idx[cod.toLowerCase()] && !bpCodigoOk(cod)){
+    var daCam=BP.deCam; BP.deCam=false;
+    if(daCam&&BP.rgUlt===cod) return;   /* câmera apontada pra mesma etiqueta: avisa e apita uma vez só */
+    BP.rgUlt=cod; somErroBip(); BP.ult={t:'err',m:'Esse código não é da '+esc(BP.trN||'transportadora')+'. Bipe o código certo da etiqueta.',cod:cod}; bpAtualizar(); return;
+  }
+  BP.deCam=false;
   if(cod.length<5){ somErroBip(); BP.ult={t:'err',m:'Código curto demais — confira a etiqueta.',cod:cod}; bpAtualizar(); return; }
   var k=cod.toLowerCase(), e=BP.idx[k], canon=e?e.c:cod, i;
   for(i=0;i<BP.meus.length;i++) if(BP.meus[i].cod.toLowerCase()===canon.toLowerCase()){
@@ -2589,7 +2606,7 @@ function bpCamera(){
         BP.cam.ult=c; BP.cam.q=ag;
         try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
         var f=el('bp-faixa'); if(f){ f.style.boxShadow='0 0 0 4px #22C55E inset'; setTimeout(function(){ var f2=el('bp-faixa'); if(f2) f2.style.boxShadow=''; },350); }
-        if(BP.camFn) BP.camFn(c); else { bpBipar(c); bpCamFeedback(); }   /* (v230) a câmera NÃO fecha a cada bipe: segue lendo o próximo pacote */
+        if(BP.camFn) BP.camFn(c); else { BP.deCam=true; bpBipar(c); BP.deCam=false; bpCamFeedback(); }   /* (v230) a câmera NÃO fecha a cada bipe: segue lendo o próximo pacote */
       }).catch(function(){ if(BP.cam) BP.cam.lendo=false; });
     },140)};
   }).catch(function(){ BP.camAbrindo=0; BP.camQuer=false; aviso('Não consegui abrir a câmera. Libere a permissão do navegador.'); });
