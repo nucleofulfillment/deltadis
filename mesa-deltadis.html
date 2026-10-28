@@ -671,7 +671,7 @@ function restaurarSessao(){
     aviso('Contagem retomada: '+CNT+' pacote'+(CNT===1?'':'s'));
   }catch(e){}
 }
-function tituloScan(){ return (ATIVA?ATIVA.n:''); }
+function tituloScan(){ var c=ATIVA&&ATIVA.id?(achaTr(ATIVA.id)||ATIVA):ATIVA; return (ATIVA?ATIVA.n+((c&&c.regras&&c.regras.length)?' 🔒':''):''); }   /* 🔒 = esta transportadora só aceita os códigos das regras */
 /* (09) o campo do motorista aceita DIGITAR (e filtra) ou escolher na lista */
 function normNome(t){ return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
 function achaMot(t){
@@ -813,7 +813,7 @@ function tamEscolher(t){
 }
 /* filtro de código por transportadora: regras (começa com + nº de caracteres + tipo) vindas do painel. Sem regra = aceita tudo. */
 function codigoDaTr(cod,tr){
-  var rg=tr&&tr.regras; if(!rg||!rg.length) return true;
+  var cur=(tr&&tr.id&&achaTr(tr.id))||tr, rg=cur&&cur.regras; if(!rg||!rg.length) return true;   /* sempre a versão mais nova da lista (a sessão retomada guardava um objeto velho, sem regras) */
   var c=String(cod||'').toUpperCase(), i;
   for(i=0;i<rg.length;i++){ var r=rg[i];
     if(r.n&&c.length!==r.n) continue;
@@ -1771,6 +1771,7 @@ function carregarTransportadoras(quieto){
     var nova=d.itens.filter(function(s){ return s&&s.id&&s.n&&!ant[s.id]||(s&&s.id&&s.n&&!ant[s.id].somente); }).map(function(s){ var o=ant[s.id]||{}; return {id:s.id,n:s.n,ini:s.ini||String(s.n).slice(0,2).toUpperCase(),cor:s.cor||'#6D28D9',hoje:o.hoje||0,dominio:s.dominio||null,logo:s.logo||'',regras:Array.isArray(s.regras)?s.regras:[]}; });
     if(!nova.length) return;
     TRANSPORTADORAS.length=0; nova.concat(esp).forEach(function(t){ TRANSPORTADORAS.push(t); });
+    if(ATIVA&&ATIVA.id){ var at2=achaTr(ATIVA.id); if(at2){ ATIVA=at2; try{ el('scan-nome').textContent=tituloScan(); }catch(e){} } }   /* a transportadora aberta passa a usar as regras novas */
     pintarCards(); if(!quieto) carregarContagemDia();
   }).catch(function(){});
 }
