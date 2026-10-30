@@ -278,7 +278,7 @@ m1046 -391 c139 -68 217 -187 239 -361 19 -152 -12 -335 -75 -434 -31 -50 -95
     <div class="field"><label>Senha</label><input class="inp" id="lg-senha" type="password" placeholder="••••••••"></div>
     <button class="btn pri" style="width:100%" onclick="entrar()">Entrar</button>
     <p class="lg-demo" id="lg-msg" style="min-height:16px"></p>
-    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-71-2110</p>
+    <p class="lg-demo" style="opacity:.55;font-size:10.5px">DELTADIS-MESA-72-2210</p>
   </div>
 </div>
 
@@ -1369,8 +1369,11 @@ function abrirCamera(){
       det.detect(v).then(function(r){
         CAM.lendo=false; if(!r||!r.length) return;
         var c=String(r[0].rawValue||'').trim(), ag=Date.now(); if(!c) return;
-        if(c===CAM.ult && ag-CAM.q<3000) return;   /* mesma etiqueta na frente da câmera: não conta de novo */
-        CAM.ult=c; CAM.q=ag;
+        if(c===CAM.ult && ag-CAM.q<3000){   /* mesma etiqueta na frente da câmera: não conta de novo */
+          if(!CAM.avisou){ CAM.avisou=true; somErro(); try{ if(navigator.vibrate) navigator.vibrate([120,60,120]); }catch(e){} mostrarUlt('rep','Já bipado — mesmo código',c); }
+          return;
+        }
+        CAM.avisou=false; CAM.ult=c; CAM.q=ag;
         try{ if(navigator.vibrate) navigator.vibrate(60); }catch(e){}
         var f=el('bp-faixa'); if(f){ f.style.boxShadow='0 0 0 4px #22C55E inset'; setTimeout(function(){ var f2=el('bp-faixa'); if(f2) f2.style.boxShadow=''; },350); }
         registrarPacote(c);
